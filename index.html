@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Indonesia Factory Energy Report Calculator</title>
+  <meta name="description" content="Local browser calculator for JRE and UNILAND daily cumulative electricity meter readings." />
+  <link rel="icon" type="image/webp" href="./asset/Midea.webp" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app-container" id="app-root">
+    <header class="top-header">
+      <div class="brand-section">
+        <div class="brand-logo-container">
+          <img src="./asset/Midea.webp" alt="Midea" class="brand-logo-img" />
+        </div>
+        <div>
+          <h1 class="brand-title">ENERGY DAILY REPORT</h1>
+          <div class="brand-subtitle">JRE & UNILAND meter reading calculator</div>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="header-clock" title="Device clock displayed in Asia/Jakarta (WIB / GMT+7). No internet request is made.">
+          <div class="clock-live-indicator">
+            <span class="pulse-dot"></span>
+            <span class="live-label">WIB</span>
+          </div>
+          <div class="clock-display">
+            <span class="clock-digits" id="clock-live-time">--:--:--</span>
+            <span class="clock-date-sub" id="clock-live-date">-- --- ----</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="plant-select">Plant:</label>
+          <select id="plant-select" class="select-input">
+            <option value="JRE">JRE</option>
+            <option value="UNILAND">UNILAND</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="report-date">Report date:</label>
+          <input type="date" id="report-date" class="date-input" />
+          <button type="button" id="btn-wib-today" class="btn btn-outline btn-sm" title="Use this device's current date in Asia/Jakarta (WIB)">Use WIB Today</button>
+        </div>
+
+        <button id="theme-toggle-btn" class="btn btn-outline btn-sm">🌙 Dark Mode</button>
+        <button id="self-test-btn" class="btn btn-outline btn-sm" title="Run the built-in JRE and UNILAND reference checks">🧪 Self-Check</button>
+      </div>
+    </header>
+
+    <section class="toolbar-card" aria-label="Actions">
+      <div class="toolbar-left">
+        <button id="btn-calculate" class="btn btn-primary" title="Calculate (Ctrl+Enter)">⚡ CALCULATE REPORT</button>
+        <button id="btn-load-jre" class="btn btn-secondary">📂 Load JRE Example</button>
+        <button id="btn-load-uniland" class="btn btn-secondary">📂 Load UNILAND Example</button>
+        <button id="btn-save-baseline" class="btn btn-success" title="Store Today's raw reading as the next baseline in this browser">📌 SAVE TODAY AS NEXT BASELINE</button>
+      </div>
+      <div class="toolbar-right">
+        <button id="btn-swap" class="btn btn-outline">⇄ Swap Readings</button>
+        <button id="btn-clear" class="btn btn-outline">✕ Clear Inputs</button>
+        <button id="btn-forget-baseline" class="btn btn-outline" title="Remove the explicitly saved baseline for the selected plant from browser storage">Forget Saved Baseline</button>
+      </div>
+    </section>
+
+    <main class="input-grid">
+      <div class="input-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span>YESTERDAY METER READING</span><span class="badge">Baseline</span></div>
+          <span class="panel-stats" id="yesterday-stats">0 lines</span>
+        </div>
+        <textarea id="yesterday-input" class="meter-textarea" spellcheck="false" placeholder="Paste the previous day's cumulative meter reading here. Date lines such as 15/09/2026 are accepted.&#10;&#10;JRE example:&#10;1. Total: 100000&#10;2. Indoor: 10.00 (Ratio 250) + 20.00 (Ratio 40)&#10;&#10;UNILAND example:&#10;1. Total: 100 ((Ratio 3200)/1000)&#10;5. Building A : 1000 ((Ratio 160)/1000)"></textarea>
+        <div class="panel-footer-hint"><span>Cumulative reading, not daily usage</span><span class="badge badge-blue">Yesterday</span></div>
+      </div>
+
+      <div class="input-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span>TODAY METER READING</span><span class="badge badge-blue">Today</span></div>
+          <span class="panel-stats" id="today-stats">0 lines</span>
+        </div>
+        <textarea id="today-input" class="meter-textarea" spellcheck="false" placeholder="Paste today's cumulative meter reading here. Decimal comma and decimal point are both accepted.&#10;&#10;Press Ctrl+Enter to calculate."></textarea>
+        <div class="panel-footer-hint"><span>Ratios are fixed by the JRE/UNILAND template and cross-checked against pasted text</span><span class="badge badge-success">Today</span></div>
+      </div>
+    </main>
+
+    <section class="consumables-card" aria-label="Utilities">
+      <div class="panel-header">
+        <div class="panel-title"><span>DAILY UTILITIES / CONSUMABLES</span><span class="badge badge-success">Optional</span></div>
+        <span class="panel-stats">Copied to the report, not calculated from electricity meters</span>
+      </div>
+      <textarea id="consumables-input" class="consumables-textarea" spellcheck="false"></textarea>
+    </section>
+
+    <section id="validation-container" class="validation-card hidden" aria-live="polite">
+      <div id="validation-header" class="validation-header warning-bg">
+        <div id="validation-title" class="validation-title">⚠️ VALIDATION</div>
+      </div>
+      <ul id="validation-list" class="validation-list"></ul>
+    </section>
+
+    <section id="results-section" class="results-section hidden" aria-label="Report output">
+      <div class="metrics-grid">
+        <div class="metric-card highlight">
+          <div class="metric-label" id="metric-label-total">Total Energy</div>
+          <div class="metric-value" id="metric-total-direct">-</div>
+          <div class="metric-note">Plant boundary meter</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="metric-label-second">Sub-Areas Sum</div>
+          <div class="metric-value" id="metric-second">-</div>
+          <div class="metric-note" id="metric-note-second">-</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="metric-label-third">Gap</div>
+          <div class="metric-value" id="metric-third">-</div>
+          <div class="metric-note" id="metric-note-third">-</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="metric-label-fourth">Parsed Meters</div>
+          <div class="metric-value" id="metric-fourth">-</div>
+          <div class="metric-note">Comparable meter points</div>
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-header">
+          <div class="report-title-box">
+            <h2 class="report-title">[INDONESIA FACTORY ENERGY REPORT]</h2>
+            <div class="report-view-tabs" role="tablist">
+              <button id="tab-formatted" class="tab-btn active" role="tab" aria-selected="true">Formatted Report</button>
+              <button id="tab-details" class="tab-btn" role="tab" aria-selected="false">Calculation Breakdown</button>
+            </div>
+          </div>
+
+          <div class="header-controls">
+            <div class="control-group" style="margin-right: 8px;">
+              <select id="report-mode-select" class="select-input">
+                <option value="combined">Master Report (JRE + UNILAND)</option>
+                <option value="single">Single Plant Only</option>
+              </select>
+            </div>
+            <button id="btn-copy-full-report" class="btn btn-primary btn-sm">📋 COPY FULL REPORT</button>
+            <button id="btn-copy-plant-report" class="btn btn-outline btn-sm">📋 Copy Current Plant</button>
+            <button id="btn-download-report" class="btn btn-outline btn-sm">💾 Download .txt</button>
+            <button id="btn-toggle-details" class="btn btn-outline btn-sm">Expand Details</button>
+          </div>
+        </div>
+
+        <div id="report-text-view" class="report-text-container"><pre id="report-pre" class="report-pre"></pre></div>
+        <div id="report-details-view" class="details-container hidden">
+          <div class="details-filter-bar">
+            <div class="search-box"><input type="text" id="details-search-input" class="search-input" placeholder="Search area name or row #..." /></div>
+            <span class="panel-stats">Click an area to show/hide meter arithmetic</span>
+          </div>
+          <div id="details-area-list" class="area-detail-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="worksheet-section" class="report-card hidden worksheet-card" aria-label="Excel worksheet helper">
+      <div class="report-header">
+        <div class="report-title-box">
+          <h2 class="report-title">EXCEL WORKSHEET HELPER</h2>
+          <div class="brand-subtitle">Only fields used by the JRE / UNILAND electrical worksheet are included.</div>
+        </div>
+        <button id="btn-copy-worksheet" class="btn btn-primary btn-sm">📋 Copy Paste-Ready Row</button>
+      </div>
+      <div class="report-text-container"><pre id="worksheet-pre" class="report-pre worksheet-pre"></pre></div>
+    </section>
+
+    <footer class="app-footer">
+      <div><strong>Indonesia Factory Energy Report</strong> &bull; <span class="credits-love">made with love ❤️ by igede</span></div>
+      <div class="footer-links"><span>Local browser calculation</span><span>No API key required</span><span>Ctrl+Enter to calculate</span></div>
+    </footer>
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="assertive"></div>
+  <script src="./engine.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
