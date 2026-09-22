@@ -1,303 +1,154 @@
-# Midea JRE + UNILAND Daily Energy Calculator
+# Midea Daily Energy Report
 
-I made this because the daily energy report is simple in theory, but annoying to do by hand every morning.
+Website untuk mengisi reading meter JRE dan UNILAND, menghitung konsumsi per periode, dan menyalin laporan harian serta baris worksheet Excel.
 
-The raw numbers are cumulative meter readings. Some meters use multipliers, some areas contain several meters, JRE and UNILAND do not use exactly the same reporting format, and a single typo can turn into a very convincing but completely wrong kWh figure. Excel is still useful as the archive, but it should not be the place where somebody has to repeat the same subtraction and ratio math every day.
+Input utama berupa tabel dengan ratio tetap untuk setiap meter. Aplikasi memakai HTML, CSS, JavaScript, dan satu endpoint Node.js untuk waktu. Tidak ada dependency npm, framework UI, SDK AI, analytics, database, atau API key.
 
-This page does that repetitive part locally in the browser.
+## Jalankan lokal
 
-There is no ChatGPT, Gemini, OpenAI API, backend, login, database, analytics script, or API key in the runtime. The calculation rules are plain JavaScript and can be checked line by line.
+Gunakan Node.js 22.
 
-## What the calculator actually does
-
-For a normal meter:
-
-```text
-Daily consumption = Today cumulative reading - Yesterday cumulative reading
+```sh
+npm run dev
 ```
 
-For a meter with a multiplier:
+Buka http://127.0.0.1:3000. Tidak perlu `npm install` karena tidak ada dependency. Jangan membuka `index.html` melalui `file://`: ES modules dan endpoint waktu membutuhkan HTTP.
 
-```text
-Daily consumption = (Today - Yesterday) × Ratio
+```sh
+npm test
+npm run build
+npm run preview
 ```
 
-For the UNILAND meters written like this:
+`build` menyalin file frontend ke `dist/`. `preview` menjalankan hasil build bersama endpoint waktu lokal.
+
+## Cara pakai
+
+1. Pilih JRE atau UNILAND, lalu isi tanggal reading awal dan akhir.
+2. Isi angka kumulatif pada kedua kolom. Ratio ditampilkan di samping setiap meter dan tidak bisa diedit melalui tabel.
+3. Gunakan Tab untuk pindah kolom atau Enter untuk pindah meter pada kolom yang sama. Cari nama equipment untuk mempersempit tabel.
+4. Bisa tempel satu kolom reading atau dua kolom awal/akhir dari Excel. Tempel hanya angkanya, tanpa header, mengikuti urutan meter yang terlihat. Satu baris Excel mewakili satu meter. Data yang melebihi area tujuan atau berisi angka rusak ditolak seluruhnya.
+5. Isi utility harian jika tersedia. Nilainya adalah pemakaian langsung, bukan turunan dari meter listrik.
+6. Periksa catatan sebelum menyalin laporan. Kolom kosong dan angka yang tidak valid memblokir tombol salin. Gunakan `-` untuk data yang memang tidak tersedia.
+7. **Salin gabungan** tersedia setelah kedua pabrik terisi dan tanggal awal serta akhirnya sama.
+8. **Salin baris Excel** menghasilkan TSV. JRE memakai tanggal lengkap `YYYY-MM-DD` sebagai kolom pertama. UNILAND memakai 16 kolom sesuai template, tanpa tambahan tanggal. Nilai yang tidak tersedia ditulis `-`.
+9. **Simpan draft** menyimpan kedua pabrik di browser ini. Ctrl+S juga menyimpan draft. Data tidak tersimpan otomatis saat mengetik.
+10. **Lanjut hari berikutnya** memindahkan reading akhir menjadi reading awal dan mengosongkan reading akhir serta utility. Simpan kembali draft untuk mempertahankan perubahan.
+
+Impor teks tersedia untuk satu snapshot reading lengkap. Sertakan satu baris tanggal dan semua equipment. Parser mendukung angka desimal, ratio dari template, dan baris lanjutan Injection Molding. Teks dengan dua tanggal, duplikat equipment, jumlah meter yang salah, atau angka rusak ditolak. Ratio yang berbeda tetap memakai konfigurasi pabrik dan disertai catatan pada laporan.
+
+**Isi contoh**, **Kosongkan**, impor, dan perpindahan hari dapat dibatalkan satu langkah. Data contoh diberi penanda agar tidak tertukar dengan data operasional.
+
+## Periode laporan
+
+Kedua pabrik memakai **tanggal reading awal**, sesuai keputusan pengguna yang menggantikan instruksi tanggal akhir pada template UNILAND lama.
 
 ```text
-((Ratio 3200)/1000)
+Reading awal : 16 September 2026 sekitar 08.00 WIB
+Reading akhir: 17 September 2026 sekitar 08.00 WIB
+Judul laporan: SEPTEMBER 16, 2026 - 24 HOURS
 ```
 
-the calculation is:
+Ini periode antar-reading, bukan konsumsi kalender pukul 00.00 sampai 24.00. Waktu 08.00 adalah asumsi operasional dari template; aplikasi tidak merekam jam pengambilan setiap meter.
+
+Tanggal harus valid dan bergerak maju. Periode lebih dari satu hari diberi catatan dan judul sesuai durasinya, misalnya `48 HOURS`, sehingga tidak dilabeli 24 jam. Waktu NTP hanya membantu pemilihan tanggal dan jam WIB. Sinkronisasi tidak mengubah periode yang sedang diisi.
+
+## Perhitungan
 
 ```text
-(Today - Yesterday) × 3200 / 1000
+Konsumsi setiap meter = (reading akhir - reading awal) × factor
+Konsumsi equipment = jumlah konsumsi masing-masing meter
 ```
 
-The plant rules are fixed in `engine.js`, so the page does not silently invent ratios from whatever text happens to be pasted.
+Konfigurasi lengkap ada di `schema.js`. Nama, kapitalisasi, dan urutan equipment mengikuti template: JRE 29 equipment dengan 57 meter; UNILAND 28 equipment dengan 28 meter. Injection Molding JRE memiliki 13 meter dan Server Room memiliki 2 meter.
 
-## The two plant workflows
+Aturan JRE yang perlu diperhatikan:
 
-### JRE
+- Total berasal dari selisih main meter, tanpa ratio 1000 dan tanpa menjumlahkan sub-meter.
+- All Office Building memakai ×1000.
+- Utility Area memakai ×1000 pada meter pertama dan ×40 pada meter kedua.
+- `394,850` berarti `394.850`, sehingga Office `394,850` ke `395,250` menghasilkan `400.00 kWh`.
+- Utility `660,610 + 29,09` ke `660,700 + 29,53` menghasilkan `107.60 kWh`.
+- Piping All adalah Piping Building 1# + Piping Building 3#, bukan meter baru.
+- Cross-check membandingkan Total dengan jumlah equipment 2 sampai 29. Jika ada sub-meter yang hilang atau invalid, jumlah sub-meter dan gap tidak ditampilkan sebagai angka lengkap. Gap tidak otomatis berarti salah karena cakupan meter dapat berbeda.
+- `-` boleh menjadi nol hanya untuk Air Compressor 1# dan New Air Compressor 2# setelah **Unit tidak aktif** ditandai. Konfirmasi tersebut berlaku untuk periode yang sedang diisi dan direset saat lanjut hari berikutnya.
+- Hasil bukan nol ditulis dua desimal. Nol ditulis `0 kWh`.
 
-JRE uses the 29-point daily report format we have been using in the factory group.
+Aturan UNILAND:
 
-A few examples of fixed ratios:
+| Equipment | Factor | Satuan hasil |
+| --- | --- | --- |
+| Total | 3200 / 1000 | MWh |
+| Trafo 1, 2, 3 | Selisih langsung; raw meter sudah MWh | MWh |
+| Building A, PP hydrant | 160 / 1000 | MWh |
+| Building B | 80 / 1000 | MWh |
+| SDP pompa, Dp power house | 20 / 1000 | MWh |
+| Refrigant and LPG area | 40 | kWh |
+| Equipment lainnya | Selisih langsung | kWh |
 
-- Indoor: first meter ×250, second meter ×40
-- Outdoor: first meter ×1, second meter ×40
-- Window: ×1, ×90, ×90, ×40, ×40
-- Heat Exchanger: ×40, ×1, ×1, ×1
-- Piping Building 1#: ×40
-- Warehouse Area: ×40, ×1, ×1
-- Utility Area: ×1, ×40
-- Heater LPG: ×40
-
-The output keeps the JRE report style, including two decimal places for non-zero kWh values.
-
-The page also calculates:
-
-```text
-Piping All = Piping Building 1# + Piping Building 3#
-```
-
-and compares the sum of points 2–29 against the main Total meter. That gap is shown on the dashboard because it is useful when checking whether all monitored sub-areas explain the plant total.
-
-The built-in JRE example is deliberately synthetic. It uses the real ratio rules and all 29 report rows, but it does not publish a historical factory meter snapshot in the repository. The self-check currently expects:
-
-```text
-Total = 1000.00 kWh
-Indoor = 70.00 kWh
-Injection Molding = 130.00 kWh
-Electricity Building 2# = 22.00 kWh
-Sum points 2–29 = 886.00 kWh
-Gap = 114.00 kWh
-Piping All = 15.00 kWh
-```
-
-### UNILAND
-
-UNILAND follows the same idea, but a few meters have fixed conversion ratios:
-
-```text
-Total                         × 3200 / 1000   -> MWh
-Building A                    × 160 / 1000    -> MWh
-Building B                    × 80 / 1000     -> MWh
-PP hydrant                    × 160 / 1000    -> MWh
-SDP pompa                     × 20 / 1000     -> MWh
-Dp power house                × 20 / 1000     -> MWh
-Refrigant and LPG area        × 40            -> kWh
-```
-
-A dash (`-`) means the reading is unavailable. It is **not** converted to zero.
-
-JRE has one narrow exception because of how the daily log is currently written: for `Air Compressor 1#` and `New Air Compressor 2#`, a dash paired with a zero reading on the other day is treated as an inactive meter and reported as `0 kWh`. A dash paired with a non-zero counter reading is still treated as missing and is flagged for checking.
-
-The UNILAND Excel helper also calculates these two grouped columns automatically:
+Kapitalisasi `Mwh` pada Trafo 3 dan `KWh` pada Refrigant and LPG area tetap mengikuti teks laporan template. Utility ditempatkan setelah seluruh 28 equipment.
 
 ```text
 Indoor Area = Indoor + Vacum box indoor
-
-Outdoor Area = Outdoor
-             + Vacum box outdoor
-             + Line compressor outdoor
+Outdoor Area = Outdoor + Vacum box outdoor + Line compressor outdoor
 ```
 
-The built-in UNILAND example is synthetic for the same reason. It still exercises the fixed ratios, missing `-` readings, repeated report numbering, and derived worksheet columns:
+Kedua kelompok tersebut hanya untuk worksheet. Laporan utama tetap menampilkan masing-masing equipment. UNILAND mempertahankan desimal hasil yang relevan, termasuk `0.6912 MWh`, tanpa pemisah ribuan atau notasi eksponen.
 
-```text
-Total = 3.2 MWh
-Building A = 0.32 MWh
-Heat Exchanger = 40 kWh
-Refrigant and LPG area = 20 kWh
-Indoor Area = 25 kWh
-Outdoor Area = 43 kWh
-```
+## Validasi angka
 
-The slightly strange repeated row numbering in the UNILAND report is kept on purpose because that is the current group-report template. The calculator matches equipment by name, not by assuming every row number is unique.
+- Koma dan titik diterima sebagai pemisah desimal tunggal. Pemisah ribuan, notasi eksponen, teks tambahan, dan angka negatif ditolak agar tidak ditebak.
+- Batas input: enam angka desimal, nilai kumulatif maksimum 1000000000000. Pengurangan memakai integer berskala melalui BigInt untuk mempertahankan selisih kecil pada counter besar.
+- Reading yang turun menghasilkan `-` untuk equipment tersebut dan catatan pemeriksaan. Equipment lain tetap dihitung. Reset/rollover perlu diperiksa manual, tidak dikoreksi otomatis.
+- Jumlah meter wajib cocok dengan template pada kedua reading. Satu meter hilang membuat hasil equipment tidak lengkap.
+- Kenaikan yang melebihi **100 unit raw dan 50% reading awal** diberi peringatan. Ini pemeriksaan sederhana, bukan analisis pola historis atau batas beban mesin.
+- Laporan memasukkan `CHECK RAW DATA` jika diperlukan. Tidak ada substitusi nol untuk missing data di worksheet.
 
-## Input format
+## Sinkronisasi waktu
 
-You can paste the meter text almost exactly as it comes from the daily message.
+Browser meminta `GET /api/time` secara asynchronous. Endpoint Node.js melakukan permintaan NTP ke `time.cloudflare.com`, dengan `time.google.com` sebagai cadangan. Endpoint tidak menerima atau mengirim reading meter.
 
-Both decimal styles are accepted:
+- Timeout 1,6 detik per sumber; socket selalu ditutup.
+- Balasan diperiksa: asal permintaan, panjang paket, versi, mode, stratum, status leap, timestamp, dan kualitas waktu.
+- Sampel NTP disimpan maksimal 60 detik per instance server. Waktu respons diproyeksikan dari sampel menggunakan clock monotonic. Permintaan bersamaan memakai proses sinkronisasi yang sama.
+- Respons HTTP diberi `no-store`. Browser mengambil tiga sampel dan memilih round-trip terendah, dengan kompensasi setengah waktu perjalanan sebagai perkiraan.
+- Jam berjalan menggunakan `performance.now()`. Perubahan jam perangkat setelah sinkronisasi tidak langsung menggeser waktu yang ditampilkan.
+- Sinkronisasi ulang setiap lima menit saat halaman terlihat, ketika tab kembali aktif, atau koneksi kembali online. Kegagalan dicoba lagi setelah satu menit. Status tersinkron kedaluwarsa setelah 15 menit tanpa pembaruan.
+- Jika semua sumber gagal, endpoint mengembalikan 503. Halaman menunjukkan jam perangkat atau sampel terakhir dengan status belum tersinkron. Pengisian manual tetap berjalan; tombol periode otomatis membutuhkan sinkronisasi yang berhasil.
 
-```text
-131.11
-131,11
-```
+Akses UDP keluar port 123 diperlukan pada server. NTP di sini bukan NTS dan tidak ditujukan sebagai acuan waktu presisi untuk kontrol mesin atau audit bertanda tangan. Implementasi memeriksa paket dan menampilkan perkiraan ketidakpastian waktu, tetapi tidak menjanjikan ketepatan milidetik.
 
-A date line is also accepted:
+Referensi: [Cloudflare Time Services](https://developers.cloudflare.com/time-services/ntp/usage/) dan [spesifikasi NTP v4](https://www.rfc-editor.org/rfc/rfc5905).
 
-```text
-16/09/2026
-```
+## Deploy ke Vercel
 
-The Today date is used as the report date when it is present in the pasted text.
+1. Import repository ke Vercel.
+2. Gunakan root repository ini, preset **Other**, dan Node.js **22.x**. Hapus override lama dari project jika masih memakai konfigurasi framework sebelumnya.
+3. `vercel.json` menetapkan build command `npm run build`, output `dist`, dan durasi maksimum 10 detik untuk `api/time.js`. Tidak ada environment variable yang wajib diisi.
+4. Jalankan deployment. Vercel menyajikan frontend statis dan memasang `/api/time` sebagai Node.js Function dari direktori `api/`.
+5. Buka URL hasil deploy dan periksa status **NTP tersinkron**. `GET /api/time` harus menghasilkan JSON dengan `protocol: "NTP"`, timestamp, sumber, dan umur sampel. Jika 503, periksa akses UDP port 123 dari runtime dan ketersediaan sumber waktu.
 
-Example JRE line:
+Konfigurasi mengikuti [Vercel Node.js Functions](https://vercel.com/docs/functions/runtimes/node-js). `npm run build` memeriksa hasil build lokal, bukan bukti deployment production sudah berjalan. Deployment tidak dilakukan hanya dengan menjalankan build tersebut.
 
-```text
-2. Indoor: 131,11 (Ratio 250) + 138,72 (Ratio 40)
-```
+Frontend juga bisa disajikan oleh hosting statis, tetapi sinkronisasi NTP membutuhkan endpoint yang sama. GitHub Pages saja tidak menjalankan endpoint Node.js ini.
 
-Example UNILAND line:
+## Penyimpanan dan pemeriksaan
 
-```text
-1. Total: 101 ((Ratio 3200)/1000)
-```
+Draft tersimpan menggunakan key `midea_energy_draft_v4` di localStorage, hanya setelah tombol simpan ditekan. Draft tetap berada di perangkat/browser yang sama; tidak disinkronkan antarperangkat. **Hapus draft tersimpan** menghapus draft dan baseline versi lama di browser itu. Data yang sedang dibuka tetap ada di memori halaman.
 
-The parser also tolerates the usual message preamble when a reading is copied together with a name/timestamp, as long as the actual meter lines keep the normal `Name: Reading` structure.
+Baseline versi lama tidak otomatis dimigrasikan karena aturan ratio berubah. Gunakan impor yang memvalidasi template jika ingin memindahkan reading lama. Data dari tombol **Isi contoh** dibuat untuk pengujian, bukan data historis pabrik.
 
-## What happens when the raw data looks wrong
+`npm test` mencakup ratio, tanggal, format output, missing data, decimal precision, validasi impor, TSV, draft, NTP UDP, timeout, cache, dan kegagalan sinkronisasi. Pengujian otomatis memakai server UDP lokal dan sumber waktu tiruan agar tidak tergantung koneksi internet. Koneksi NTP publik diperiksa terpisah saat menjalankan website.
 
-The calculator does not auto-correct suspicious readings.
+File utama:
 
-It warns when it sees things such as:
-
-- Today lower than Yesterday
-- an unusually large cumulative-meter jump
-- a pasted ratio that disagrees with the fixed plant ratio
-- a date pair that is not a normal consecutive 24-hour interval
-- one day containing a meter while the other day contains `-`
-- malformed or duplicated equipment lines
-
-If a suspicious reading is found, the report gets a `CHECK RAW DATA` section instead of quietly guessing what the operator meant.
-
-That behavior is deliberate. A calculator should be good at arithmetic, not at inventing meter readings.
-
-## Running it
-
-The repo is intentionally just a static page.
-
-### Easiest way
-
-Open `index.html` in a browser.
-
-No install step is required.
-
-### Local HTTP server
-
-If your browser or company policy is stricter about local files, run any simple static server from the repo folder. For example:
-
-```bash
-python -m http.server 8000
-```
-
-Then open:
-
-```text
-http://localhost:8000
-```
-
-### GitHub Pages / Vercel / internal static hosting
-
-There is no build step. Serve the repository root as a static site.
-
-The files that matter at runtime are:
-
-```text
-index.html
-style.css
-engine.js
-app.js
-asset/Midea.webp
-```
-
-## Daily use
-
-A normal workflow is:
-
-1. Select JRE or UNILAND.
-2. Paste Yesterday's cumulative readings.
-3. Paste Today's cumulative readings.
-4. Paste the daily LPG / gas / water / refrigerant values if needed.
-5. Click **CALCULATE REPORT** or press `Ctrl+Enter`.
-6. Read any validation warning before copying the report.
-7. Use **COPY FULL REPORT** for the group format. The button only copies when both JRE and UNILAND have been calculated for the same report date, so an old UNILAND result cannot quietly ride along with a newer JRE report.
-8. Use **Copy Current Plant** when you intentionally need only one plant, and **Copy Paste-Ready Row** for the relevant Excel worksheet columns.
-9. At the end, **SAVE TODAY AS NEXT BASELINE** if this browser should remember today's raw reading for tomorrow.
-
-Only that explicitly saved baseline is persisted. The page no longer writes every current meter entry and calculated report into browser storage automatically.
-
-If the computer is shared, use **Forget Saved Baseline** when you do not want the saved baseline to remain in that browser.
-
-## Report format
-
-The full output follows this structure:
-
-```text
-[INDONESIA FACTORY ENERGY REPORT]
-
-Summary situation:
-A) JRE (SEPTEMBER XX, 2026 - 24 HOURS)
-...
-- LPG: ...
-- Oxygen: ...
-- Nitrogen: ...
-- Refrigerant R32: ...
-- Water: ...
-
-B) UNILAND (SEPTEMBER XX, 2026 - 24 Hours)
-...
-* LPG: ...
-* Air Compressor: ...
-* Oxygen: ...
-* Nitrogen: ...
-* Water: ...
-* R32: ...
-* R454B: ...
-```
-
-The different utility prefixes (`-` for JRE, `*` for UNILAND) and the JRE/UNILAND `24 HOURS` capitalization are intentional because they follow the current report baseline.
-
-## Self-check and tests
-
-There are two ways to check the math.
-
-Inside the page, click **Self-Check**. It runs synthetic JRE and UNILAND fixtures against the same plant formulas used for real inputs.
-
-If Node.js is available, the repository also has a small test suite with no third-party dependency:
-
-```bash
-npm test
-```
-
-The tests cover the reference calculations, decimal-comma parsing, missing `-` readings, report formatting, worksheet derived columns, and typo/jump detection.
-
-## Repo layout
-
-```text
-.
-├── index.html                 # page structure
-├── style.css                  # UI styling
-├── engine.js                  # parser, ratios, calculations, validation, report format
-├── app.js                     # browser UI and local baseline handling
-├── asset/
-│   └── Midea.webp
-├── tests/
-│   └── engine.test.mjs
-├── SECURITY.md
-├── package.json               # only used for npm test; no dependencies
-└── README.md
-```
-
-## Before making the repository public
-
-The cleaned tree no longer contains the historical factory meter snapshots that were used while the first version was being built, and it does not contain a working API key or token.
-
-There is still plant-specific information in the source **by design**: equipment names, fixed meter ratios, report wording, and the Midea logo. If those details are considered internal at your site, keep the repository private even though the app itself has no backend or credential.
-
-Also remember that Git has a memory. Older commits in the existing GitHub repository contained factory-looking sample readings and an AI Studio `.env.example` with placeholder variable names such as `GEMINI_API_KEY`. The placeholder value was not a usable secret, but removing a file in a new commit does not erase old commits. If the historical readings should not remain public, rewrite the repository history or start a fresh clean repository from this snapshot before publishing it.
-
-If a real credential was ever committed at any point, rotate it first. History cleanup is not a substitute for credential rotation.
-
-## A note about the old version
-
-The first version of this repo came from a much heavier starter scaffold. It still had an unused React/Vite structure, an unused `@google/genai` dependency, an AI-Studio metadata flag, and two external time API calls even though the README said the app was fully local.
-
-Those pieces were removed in this cleanup.
-
-The current version does not need them. The browser already knows how to calculate the date in `Asia/Jakarta`, and energy arithmetic does not need an AI SDK.
-
-If you change the meter layout later, update the plant schema and the test case together. That is much safer than changing a ratio in the UI and hoping everybody's browser has the same local configuration.
+| File | Fungsi |
+| --- | --- |
+| `schema.js` | Nama equipment, jumlah meter, ratio, satuan utility |
+| `engine.js`, `numbers.js` | Validasi dan perhitungan |
+| `worksheet.js`, `importer.js` | Worksheet dan impor reading |
+| `app.js`, `index.html`, `style.css` | Tabel input dan tampilan laporan |
+| `storage.js` | Validasi draft tersimpan dan pindah hari |
+| `clock.js`, `api/time.js`, `server/ntp.js` | Sinkronisasi waktu |
+| `scripts/` | Server lokal dan build |
+| `tests/` | Pengujian tanpa dependency tambahan |

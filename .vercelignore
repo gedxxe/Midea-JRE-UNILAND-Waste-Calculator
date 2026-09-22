@@ -1,0 +1,6 @@
+.git
+node_modules
+coverage
+tests
+README.md
+SECURITY.md
