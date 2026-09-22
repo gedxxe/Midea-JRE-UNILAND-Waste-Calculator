@@ -47,3 +47,14 @@ Capture the footer's version, commit, build time, sourceHash, browser, and a min
 NTP refresh logs are JSON records with event ntp.sync, timestamp, version, commit, status (ok/unavailable), source, attempts, and durationMs. A cache hit emits no new refresh event. Success with attempts 2 means fallback was used. Repeated unavailable results suggest blocked UDP 123, DNS, or time-source availability. Logs contain no request bodies or meter readings. The UI shows device/last-sample time when synchronization is unavailable, and manual entry remains possible.
 
 Reference: [Vercel Git integration](https://vercel.com/docs/git/vercel-for-github), [GitHub branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+
+## Repository controls verified on 2026-09-22
+
+For [PR #1](https://github.com/gedxxe/Midea-JRE-UNILAND-Waste-Calculator/pull/1), GitHub settings were applied and read back successfully:
+
+- main requires a pull request, resolved conversations, and an up-to-date Quality gate check from the GitHub Actions app. Admins are included; force push and deletion are disabled. Mandatory approval count is zero for this single-owner repository.
+- Active ruleset 23807503 prevents updates, force pushes, and deletion of release/* branches. New milestone branches may still be created.
+- Active ruleset 23807504 prevents updates and deletion of v*-alpha tags. New release tags may still be created.
+- The v0.1.0-alpha branch/tag are published at 8e5bb21. Vercel's Git integration successfully created the v0.2.0-alpha preview. Its runtime is protected by Vercel Authentication and requires an authorized account to inspect.
+
+These are settings verified at that time, not immutable guarantees. Recheck GitHub settings if repository ownership, permissions, or workflow names change. Main/production stays on the previous milestone until the PR is merged.
