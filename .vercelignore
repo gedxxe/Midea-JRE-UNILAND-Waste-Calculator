@@ -1,6 +1,6 @@
 .git
 node_modules
+dist
 coverage
-tests
-README.md
-SECURITY.md
+playwright-report
+test-results

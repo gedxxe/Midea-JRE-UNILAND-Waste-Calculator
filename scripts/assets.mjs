@@ -1,0 +1,28 @@
+export const PUBLIC_FILES = [
+  'index.html',
+  'style.css',
+  'app.js',
+  'schema.js',
+  'engine.js',
+  'numbers.js',
+  'worksheet.js',
+  'importer.js',
+  'storage.js',
+  'examples.js',
+  'clock.js',
+  'i18n/catalog.js',
+  'i18n/index.js',
+  'ui/dom.js',
+  'ui/table.js',
+  'ui/build-info.js',
+  'asset/Midea.webp',
+];
+export const RUNTIME_FILES = [
+  ...PUBLIC_FILES,
+  'api/time.js',
+  'server/ntp.js',
+  'server/log.js',
+  'vercel.json',
+  'package.json',
+  'package-lock.json',
+];

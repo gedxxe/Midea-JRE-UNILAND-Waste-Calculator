@@ -21,11 +21,18 @@ export function scaledReading(raw) {
 }
 
 export function normalizeName(name) {
-  return String(name || '').trim().toLowerCase().replace(/&/g, ' and ')
-    .replace(/[\s\-_]+/g, ' ').replace(/\s+#/g, '#').trim();
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[\s\-_]+/g, ' ')
+    .replace(/\s+#/g, '#')
+    .trim();
 }
 
-export function round(value, digits = 6) { return Number(value.toFixed(digits)); }
+export function round(value, digits = 6) {
+  return Number(value.toFixed(digits));
+}
 
 export function formatNumber(value, digits = 6) {
   if (!Number.isFinite(value)) return '-';
@@ -47,11 +54,18 @@ export function shiftDate(value, days) {
 
 export function dayDiff(start, end) {
   return validDate(start) && validDate(end)
-    ? (Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86400000 : null;
+    ? (Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86400000
+    : null;
 }
 
 export function formatReportDate(value) {
   if (!validDate(value)) return 'DATE UNKNOWN';
-  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' })
-    .format(new Date(`${value}T00:00:00Z`)).toUpperCase();
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+    .format(new Date(`${value}T00:00:00Z`))
+    .toUpperCase();
 }

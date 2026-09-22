@@ -1,0 +1,59 @@
+# Working on this repository
+
+## Purpose and current state
+
+Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
+
+Current milestone: v0.2.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+
+## User decisions, last confirmed 2026-09-22
+
+- Build a convenient table filler with copy-ready reports. Text import is optional, not the main flow.
+- Both report titles use the START reading date. 16 September 08:00 to 17 September 08:00 means a 16 September report for both plants.
+- UNILAND Trafo 1, 2, and 3 cumulative values are already MWh.
+- README.md must contain English first, Mandarin Chinese second, Indonesian third.
+- A website language switch is wanted. Not every element needs translation. Main interface text follows the selection; equipment, units, and copied report templates retain their official wording. English is the default. Do not print three languages beside every field.
+- Include the literal attribution `made in <3 by gede`.
+- Keep wording ordinary and concise. Avoid em dashes, exaggerated quality claims, and generic AI wording.
+- Use real asynchronous NTP, with explicit failure states. A device clock is not evidence of NTP sync.
+- Remain deployable on Vercel and avoid unnecessary dependencies or services.
+- Maintain modular code, tests, CI/CD, incremental version numbers, and rollback points. Never force push.
+
+New user instructions override older choices here. Update this decision record, README, and changelog when requirements change. Record what was actually decided, not inferred preferences or invented chat memory. Do not store credentials or operational readings in documentation.
+
+## Architecture
+
+- schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
+- engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.
+- importer.js parses and validates a complete input before applying it. Never partially apply a failed paste.
+- storage.js validates version-4 drafts. Preserve existing drafts across UI/language releases.
+- app.js coordinates events and state. ui/table.js owns table rendering and navigation; ui/dom.js provides DOM helpers; ui/build-info.js displays release metadata.
+- i18n/catalog.js contains English, Simplified Chinese, and Indonesian UI strings. Render translated/user text with textContent or value, never innerHTML.
+- clock.js owns the browser clock. api/time.js and server/ntp.js provide NTP. server/log.js logs only an allowlist of service metadata.
+- scripts/assets.mjs is the public-file allowlist shared by build and local server. New browser modules must be listed. Do not expose docs, tests, scripts, or server code as static assets.
+- package.json is the only version source. Keep package-lock.json and CHANGELOG.md consistent. Build metadata is generated into dist and never committed.
+
+Keep the browser runtime dependency-free. Development dependencies require a concrete benefit and exact versions. Do not add a framework, database, telemetry SDK, or AI features without a user need.
+
+## Calculation rules to preserve
+
+Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
+
+- JRE: 29 equipment rows, 57 meters. Main Total is a direct delta; never multiply it by 1000 or replace it with the sub-meter sum. Office is x1000; Utility Area is x1000 and x40. Piping All is Piping Building 1# plus Piping Building 3# for the worksheet only.
+- JRE inactive-to-zero exceptions apply only to Air Compressor 1# and New Air Compressor 2# after operator confirmation. Next day resets this confirmation.
+- UNILAND: 28 rows. Main factor 3.2 MWh; Trafo rows direct MWh; Building A/hydrant .16 MWh; Building B .08 MWh; pump/power house .02 MWh; refrigerant area x40 kWh; other rows direct kWh. Keep exact template spelling, numbering, spaces, and Mwh/KWh capitalization.
+- Missing data is never silently zero. Empty/invalid values block copying; explicit unavailable or decreasing readings become `-` with check notes. One missing meter invalidates the whole equipment result. Never show a partial JRE sub-meter sum as complete.
+- Decimal comma or dot, no thousands separators/exponents/suffixes. Maximum six decimals and cumulative 1000000000000. Preserve BigInt scaled subtraction.
+- JRE nonzero output has two decimals; zero is 0. UNILAND trims up to eight decimals without exponential notation.
+- Both reports use start date. Combined reports require matching BOTH endpoints. Non-daily intervals show actual hours and a warning.
+- JRE worksheet has date plus 18 values; UNILAND has 16 values without a date. UNILAND grouped areas are worksheet-only.
+
+## Verification and release work
+
+Use Node 22.x. Run npm ci, npm run verify, then npm run test:e2e after installing Chromium with npx playwright install chromium. CI additionally installs browser OS dependencies. Browser tests use a dedicated local server and mocked time responses; they do not prove public NTP availability. For deployment work, separately inspect /api/time and build-info.json on the deployed URL.
+
+Use npm run format for formatting. Add tests for changed business behavior and data-loss risks, not tests that merely repeat an implementation. Exercise language switching with a filled draft and confirm report bytes stay unchanged. Check desktop/mobile rendering and console errors when changing UI.
+
+Branch: codex/vX.Y.Z-alpha. Open a PR to main and require Quality gate. Read docs/releases.md before GitHub mutations. Do not merge a PR, deploy production manually, rewrite main, replace tags, or delete release branches without the user's applicable authorization. Existing authorization to push covers a normal branch push and PR; it does not mean force push. Preserve rollback history. Attach created PRs to the current task.
+
+Do not claim branch protection, CI success, or deployment success without reading the actual GitHub/Vercel result. Configuration files alone are not proof. If an external permission or platform setting prevents a control from being applied, report that specific limitation.

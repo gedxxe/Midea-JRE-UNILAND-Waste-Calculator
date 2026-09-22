@@ -33,8 +33,8 @@ export const PLANT_SCHEMAS = {
       { name: 'Warehouse Area', unit: 'kWh', factors: [40, 1, 1] },
       { name: 'Server Room', unit: 'kWh', factors: [1, 1] },
       { name: 'Utility Area', unit: 'kWh', factors: [1000, 40] },
-      { name: 'Heater LPG', unit: 'kWh', factors: [40] }
-    ]
+      { name: 'Heater LPG', unit: 'kWh', factors: [40] },
+    ],
   },
   UNILAND: {
     key: 'UNILAND',
@@ -46,11 +46,41 @@ export const PLANT_SCHEMAS = {
       { name: 'Trafo 1', displayName: 'Trafo 1 ', unit: 'MWh' },
       { name: 'Trafo 2', displayName: 'Trafo 2 ', unit: 'MWh' },
       { name: 'Trafo 3', displayName: 'Trafo 3 ', unit: 'Mwh' },
-      { name: 'Building A', displayName: 'Building A ', unit: 'MWh', factors: [0.16], ratioLabel: '160/1000' },
-      { name: 'Building B', displayName: 'Building B ', unit: 'MWh', factors: [0.08], ratioLabel: '80/1000' },
-      { name: 'PP hydrant', displayName: 'PP hydrant ', unit: 'MWh', factors: [0.16], ratioLabel: '160/1000' },
-      { name: 'SDP pompa', displayName: 'SDP pompa ', unit: 'MWh', factors: [0.02], ratioLabel: '20/1000' },
-      { name: 'Dp power house', displayName: 'Dp power house ', unit: 'MWh', factors: [0.02], ratioLabel: '20/1000' },
+      {
+        name: 'Building A',
+        displayName: 'Building A ',
+        unit: 'MWh',
+        factors: [0.16],
+        ratioLabel: '160/1000',
+      },
+      {
+        name: 'Building B',
+        displayName: 'Building B ',
+        unit: 'MWh',
+        factors: [0.08],
+        ratioLabel: '80/1000',
+      },
+      {
+        name: 'PP hydrant',
+        displayName: 'PP hydrant ',
+        unit: 'MWh',
+        factors: [0.16],
+        ratioLabel: '160/1000',
+      },
+      {
+        name: 'SDP pompa',
+        displayName: 'SDP pompa ',
+        unit: 'MWh',
+        factors: [0.02],
+        ratioLabel: '20/1000',
+      },
+      {
+        name: 'Dp power house',
+        displayName: 'Dp power house ',
+        unit: 'MWh',
+        factors: [0.02],
+        ratioLabel: '20/1000',
+      },
       { name: 'Indoor', unit: 'kWh' },
       { name: 'Outdoor', unit: 'kWh' },
       { name: 'Heat Exchanger', unit: 'kWh' },
@@ -69,11 +99,17 @@ export const PLANT_SCHEMAS = {
       { name: 'OQC- Testing Room B', unit: 'kWh', aliases: ['OQC Testing Room B'] },
       { name: 'IQC- Testing Room B', unit: 'kWh', aliases: ['IQC Testing Room B'] },
       { name: 'Charger Forklift Area', unit: 'kWh' },
-      { name: 'Refrigant and LPG area', displayName: 'Refrigant and LPG area  ', unit: 'KWh', factors: [40], ratioLabel: '40', aliases: ['Refrigerant and LPG area', 'Refrigerant & LPG', 'Refrigant & LPG'] }
-    ]
-  }
+      {
+        name: 'Refrigant and LPG area',
+        displayName: 'Refrigant and LPG area  ',
+        unit: 'KWh',
+        factors: [40],
+        ratioLabel: '40',
+        aliases: ['Refrigerant and LPG area', 'Refrigerant & LPG', 'Refrigant & LPG'],
+      },
+    ],
+  },
 };
-
 
 for (const schema of Object.values(PLANT_SCHEMAS)) {
   schema.rows.forEach((row, i) => {
@@ -88,6 +124,20 @@ for (const schema of Object.values(PLANT_SCHEMAS)) {
 Object.freeze(PLANT_SCHEMAS);
 
 export const UTILITIES = {
-  JRE: [['LPG','Kg'], ['Oxygen','Kg'], ['Nitrogen','Kg'], ['Refrigerant R32','Kg'], ['Water','m³']],
-  UNILAND: [['LPG','Nm3'], ['Air Compressor','Nm3'], ['Oxygen','mmWc'], ['Nitrogen','mmH2O'], ['Water','m³'], ['R32',''], ['R454B','']]
+  JRE: [
+    ['LPG', 'Kg'],
+    ['Oxygen', 'Kg'],
+    ['Nitrogen', 'Kg'],
+    ['Refrigerant R32', 'Kg'],
+    ['Water', 'm³'],
+  ],
+  UNILAND: [
+    ['LPG', 'Nm3'],
+    ['Air Compressor', 'Nm3'],
+    ['Oxygen', 'mmWc'],
+    ['Nitrogen', 'mmH2O'],
+    ['Water', 'm³'],
+    ['R32', ''],
+    ['R454B', ''],
+  ],
 };

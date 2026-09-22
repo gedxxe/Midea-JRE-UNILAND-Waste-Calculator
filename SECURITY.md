@@ -1,13 +1,13 @@
-# Data dan keamanan
+# Data and security
 
-Reading meter dihitung di browser. Aplikasi tidak mengirim reading, utility, draft, atau laporan ke server. Endpoint `/api/time` hanya menerima GET tanpa payload meter dan mengambil waktu dari dua host NTP tetap.
+Meter readings, utilities, drafts, and reports are calculated in the browser and are not uploaded. The browser requests same-origin static assets, build-info.json, and GET /api/time. The time endpoint queries two fixed NTP hosts; callers cannot supply a destination.
 
-Draft hanya ditulis ke localStorage setelah **Simpan draft** ditekan. Siapa pun yang menggunakan profil browser yang sama dapat membukanya. **Hapus draft tersimpan** menghapus data tersimpan; reading yang masih terbuka tetap berada di memori halaman sampai ditutup atau dikosongkan.
+Drafts are written to localStorage only after Save draft. Anyone using the same browser profile can read them. Delete saved draft removes stored drafts; currently open values remain in page memory. The language preference is stored separately and contains no readings.
 
-Teks input dan catatan ditampilkan lewat DOM text/value, bukan `innerHTML`. Content Security Policy membatasi script, style, gambar, dan koneksi browser ke origin yang sama. Header Vercel juga memblokir embedding halaman dan MIME sniffing. Build hanya menyalin file frontend yang tercantum, sehingga test dan file server tidak disajikan sebagai aset statis.
+User text is rendered through textContent/value, not innerHTML. Content Security Policy restricts scripts, styles, images, and connections to the same origin. Vercel headers block framing and MIME sniffing. Build and local serving share an explicit public-file allowlist; server files, tests, and documentation are not public assets.
 
-NTP menggunakan UDP dengan pemeriksaan sumber, timestamp asal, mode, dan status sinkronisasi. Host tujuan tidak dapat dipilih dari parameter request. Ini bukan NTS yang memakai autentikasi kriptografis. Jangan memakai jam aplikasi sebagai acuan kontrol mesin atau tanda waktu untuk audit resmi.
+NTP packets are checked for source/request timestamps, mode, version, synchronization state, and sample quality. UDP NTP is not authenticated NTS. Do not use this clock for machine control or signed audit timestamps. Each refresh emits an allowlisted JSON diagnostic record without request contents, raw errors, meter data, or headers. Build metadata exposes the release version, commit, build time, source hash, and local-change status.
 
-Tidak ada API key, login, analytics, atau credential cloud di runtime aplikasi. Logo, nama equipment, dan ratio tetap merupakan informasi pabrik. Akses dan publikasi repository mengikuti kebijakan pemiliknya.
+There are no API keys, accounts, analytics, or cloud credentials in the application runtime. GitHub CI uses read-only token permissions and pinned Actions. Vercel deployment uses the existing Git integration. Keep repository protection and deployment access appropriate for its owner; a public repository is not access control for factory information.
 
-Laporkan masalah dengan contoh minimal yang dapat direproduksi. Hindari menyertakan reading operasional yang tidak diperlukan, token, atau password.
+Report security problems privately through the repository owner's available contact or GitHub private vulnerability reporting if enabled. Include a minimal reproduction, and do not include unnecessary operational readings, tokens, or passwords.
