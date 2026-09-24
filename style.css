@@ -1263,3 +1263,98 @@ dialog textarea {
     text-align: left;
   }
 }
+
+[hidden] {
+  display: none !important;
+}
+.account-card {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.account-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.account-heading p {
+  margin-top: 6px;
+  max-width: 660px;
+  line-height: 1.5;
+}
+.account-form {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.account-form label {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.account-form input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+.account-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#cloud-actions,
+#account-status {
+  margin-top: 14px;
+}
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.history-row span {
+  overflow-wrap: anywhere;
+}
+.history-detail {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.history-detail p {
+  margin: 12px 0;
+}
+#history-revision {
+  width: 100px;
+}
+#history-dialog,
+#users-dialog {
+  width: min(760px, calc(100vw - 32px));
+  max-height: 85dvh;
+  overflow-y: auto;
+}
+#temporary-password {
+  width: 100%;
+  margin-top: 8px;
+  font-family: monospace;
+}
+@media (max-width: 600px) {
+  .account-card {
+    padding: 14px;
+  }
+  .account-form {
+    align-items: stretch;
+  }
+  .account-form button {
+    width: 100%;
+  }
+}

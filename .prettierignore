@@ -5,3 +5,6 @@ playwright-report/
 test-results/
 .vercel/
 package-lock.json
+
+.env*
+*.local.txt

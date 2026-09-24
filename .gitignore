@@ -9,3 +9,5 @@ coverage/
 .vercel/
 playwright-report/
 test-results/
+
+*.local.txt

@@ -21,7 +21,7 @@ export default defineConfig({
   webServer: {
     command: 'node scripts/dev.mjs --built',
     url: 'http://127.0.0.1:4173',
-    env: { PORT: '4173' },
+    env: { PORT: '4173', METER_SKIP_LOCAL_ENV: '1', DATABASE_URL: '' },
     reuseExistingServer: false,
     timeout: 15000,
   },

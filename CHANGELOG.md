@@ -2,6 +2,17 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.3.0-alpha - 2026-09-24
+
+- Add username/password accounts with Argon2id, database sessions, required initial password change, account recovery, and shared rate limits.
+- Add admin account creation, password reset, disable/enable, and session revocation.
+- Add private per-user historian with server calculation, preserved output, append-only revisions, and concurrent-edit protection.
+- Separate account drafts from existing guest drafts and clear active account state on logout or account changes.
+- Add versioned PostgreSQL migrations, explicit bootstrap/recovery commands, server configuration, and trilingual account UI/docs.
+- Extend Quality gate with a disposable PostgreSQL service, HTTP/database integration tests, and account browser flows.
+
+Production requires separate database migration, credentials, admin bootstrap, and runtime verification. Builds never migrate the database. Browser runtime remains dependency-free; server packages are limited to PostgreSQL and Argon2.
+
 ## v0.2.0-alpha - 2026-09-22
 
 - Add an English, Simplified Chinese, and Indonesian switch for the main interface. Keep equipment names and copied factory reports fixed.

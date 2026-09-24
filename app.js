@@ -1,3 +1,4 @@
+import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
 import { t, setLanguage, getLanguage, translatePage, LANGUAGE_KEY } from './i18n/index.js';
@@ -37,6 +38,54 @@ let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
 const current = () => drafts[plant];
+let accountUser = null;
+let firstIdentity = true;
+const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
+const draftStorage = () => (accountUser ? sessionStorage : localStorage);
+function accountChanged(user) {
+  try {
+    if (accountUser) sessionStorage.removeItem(draftKey());
+  } catch {
+    /* No persisted tab draft. */
+  }
+  accountUser = user;
+  drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
+  undo = null;
+  dirty = false;
+  showValidation = false;
+  saveStatus = 'unsaved';
+  $('undo-change').hidden = true;
+  $('import-text').value = '';
+  $('import-feedback').textContent = '';
+  $('import-dialog').close();
+  $('toast').hidden = true;
+  if (user || firstIdentity) {
+    try {
+      const raw = draftStorage().getItem(draftKey());
+      if (raw) {
+        drafts = restoreDrafts(raw);
+        saveStatus = 'restored';
+      }
+    } catch {
+      toast(t('restoreError'));
+    }
+  }
+  firstIdentity = false;
+  $('save-status').textContent = t(saveStatus);
+  mountPlant();
+}
+const accounts = createAccounts({
+  current,
+  identityChanged: accountChanged,
+  toast,
+  loadDraft(draft) {
+    plant = draft.plantKey;
+    rememberUndo();
+    drafts[plant] = draft;
+    mountPlant();
+    changed();
+  },
+});
 function toast(message) {
   $('toast').textContent = message;
   $('toast').hidden = false;
@@ -260,18 +309,10 @@ $('language-select').addEventListener('change', () => {
   $('toast').hidden = true;
   mountPlant();
   renderClock();
+  accounts.render();
 });
 void showBuildInfo();
-try {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    drafts = restoreDrafts(raw);
-    saveStatus = 'restored';
-    $('save-status').textContent = t(saveStatus);
-  }
-} catch {
-  toast(t('restoreError'));
-}
+void accounts.start();
 mountPlant();
 renderClock();
 void syncTime();
@@ -342,7 +383,7 @@ $('copy-worksheet').addEventListener('click', () => {
 });
 $('save-draft').addEventListener('click', () => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 4, drafts }));
+    draftStorage().setItem(draftKey(), JSON.stringify({ version: 4, drafts }));
     dirty = false;
     saveStatus = 'saved';
     $('save-status').textContent = t(saveStatus);
@@ -353,8 +394,8 @@ $('save-draft').addEventListener('click', () => {
 });
 $('forget-draft').addEventListener('click', () => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    for (const key of ['JRE', 'UNILAND'])
+    draftStorage().removeItem(draftKey());
+    for (const key of accountUser ? [] : ['JRE', 'UNILAND'])
       localStorage.removeItem(`midea_energy_baseline_${key}_v3`);
     dirty = true;
     saveStatus = 'deleted';

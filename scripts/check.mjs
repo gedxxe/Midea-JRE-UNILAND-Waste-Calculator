@@ -33,7 +33,12 @@ const lock = JSON.parse(await readFile(resolve(root, 'package-lock.json'), 'utf8
 assert.match(pkg.version, /^0\.\d+\.\d+-alpha$/);
 assert.equal(lock.version, pkg.version);
 assert.equal(lock.packages[''].version, pkg.version);
-assert.equal(Object.keys(pkg.dependencies || {}).length, 0, 'Keep runtime dependency-free.');
+assert.deepEqual(
+  Object.keys(pkg.dependencies || {}).sort(),
+  ['@node-rs/argon2', 'pg'],
+  'Review every server dependency. Browser modules must stay dependency-free.',
+);
+for (const version of Object.values(pkg.dependencies)) assert.match(version, /^\d+\.\d+\.\d+$/);
 const changelog = await readFile(resolve(root, 'CHANGELOG.md'), 'utf8');
 assert.ok(changelog.includes(`## v${pkg.version}`), 'Add release notes when bumping the version.');
 for (const [key, messages] of Object.entries(catalog)) {

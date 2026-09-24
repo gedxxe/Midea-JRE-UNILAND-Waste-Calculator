@@ -10,7 +10,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"
     />
     <title>Daily Energy Report | Midea</title>
     <link rel="icon" type="image/webp" href="./asset/Midea.webp" />
@@ -70,6 +70,100 @@
           </button>
         </div>
       </div>
+      <section class="card account-card" aria-labelledby="account-label">
+        <div class="account-heading">
+          <div>
+            <h2 id="account-label" data-i18n="accountTitle">Save reports to your account</h2>
+            <p id="account-hint" class="muted" data-i18n="accountHint">
+              Sign in to save and reopen reports across devices. Ask your admin for an account.
+            </p>
+          </div>
+          <div id="account-session" class="account-buttons" hidden>
+            <strong id="account-name"></strong
+            ><button id="change-password" class="text-button" data-i18n="changePassword">
+              Change password</button
+            ><button id="logout" class="button secondary" data-i18n="signOut">Sign out</button>
+          </div>
+        </div>
+        <form id="login-form" class="account-form" hidden>
+          <label
+            ><span data-i18n="username">Username</span
+            ><input
+              id="login-username"
+              name="username"
+              autocomplete="username"
+              required
+              maxlength="32"
+              autocapitalize="none"
+              spellcheck="false"
+          /></label>
+          <label
+            ><span data-i18n="password">Password</span
+            ><input
+              id="login-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="128"
+          /></label>
+          <button id="login-submit" type="submit" class="button primary" data-i18n="signIn">
+            Sign in
+          </button>
+        </form>
+        <p id="password-required" class="notice warning" data-i18n="passwordRequired" hidden>
+          Change your temporary password before opening saved reports.
+        </p>
+        <form id="password-form" class="account-form" hidden>
+          <label
+            ><span data-i18n="currentPassword">Current password</span
+            ><input
+              id="current-password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="128"
+          /></label>
+          <label
+            ><span data-i18n="newPassword">New password (15–128 characters)</span
+            ><input
+              id="new-password"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="15"
+              maxlength="128"
+          /></label>
+          <label
+            ><span data-i18n="confirmPassword">Repeat new password</span
+            ><input
+              id="confirm-password"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="15"
+              maxlength="128"
+          /></label>
+          <button
+            id="password-submit"
+            type="submit"
+            class="button primary"
+            data-i18n="changePassword"
+          >
+            Change password
+          </button>
+        </form>
+        <div id="cloud-actions" class="account-buttons" hidden>
+          <button id="save-report" class="button primary" data-i18n="saveReport">
+            Save report
+          </button>
+          <button id="open-history" class="button secondary" data-i18n="history">Historian</button>
+          <button id="open-users" class="text-button" data-i18n="manageUsers" hidden>
+            Manage accounts
+          </button>
+        </div>
+        <p id="account-status" class="small muted" role="status"></p>
+      </section>
       <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
         <div class="plant-tabs">
           <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
@@ -307,7 +401,7 @@
       <footer class="site-footer">
         <span
           ><span data-i18n="privacy"
-            >Readings are calculated in your browser and are not sent to the server.</span
+            >Readings are uploaded only when you save a report to your account.</span
           ></span
         ><button id="forget-draft" class="text-button" data-i18n="forget">
           Delete saved draft
@@ -362,6 +456,86 @@
       <button id="apply-import" class="button primary" data-i18n="applyImport">
         Check & fill table
       </button>
+    </dialog>
+    <dialog id="history-dialog">
+      <div class="dialog-heading">
+        <h2 data-i18n="history">Historian</h2>
+        <button class="text-button" data-close-dialog="history-dialog" data-i18n="close">
+          Close
+        </button>
+      </div>
+      <label
+        ><span data-i18n="selectPlant">Select factory</span
+        ><select id="history-plant">
+          <option value="" data-i18n="allPlants">All factories</option>
+          <option>JRE</option>
+          <option>UNILAND</option>
+        </select></label
+      >
+      <ul id="history-list" class="history-list"></ul>
+      <p id="history-empty" data-i18n="noReports">No saved reports yet.</p>
+      <div class="account-buttons">
+        <button id="history-previous" class="button secondary" data-i18n="previous">Previous</button
+        ><span id="history-page">1</span
+        ><button id="history-next" class="button secondary" data-i18n="next">Next</button>
+      </div>
+      <section id="history-detail" class="history-detail" hidden>
+        <div class="account-buttons">
+          <label
+            ><span data-i18n="revision">Revision</span
+            ><input id="history-revision" type="number" min="1" step="1" /></label
+          ><button id="load-revision" class="button secondary" data-i18n="viewRevision">
+            View revision
+          </button>
+        </div>
+        <p id="history-version" class="muted"></p>
+        <textarea
+          id="history-snapshot"
+          class="report-preview"
+          readonly
+          aria-label="Stored report"
+          spellcheck="false"
+        ></textarea>
+        <button id="use-history" class="button primary" data-i18n="useReadings">
+          Use these readings
+        </button>
+      </section>
+    </dialog>
+    <dialog id="users-dialog">
+      <div class="dialog-heading">
+        <h2 data-i18n="manageUsers">Manage accounts</h2>
+        <button class="text-button" data-close-dialog="users-dialog" data-i18n="close">
+          Close
+        </button>
+      </div>
+      <form id="create-user-form" class="account-form">
+        <label
+          ><span data-i18n="username">Username</span
+          ><input
+            id="new-username"
+            required
+            minlength="3"
+            maxlength="32"
+            pattern="[a-z0-9][a-z0-9_.-]{2,31}"
+            autocapitalize="none"
+            autocomplete="off" /></label
+        ><button type="submit" class="button primary" data-i18n="createUser">
+          Create operator account
+        </button>
+      </form>
+      <div id="temporary-result" class="notice" hidden>
+        <strong id="temporary-name"></strong>
+        <p data-i18n="temporaryPassword">
+          Temporary password. Share privately; the user must change it at first login.
+        </p>
+        <input
+          id="temporary-password"
+          readonly
+          aria-label="Temporary password"
+          autocomplete="off"
+        />
+      </div>
+      <ul id="users-list" class="history-list"></ul>
     </dialog>
     <div id="toast" role="status" class="toast" hidden></div>
     <noscript
