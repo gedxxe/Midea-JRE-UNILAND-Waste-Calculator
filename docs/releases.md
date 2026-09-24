@@ -4,7 +4,7 @@
 
 package.json is the version source; package-lock.json must match it. Use v0.MINOR.PATCH-alpha. Increment PATCH for fixes and MINOR for features; reset PATCH to zero for a minor release. Stable v1.0.0 requires an explicit release decision. Do not infer stability from successful tests.
 
-- Work branch: codex/v0.2.0-alpha (or a short fix branch for an existing milestone).
+- Work branch: codex/v0.3.0-alpha (or a short fix branch for an existing milestone).
 - Preserved baseline: release/v0.1.0-alpha and annotated tag v0.1.0-alpha, both at 8e5bb21aa97344dff5d1c29826f71566b6f870f2.
 - Milestone branch: release/vX.Y.Z-alpha. Tag: vX.Y.Z-alpha. Create these only for the tested commit. Never move an existing milestone to a newer commit.
 - main is the production source. Feature pushes create Vercel previews; merging main triggers production through the existing Git integration.
@@ -13,7 +13,7 @@ package.json is the version source; package-lock.json must match it. Use v0.MINO
 
 1. Start from the current main in a new codex/ branch. Check git status first and preserve other work.
 2. Implement changes, update the version/lockfile/changelog, and update AGENTS.md if requirements changed.
-3. Run npm ci, npm run verify, and npm run test:e2e. Install Chromium once with npx playwright install chromium.
+3. Run npm ci, npm run verify, npm run test:integration against a test/development database, and npm run test:e2e. Install Chromium once with npx playwright install chromium.
 4. Push the branch normally and open a PR. CI uses read-only permissions and official Actions pinned to commit hashes. Quality gate checks formatting, source contracts, unit tests, the build, and Chromium desktop/mobile behavior. Failure artifacts and build metadata are kept for seven days.
 5. Inspect the actual GitHub checks and Vercel preview. Verify build-info.json matches the commit and /api/time reports NTP or an explicit 503, never a false success. Browser tests mock time and do not establish real network synchronization.
 6. Merge only after the required checks pass and the owner is ready. The Git integration deploys main; no extra Vercel token or duplicate deployment workflow is needed.
@@ -57,4 +57,8 @@ For [PR #1](https://github.com/gedxxe/Midea-JRE-UNILAND-Waste-Calculator/pull/1)
 - Active ruleset 23807504 prevents updates and deletion of v*-alpha tags. New release tags may still be created.
 - The v0.1.0-alpha branch/tag are published at 8e5bb21. Vercel's Git integration successfully created the v0.2.0-alpha preview. Its runtime is protected by Vercel Authentication and requires an authorized account to inspect.
 
-These are settings verified at that time, not immutable guarantees. Recheck GitHub settings if repository ownership, permissions, or workflow names change. Main/production stays on the previous milestone until the PR is merged.
+These are settings verified at that time, not immutable guarantees. Recheck GitHub settings if repository ownership, permissions, or workflow names change. PR #1 was verified merged into main at 1ba66634b03acf76b97f8b9a23f38275082366c0 on 2026-09-24. This does not independently prove the current production deployment.
+
+## Database releases
+
+v0.3.0-alpha adds PostgreSQL. See docs/accounts.md for environment separation, explicit migration/bootstrap, limited runtime grants, and recovery. A code rollback never deletes database records. Do not publish a milestone as production-ready until live account storage and its permissions have been verified.

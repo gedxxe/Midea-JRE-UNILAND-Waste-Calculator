@@ -1,6 +1,6 @@
 {
   "name": "midea-jre-uniland-energy-report",
-  "version": "0.2.0-alpha",
+  "version": "0.3.0-alpha",
   "private": true,
   "type": "module",
   "engines": {
@@ -15,10 +15,18 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:e2e": "playwright test",
-    "verify": "npm run check && npm run format:check && npm test && npm run build"
+    "verify": "npm run check && npm run format:check && npm test && npm run build",
+    "db:check": "node scripts/database.mjs check",
+    "db:migrate": "node scripts/database.mjs migrate",
+    "admin:create": "node scripts/database.mjs bootstrap",
+    "test:integration": "node --test tests/integration/*.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "prettier": "3.9.8"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "2.2.1",
+    "pg": "8.23.0"
   }
 }

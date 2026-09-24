@@ -4,9 +4,9 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.2.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.3.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
-## User decisions, last confirmed 2026-09-22
+## User decisions, last confirmed 2026-09-24
 
 - Build a convenient table filler with copy-ready reports. Text import is optional, not the main flow.
 - Both report titles use the START reading date. 16 September 08:00 to 17 September 08:00 means a 16 September report for both plants.
@@ -18,6 +18,12 @@ Current milestone: v0.2.0-alpha in package.json. Preserved baseline: v0.1.0-alph
 - Use real asynchronous NTP, with explicit failure states. A device clock is not evidence of NTP sync.
 - Remain deployable on Vercel and avoid unnecessary dependencies or services.
 - Maintain modular code, tests, CI/CD, incremental version numbers, and rollback points. Never force push.
+
+- Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
+- Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
+- User chose power-engineer for the first admin username. Generate temporary credentials locally; require a password change at first login.
+- Separate development and production database connections. Do not store or print credentials in agent memory.
+- Admins manage accounts; reports remain private to their owner. Correcting a report creates a revision.
 
 New user instructions override older choices here. Update this decision record, README, and changelog when requirements change. Record what was actually decided, not inferred preferences or invented chat memory. Do not store credentials or operational readings in documentation.
 
@@ -35,6 +41,16 @@ New user instructions override older choices here. Update this decision record, 
 
 Keep the browser runtime dependency-free. Development dependencies require a concrete benefit and exact versions. Do not add a framework, database, telemetry SDK, or AI features without a user need.
 
+## Accounts and database
+
+- server/password.js owns Argon2id and credential validation. server/auth.js owns sessions, account consistency, rate limits, and audit writes. server/http.js owns origin/body/error handling.
+- server/reports.js checks ownership and expected revision for every mutation. server/report-data.js reuses the pure engine and stores raw readings plus original English output and engine version.
+- PostgreSQL SQL is parameterized; identifiers are fixed. All report/revision/audit changes share a transaction. Never trust client user IDs, reported totals, factors, or units.
+- ui/accounts.js coordinates account/historian UI. app.js scopes signed-in drafts to sessionStorage per user and keeps old guest localStorage separate. Account changes clear readings, undo, dialogs, and temporary passwords.
+- API and CLI code must not print connection strings, raw database errors, request bodies, session cookies, passwords, or readings.
+- Read docs/accounts.md before database setup or recovery. Migrations and admin bootstrap are explicit commands, never build steps. Use a privileged migration connection separately from a restricted runtime role.
+- Integration tests require TEST_DATABASE_URL and may create/clean only their own synthetic data in development/test. Never run them against production.
+
 ## Calculation rules to preserve
 
 Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
@@ -50,7 +66,7 @@ Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
 
 ## Verification and release work
 
-Use Node 22.x. Run npm ci, npm run verify, then npm run test:e2e after installing Chromium with npx playwright install chromium. CI additionally installs browser OS dependencies. Browser tests use a dedicated local server and mocked time responses; they do not prove public NTP availability. For deployment work, separately inspect /api/time and build-info.json on the deployed URL.
+Use Node 22.x. Run npm ci, npm run verify, npm run test:integration with a test/development TEST_DATABASE_URL, then npm run test:e2e after installing Chromium with npx playwright install chromium. CI additionally installs browser OS dependencies. Browser tests use a dedicated local server and mocked time responses; they do not prove public NTP availability. For deployment work, separately inspect /api/time and build-info.json on the deployed URL.
 
 Use npm run format for formatting. Add tests for changed business behavior and data-loss risks, not tests that merely repeat an implementation. Exercise language switching with a filled draft and confirm report bytes stay unchanged. Check desktop/mobile rendering and console errors when changing UI.
 

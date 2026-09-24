@@ -4,6 +4,18 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import time from '../api/time.js';
+import auth from '../api/auth.js';
+import users from '../api/users.js';
+import reports from '../api/reports.js';
+import { loadEnvFile } from 'node:process';
+if (!process.env.CI && process.env.METER_SKIP_LOCAL_ENV !== '1') {
+  try {
+    loadEnvFile('.env.local');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+}
+const api = { '/api/time': time, '/api/auth': auth, '/api/users': users, '/api/reports': reports };
 const root = resolve(import.meta.dirname, '..');
 const built = process.argv.includes('--built');
 const staticRoot = built ? resolve(root, 'dist') : root;
@@ -19,8 +31,8 @@ const config = JSON.parse(await readFile(resolve(root, 'vercel.json'), 'utf8'));
 const server = createServer(async (req, res) => {
   for (const { key, value } of config.headers[0].headers) res.setHeader(key, value);
   const pathname = new URL(req.url, 'http://localhost').pathname;
-  if (pathname === '/api/time') {
-    await time(req, res);
+  if (api[pathname]) {
+    await api[pathname](req, res);
     return;
   }
   if (!['GET', 'HEAD'].includes(req.method)) {
