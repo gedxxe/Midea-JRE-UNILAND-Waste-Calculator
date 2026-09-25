@@ -4,9 +4,9 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.3.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.3.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
-## User decisions, last confirmed 2026-09-24
+## User decisions, last confirmed 2026-09-25
 
 - Build a convenient table filler with copy-ready reports. Text import is optional, not the main flow.
 - Both report titles use the START reading date. 16 September 08:00 to 17 September 08:00 means a 16 September report for both plants.
@@ -19,6 +19,8 @@ Current milestone: v0.3.0-alpha in package.json. Preserved baseline: v0.1.0-alph
 - Remain deployable on Vercel and avoid unnecessary dependencies or services.
 - Maintain modular code, tests, CI/CD, incremental version numbers, and rollback points. Never force push.
 
+- Show a login screen first. Keep the reporting workspace hidden until a session is established and any required initial password change is complete. Logout returns to login. Preserve old guest drafts separately without exposing a guest entry mode.
+- Use larger entry text and black equipment labels/readings for readability, including on mobile.
 - Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
 - Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
 - User chose power-engineer for the first admin username. Generate temporary credentials locally; require a password change at first login.

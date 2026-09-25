@@ -73,15 +73,32 @@ test('account drafts, required password change, historian revisions, and logout 
         },
       });
   });
+  const guest = JSON.stringify({
+    version: 4,
+    drafts: { JRE: exampleDraft('JRE'), UNILAND: exampleDraft('UNILAND') },
+  });
+  await page.addInitScript((value) => {
+    if (!localStorage.getItem('midea_energy_draft_v4'))
+      localStorage.setItem('midea_energy_draft_v4', value);
+  }, guest);
   await page.goto('/');
   await expect(page.locator('#login-form')).toBeVisible();
-  await page.locator('#load-example').click();
-  await page.locator('#save-draft').click();
-  const guest = await page.evaluate(() => localStorage.getItem('midea_energy_draft_v4'));
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('#save-draft')).toBeHidden();
+  await expect(page.locator('#skip-table')).toBeHidden();
+  for (const language of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(language);
+    await expect(page.locator('#report-workspace')).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+  await page.screenshot({ path: testInfo.outputPath('login.png'), fullPage: true });
   await page.locator('#login-username').fill('test-operator');
   await page.locator('#login-password').fill('Test-only password 123');
   await page.locator('#login-submit').click();
   await expect(page.locator('#password-required')).toBeVisible();
+  await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#save-report')).toBeHidden();
   await expect(page.locator('.meter-input').first()).toHaveValue('');
   await page.locator('#current-password').fill('Test-only password 123');
@@ -89,6 +106,7 @@ test('account drafts, required password change, historian revisions, and logout 
   await page.locator('#confirm-password').fill('New test-only password 456');
   await page.locator('#password-submit').click();
   await expect(page.locator('#save-report')).toBeVisible();
+  await expect(page.locator('#report-workspace')).toBeVisible();
   await page.locator('#load-example').click();
   await page.locator('#save-draft').click();
   expect(await page.evaluate(() => localStorage.getItem('midea_energy_draft_v4'))).toBe(guest);
@@ -117,6 +135,8 @@ test('account drafts, required password change, historian revisions, and logout 
   await page.locator('#save-report').click();
   await expect(page.locator('#toast')).toContainText('revision 2');
   await page.locator('#logout').click();
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('#login-username')).toBeFocused();
   await expect(page.locator('#login-form')).toBeVisible();
   await expect(page.locator('.meter-input').first()).toHaveValue('');
   expect(
@@ -195,4 +215,61 @@ test('admin account creation waits for loading and clears temporary passwords on
   expect(creates).toBe(1);
   await page.locator('[data-close-dialog="users-dialog"]').click();
   await expect(page.locator('#temporary-password')).toHaveValue('');
+});
+
+test('session loading and service failure never reveal the table, retry restores sign-in', async ({
+  page,
+}) => {
+  let finishCheck;
+  await page.route('**/api/auth', async (route) => {
+    await new Promise((resolve) => {
+      finishCheck = resolve;
+    });
+    await route.fulfill({ json: { available: false, user: null } });
+  });
+  await page.goto('/');
+  await expect(page.locator('#account-status')).toHaveText('Checking your session...');
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('#login-submit')).toBeDisabled();
+  await expect.poll(() => typeof finishCheck).toBe('function');
+  finishCheck();
+  await expect(page.locator('#retry-account')).toBeVisible();
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await page.unroute('**/api/auth');
+  await page.route('**/api/auth', (route) =>
+    route.fulfill({ json: { available: true, user: null } }),
+  );
+  await page.locator('#retry-account').click();
+  await expect(page.locator('#login-submit')).toBeEnabled();
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('#retry-account')).toBeHidden();
+});
+
+test('an expired session closes the historian and returns to the login screen', async ({
+  page,
+}) => {
+  let user = {
+    id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352',
+    username: 'test-operator',
+    role: 'operator',
+    mustChangePassword: false,
+  };
+  await page.route('**/api/auth', (route) => route.fulfill({ json: { available: true, user } }));
+  await page.route('**/api/reports**', (route) => {
+    user = null;
+    return route.fulfill({ status: 401, json: { error: 'LOGIN_REQUIRED' } });
+  });
+  await page.goto('/');
+  await page.locator('#load-example').click();
+  await page.locator('#save-draft').click();
+  await page.locator('#open-history').click();
+  await expect(page.locator('#login-form')).toBeVisible();
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('#history-dialog')).not.toBeVisible();
+  await expect(page.locator('.meter-input').first()).toHaveValue('');
+  expect(
+    await page.evaluate(() =>
+      Object.keys(sessionStorage).filter((key) => key.startsWith('midea_energy_draft_v4_')),
+    ),
+  ).toEqual([]);
 });

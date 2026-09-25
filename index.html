@@ -17,8 +17,10 @@
     <link rel="stylesheet" href="./style.css" />
     <script type="module" src="./app.js"></script>
   </head>
-  <body>
-    <a class="skip-link" href="#meter-table" data-i18n="skip">Skip to meter table</a>
+  <body class="login-page">
+    <a id="skip-table" class="skip-link" href="#meter-table" data-i18n="skip" hidden
+      >Skip to meter table</a
+    >
     <header class="site-header">
       <a class="brand" href="./" aria-label="Midea Daily Energy Report"
         ><img src="./asset/Midea.webp" alt="Midea" /><span class="brand-divider"></span
@@ -56,13 +58,13 @@
         <div>
           <p class="eyebrow">JRE / UNILAND</p>
           <h1>Daily energy report</h1>
-          <p class="intro">
+          <p id="entry-intro" class="intro" hidden>
             <span data-i18n="intro"
               >Enter meter readings. Check the results. Copy the daily report.</span
             >
           </p>
         </div>
-        <div class="save-controls">
+        <div id="draft-controls" class="save-controls" hidden>
           <span id="save-status" class="muted" role="status"
             ><span data-i18n="unsaved">Draft not saved</span></span
           ><button id="save-draft" class="button secondary">
@@ -73,9 +75,9 @@
       <section class="card account-card" aria-labelledby="account-label">
         <div class="account-heading">
           <div>
-            <h2 id="account-label" data-i18n="accountTitle">Save reports to your account</h2>
+            <h2 id="account-label" data-i18n="accountTitle">Sign in</h2>
             <p id="account-hint" class="muted" data-i18n="accountHint">
-              Sign in to save and reopen reports across devices. Ask your admin for an account.
+              Sign in to enter readings and open your reports. Ask your admin for an account.
             </p>
           </div>
           <div id="account-session" class="account-buttons" hidden>
@@ -112,7 +114,7 @@
           </button>
         </form>
         <p id="password-required" class="notice warning" data-i18n="passwordRequired" hidden>
-          Change your temporary password before opening saved reports.
+          Change your temporary password before entering readings or opening reports.
         </p>
         <form id="password-form" class="account-form" hidden>
           <label
@@ -163,250 +165,261 @@
           </button>
         </div>
         <p id="account-status" class="small muted" role="status"></p>
-      </section>
-      <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
-        <div class="plant-tabs">
-          <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
-            JRE <span id="count-jre">0/29</span></button
-          ><button class="plant-tab" data-plant="UNILAND" aria-pressed="false">
-            UNILAND <span id="count-uniland">0/28</span>
-          </button>
-        </div>
-        <span class="plant-bar-note"
-          ><span data-i18n="automatic">Cumulative readings · Calculated automatically</span></span
+        <button
+          id="retry-account"
+          type="button"
+          class="text-button"
+          data-i18n="retryAccount"
+          hidden
         >
-      </div>
-      <section class="period-card" aria-label="Reading period" data-i18n-aria-label="period">
-        <div class="period-label">
-          <span class="step-number">01</span>
-          <div>
-            <h2><span data-i18n="period">Reading period</span></h2>
-            <p><span data-i18n="readTime">Read around 08:00 WIB</span></p>
+          Try again
+        </button>
+      </section>
+      <div id="report-workspace" hidden>
+        <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
+          <div class="plant-tabs">
+            <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
+              JRE <span id="count-jre">0/29</span></button
+            ><button class="plant-tab" data-plant="UNILAND" aria-pressed="false">
+              UNILAND <span id="count-uniland">0/28</span>
+            </button>
           </div>
+          <span class="plant-bar-note"
+            ><span data-i18n="automatic">Cumulative readings · Calculated automatically</span></span
+          >
         </div>
-        <label
-          ><span data-i18n="startDate">Start date</span
-          ><input type="date" id="start-date" min="2000-01-01" max="2099-12-31"
-        /></label>
-        <span class="period-arrow" aria-hidden="true">→</span>
-        <label
-          ><span data-i18n="endDate">End date</span
-          ><input type="date" id="end-date" min="2000-01-01" max="2099-12-31"
-        /></label>
-        <div class="report-date">
-          <span><span data-i18n="reportDate">Report date</span></span
-          ><strong id="report-date-label"
-            ><span data-i18n="selectPeriod">Select a period</span></strong
-          ><button id="use-today" class="text-button">
-            <span data-i18n="latest">Use latest period</span>
-          </button>
+        <section class="period-card" aria-label="Reading period" data-i18n-aria-label="period">
+          <div class="period-label">
+            <span class="step-number">01</span>
+            <div>
+              <h2><span data-i18n="period">Reading period</span></h2>
+              <p><span data-i18n="readTime">Read around 08:00 WIB</span></p>
+            </div>
+          </div>
+          <label
+            ><span data-i18n="startDate">Start date</span
+            ><input type="date" id="start-date" min="2000-01-01" max="2099-12-31"
+          /></label>
+          <span class="period-arrow" aria-hidden="true">→</span>
+          <label
+            ><span data-i18n="endDate">End date</span
+            ><input type="date" id="end-date" min="2000-01-01" max="2099-12-31"
+          /></label>
+          <div class="report-date">
+            <span><span data-i18n="reportDate">Report date</span></span
+            ><strong id="report-date-label"
+              ><span data-i18n="selectPeriod">Select a period</span></strong
+            ><button id="use-today" class="text-button">
+              <span data-i18n="latest">Use latest period</span>
+            </button>
+          </div>
+        </section>
+        <p class="notice" id="period-note">The report uses the start date.</p>
+        <div id="example-note" class="notice warning" hidden>
+          <span data-i18n="exampleNote"
+            >Example data for testing. Replace it with actual readings before making an operational
+            report.</span
+          >
         </div>
-      </section>
-      <p class="notice" id="period-note">The report uses the start date.</p>
-      <div id="example-note" class="notice warning" hidden>
-        <span data-i18n="exampleNote"
-          >Example data for testing. Replace it with actual readings before making an operational
-          report.</span
-        >
-      </div>
-      <div class="work-grid">
-        <div class="entry-column">
-          <section class="card meter-card" aria-labelledby="table-title">
-            <div class="card-heading">
-              <div class="section-label">
-                <span class="step-number">02</span>
+        <div class="work-grid">
+          <div class="entry-column">
+            <section class="card meter-card" aria-labelledby="table-title">
+              <div class="card-heading">
+                <div class="section-label">
+                  <span class="step-number">02</span>
+                  <div>
+                    <h2 id="table-title">
+                      <span data-i18n="readings">Meter readings</span>
+                      <span id="table-plant">JRE</span>
+                    </h2>
+                    <p><span data-i18n="rawHint">Enter the numbers shown on each meter.</span></p>
+                  </div>
+                </div>
+                <button id="open-import" class="text-button">
+                  <span data-i18n="import">Import text</span>
+                </button>
+              </div>
+              <div class="table-toolbar">
+                <label class="search-field"
+                  ><span aria-hidden="true">⌕</span
+                  ><input
+                    type="search"
+                    id="search-meter"
+                    placeholder="Find equipment..."
+                    data-i18n-placeholder="search"
+                    aria-label="Find equipment"
+                    data-i18n-aria-label="search" /></label
+                ><label class="check-label"
+                  ><input type="checkbox" id="only-incomplete" /><span data-i18n="incompleteFilter"
+                    >Incomplete / check</span
+                  ></label
+                >
+              </div>
+              <div
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Meter readings; scroll to see all meters"
+                data-i18n-aria-label="scrollTable"
+              >
+                <table id="meter-table">
+                  <caption class="sr-only">
+                    <span data-i18n="caption"
+                      >Start and end readings; ratios follow the factory template.</span
+                    >
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Equipment</th>
+                      <th scope="col"><span data-i18n="ratio">Meter / ratio</span></th>
+                      <th scope="col"><span data-i18n="startReading">Start reading</span></th>
+                      <th scope="col"><span data-i18n="endReading">End reading</span></th>
+                      <th scope="col" class="numeric">
+                        <span data-i18n="consumption">Consumption</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="meter-body"></tbody>
+                </table>
+                <p id="no-matches" class="empty-search" hidden>
+                  <span data-i18n="noMatches">No matching equipment.</span>
+                </p>
+              </div>
+              <div class="table-footer">
+                <span
+                  ><span data-i18n="decimals"
+                    >Comma or dot for decimals. No thousands separators.</span
+                  ></span
+                ><span><span data-i18n="keyboard">Tab: next column · Enter: next row</span></span>
+              </div>
+              <div class="entry-hint">
+                <span data-i18n="pasteHint"
+                  >Use - for unavailable data. Paste 1 or 2 Excel columns into a reading cell, in
+                  the order of the visible meters.</span
+                >
+              </div>
+            </section>
+            <details class="card utilities-card">
+              <summary>
+                <span
+                  ><strong><span data-i18n="utilities">Daily utilities</span></strong
+                  ><span class="muted"
+                    ><span data-i18n="utilityHint">Optional, enter consumption directly</span></span
+                  ></span
+                ><span class="muted">LPG, gas, air <span aria-hidden="true">+</span></span>
+              </summary>
+              <div id="utility-fields" class="utility-fields"></div>
+            </details>
+            <div class="bottom-actions">
+              <button id="next-day" class="button secondary">
+                <span data-i18n="nextDay">Next day →</span>
+              </button>
+              <div>
+                <button id="undo-change" class="text-button" hidden>
+                  <span data-i18n="undo">Undo change</span></button
+                ><button id="load-example" class="text-button">
+                  <span data-i18n="example">Load example</span></button
+                ><button id="clear-plant" class="text-button">
+                  <span data-i18n="clear">Clear</span>
+                </button>
+              </div>
+            </div>
+            <p class="small muted">
+              <span data-i18n="nextHint"
+                >Next day moves end readings to start readings. Save your draft to keep data after
+                closing the browser.</span
+              >
+            </p>
+          </div>
+          <aside class="result-column" aria-labelledby="result-title">
+            <section class="card result-card">
+              <div class="card-heading">
+                <div class="section-label">
+                  <span class="step-number">03</span>
+                  <h2 id="result-title"><span data-i18n="results">Results & report</span></h2>
+                </div>
+                <span class="result-badge" id="result-state"
+                  ><span data-i18n="incomplete">Incomplete</span></span
+                >
+              </div>
+              <div class="completion">
                 <div>
-                  <h2 id="table-title">
-                    <span data-i18n="readings">Meter readings</span>
-                    <span id="table-plant">JRE</span>
-                  </h2>
-                  <p><span data-i18n="rawHint">Enter the numbers shown on each meter.</span></p>
+                  <span><span data-i18n="filled">Equipment completed</span></span
+                  ><strong id="progress-label">0 of 29</strong>
+                </div>
+                <progress id="completion-progress" value="0" max="29"></progress>
+              </div>
+              <div class="total-panel">
+                <span>Main meter</span>
+                <div><strong id="main-total">-</strong><span id="main-unit">kWh</span></div>
+                <p><span data-i18n="totalHint">Main meter difference for this period</span></p>
+              </div>
+              <div class="derived-grid">
+                <div>
+                  <span id="derived-one-label">Sub-meter 2-29</span
+                  ><strong id="derived-one">-</strong>
+                </div>
+                <div>
+                  <span id="derived-two-label"
+                    ><span data-i18n="gapLabel">Gap to main meter</span></span
+                  ><strong id="derived-two">-</strong>
                 </div>
               </div>
-              <button id="open-import" class="text-button">
-                <span data-i18n="import">Import text</span>
-              </button>
-            </div>
-            <div class="table-toolbar">
-              <label class="search-field"
-                ><span aria-hidden="true">⌕</span
-                ><input
-                  type="search"
-                  id="search-meter"
-                  placeholder="Find equipment..."
-                  data-i18n-placeholder="search"
-                  aria-label="Find equipment"
-                  data-i18n-aria-label="search" /></label
-              ><label class="check-label"
-                ><input type="checkbox" id="only-incomplete" /><span data-i18n="incompleteFilter"
-                  >Incomplete / check</span
-                ></label
-              >
-            </div>
-            <div
-              class="table-scroll"
-              tabindex="0"
-              aria-label="Meter readings; scroll to see all meters"
-              data-i18n-aria-label="scrollTable"
-            >
-              <table id="meter-table">
-                <caption class="sr-only">
-                  <span data-i18n="caption"
-                    >Start and end readings; ratios follow the factory template.</span
-                  >
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Equipment</th>
-                    <th scope="col"><span data-i18n="ratio">Meter / ratio</span></th>
-                    <th scope="col"><span data-i18n="startReading">Start reading</span></th>
-                    <th scope="col"><span data-i18n="endReading">End reading</span></th>
-                    <th scope="col" class="numeric">
-                      <span data-i18n="consumption">Consumption</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="meter-body"></tbody>
-              </table>
-              <p id="no-matches" class="empty-search" hidden>
-                <span data-i18n="noMatches">No matching equipment.</span>
+              <p class="metric-note" id="metric-note">
+                <span data-i18n="gapPending"
+                  >The gap is calculated when all sub-meters are complete.</span
+                >
               </p>
-            </div>
-            <div class="table-footer">
-              <span
-                ><span data-i18n="decimals"
-                  >Comma or dot for decimals. No thousands separators.</span
-                ></span
-              ><span><span data-i18n="keyboard">Tab: next column · Enter: next row</span></span>
-            </div>
-            <div class="entry-hint">
-              <span data-i18n="pasteHint"
-                >Use - for unavailable data. Paste 1 or 2 Excel columns into a reading cell, in the
-                order of the visible meters.</span
-              >
-            </div>
-          </section>
-          <details class="card utilities-card">
-            <summary>
-              <span
-                ><strong><span data-i18n="utilities">Daily utilities</span></strong
-                ><span class="muted"
-                  ><span data-i18n="utilityHint">Optional, enter consumption directly</span></span
-                ></span
-              ><span class="muted">LPG, gas, air <span aria-hidden="true">+</span></span>
-            </summary>
-            <div id="utility-fields" class="utility-fields"></div>
-          </details>
-          <div class="bottom-actions">
-            <button id="next-day" class="button secondary">
-              <span data-i18n="nextDay">Next day →</span>
-            </button>
-            <div>
-              <button id="undo-change" class="text-button" hidden>
-                <span data-i18n="undo">Undo change</span></button
-              ><button id="load-example" class="text-button">
-                <span data-i18n="example">Load example</span></button
-              ><button id="clear-plant" class="text-button">
-                <span data-i18n="clear">Clear</span>
+              <button id="check-data" class="validation-button">
+                <span data-i18n="check">Check data</span> <span id="issue-count">0 notes</span>
               </button>
-            </div>
-          </div>
-          <p class="small muted">
-            <span data-i18n="nextHint"
-              >Next day moves end readings to start readings. Save your draft to keep data after
-              closing the browser.</span
-            >
-          </p>
+              <div id="validation-panel" class="validation-panel" hidden>
+                <p id="validation-summary"></p>
+                <ul id="validation-list"></ul>
+              </div>
+              <div class="preview-heading">
+                <label for="report-view"><span data-i18n="preview">Preview</span></label
+                ><select id="report-view">
+                  <option value="plant" data-i18n="factoryReport">This factory report</option>
+                  <option value="combined" data-i18n="combinedReport">Combined report</option>
+                  <option value="worksheet">Worksheet Excel</option>
+                </select>
+              </div>
+              <textarea
+                id="report-preview"
+                class="report-preview"
+                readonly
+                spellcheck="false"
+                aria-label="Preview"
+                data-i18n-aria-label="preview"
+                placeholder="The report appears when you start entering readings."
+                data-i18n-placeholder="previewPlaceholder"
+              ></textarea>
+              <button id="copy-report" class="button primary full">Copy report</button>
+              <div class="copy-extra">
+                <button id="copy-combined" class="text-button" data-i18n="copyCombined">
+                  Copy combined</button
+                ><button id="copy-worksheet" class="text-button" data-i18n="copyExcel">
+                  Copy Excel row
+                </button>
+              </div>
+              <p class="small muted" id="copy-note">
+                <span data-i18n="copyIncomplete"
+                  >Fill all readings or use - for unavailable data.</span
+                >
+              </p>
+            </section>
+          </aside>
         </div>
-        <aside class="result-column" aria-labelledby="result-title">
-          <section class="card result-card">
-            <div class="card-heading">
-              <div class="section-label">
-                <span class="step-number">03</span>
-                <h2 id="result-title"><span data-i18n="results">Results & report</span></h2>
-              </div>
-              <span class="result-badge" id="result-state"
-                ><span data-i18n="incomplete">Incomplete</span></span
-              >
-            </div>
-            <div class="completion">
-              <div>
-                <span><span data-i18n="filled">Equipment completed</span></span
-                ><strong id="progress-label">0 of 29</strong>
-              </div>
-              <progress id="completion-progress" value="0" max="29"></progress>
-            </div>
-            <div class="total-panel">
-              <span>Main meter</span>
-              <div><strong id="main-total">-</strong><span id="main-unit">kWh</span></div>
-              <p><span data-i18n="totalHint">Main meter difference for this period</span></p>
-            </div>
-            <div class="derived-grid">
-              <div>
-                <span id="derived-one-label">Sub-meter 2-29</span
-                ><strong id="derived-one">-</strong>
-              </div>
-              <div>
-                <span id="derived-two-label"
-                  ><span data-i18n="gapLabel">Gap to main meter</span></span
-                ><strong id="derived-two">-</strong>
-              </div>
-            </div>
-            <p class="metric-note" id="metric-note">
-              <span data-i18n="gapPending"
-                >The gap is calculated when all sub-meters are complete.</span
-              >
-            </p>
-            <button id="check-data" class="validation-button">
-              <span data-i18n="check">Check data</span> <span id="issue-count">0 notes</span>
-            </button>
-            <div id="validation-panel" class="validation-panel" hidden>
-              <p id="validation-summary"></p>
-              <ul id="validation-list"></ul>
-            </div>
-            <div class="preview-heading">
-              <label for="report-view"><span data-i18n="preview">Preview</span></label
-              ><select id="report-view">
-                <option value="plant" data-i18n="factoryReport">This factory report</option>
-                <option value="combined" data-i18n="combinedReport">Combined report</option>
-                <option value="worksheet">Worksheet Excel</option>
-              </select>
-            </div>
-            <textarea
-              id="report-preview"
-              class="report-preview"
-              readonly
-              spellcheck="false"
-              aria-label="Preview"
-              data-i18n-aria-label="preview"
-              placeholder="The report appears when you start entering readings."
-              data-i18n-placeholder="previewPlaceholder"
-            ></textarea>
-            <button id="copy-report" class="button primary full">Copy report</button>
-            <div class="copy-extra">
-              <button id="copy-combined" class="text-button" data-i18n="copyCombined">
-                Copy combined</button
-              ><button id="copy-worksheet" class="text-button" data-i18n="copyExcel">
-                Copy Excel row
-              </button>
-            </div>
-            <p class="small muted" id="copy-note">
-              <span data-i18n="copyIncomplete"
-                >Fill all readings or use - for unavailable data.</span
-              >
-            </p>
-          </section>
-        </aside>
+        <footer class="site-footer">
+          <span
+            ><span data-i18n="privacy"
+              >Readings are uploaded only when you save a report to your account.</span
+            ></span
+          ><button id="forget-draft" class="text-button" data-i18n="forget">
+            Delete saved draft
+          </button>
+        </footer>
       </div>
-      <footer class="site-footer">
-        <span
-          ><span data-i18n="privacy"
-            >Readings are uploaded only when you save a report to your account.</span
-          ></span
-        ><button id="forget-draft" class="text-button" data-i18n="forget">
-          Delete saved draft
-        </button>
-      </footer>
       <div class="release-footer">
         <span>made in &lt;3 by gede</span>
         <details id="build-details">

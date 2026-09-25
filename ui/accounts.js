@@ -13,6 +13,7 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
   let links = {};
   let busy = false;
   let lastError = null;
+  let pendingFocus = null;
   const eventKey = 'midea_account_changed';
 
   function applyIdentity(next) {
@@ -102,6 +103,7 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
     }
   }
   async function refresh() {
+    if (!ready) render();
     const sequence = ++refreshSequence;
     const epoch = generation;
     try {
@@ -119,6 +121,11 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
     }
   }
   function render() {
+    const canEnter = ready && !!user && !user.mustChangePassword;
+    const wasHidden = $('report-workspace').hidden;
+    for (const id of ['report-workspace', 'draft-controls', 'entry-intro', 'skip-table'])
+      $(id).hidden = !canEnter;
+    document.body.classList.toggle('login-page', !canEnter);
     for (const element of document.querySelectorAll(
       '#login-form input, #password-form input, #create-user-form input, #create-user-form button, #users-list button, #history-list button, #open-history, #open-users, #load-revision, #use-history, #history-plant, #change-password',
     ))
@@ -127,10 +134,14 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
     $('history-next').disabled = busy || !hasMore;
     $('account-status').textContent = lastError
       ? errorMessage(lastError)
-      : available
-        ? ''
-        : t('accountUnavailable');
-    $('login-form').hidden = !!user || !available;
+      : !ready
+        ? t('accountChecking')
+        : available
+          ? ''
+          : t('accountUnavailable');
+    $('login-form').hidden = !!user;
+    $('retry-account').hidden = !ready || available;
+    $('retry-account').disabled = busy;
     $('account-session').hidden = !user;
     $('account-name').textContent = user?.username || '';
     $('password-form').hidden =
@@ -139,12 +150,19 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
     $('cloud-actions').hidden = !user || user.mustChangePassword;
     $('open-users').hidden = user?.role !== 'admin';
     $('save-report').disabled = busy || !available || !user || user.mustChangePassword;
-    $('login-submit').disabled = busy;
+    $('login-submit').disabled = busy || !ready || !available;
     $('password-submit').disabled = busy;
     $('logout').disabled = busy;
     $('account-label').textContent = t(user ? 'accountSignedIn' : 'accountTitle');
     $('account-hint').textContent = t(user ? 'accountPrivate' : 'accountHint');
+    if (wasHidden !== !canEnter)
+      pendingFocus = canEnter ? 'start-date' : user ? 'current-password' : 'login-username';
+    if (pendingFocus && !busy) {
+      $(pendingFocus).focus({ preventScroll: true });
+      pendingFocus = null;
+    }
   }
+  $('retry-account').addEventListener('click', () => void action(refresh));
   $('login-form').addEventListener('submit', (event) => {
     event.preventDefault();
     void action(async () => {
@@ -160,7 +178,7 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
       $('account-status').textContent = '';
       applyIdentity(data.user);
       signalChange();
-      if (data.user.mustChangePassword) $('current-password').focus();
+      if (data.user.mustChangePassword) pendingFocus = 'current-password';
     });
   });
   $('logout').addEventListener(

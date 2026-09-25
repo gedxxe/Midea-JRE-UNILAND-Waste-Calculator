@@ -1,10 +1,12 @@
 export const accountMessages = {
-  accountTitle: ['Save reports to your account', '将报告保存到您的账户', 'Simpan laporan ke akun'],
+  accountTitle: ['Sign in', '登录', 'Login'],
+  accountChecking: ['Checking your session...', '正在检查登录状态...', 'Memeriksa sesi...'],
+  retryAccount: ['Try again', '重试', 'Coba lagi'],
   accountSignedIn: ['Account', '账户', 'Akun'],
   accountHint: [
-    'Sign in to save and reopen reports across devices. Ask your admin for an account.',
-    '登录后可跨设备保存和打开报告。请联系管理员创建账户。',
-    'Login untuk menyimpan dan membuka laporan lintas perangkat. Hubungi admin untuk akun.',
+    'Sign in to enter readings and open your reports. Ask your admin for an account.',
+    '登录后可填写读数和查看报告。请联系管理员创建账户。',
+    'Login untuk mengisi reading dan membuka laporan. Hubungi admin untuk akun.',
   ],
   accountPrivate: [
     'Reports belong to your account. Save draft keeps a temporary copy in this tab.',
@@ -12,9 +14,9 @@ export const accountMessages = {
     'Laporan tersimpan di akunmu. Simpan draft menyimpan salinan sementara di tab ini.',
   ],
   accountUnavailable: [
-    'Account storage is unavailable. You can still calculate and copy reports.',
-    '账户存储暂不可用，仍可计算和复制报告。',
-    'Penyimpanan akun belum tersedia. Perhitungan dan salin laporan tetap bisa digunakan.',
+    'Cannot connect to the account service. Try again.',
+    '无法连接账户服务，请重试。',
+    'Tidak dapat terhubung ke layanan akun. Coba lagi.',
   ],
   username: ['Username', '用户名', 'Username'],
   password: ['Password', '密码', 'Password'],
@@ -25,9 +27,9 @@ export const accountMessages = {
   manageUsers: ['Manage accounts', '管理账户', 'Kelola akun'],
   changePassword: ['Change password', '修改密码', 'Ganti password'],
   passwordRequired: [
-    'Change your temporary password before opening saved reports.',
-    '打开已保存报告前，请先修改临时密码。',
-    'Ganti password sementara sebelum membuka laporan tersimpan.',
+    'Change your temporary password before entering readings or opening reports.',
+    '填写读数或打开报告前，请先修改临时密码。',
+    'Ganti password sementara sebelum mengisi reading atau membuka laporan.',
   ],
   currentPassword: ['Current password', '当前密码', 'Password saat ini'],
   newPassword: [
