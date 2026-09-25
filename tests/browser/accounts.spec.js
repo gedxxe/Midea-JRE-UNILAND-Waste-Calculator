@@ -159,6 +159,8 @@ test('an account change in another tab discards stale report responses and clear
   await expect(page.locator('#account-name')).toHaveText('first-user');
   await page.locator('#load-example').click();
   await page.locator('#save-draft').click();
+  await page.locator('#open-raw-export').click();
+  await expect(page.locator('#raw-export-preview')).not.toHaveValue('');
   user = { ...user, id: 'eb90c39b-1801-4aa4-98f7-bcb591e68c68', username: 'second-user' };
   await page.evaluate(() =>
     window.dispatchEvent(
@@ -166,6 +168,8 @@ test('an account change in another tab discards stale report responses and clear
     ),
   );
   await expect(page.locator('#account-name')).toHaveText('second-user');
+  await expect(page.locator('#raw-export-dialog')).not.toBeVisible();
+  await expect(page.locator('#raw-export-preview')).toHaveValue('');
   await expect(page.locator('.meter-input').first()).toHaveValue('');
   expect(
     await page.evaluate(() =>

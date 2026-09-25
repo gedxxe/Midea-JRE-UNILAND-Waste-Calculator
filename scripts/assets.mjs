@@ -6,6 +6,8 @@ export const PUBLIC_FILES = [
   'engine.js',
   'numbers.js',
   'worksheet.js',
+  'raw-export.js',
+  'ui/raw-export.js',
   'importer.js',
   'storage.js',
   'examples.js',

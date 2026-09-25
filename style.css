@@ -1414,3 +1414,23 @@ dialog textarea {
 .login-page .release-footer details {
   text-align: center;
 }
+
+.raw-export-button {
+  margin-top: 16px;
+  white-space: normal;
+}
+#raw-export-dialog {
+  width: min(820px, calc(100vw - 32px));
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+#raw-export-preview {
+  width: 100%;
+  color: #111;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre;
+}
+#raw-export-status:not(:empty) {
+  color: var(--amber);
+}

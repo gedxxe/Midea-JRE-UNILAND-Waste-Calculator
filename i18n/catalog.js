@@ -3,6 +3,35 @@ import { accountMessages } from './accounts.js';
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
   ...accountMessages,
+  exportRaw: ['Export Raw Table Data', '导出原始表格数据', 'Ekspor Data Mentah Tabel'],
+  rawExportHint: [
+    'Copy cumulative electricity readings for this factory. No consumption calculation, gas, or water data.',
+    '复制当前工厂的电表累计读数，不计算用量，不包含气体或用水数据。',
+    'Salin reading listrik kumulatif pabrik ini. Tanpa perhitungan konsumsi, data gas, atau air.',
+  ],
+  rawReadingSide: ['Reading to export', '选择读数列', 'Reading yang diekspor'],
+  rawPreview: ['Raw reading preview', '原始读数预览', 'Pratinjau reading mentah'],
+  copyRaw: ['Copy raw data', '复制原始数据', 'Salin data mentah'],
+  rawDateRequired: [
+    'Enter a valid date for the selected reading column.',
+    '请为所选读数列填写有效日期。',
+    'Isi tanggal yang valid untuk kolom reading yang dipilih.',
+  ],
+  rawLayoutInvalid: [
+    'The meter layout is invalid. Reopen the saved report or reload the page.',
+    '电表布局无效，请重新打开已保存的报告或刷新页面。',
+    'Susunan meter tidak valid. Buka ulang laporan tersimpan atau muat ulang halaman.',
+  ],
+  rawEmpty: [
+    '{equipment}, meter {meter}: fill the selected reading, or use - if unavailable.',
+    '{equipment}，电表 {meter}：请填写所选读数，无数据时填 -。',
+    '{equipment}, meter {meter}: isi reading yang dipilih, atau gunakan - jika tidak tersedia.',
+  ],
+  rawInvalid: [
+    '{equipment}, meter {meter}: correct the selected reading before copying.',
+    '{equipment}，电表 {meter}：请更正所选读数后再复制。',
+    '{equipment}, meter {meter}: perbaiki reading yang dipilih sebelum menyalin.',
+  ],
   skip: ['Skip to meter table', '跳转到电表表格', 'Langsung ke tabel meter'],
   language: ['Language', '语言', 'Bahasa'],
   intro: [

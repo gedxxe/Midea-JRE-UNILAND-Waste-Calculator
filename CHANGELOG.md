@@ -2,6 +2,14 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.4.0-alpha - 2026-09-25
+
+- Add Export Raw Table Data with a preview and copy action for the active factory.
+- Select start or end cumulative readings, defaulting to end; use the selected reading date and preserve raw decimal precision with ratio annotations.
+- Export electricity meter rows only, including UNILAND Trafo readings. Follow the current 29-row JRE and 28-row UNILAND tables; exclude daily utility fields.
+- Block incomplete or invalid selected columns while allowing explicit unavailable readings and an incomplete opposite column. Clear raw previews when closing or changing accounts.
+- Keep consumption calculations, saved historian data, and official report templates unchanged.
+
 ## v0.3.1-alpha - 2026-09-25
 
 - Show a compact login screen before opening the reading workspace, including during session checks and required initial password changes.
