@@ -1,3 +1,4 @@
+import { createGasDraft, calculateGas, GASES, GAS_TABLE_VERSION, gasMassText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import {
   decimalText,
@@ -11,6 +12,7 @@ import { buildWorksheet, worksheetPreview } from './worksheet.js';
 
 export function createDraft(plantKey, startDate = '', endDate = '') {
   return {
+    ...(plantKey === 'JRE' ? { gas: createGasDraft() } : {}),
     plantKey,
     startDate,
     endDate,
@@ -147,9 +149,39 @@ export function calculateDraft(draft) {
     return { ...row, meters, missing, totalEnergy: missing ? null : Number(energyScaled) / 1e8 };
   });
 
+  const gasResults = [];
   const utilities = [];
+  if (draft.plantKey === 'JRE' && draft.gas && draft.gas.version !== GAS_TABLE_VERSION)
+    issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
   UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
-    const { value = '', note = '' } = draft.utilities?.[i] || {};
+    let { value = '', note = '' } = draft.utilities?.[i] || {};
+    if (draft.plantKey === 'JRE' && i < GASES.length && draft.gas?.entries[i]?.enabled) {
+      const result = calculateGas(GASES[i].id, draft.gas.entries[i]);
+      gasResults.push({ gas: GASES[i].id, calibration: GAS_TABLE_VERSION, ...result });
+      for (const error of result.errors)
+        issue(
+          issues,
+          'GAS_INVALID',
+          name +
+            ': ' +
+            error.point +
+            '. ' +
+            {
+              gasEmpty: 'Enter the raw gas reading.',
+              gasNumber: 'Use a decimal reading without unit suffixes.',
+              gasRange: 'Reading is outside the reference table range.',
+              gasTemperature: 'Enter R32 temperature from -20 to 50 C.',
+              gasSequence:
+                'Tank mass increased without a matching refill, or refill mass decreased. Check readings, temperatures, and refill order.',
+            }[error.code],
+          null,
+          null,
+          'ERROR',
+        );
+      if (result.unavailable)
+        issue(issues, 'GAS_UNAVAILABLE', name + ': a tank reading is unavailable.');
+      value = gasMassText(result.kg);
+    }
     if (!String(value).trim()) {
       if (String(note).trim())
         issue(
@@ -226,6 +258,7 @@ export function calculateDraft(draft) {
     success: !issues.some((item) => item.level === 'ERROR'),
     issues,
     calculatedRows,
+    gasResults,
     mainText,
     reportSectionText: [mainText, crossCheckText, checks].filter(Boolean).join('\n\n'),
     checks,

@@ -26,6 +26,7 @@ export function reportSnapshot(input) {
       reportText: result.reportSectionText,
       worksheetText: result.worksheetText,
       checks: result.checks,
+      gas: result.gasResults,
     },
   };
 }

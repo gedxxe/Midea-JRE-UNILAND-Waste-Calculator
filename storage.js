@@ -1,3 +1,4 @@
+import { restoreGasDraft, nextGasDay } from './gas.js';
 import { createDraft } from './engine.js';
 import { validDate, shiftDate, decimalText } from './numbers.js';
 
@@ -19,6 +20,7 @@ export function restoreDrafts(raw) {
       input.utilities?.length !== draft.utilities.length
     )
       throw new Error('Draft meter layout does not match.');
+    if (plant === 'JRE') draft.gas = restoreGasDraft(input.gas);
     draft.isExample = input.isExample === true;
     draft.startDate = input.startDate;
     draft.endDate = input.endDate;
@@ -76,6 +78,7 @@ export function nextDayDraft(draft) {
   if (draft.rows.some((row) => row.end.some((v) => v.trim() !== '-' && decimalText(v) === null)))
     throw new Error('Correct invalid end readings before moving to the next day.');
   const next = createDraft(draft.plantKey, draft.endDate, shiftDate(draft.endDate, 1));
+  if (draft.plantKey === 'JRE') next.gas = nextGasDay(draft.gas);
   next.rows.forEach((row, i) => {
     row.start = [...draft.rows[i].end];
   });

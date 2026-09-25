@@ -108,6 +108,12 @@ test('account drafts, required password change, historian revisions, and logout 
   await expect(page.locator('#save-report')).toBeVisible();
   await expect(page.locator('#report-workspace')).toBeVisible();
   await page.locator('#load-example').click();
+  await page.locator('[data-gas-enable="R32"]').check();
+  const gas = page.locator('[data-gas="R32"]');
+  await gas.locator('[data-gas-point="start"]').fill('587');
+  await gas.locator('[data-gas-point="end"]').fill('550');
+  await gas.locator('[data-gas-temperature="start"]').fill('33.5');
+  await gas.locator('[data-gas-temperature="end"]').fill('33.5');
   await page.locator('#save-draft').click();
   expect(await page.evaluate(() => localStorage.getItem('midea_energy_draft_v4'))).toBe(guest);
   await page.reload();
@@ -132,6 +138,7 @@ test('account drafts, required password change, historian revisions, and logout 
   page.on('dialog', (dialog) => dialog.accept());
   await page.locator('#use-history').click();
   await expect(page.locator('#report-preview')).toHaveValue(original);
+  await expect(gas.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
   await page.locator('#save-report').click();
   await expect(page.locator('#toast')).toContainText('revision 2');
   await page.locator('#logout').click();
@@ -142,6 +149,8 @@ test('account drafts, required password change, historian revisions, and logout 
   expect(
     await page.evaluate((id) => sessionStorage.getItem('midea_energy_draft_v4_' + id), account.id),
   ).toBe(null);
+  await expect(page.locator('[data-gas-enable="R32"]')).not.toBeChecked();
+  await expect(page.locator('[data-gas-temperature]')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

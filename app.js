@@ -1,3 +1,4 @@
+import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
@@ -40,6 +41,12 @@ let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
 const current = () => drafts[plant];
 const rawExport = createRawExport({ current, toast });
+const gasPanel = createGasPanel({
+  current,
+  changed,
+  rememberUndo,
+  rebuildUtilities: () => table.buildUtilities(),
+});
 let accountUser = null;
 let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
@@ -116,6 +123,7 @@ function mountPlant() {
     button.classList.toggle('active', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
+  gasPanel.rebuild();
   table.rebuild();
   renderResults();
 }
@@ -233,6 +241,7 @@ function renderResults() {
       : t('copyPeriod');
   filterTable();
   rawExport.render();
+  gasPanel.update();
 }
 async function copyText(text) {
   try {

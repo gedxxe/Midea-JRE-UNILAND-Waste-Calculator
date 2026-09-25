@@ -267,3 +267,57 @@ test('raw export offers manual copy when clipboard access is denied', async ({ p
   expect(selected).toBe(exportRawReading(exampleDraft('JRE'), 'end').text);
   await expect(page.locator('#toast')).toContainText('Clipboard unavailable');
 });
+
+test('JRE gas raw readings, decimal temperatures, refills, language and next day preserve data', async ({
+  page,
+}, testInfo) => {
+  await page.locator('#load-example').click();
+  const lpg = page.locator('[data-gas="LPG"]');
+  await lpg.locator('[data-gas-enable]').check();
+  await lpg.locator('[data-gas-point="start"]').fill('60');
+  await lpg.locator('[data-gas-point="end"]').fill('40');
+  await lpg.locator('[data-add-refill]').click();
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await lpg.locator('[data-gas-point="before0"]').fill('50');
+  await lpg.locator('[data-gas-point="after0"]').fill('80');
+  const r32 = page.locator('[data-gas="R32"]');
+  await r32.locator('[data-gas-enable]').check();
+  await r32.locator('[data-gas-point="start"]').fill('587');
+  await r32.locator('[data-gas-temperature="start"]').fill('33,5');
+  await r32.locator('[data-gas-point="end"]').fill('550');
+  await r32.locator('[data-gas-temperature="end"]').fill('33.5');
+  await expect(r32.locator('.gas-total')).toHaveText('Consumption: 154.2086 kg');
+  await expect(page.locator('#report-preview')).toHaveValue(/Refrigerant R32: 154.2086 Kg/);
+  const report = await page.locator('#report-preview').inputValue();
+  for (const lang of ['id', 'zh-CN', 'en']) {
+    await page.locator('#language-select').selectOption(lang);
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+    await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33,5');
+  }
+  await page.locator('#save-draft').click();
+  await page.reload();
+  await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33,5');
+  await expect(lpg.locator('[data-gas-point="after0"]')).toHaveValue('80');
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  await r32.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath('gas-entry.png') });
+  await r32.locator('[data-gas-temperature="end"]').fill('51');
+  await expect(r32.locator('.gas-total')).toHaveText('Consumption: - kg');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await r32.locator('[data-gas-temperature="end"]').fill('33.5');
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(page.locator('#gas-section')).toBeHidden();
+  await page.locator('[data-plant="JRE"]').click();
+  await expect(r32.locator('[data-gas-point="start"]')).toHaveValue('587');
+  await page.locator('#next-day').click();
+  await expect(r32.locator('[data-gas-point="start"]')).toHaveValue('550');
+  await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
+  await expect(r32.locator('[data-gas-temperature="end"]')).toHaveValue('');
+  await expect(lpg.locator('[data-gas-point="before0"]')).toHaveCount(0);
+  await page.locator('#undo-change').click();
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  await lpg.locator('[data-remove-refill]').click();
+  await expect(lpg.locator('[data-gas-point="before0"]')).toHaveCount(0);
+  await page.locator('#undo-change').click();
+  await expect(lpg.locator('[data-gas-point="after0"]')).toHaveValue('80');
+});

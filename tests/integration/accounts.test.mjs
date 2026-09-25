@@ -173,6 +173,12 @@ test('temporary accounts must change their password; the old session is revoked'
 });
 test('report ownership comes from the session; server output and raw readings are retained', async () => {
   const draft = exampleDraft('JRE');
+  draft.gas.entries[3] = {
+    enabled: true,
+    start: { reading: '587', temperature: '33.5' },
+    end: { reading: '550', temperature: '33.5' },
+    refills: [],
+  };
   const saved = await call('/api/reports', {
     actor: operator,
     body: { draft, owner_id: other.id, output: { reportText: 'forged' } },
@@ -182,6 +188,9 @@ test('report ownership comes from the session; server output and raw readings ar
   assert.equal(saved.value.snapshot.output.reportText, calculateDraft(draft).reportSectionText);
   const own = await call('/api/reports?id=' + reportId, { actor: operator });
   assert.equal(own.value.snapshot.draft.rows[0].start[0], draft.rows[0].start[0]);
+  assert.deepEqual(own.value.snapshot.draft.gas, draft.gas);
+  assert.equal(own.value.snapshot.output.gas[0].calibration, draft.gas.version);
+  assert.ok(Math.abs(own.value.snapshot.output.gas[0].kg - 154.2086) < 1e-7);
   assert.equal((await call('/api/reports?id=' + reportId, { actor: other })).status, 404);
   assert.equal((await call('/api/reports?id=' + reportId, { actor: admin })).status, 404);
   assert.equal(
