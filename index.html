@@ -305,6 +305,19 @@
             >
               Export Raw Table Data
             </button>
+            <section id="gas-section" class="card gas-card" aria-labelledby="gas-title">
+              <h2 id="gas-title" data-i18n="gasTitle">JRE gas consumption</h2>
+              <p data-i18n="gasHint">
+                Enter tank readings, then convert each observation to kg before calculating
+                consumption. After Work normally uses the following morning's reading.
+              </p>
+              <p id="gas-period"></p>
+              <div id="gas-fields"></div>
+              <p class="gas-source" data-i18n="gasSource">
+                Uses the supplied tank reference tables. R32 requires temperature at each
+                observation. LPG uses the workbook's corrected reference values.
+              </p>
+            </section>
             <details class="card utilities-card">
               <summary>
                 <span

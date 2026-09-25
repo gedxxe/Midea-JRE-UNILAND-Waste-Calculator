@@ -64,7 +64,7 @@ These sums appear only in the worksheet. Individual equipment remain separate in
 
 Text import accepts one date and a complete factory snapshot, including wrapped Injection Molding entries. Meter counts, duplicate/missing equipment, and numeric syntax are validated before replacement. Wrong imported ratios produce a warning and never override the schema. One- or two-column Excel pastes are planned atomically; an invalid cell or oversized block changes nothing.
 
-Utilities are optional direct consumption values, never inferred. A note without a value blocks copying. Water notes are retained. Drafts use localStorage key midea_energy_draft_v4 and are written only on Save draft. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and does not save automatically.
+Utilities are optional direct consumption values, except enabled JRE tank gas calculations described in [gas rules](gas.md). Those gas values come from converted raw observations and refill events. A note without a value blocks copying. Water notes are retained. Drafts use localStorage key midea_energy_draft_v4 and are written only on Save draft. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and does not save automatically.
 
 ## Raw reading export
 

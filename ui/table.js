@@ -140,6 +140,9 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         const wrapper = node('div', undefined, 'utility-entry');
         const label = node('label', `${name}${unit ? ` (${unit})` : ''}`);
         const input = node('input');
+        input.dataset.utility = i;
+        input.disabled = getPlant() === 'JRE' && i < 4 && current().gas?.entries[i]?.enabled;
+        if (input.disabled) label.append(node('span', t('gasCalculated')));
         input.type = 'text';
         input.inputMode = 'decimal';
         input.maxLength = 50;
@@ -183,6 +186,11 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
     $('no-matches').hidden = visible !== 0;
   }
   function update(report) {
+    report.gasResults?.forEach((result) => {
+      const index = ['LPG', 'O2', 'N2', 'R32'].indexOf(result.gas);
+      const input = document.querySelector(`[data-utility="${index}"]`);
+      if (input) input.value = formatNumber(result.kg, 6);
+    });
     report.calculatedRows.forEach((row, ri) => {
       const rowIssues = report.issues.filter((i) => i.rowIndex === ri);
       const output = outputNodes[ri];
@@ -213,6 +221,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
   }
 
   return {
+    buildUtilities,
     rebuild() {
       buildTable();
       buildUtilities();

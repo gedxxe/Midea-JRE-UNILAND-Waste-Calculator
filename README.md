@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.4.0-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.5.0-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+JRE gas consumption now accepts raw LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), and R32 (mm) readings. Enable each gas, enter Before Work and After Work, and add paired Before/After Refill observations when needed. R32 accepts a temperature for every reading from -20 to 50 °C, including decimals such as 33.5. Conversion follows the supplied reference tables before calculating initial kg + refill kg - final kg. Next day carries final readings and temperatures forward. Saved manual utilities remain available; enabled tank calculations replace their report values. Raw readings, temperatures, refills and calibration version are saved in your historian. See [gas rules and source ranges](docs/gas.md).
 
 Enter cumulative readings in a table, check consumption, and copy the official factory report or Excel row. Sign in with a username and password to save reports to your own historian and reopen them on another device. The opening screen shows only sign-in controls. The reading workspace opens after login and any required password change. Entry text is larger, with black table labels and readings.
 
@@ -56,13 +58,14 @@ Vercel uses **Other**, repository root, Node 22.x, and `vercel.json`. The Git in
 
 ### Versions and maintenance
 
-| Version      | Contents                                                                 |
-| ------------ | ------------------------------------------------------------------------ |
-| v0.1.0-alpha | Preserved baseline: tables, meter rules, asynchronous NTP                |
-| v0.2.0-alpha | Language switch, build metadata, version history, CI                     |
-| v0.4.0-alpha | Copy raw cumulative readings by column and date, without utilities       |
-| v0.3.1-alpha | Login screen before entry, larger text and black meter-table labels      |
-| v0.3.0-alpha | Username/password accounts, private historian, revisions, database tests |
+| Version      | Contents                                                                         |
+| ------------ | -------------------------------------------------------------------------------- |
+| v0.1.0-alpha | Preserved baseline: tables, meter rules, asynchronous NTP                        |
+| v0.2.0-alpha | Language switch, build metadata, version history, CI                             |
+| v0.5.0-alpha | JRE raw gas readings, temperature interpolation, refill accounting and historian |
+| v0.4.0-alpha | Copy raw cumulative readings by column and date, without utilities               |
+| v0.3.1-alpha | Login screen before entry, larger text and black meter-table labels              |
+| v0.3.0-alpha | Username/password accounts, private historian, revisions, database tests         |
 
 `package.json` is the version source. Work on `codex/vX.Y.Z-alpha`, pass Quality gate, and merge through a PR. Preserve tested milestones with immutable release branches and annotated tags. Never force push. [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), and [release instructions](docs/releases.md) track changes and decisions.
 
@@ -73,6 +76,8 @@ Modules: `engine.js`, `numbers.js`, and `worksheet.js` hold pure calculation log
 This is an alpha reporting tool. Scheduled backups, restore drills, runtime monitoring, and independent security review remain deployment responsibilities. See [SECURITY.md](SECURITY.md). Rolling back code does not roll back database data; preserve revisions and use compatible forward migrations.
 
 ## 中文
+
+JRE 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) 和 R32 (mm) 原始读数。启用相应气体，填写工作前、工作后读数，并按需添加补充前后读数。每次 R32 读数需填写 -20 至 50 °C 的温度，支持 33.5 等小数。先按参考表换算，再计算初始 kg + 补充 kg - 最终 kg。下一天会带入最终读数与温度。原有手动用量保留，启用储罐计算后报告使用计算结果。历史记录保存原始读数、温度、补充记录及校准版本。详见[气体规则与范围](docs/gas.md)。
 
 在表格中填写累计读数，检查用量，然后复制工厂正式报告或 Excel 行。使用用户名和密码登录后，可将报告保存到个人历史记录并跨设备打开。首页仅显示登录界面。登录并完成必要的密码修改后，才显示读数工作区。输入文字已放大，表格标签和读数使用黑色。
 
@@ -106,13 +111,15 @@ Vercel 使用 Other 预设、仓库根目录和 Node 22.x。Git 集成创建 Pre
 
 ### 版本、维护与限制
 
-v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语言切换、构建信息与 CI；v0.3.0-alpha 增加账户、私人历史报告、修订和数据库测试；v0.3.1-alpha 增加登录首页并改善表格可读性。`package.json` 为版本来源。在 `codex/vX.Y.Z-alpha` 开发，通过 Quality gate 后提交 PR，保留不可修改的发布分支和附注标签，禁止强制推送。参见 [CHANGELOG.md](CHANGELOG.md)、[AGENTS.md](AGENTS.md) 和[发布说明](docs/releases.md)。
+v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语言切换、构建信息与 CI；v0.3.0-alpha 增加账户、私人历史报告、修订和数据库测试；v0.3.1-alpha 增加登录首页并改善表格可读性；v0.4.0-alpha 增加原始电表读数导出；v0.5.0-alpha 增加 JRE 原始气体读数、温度插值、补充记录及历史保存。`package.json` 为版本来源。在 `codex/vX.Y.Z-alpha` 开发，通过 Quality gate 后提交 PR，保留不可修改的发布分支和附注标签，禁止强制推送。参见 [CHANGELOG.md](CHANGELOG.md)、[AGENTS.md](AGENTS.md) 和[发布说明](docs/releases.md)。
 
 页脚及 build-info.json 显示版本、提交、构建时间和源文件哈希。浏览器异步同步 NTP，服务器先查询 Cloudflare，失败时使用 Google，缓存 60 秒。失败状态明确显示，仍可手动输入。数据库记录写入时间，浏览器时钟不是经过认证的审计时钟。
 
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Konsumsi gas JRE menerima reading mentah LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), dan R32 (mm). Aktifkan gas yang dicatat, isi Before Work dan After Work, lalu tambahkan pasangan Before/After Refill jika ada pengisian. Setiap reading R32 memerlukan suhu -20 hingga 50 °C, termasuk desimal seperti 33,5. Konversi mengikuti tabel referensi sebelum menghitung kg awal + kg refill - kg akhir. Next day membawa reading akhir dan suhunya ke awal periode berikutnya. Nilai utility manual lama tetap tersimpan; gas yang diaktifkan memakai hasil kalkulasi pada laporan. Reading mentah, suhu, refill, dan versi kalibrasi ikut tersimpan di historian. Lihat [aturan dan rentang gas](docs/gas.md).
 
 Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi pabrik atau baris Excel. Login dengan username dan password untuk menyimpan laporan ke historian pribadi dan membukanya dari perangkat lain. Halaman awal hanya menampilkan login. Tabel muncul setelah login dan penggantian password awal bila diwajibkan. Teks pengisian diperbesar, dengan label tabel dan angka berwarna hitam.
 
@@ -146,7 +153,7 @@ Vercel memakai preset Other, root repo, dan Node 22.x. Integrasi Git membuat pre
 
 ### Versi, pemeliharaan, dan batasan
 
-v0.1.0-alpha menyimpan baseline tabel, aturan meter, dan NTP. v0.2.0-alpha menambahkan bahasa, informasi build, dan CI. v0.3.0-alpha menambahkan akun, historian pribadi, revisi, serta tes database. v0.3.1-alpha menambahkan halaman login dan memperjelas teks tabel. Versi bersumber dari `package.json`. Kerjakan di `codex/vX.Y.Z-alpha`, lolos Quality gate, lalu gunakan PR. Simpan milestone melalui branch rilis dan annotated tag yang tidak dipindahkan. Jangan force push. Lihat [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), dan [panduan rilis](docs/releases.md).
+v0.1.0-alpha menyimpan baseline tabel, aturan meter, dan NTP. v0.2.0-alpha menambahkan bahasa, informasi build, dan CI. v0.3.0-alpha menambahkan akun, historian pribadi, revisi, serta tes database. v0.3.1-alpha menambahkan halaman login dan memperjelas teks tabel. v0.4.0-alpha menambahkan ekspor reading listrik mentah. v0.5.0-alpha menambahkan reading gas JRE, interpolasi suhu, perhitungan refill, dan penyimpanan historian. Versi bersumber dari `package.json`. Kerjakan di `codex/vX.Y.Z-alpha`, lolos Quality gate, lalu gunakan PR. Simpan milestone melalui branch rilis dan annotated tag yang tidak dipindahkan. Jangan force push. Lihat [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), dan [panduan rilis](docs/releases.md).
 
 Footer dan build-info.json menunjukkan versi, commit, waktu build, serta hash sumber. NTP berjalan asynchronous melalui Cloudflare dengan Google sebagai cadangan dan cache server 60 detik. Kegagalan ditampilkan dan input manual tetap tersedia. Waktu pencatatan memakai server database; clock browser bukan waktu audit terautentikasi.
 

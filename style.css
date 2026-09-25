@@ -1434,3 +1434,92 @@ dialog textarea {
 #raw-export-status:not(:empty) {
   color: var(--amber);
 }
+
+.gas-card {
+  margin-top: 18px;
+  padding: 20px;
+}
+.gas-card h2 {
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+.gas-card p {
+  line-height: 1.5;
+}
+.gas-entry {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #c5cdd5;
+  border-radius: 10px;
+  min-width: 0;
+  color: #111;
+}
+.gas-entry legend {
+  font-size: 18px;
+  font-weight: 650;
+  padding: 0 6px;
+}
+.gas-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 14px 0;
+}
+.gas-observation {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+.gas-observation label {
+  display: grid;
+  gap: 6px;
+  font-size: 16px;
+  color: #111;
+}
+.gas-observation input {
+  width: 100%;
+  min-width: 0;
+  font-size: 18px;
+  color: #000;
+  background: #fff;
+}
+.gas-observation output {
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+}
+.gas-error,
+.gas-status {
+  color: #a62020;
+  font-size: 14px;
+}
+.gas-error:empty,
+.gas-status:empty {
+  display: none;
+}
+.gas-help,
+.gas-source {
+  font-size: 14px;
+  color: #384655;
+}
+.gas-refill {
+  min-width: 0;
+  margin: 18px 0;
+  padding: 12px;
+  border: 1px solid #c5cdd5;
+  border-radius: 8px;
+}
+.gas-total {
+  display: block;
+  font-size: 19px;
+  font-weight: 650;
+  margin-top: 12px;
+}
+@media (max-width: 540px) {
+  .gas-pair {
+    grid-template-columns: 1fr;
+  }
+  .gas-card {
+    padding: 14px;
+  }
+}

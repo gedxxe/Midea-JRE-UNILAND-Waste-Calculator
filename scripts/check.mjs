@@ -64,6 +64,7 @@ for (const file of PUBLIC_FILES) {
     }
   }
 }
-assert.ok(size < 220000, `Static assets grew to ${size} bytes; review the footprint.`);
+// Includes the four bundled tank calibration tables; no browser dependencies added.
+assert.ok(size < 250000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);
