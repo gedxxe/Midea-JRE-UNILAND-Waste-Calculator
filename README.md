@@ -1,6 +1,6 @@
 # Midea Daily Energy Report
 
-**v0.3.1-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.4.0-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
@@ -15,6 +15,8 @@ Enter cumulative readings in a table, check consumption, and copy the official f
 3. Check the report. Combined reports require matching start and end dates for both factories.
 4. **Save draft** keeps both factories locally. Signed-in drafts use this tab's sessionStorage and are cleared on logout or account change. Existing guest drafts are preserved separately and never uploaded automatically.
 5. **Save report** sends the current factory to your account. The server validates and recalculates it. Historian lets you view the original saved output, choose a revision, and load readings into the editor. Saving an edited report adds a revision. A conflicting edit from another device is rejected so you can reopen the latest version.
+
+**Export Raw Table Data** below the meter table opens a copy-ready list for the current factory. Choose start or end readings (end is the default). The export uses that column’s date in DD/MM/YYYY, preserves entered decimal precision, and lists ratios without multiplying or subtracting readings. Only electricity meter rows are included, including direct MWh Trafo readings and electric meters whose equipment name mentions LPG. Daily gas, water, and other utility fields are excluded. Every selected meter must be filled or explicitly marked `-`; the other reading column is not required. UNILAND follows the current 28-row table, without inventing additional meters or equipment.
 
 Accounts are created by an admin; there is no public sign-up or Google login. Temporary passwords must be changed at first login. Admins can create, reset, disable, and enable operator accounts. Admin status does not grant access to another account's reports. Without email, account recovery requires an admin; admin recovery uses a local maintenance command.
 
@@ -58,6 +60,7 @@ Vercel uses **Other**, repository root, Node 22.x, and `vercel.json`. The Git in
 | ------------ | ------------------------------------------------------------------------ |
 | v0.1.0-alpha | Preserved baseline: tables, meter rules, asynchronous NTP                |
 | v0.2.0-alpha | Language switch, build metadata, version history, CI                     |
+| v0.4.0-alpha | Copy raw cumulative readings by column and date, without utilities       |
 | v0.3.1-alpha | Login screen before entry, larger text and black meter-table labels      |
 | v0.3.0-alpha | Username/password accounts, private historian, revisions, database tests |
 
@@ -80,6 +83,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 3. 检查报告。合并报告要求两家工厂的开始与结束日期一致。
 4. **保存草稿**在本地保留两家工厂的数据。登录后的草稿使用当前标签页的 sessionStorage，退出或切换账户时清除。旧访客草稿单独保留，不会自动上传。
 5. **保存报告**将当前工厂的数据提交到账户。服务器重新验证和计算。历史报告可查看原始输出、选择修订版、载入读数。修改后保存会新增修订版；其他设备已修改时，系统拒绝覆盖并要求重新打开最新版本。
+
+表格下方的**导出原始表格数据**可复制当前工厂的读数清单。选择开始或结束读数，默认为结束列；日期使用所选列的 DD/MM/YYYY。保留输入的小数精度，比例仅作标注，不相乘或计算差值。包含电表数据及直接以 MWh 读取的变压器数据，也保留名称含 LPG 的电表；不导出日常燃气、用水等辅助数据。所选列必须全部填写，无数据时明确填 `-`，另一列无需填写。UNILAND 按当前 28 行表格导出，不虚构其他电表或设备。
 
 管理员创建账户，没有公开注册或 Google 登录。首次登录必须修改临时密码。管理员可创建、重置、停用及启用操作员账户，但不能查看其他用户的私人报告。没有邮件恢复流程；操作员联系管理员，管理员通过本地维护命令恢复账户。
 
@@ -118,6 +123,8 @@ Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi 
 3. Periksa laporan. Laporan gabungan membutuhkan tanggal awal dan akhir yang sama.
 4. **Simpan draft** menyimpan kedua pabrik secara lokal. Draft akun memakai sessionStorage di tab ini dan dibersihkan saat logout atau berganti akun. Draft tamu lama disimpan terpisah dan tidak diunggah otomatis.
 5. **Simpan laporan** mengirim pabrik yang sedang dibuka ke akun. Server memvalidasi dan menghitung ulang reading. Historian menampilkan laporan asli, pilihan revisi, dan tombol untuk memuat reading. Koreksi menghasilkan revisi baru. Perubahan bersamaan dari perangkat lain ditolak agar pengguna membuka revisi terbaru.
+
+**Ekspor Data Mentah Tabel** di bawah tabel membuka daftar siap salin untuk pabrik yang sedang dipilih. Pilih reading awal atau akhir (default akhir). Tanggal mengikuti kolom terpilih dengan format DD/MM/YYYY. Presisi desimal dipertahankan; ratio hanya ditulis, tanpa perkalian atau pengurangan. Hanya baris meter listrik yang diekspor, termasuk Trafo dalam MWh dan meter listrik bernama LPG. Isian utility harian seperti gas dan air tidak ikut. Semua meter pada kolom terpilih harus diisi atau diberi `-`; kolom satunya tidak wajib lengkap. UNILAND mengikuti 28 baris tabel saat ini, tanpa membuat rincian meter atau equipment tambahan.
 
 Admin membuat akun, tanpa registrasi publik atau login Google. Password sementara wajib diganti saat login pertama. Admin bisa membuat, mereset, menonaktifkan, dan mengaktifkan akun operator. Admin tidak mendapat akses ke laporan pribadi akun lain. Pemulihan operator melalui admin; pemulihan admin menggunakan perintah pemeliharaan lokal.
 

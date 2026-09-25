@@ -1,3 +1,4 @@
+import { createRawExport } from './ui/raw-export.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
@@ -38,11 +39,13 @@ let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
 const current = () => drafts[plant];
+const rawExport = createRawExport({ current, toast });
 let accountUser = null;
 let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  rawExport.reset();
   try {
     if (accountUser) sessionStorage.removeItem(draftKey());
   } catch {
@@ -229,6 +232,7 @@ function renderResults() {
       ? t('copyWarnings')
       : t('copyPeriod');
   filterTable();
+  rawExport.render();
 }
 async function copyText(text) {
   try {

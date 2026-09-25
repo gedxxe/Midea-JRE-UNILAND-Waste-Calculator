@@ -1,3 +1,4 @@
+import { exportRawReading } from '../../raw-export.js';
 import { test, expect } from '@playwright/test';
 import { exampleDraft } from '../../examples.js';
 import { calculateDraft, generateFullIndonesiaReport } from '../../engine.js';
@@ -196,4 +197,73 @@ test('version, attribution, public allowlist, and responsive layout are visible'
     await expect(page.locator('#language-select')).toBeVisible();
   }
   await page.screenshot({ path: testInfo.outputPath('page.png'), fullPage: true });
+});
+
+test('raw export copies one dated reading column independently of consumption and language', async ({
+  page,
+  context,
+}, testInfo) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  for (const plant of ['JRE', 'UNILAND']) {
+    await page.locator('[data-plant="' + plant + '"]').click();
+    await page.locator('#load-example').click();
+    const draft = exampleDraft(plant);
+    await cell(page).fill('');
+    await expect(page.locator('#copy-report')).toBeDisabled();
+    await page.locator('#open-raw-export').click();
+    await expect(page.locator('#raw-export-side')).toHaveValue('end');
+    const raw = exportRawReading(draft, 'end').text;
+    await expect(page.locator('#raw-export-preview')).toHaveValue(raw);
+    await page.locator('#copy-raw-export').click();
+    await expect
+      .poll(() =>
+        page.evaluate(async () => (await navigator.clipboard.readText()).replaceAll('\r\n', '\n')),
+      )
+      .toBe(raw);
+    if (plant === 'JRE')
+      await page.screenshot({ path: testInfo.outputPath('raw-export.png'), fullPage: true });
+    await page.locator('#raw-export-side').selectOption('start');
+    await expect(page.locator('#copy-raw-export')).toBeDisabled();
+    await expect(page.locator('#raw-export-preview')).toHaveValue('');
+    await expect(page.locator('#raw-export-status')).toContainText('Total, meter 1');
+    await page.locator('[data-close-dialog="raw-export-dialog"]').click();
+    await cell(page).fill(draft.rows[0].start[0]);
+    await page.locator('#open-raw-export').click();
+    await page.locator('#raw-export-side').selectOption('start');
+    await expect(page.locator('#raw-export-preview')).toHaveValue(
+      exportRawReading(draft, 'start').text,
+    );
+    await page.locator('[data-close-dialog="raw-export-dialog"]').click();
+    for (const language of ['zh-CN', 'id', 'en']) {
+      await page.locator('#language-select').selectOption(language);
+      await page.locator('#open-raw-export').click();
+      await expect(page.locator('#raw-export-preview')).toHaveValue(raw);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await page.locator('[data-close-dialog="raw-export-dialog"]').click();
+    }
+  }
+});
+
+test('raw export offers manual copy when clipboard access is denied', async ({ page }) => {
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new Error('Clipboard denied in test');
+        },
+      },
+    }),
+  );
+  await page.locator('#load-example').click();
+  await page.locator('#open-raw-export').click();
+  await page.locator('#copy-raw-export').click();
+  await expect(page.locator('#raw-export-preview')).toBeFocused();
+  const selected = await page
+    .locator('#raw-export-preview')
+    .evaluate((el) => el.value.slice(el.selectionStart, el.selectionEnd));
+  expect(selected).toBe(exportRawReading(exampleDraft('JRE'), 'end').text);
+  await expect(page.locator('#toast')).toContainText('Clipboard unavailable');
 });

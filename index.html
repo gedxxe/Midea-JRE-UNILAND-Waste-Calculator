@@ -298,6 +298,13 @@
                 >
               </div>
             </section>
+            <button
+              id="open-raw-export"
+              class="button secondary full raw-export-button"
+              data-i18n="exportRaw"
+            >
+              Export Raw Table Data
+            </button>
             <details class="card utilities-card">
               <summary>
                 <span
@@ -430,6 +437,44 @@
         </details>
       </div>
     </main>
+    <dialog id="raw-export-dialog" aria-labelledby="raw-export-title">
+      <div class="dialog-heading">
+        <h2 id="raw-export-title" data-i18n="exportRaw">Export Raw Table Data</h2>
+        <button class="text-button" data-close-dialog="raw-export-dialog" data-i18n="close">
+          Close
+        </button>
+      </div>
+      <p data-i18n="rawExportHint">
+        Copy cumulative electricity readings for this factory. No consumption calculation, gas, or
+        water data.
+      </p>
+      <p id="raw-export-example" class="notice warning" data-i18n="exampleNote" hidden>
+        Example data for testing. Replace it with actual readings before making an operational
+        report.
+      </p>
+      <label
+        ><span data-i18n="rawReadingSide">Reading to export</span>
+        <select id="raw-export-side">
+          <option value="start" data-i18n="startReading">Start reading</option>
+          <option value="end" data-i18n="endReading" selected>End reading</option>
+        </select>
+      </label>
+      <p id="raw-export-status" role="status"></p>
+      <label
+        ><span id="raw-export-plant"></span>
+        <textarea
+          id="raw-export-preview"
+          rows="12"
+          readonly
+          spellcheck="false"
+          aria-label="Raw reading preview"
+          data-i18n-aria-label="rawPreview"
+        ></textarea>
+      </label>
+      <button id="copy-raw-export" class="button primary full" data-i18n="copyRaw" disabled>
+        Copy raw data
+      </button>
+    </dialog>
     <dialog id="import-dialog">
       <form method="dialog">
         <div class="dialog-heading">

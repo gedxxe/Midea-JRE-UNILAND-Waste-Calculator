@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.3.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.4.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -21,6 +21,7 @@ Current milestone: v0.3.1-alpha in package.json. Preserved baseline: v0.1.0-alph
 
 - Show a login screen first. Keep the reporting workspace hidden until a session is established and any required initial password change is complete. Logout returns to login. Preserve old guest drafts separately without exposing a guest entry mode.
 - Use larger entry text and black equipment labels/readings for readability, including on mobile.
+- Export raw cumulative electricity readings as a copy-ready factory/date/numbered list, with ratio annotations only and no consumption calculations or daily utilities. Choose start/end column; default to end and use that column’s date. The user confirmed UNILAND export follows the current 28-row website table, not the different 26-row example. Do not fabricate component meters or omit Trafo readings.
 - Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
 - Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
 - User chose power-engineer for the first admin username. Generate temporary credentials locally; require a password change at first login.
@@ -33,6 +34,7 @@ New user instructions override older choices here. Update this decision record, 
 
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
 - engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.
+- raw-export.js validates and formats one raw reading column independently of calculated reports. ui/raw-export.js owns its preview/copy dialog and clears it on account changes.
 - importer.js parses and validates a complete input before applying it. Never partially apply a failed paste.
 - storage.js validates version-4 drafts. Preserve existing drafts across UI/language releases.
 - app.js coordinates events and state. ui/table.js owns table rendering and navigation; ui/dom.js provides DOM helpers; ui/build-info.js displays release metadata.
