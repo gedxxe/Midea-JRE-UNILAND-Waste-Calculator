@@ -24,6 +24,19 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   );
+  await page.route('**/api/auth', (route) =>
+    route.fulfill({
+      json: {
+        available: true,
+        user: {
+          id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352',
+          username: 'test-operator',
+          role: 'operator',
+          mustChangePassword: false,
+        },
+      },
+    }),
+  );
   await page.goto('/');
   await expect(page.locator('#clock-status')).toHaveText('NTP synchronized');
 });

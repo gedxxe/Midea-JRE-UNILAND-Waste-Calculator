@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.3.1-alpha - 2026-09-25
+
+- Show a compact login screen before opening the reading workspace, including during session checks and required initial password changes.
+- Return to login after logout or an expired session; keep existing guest drafts separate.
+- Add a retry action when the account service cannot be reached.
+- Increase entry text size and use black table labels, equipment names, and readings. Preserve report output and calculation rules.
+
 ## v0.3.0-alpha - 2026-09-24
 
 - Add username/password accounts with Argon2id, database sessions, required initial password change, account recovery, and shared rate limits.

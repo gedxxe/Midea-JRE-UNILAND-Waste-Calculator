@@ -2,7 +2,7 @@
 
 ## Configuration
 
-The static calculator remains usable without database configuration. Account APIs fail closed when configuration or PostgreSQL is unavailable. Never infer that a build or a logged-in UI proves database access.
+The opening screen requires sign-in before showing the reading workspace. A required initial password change also keeps the workspace hidden. Without database configuration, show an account-service error and a retry action; there is no guest entry mode. Existing guest drafts remain preserved in localStorage. This screen transition does not replace server-side authentication or report ownership checks. Account APIs fail closed when configuration or PostgreSQL is unavailable. Never infer that a build or a logged-in UI proves database access.
 
 - DATABASE_URL: runtime PostgreSQL connection, preferably Neon pooled.
 - AUTH_SECRET: at least 32 cryptographically random characters, used to hash persistent rate-limit identifiers.
