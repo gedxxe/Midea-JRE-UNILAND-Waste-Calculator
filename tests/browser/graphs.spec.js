@@ -86,7 +86,7 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
   const state = await setup(page);
   const report = await page.locator('#report-preview').inputValue();
   await page.locator('#open-graphs').click();
-  await expect(page.locator('#graph-status')).toContainText('5 saved reports');
+  await expect(page.locator('#graph-status')).toContainText('5 saved periods');
   const cards = page.locator('.graph-card'),
     first = cards.first();
   await expect(cards).toHaveCount(9);
@@ -197,7 +197,7 @@ test('account changes invalidate pending graphs and isolate saved layouts', asyn
   await page.locator('#load-example').click();
   await page.locator('#open-graphs').click();
   await expect(page.locator('.graph-card')).toHaveCount(9);
-  await expect(page.locator('#graph-status')).toContainText('5 saved reports');
+  await expect(page.locator('#graph-status')).toContainText('5 saved periods');
   expect(state.errors).toEqual([]);
 });
 
@@ -252,5 +252,59 @@ test('clipboard denial keeps PNG download available', async ({ page }) => {
   await first.locator('[data-graph-copy]').click();
   await expect(page.locator('#toast')).toContainText('Allow clipboard access');
   await expect(first.locator('[data-graph-export="png"]')).toBeEnabled();
+  expect(state.errors).toEqual([]);
+});
+
+test('imported consumption stays labelled and a newer release does not overwrite the open draft', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.route('**/api/graphs?**', (r) =>
+    r.fulfill({
+      json: {
+        plant: 'JRE',
+        start: '2026-09-01',
+        end: '2026-09-30',
+        records: [
+          {
+            id: 'imported',
+            source: 'excel',
+            sourceLabel: 'synthetic.xlsx · JRE!C4:T4',
+            revision: null,
+            startDate: '2026-09-01',
+            endDate: '2026-09-03',
+            days: 2,
+            values: { w1: 200, w2: 0 },
+            overlap: false,
+            superseded: false,
+          },
+        ],
+      },
+    }),
+  );
+  await page.locator('#open-graphs').click();
+  const first = page.locator('.graph-card').first();
+  await expect(first.locator('circle')).toHaveCount(2);
+  await first.locator('.graph-data summary').click();
+  await expect(first.locator('table')).toContainText('Excel history');
+  await expect(first.locator('table')).toContainText('synthetic.xlsx');
+  await expect(first.locator('table')).toContainText('48 h');
+  await page.locator('[data-close-dialog="graphs-dialog"]').click();
+  const draft = await page.locator('#report-preview').inputValue();
+  const version = await page.locator('#app-version').textContent();
+  await page.route('**/build-info.json', (r) =>
+    r.fulfill({
+      json: {
+        schemaVersion: 1,
+        version: '0.99.0-alpha',
+        sourceHash: 'changed',
+        commit: 'a'.repeat(40),
+      },
+    }),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.locator('#update-notice')).toBeVisible();
+  await expect(page.locator('#app-version')).toHaveText(version);
+  await expect(page.locator('#report-preview')).toHaveValue(draft);
   expect(state.errors).toEqual([]);
 });

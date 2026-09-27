@@ -47,6 +47,7 @@ export const RUNTIME_FILES = [
   'server/reports.js',
   'server/report-data.js',
   'migrations/001_accounts_reports.sql',
+  'migrations/002_consumption_history.sql',
   'server/ntp.js',
   'server/log.js',
   'vercel.json',

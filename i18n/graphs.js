@@ -1,4 +1,16 @@
 export const graphMessages = {
+  graphSource: ['Source', '来源', 'Sumber'],
+  graphImported: ['Excel history', 'Excel 历史数据', 'Histori Excel'],
+  graphReplaced: [
+    'Covered by a saved report',
+    '已由保存的报告覆盖',
+    'Sudah tercakup laporan tersimpan',
+  ],
+  graphSuperseded: [
+    '{count} imported periods are covered by saved reports and are not plotted.',
+    '{count} 个导入时段已由保存的报告覆盖，不绘制。',
+    '{count} periode impor sudah tercakup laporan tersimpan dan tidak diplot.',
+  ],
   graphCopy: ['Copy graph', '复制图表', 'Copy grafik'],
   graphCopied: [
     'Graph copied as a 4000 px PNG. Paste it into your document or chat.',
@@ -18,9 +30,9 @@ export const graphMessages = {
   graphFactory: ['Factory', '工厂', 'Pabrik'],
   graphs: ['Graphs', '图表', 'Grafik'],
   graphHint: [
-    'Build charts from your saved energy reports. Unsaved table edits are not included. Refresh reads the latest revisions.',
-    '根据个人已保存的能耗报告绘图。未保存的修改不计入。刷新会读取最新修订。',
-    'Buat grafik dari energy report yang tersimpan di akunmu. Perubahan tabel yang belum disimpan belum masuk grafik. Refresh mengambil revisi terbaru.',
+    'Build charts from your saved energy reports and imported consumption history. Unsaved table edits are not included. Refresh reads the latest revisions.',
+    '根据个人已保存的能耗报告和导入的用量历史绘图。未保存的修改不计入。刷新会读取最新修订。',
+    'Buat grafik dari energy report dan histori konsumsi impor yang tersimpan di akunmu. Perubahan tabel yang belum disimpan belum masuk grafik. Refresh mengambil revisi terbaru.',
   ],
   graphStart: ['From report date', '报告开始日期', 'Dari tanggal laporan'],
   graphEnd: ['To report date', '报告结束日期', 'Sampai tanggal laporan'],
@@ -40,14 +52,14 @@ export const graphMessages = {
   graphUnit: ['Unit', '单位', 'Satuan'],
   graphVariables: ['Variables / legend', '变量 / 图例', 'Variabel / legend'],
   graphEmpty: [
-    'No saved reports in this date range. Save reports to your historian first.',
-    '此日期范围内没有已保存报告。请先保存到历史记录。',
-    'Belum ada laporan tersimpan pada rentang tanggal ini. Simpan laporan ke historian dahulu.',
+    'No saved reports in this date range. Save reports to your historian first, or import historical consumption.',
+    '此日期范围内没有记录。请先保存报告或导入历史用量。',
+    'Belum ada data pada rentang ini. Simpan laporan atau impor histori konsumsi dahulu.',
   ],
   graphReady: [
-    '{count} saved reports loaded. Charts use each report’s latest revision.',
-    '已加载 {count} 份报告，图表使用每份报告的最新修订。',
-    '{count} laporan tersimpan dimuat. Grafik memakai revisi terbaru setiap laporan.',
+    '{count} saved periods loaded. Charts use the latest report revisions and imported history.',
+    '已加载 {count} 个时段，使用最新报告修订和导入历史。',
+    '{count} periode tersimpan dimuat. Grafik memakai revisi terbaru laporan dan histori impor.',
   ],
   graphLoading: ['Loading saved reports…', '正在加载已保存报告…', 'Memuat laporan tersimpan…'],
   graphError: [

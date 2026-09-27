@@ -76,6 +76,7 @@ export function createGraphs({ current, request, toast }) {
       for (const [key, count] of [
         ['graphMulti', data.records.filter((r) => r.days > 1).length],
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
+        ['graphSuperseded', data.records.filter((r) => r.superseded).length],
       ])
         if (count) $('graph-warnings').append(node('p', t(key, { count }), 'notice warning'));
     renderCards();
@@ -276,7 +277,8 @@ export function createGraphs({ current, request, toast }) {
         const chosen = GRAPH_METRICS[plant].filter((m) => config.series.includes(m.key));
         const valid = config.series.length && config.titleEn.trim() && config.titleZh.trim();
         const usable = data?.records.some(
-          (r) => !r.overlap && chosen.some((m) => Number.isFinite(r.values[m.key])),
+          (r) =>
+            !r.overlap && !r.superseded && chosen.some((m) => Number.isFinite(r.values[m.key])),
         );
         exports.forEach((b) => (b.disabled = !valid || !usable || loading));
         prompt.textContent = valid ? '' : t('graphSelect');
@@ -295,7 +297,7 @@ export function createGraphs({ current, request, toast }) {
           header = node('tr');
         for (const label of [
           t('graphPeriod'),
-          t('graphRevision'),
+          t('graphSource'),
           ...chosen.map((m) => m.label + ' (' + m.unit + ')'),
         ])
           header.append(node('th', label));
@@ -313,9 +315,18 @@ export function createGraphs({ current, request, toast }) {
                 ' 08:00 (' +
                 record.days * 24 +
                 ' h)' +
-                (record.overlap ? ' · ' + t('graphExcluded') : ''),
+                (record.overlap
+                  ? ' · ' + t('graphExcluded')
+                  : record.superseded
+                    ? ' · ' + t('graphReplaced')
+                    : ''),
             ),
-            node('td', String(record.revision)),
+            node(
+              'td',
+              record.source === 'excel'
+                ? t('graphImported') + ' · ' + record.sourceLabel
+                : t('graphRevision') + ' ' + record.revision,
+            ),
           );
           for (const metric of chosen)
             row.append(node('td', formatNumber(record.values[metric.key], 8)));

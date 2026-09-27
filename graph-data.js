@@ -44,14 +44,35 @@ export function graphValues(snapshot, plant) {
   });
   return Object.fromEntries(GRAPH_METRICS[plant].map((m) => [m.key, values[m.key] ?? null]));
 }
-export function graphRecords(rows, plant) {
+export function graphRecords(rows, plant, history = []) {
   const records = rows.map((row) => ({
     id: row.id,
     revision: row.revision,
     startDate: row.start_date,
     endDate: row.end_date,
     values: graphValues(row.snapshot, plant),
+    source: 'report',
   }));
+  for (const row of history) {
+    const superseded = records.some(
+      (r) => r.source === 'report' && r.startDate < row.end_date && row.start_date < r.endDate,
+    );
+    records.push({
+      id: row.id,
+      revision: null,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      source: 'excel',
+      sourceLabel: row.source_name + ' · ' + row.source_sheet + '!' + row.source_range,
+      superseded,
+      values: Object.fromEntries(
+        GRAPH_METRICS[plant].map((m) => [
+          m.key,
+          Number.isFinite(row.metric_values?.[m.key]) ? row.metric_values[m.key] : null,
+        ]),
+      ),
+    });
+  }
   // Keep every latest revision in the response. Overlapping periods remain visible
   // in the data table, but neither is plotted as an unambiguous daily observation.
   records.sort(
@@ -60,6 +81,7 @@ export function graphRecords(rows, plant) {
   const overlaps = new Set();
   for (let i = 0; i < records.length; i++)
     for (let j = i + 1; j < records.length && records[j].startDate < records[i].endDate; j++) {
+      if (records[i].superseded || records[j].superseded) continue;
       overlaps.add(i);
       overlaps.add(j);
     }
@@ -75,7 +97,7 @@ export function graphSegments(records, key) {
     previous = null;
   for (const row of records) {
     const value = row.values[key];
-    if (row.overlap || row.days < 1 || !Number.isFinite(value)) {
+    if (row.overlap || row.superseded || row.days < 1 || !Number.isFinite(value)) {
       if (segment.length) segments.push(segment);
       segment = [];
       previous = null;

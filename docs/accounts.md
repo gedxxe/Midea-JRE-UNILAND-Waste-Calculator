@@ -30,6 +30,7 @@ Migrations/bootstrap use a privileged database connection. For the API, create a
 - SELECT, INSERT, UPDATE on users and reports.
 - SELECT, INSERT, UPDATE, DELETE on sessions and rate_limits.
 - SELECT, INSERT on report_revisions and audit_events.
+- SELECT only on consumption_history and consumption_imports after migration 002. Maintenance imports use a separate privileged connection; no web import or runtime write grant is added.
 
 For local setup, node scripts/runtime-role.mjs --apply creates this role, verifies its grants, and updates .env.local: DATABASE_URL becomes the restricted connection and DATABASE_MIGRATION_URL retains the maintenance connection. It refuses to overwrite an existing role or existing separated credentials. Run it separately for each environment using that environment’s local credentials.
 

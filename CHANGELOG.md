@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.7.0-alpha - 2026-09-27
+
+- Add private imported consumption history for graphs, preserving workbook source references and combined periods without fabricating cumulative readings.
+- Add a maintenance import with dry-run plans, explicit owner selection, atomic writes, duplicate detection and existing-report precedence. Runtime access to imported history is read-only.
+- Label imported graph values and keep future saved reports authoritative. Add migration 002, import validation, database ownership/idempotency tests and browser coverage.
+- Embed the loaded build identity in HTML and show an update notice when a newer release is available. Never reload an unsaved draft automatically or label an old page with a newer deployment version.
+
 ## v0.6.0-alpha - 2026-09-27
 
 - Add configurable energy graphs with 9 JRE and 7 UNILAND workbook presets, bilingual titles and department names, and confirmed Window A/B legend aliases.

@@ -255,8 +255,8 @@ export function renderGraph(config, { plant, start, end, records }) {
               p.endDate +
               ' 08:00 WIB | ' +
               p.days * 24 +
-              ' h | revision ' +
-              p.revision,
+              ' h | ' +
+              (p.source === 'excel' ? 'Excel history / Excel 历史数据' : 'revision ' + p.revision),
           ),
         );
         svg.append(mark);

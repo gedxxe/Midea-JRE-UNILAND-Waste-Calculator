@@ -1,4 +1,4 @@
-import { mkdir, copyFile, writeFile, rm } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, readFile, rm } from 'node:fs/promises';
 import { resolve, dirname, relative } from 'node:path';
 import { PUBLIC_FILES } from './assets.mjs';
 import { buildInfo, root } from './build-info.mjs';
@@ -13,5 +13,14 @@ for (const file of PUBLIC_FILES) {
   await copyFile(resolve(root, file), target);
 }
 const metadata = await buildInfo();
+const html = await readFile(resolve(output, 'index.html'), 'utf8');
+const packed = JSON.stringify(metadata)
+  .replaceAll('&', '&amp;')
+  .replaceAll('"', '&quot;')
+  .replaceAll('<', '&lt;');
+await writeFile(
+  resolve(output, 'index.html'),
+  html.replace('</head>', '<meta name="app-build" content="' + packed + '" />\n</head>'),
+);
 await writeFile(resolve(output, 'build-info.json'), JSON.stringify(metadata, null, 2) + '\n');
 console.log(JSON.stringify({ event: 'build.complete', ...metadata }));

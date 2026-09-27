@@ -1,3 +1,4 @@
+import { importHistory } from '../../server/history-import.js';
 import { graphsHandler } from '../../server/graphs.js';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -96,6 +97,14 @@ after(async () => {
   }
   try {
     await transaction(db, async (client) => {
+      await client.query(
+        'DELETE FROM meter_app.consumption_history WHERE owner_id=ANY($1::uuid[])',
+        [ids],
+      );
+      await client.query(
+        'DELETE FROM meter_app.consumption_imports WHERE owner_id=ANY($1::uuid[])',
+        [ids],
+      );
       await client.query('DELETE FROM meter_app.report_revisions WHERE actor_id=ANY($1::uuid[])', [
         ids,
       ]);
@@ -271,6 +280,95 @@ test('graphs use only the current owner latest revisions and validate the date r
     'latest unavailable result must not reuse an older total',
   );
 });
+test('historical imports are atomic, idempotent, owner-scoped and preserve existing reports', async () => {
+  const input = {
+    version: 1,
+    sourceName: 'synthetic.xlsx',
+    sourceSha256: 'b'.repeat(64),
+    records: [
+      {
+        plant: 'JRE',
+        startDate: '2026-09-01',
+        endDate: '2026-09-03',
+        values: { w0: 12, w1: 0 },
+        sheet: 'JRE',
+        row: 4,
+        range: 'C4:T4',
+      },
+      {
+        plant: 'JRE',
+        startDate: exampleDraft('JRE').startDate,
+        endDate: exampleDraft('JRE').endDate,
+        values: { w0: 99 },
+        sheet: 'JRE',
+        row: 5,
+        range: 'C5:T5',
+      },
+    ],
+  };
+  const plan = await importHistory(db, { username: operator.name, input });
+  assert.equal(plan.toImport, 1);
+  assert.equal(plan.skipped, 1);
+  assert.equal(
+    (
+      await db.query(
+        'SELECT count(*)::int AS n FROM meter_app.consumption_history WHERE owner_id=$1',
+        [operator.id],
+      )
+    ).rows[0].n,
+    0,
+  );
+  await assert.rejects(
+    () => importHistory(db, { username: operator.name, input, apply: true, expectedPlan: 'stale' }),
+    /IMPORT_PLAN_CHANGED/,
+  );
+  const applied = await importHistory(db, {
+    username: operator.name,
+    input,
+    apply: true,
+    expectedPlan: plan.planHash,
+  });
+  assert.equal(applied.imported, 1);
+  assert.equal(
+    (
+      await importHistory(db, {
+        username: operator.name,
+        input,
+        apply: true,
+        expectedPlan: plan.planHash,
+      })
+    ).alreadyImported,
+    true,
+  );
+  const path = '/api/graphs?plant=JRE&start=2026-09-01&end=2026-09-30';
+  const own = await call(path, { actor: operator });
+  const imported = own.value.records.find((r) => r.source === 'excel');
+  assert.equal(imported.values.w0, 12);
+  assert.equal(imported.values.w1, 0);
+  assert.equal(imported.values.r0, null);
+  assert.equal(imported.days, 2);
+  assert.equal(imported.revision, null);
+  assert.equal(
+    (await call(path, { actor: other })).value.records.some((r) => r.source === 'excel'),
+    false,
+  );
+  assert.equal((await call('/api/reports', { actor: operator })).value.reports.length, 1);
+  const conflicting = structuredClone(input);
+  conflicting.sourceSha256 = 'c'.repeat(64);
+  conflicting.records[0].values.w0 = 13;
+  await assert.rejects(
+    () => importHistory(db, { username: operator.name, input: conflicting }),
+    /IMPORT_CONFLICT/,
+  );
+  const permission = (
+    await runtime.query(
+      "SELECT has_table_privilege(current_user,'meter_app.consumption_history','SELECT') AS can_read,has_table_privilege(current_user,'meter_app.consumption_history','INSERT') AS can_write",
+    )
+  ).rows[0];
+  assert.equal(permission.can_read, true);
+  if (runtime !== db) assert.equal(permission.can_write, false);
+});
+
 test('admin account management does not grant access to private reports; reset and disable revoke sessions', async () => {
   assert.equal((await call('/api/users', { actor: operator })).status, 403);
   const name = 'test-' + randomUUID().slice(0, 12);
