@@ -1,4 +1,19 @@
 export const graphMessages = {
+  graphYAxis: ['Y-axis scale', 'Y 轴范围', 'Skala sumbu Y'],
+  graphAuto: ['Auto', '自动', 'Otomatis'],
+  graphManual: ['Manual', '手动', 'Manual'],
+  graphMinimum: ['Minimum', '最小值', 'Minimum'],
+  graphMaximum: ['Maximum', '最大值', 'Maksimum'],
+  graphAxisHint: [
+    'Auto starts at zero. Manual changes only the view; values outside the bounds are clipped and marked in the exported chart.',
+    '自动范围从零开始。手动仅改变显示范围；范围外数值会被裁剪，并在导出图中注明。',
+    'Otomatis dimulai dari nol. Manual hanya mengubah tampilan; nilai di luar batas tidak terlihat dan diberi keterangan pada grafik ekspor.',
+  ],
+  graphAxisInvalid: [
+    'Use bounds from 0 to 10^15, spanning at least 0.00000001, or choose Auto.',
+    '范围须在 0 至 10^15 之间，且跨度至少为 0.00000001；也可选择自动。',
+    'Isi batas dari 0 hingga 10^15 dengan selisih minimal 0,00000001, atau pilih Otomatis.',
+  ],
   graphSource: ['Source', '来源', 'Sumber'],
   graphImported: ['Excel history', 'Excel 历史数据', 'Histori Excel'],
   graphReplaced: [
@@ -13,9 +28,9 @@ export const graphMessages = {
   ],
   graphCopy: ['Copy graph', '复制图表', 'Copy grafik'],
   graphCopied: [
-    'Graph copied as a 4000 px PNG. Paste it into your document or chat.',
-    '已复制 4000 像素 PNG，可粘贴到文档或聊天中。',
-    'Grafik PNG 4000 px tersalin. Tempel ke dokumen atau chat.',
+    'Graph copied as PNG, at least 4000 px wide. Paste it into your document or chat.',
+    '已复制至少 4000 像素宽的 PNG，可粘贴到文档或聊天中。',
+    'Grafik PNG tersalin, lebar minimal 4000 px. Tempel ke dokumen atau chat.',
   ],
   graphCopyError: [
     'Could not copy the image. Allow clipboard access or download PNG.',
@@ -23,9 +38,9 @@ export const graphMessages = {
     'Gambar belum berhasil disalin. Izinkan akses clipboard atau unduh PNG.',
   ],
   graphImageNote: [
-    'Copy and PNG: 4000 px wide, 400 DPI metadata. Up to 10 inches (25.4 cm) wide at 400 DPI; pasted size and metadata depend on the destination app.',
-    '复制和 PNG：宽 4000 像素，400 DPI 元数据。以 400 DPI 使用时宽度可达 25.4 厘米；粘贴尺寸和元数据由目标应用决定。',
-    'Copy dan PNG: lebar 4000 px, metadata 400 DPI. Lebar maksimal 25,4 cm pada 400 DPI; ukuran tempel dan metadata mengikuti aplikasi tujuan.',
+    'Every period is labelled. Scroll wide charts horizontally. Copy and PNG: 4000–16384 px wide with 400 DPI metadata; use shorter ranges for readable printouts. Pasted size depends on the destination app.',
+    '每个时段均显示标签。宽图可横向滚动。复制和 PNG：宽 4000–16384 像素，400 DPI 元数据；打印时建议选择较短时段。粘贴尺寸由目标应用决定。',
+    'Setiap periode memiliki label. Geser grafik lebar secara horizontal. Copy dan PNG: lebar 4000–16384 px dengan metadata 400 DPI; pilih rentang lebih pendek agar cetakan terbaca. Ukuran tempel mengikuti aplikasi tujuan.',
   ],
   graphFactory: ['Factory', '工厂', 'Pabrik'],
   graphs: ['Graphs', '图表', 'Grafik'],

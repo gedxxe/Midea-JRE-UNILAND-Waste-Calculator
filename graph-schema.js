@@ -1,4 +1,5 @@
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
+import { validYAxis } from './graph-axis.js';
 export const DEPARTMENTS = {
   branch: ['Branch', '厂区'],
   injection: ['Injection Molding', '注塑'],
@@ -116,6 +117,7 @@ export function defaultGraphs(plant) {
       titleZh: zh + '用电量',
       unit: 'kWh',
       series: indices.map((i) => 'w' + i),
+      yAxis: { mode: 'auto' },
     };
   });
 }
@@ -130,6 +132,8 @@ export function validGraph(plant, input) {
   )
     return null;
   const metrics = GRAPH_METRICS[plant];
+  const yAxis = input.yAxis ?? { mode: 'auto' };
+  if (!validYAxis(yAxis)) return null;
   if (!metrics?.some((m) => m.unit === input.unit)) return null;
   if (
     input.series.length > metrics.length ||
@@ -142,5 +146,9 @@ export function validGraph(plant, input) {
     titleZh: input.titleZh,
     unit: input.unit,
     series: [...input.series],
+    yAxis:
+      yAxis.mode === 'manual'
+        ? { mode: 'manual', min: yAxis.min, max: yAxis.max }
+        : { mode: 'auto' },
   };
 }

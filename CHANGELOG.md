@@ -2,12 +2,16 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.8.0-alpha - 2026-09-28
+
+- Show every consumption-period label, including combined dates, with wider scrollable charts and matching exports.
+- Add Auto/Manual Y-axis bounds per chart, with visible notes for clipped values.
+- Add a weekend/combined-period picker with an explicit final-reading preview.
+
 ## v0.7.0-alpha - 2026-09-27
 
-- Add private imported consumption history for graphs, preserving workbook source references and combined periods without fabricating cumulative readings.
-- Add a maintenance import with dry-run plans, explicit owner selection, atomic writes, duplicate detection and existing-report precedence. Runtime access to imported history is read-only.
-- Label imported graph values and keep future saved reports authoritative. Add migration 002, import validation, database ownership/idempotency tests and browser coverage.
-- Embed the loaded build identity in HTML and show an update notice when a newer release is available. Never reload an unsaved draft automatically or label an old page with a newer deployment version.
+- Support private consumption-history imports in graphs, preserving period totals and existing saved reports.
+- Identify the loaded page version and show a save-draft/reload notice when an update is available.
 
 ## v0.6.0-alpha - 2026-09-27
 

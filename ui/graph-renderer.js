@@ -1,7 +1,8 @@
 import { pngResolution } from '../png.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
 import { graphSegments } from '../graph-data.js';
-import { dayDiff, shiftDate, formatNumber } from '../numbers.js';
+import { formatNumber } from '../numbers.js';
+import { periodLabel, graphYAxis } from '../graph-axis.js';
 const NS = 'http://www.w3.org/2000/svg';
 const COLORS = [
   '#165a9c',
@@ -20,20 +21,13 @@ function svgNode(name, attrs = {}, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-function dateLabel(date) {
-  return date.slice(8, 10) + '/' + date.slice(5, 7);
-}
-function tickStep(max) {
-  if (max <= 0) return 1;
-  const rough = max / 5,
-    power = 10 ** Math.floor(Math.log10(rough)),
-    scaled = rough / power;
-  return (scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10) * power;
-}
 export function renderGraph(config, { plant, start, end, records }) {
   const metrics = config.series
     .map((key) => GRAPH_METRICS[plant].find((m) => m.key === key))
     .filter(Boolean);
+  const periods = records.filter((r) => !r.overlap && !r.superseded && r.days > 0);
+  const chartWidth = Math.max(1000, periods.length * 30 + 260);
+  const positions = new Map(periods.map((r, i) => [r.startDate + '/' + r.endDate, i]));
   const canvas = document.createElement('canvas'),
     context = canvas.getContext('2d');
   function width(text, size = 14, bold = false) {
@@ -57,14 +51,21 @@ export function renderGraph(config, { plant, start, end, records }) {
     ...wrap(config.titleEn, 910, 18, true),
     ...wrap(config.titleZh, 910, 18, true),
   ];
+  const labelDepth =
+    Math.ceil(
+      Math.max(
+        40,
+        ...periods.map((p) => width(periodLabel(p.startDate, p.endDate), 14) * Math.SQRT1_2),
+      ),
+    ) + 20;
   const top = 32 + titleLines.length * 24 + 30,
     left = 100,
-    right = 960,
+    right = chartWidth - 160,
     plotHeight = 310,
     bottom = top + plotHeight;
   const legend = [];
   let lx = left,
-    ly = bottom + 74;
+    ly = bottom + labelDepth + 64;
   metrics.forEach((metric) => {
     const lines = wrap(metric.label, 250, 13),
       span = Math.min(285, Math.max(...lines.map((t) => width(t, 13))) + 42);
@@ -78,8 +79,8 @@ export function renderGraph(config, { plant, start, end, records }) {
   const height = ly + Math.max(1, ...legend.map((l) => l.lines.length)) * 16 + 48;
   const svg = svgNode('svg', {
     xmlns: NS,
-    viewBox: '0 0 1000 ' + height,
-    width: 1000,
+    viewBox: '0 0 ' + chartWidth + ' ' + height,
+    width: chartWidth,
     height,
     role: 'img',
     'aria-label': config.titleEn + ' / ' + config.titleZh,
@@ -93,13 +94,13 @@ export function renderGraph(config, { plant, start, end, records }) {
       'Saved energy records. Missing values are gaps. Overlapping periods are not plotted.',
     ),
   );
-  svg.append(svgNode('rect', { width: 1000, height, fill: '#ffffff' }));
+  svg.append(svgNode('rect', { width: chartWidth, height, fill: '#ffffff' }));
   titleLines.forEach((line, i) =>
     svg.append(
       svgNode(
         'text',
         {
-          x: 500,
+          x: chartWidth / 2,
           y: 29 + i * 24,
           'text-anchor': 'middle',
           'font-size': 18,
@@ -110,11 +111,12 @@ export function renderGraph(config, { plant, start, end, records }) {
       ),
     ),
   );
-  const multi = records.some((r) => r.days > 1);
+  svg.style.minWidth = chartWidth + 'px';
+  const multi = periods.some((r) => r.days > 1);
   svg.append(
     svgNode(
       'text',
-      { x: 500, y: top - 16, 'text-anchor': 'middle', 'font-size': 13, fill: '#333333' },
+      { x: chartWidth / 2, y: top - 16, 'text-anchor': 'middle', 'font-size': 13, fill: '#333333' },
       plant +
         ' | ' +
         start +
@@ -124,18 +126,20 @@ export function renderGraph(config, { plant, start, end, records }) {
     ),
   );
   const segments = metrics.map((metric) => ({ metric, parts: graphSegments(records, metric.key) }));
-  const maximum = Math.max(
-    0,
-    ...segments.flatMap((s) => s.parts.flatMap((p) => p.map((v) => v.value))),
+  const axis = graphYAxis(
+    segments.flatMap((s) => s.parts.flatMap((p) => p.map((v) => v.value))),
+    config.yAxis,
   );
-  const step = tickStep(maximum),
-    yMax = Math.max(step, Math.ceil(maximum / step) * step);
-  const span = Math.max(1, dayDiff(start, end));
-  const x = (date) => left + (right - left) * (dayDiff(start, date) / span);
-  const y = (value) => bottom - (plotHeight * value) / yMax;
-  for (let i = 0; i <= Math.round(yMax / step); i++) {
-    const value = i * step,
-      py = y(value);
+  if (!axis) return svg;
+  const x = (period) =>
+    left +
+    (right - left) *
+      (periods.length > 1
+        ? positions.get(period.startDate + '/' + period.endDate) / (periods.length - 1)
+        : 0.5);
+  const y = (value) => bottom - (plotHeight * (value - axis.min)) / (axis.max - axis.min);
+  for (const value of axis.ticks) {
+    const py = y(value);
     svg.append(
       svgNode('line', {
         x1: left,
@@ -150,21 +154,18 @@ export function renderGraph(config, { plant, start, end, records }) {
       svgNode(
         'text',
         { x: left - 10, y: py + 4, 'text-anchor': 'end', 'font-size': 13, fill: '#222222' },
-        value >= 1e7 ? value.toExponential(1) : formatNumber(value, 8),
+        value >= 1e7 || (value > 0 && value < 0.0001)
+          ? value.toExponential(2)
+          : formatNumber(value, 8),
       ),
     );
   }
-  const tickCount = Math.min(7, span);
-  const days = [
-    ...new Set(Array.from({ length: tickCount + 1 }, (_, i) => Math.round((i * span) / tickCount))),
-  ];
-  for (const day of days) {
-    const date = shiftDate(start, day);
-    if (date > end) continue;
+  for (const period of periods) {
+    const px = x(period);
     svg.append(
       svgNode('line', {
-        x1: x(date),
-        x2: x(date),
+        x1: px,
+        x2: px,
         y1: bottom,
         y2: bottom + 5,
         stroke: '#222222',
@@ -174,8 +175,16 @@ export function renderGraph(config, { plant, start, end, records }) {
     svg.append(
       svgNode(
         'text',
-        { x: x(date), y: bottom + 23, 'text-anchor': 'middle', 'font-size': 13, fill: '#222222' },
-        dateLabel(date),
+        {
+          x: px,
+          y: bottom + 18,
+          transform: 'rotate(45 ' + px + ' ' + (bottom + 18) + ')',
+          'text-anchor': 'start',
+          'font-size': 14,
+          fill: '#222222',
+          'data-period-label': '',
+        },
+        periodLabel(period.startDate, period.endDate),
       ),
     );
   }
@@ -210,21 +219,46 @@ export function renderGraph(config, { plant, start, end, records }) {
       'text',
       {
         x: (left + right) / 2,
-        y: bottom + 47,
+        y: bottom + labelDepth + 35,
         'text-anchor': 'middle',
         'font-size': 14,
         fill: '#111111',
       },
-      'Report start date / 报告开始日期',
+      'Consumption period / 用量时段',
     ),
   );
+  const clipId = 'plot-' + crypto.randomUUID();
+  const defs = svgNode('defs'),
+    clip = svgNode('clipPath', { id: clipId });
+  clip.append(svgNode('rect', { x: left, y: top, width: right - left, height: plotHeight }));
+  defs.append(clip);
+  const plot = svgNode('g', { 'clip-path': 'url(#' + clipId + ')', 'data-plot': '' });
+  svg.append(defs, plot);
+  if (config.yAxis?.mode === 'manual')
+    svg.append(
+      svgNode(
+        'text',
+        {
+          x: left,
+          y: top - 2,
+          'font-size': 12,
+          fill: '#70420b',
+          'data-axis-note': '',
+        },
+        'Manual Y: ' +
+          formatNumber(axis.min, 8) +
+          ' to ' +
+          formatNumber(axis.max, 8) +
+          (axis.clipped ? ' | Values outside view / 部分数值超出范围' : ''),
+      ),
+    );
   segments.forEach(({ metric, parts }, index) => {
     const color = COLORS[index % COLORS.length],
       dash = ['none', '5 3', '2 3', '8 3 2 3', '10 4'][Math.floor(index / COLORS.length) % 5];
     for (const part of parts) {
-      svg.append(
+      plot.append(
         svgNode('path', {
-          d: part.map((p, i) => (i ? 'L' : 'M') + x(p.startDate) + ' ' + y(p.value)).join(' '),
+          d: part.map((p, i) => (i ? 'L' : 'M') + x(p) + ' ' + y(p.value)).join(' '),
           fill: 'none',
           stroke: color,
           'stroke-width': 1.4,
@@ -234,7 +268,7 @@ export function renderGraph(config, { plant, start, end, records }) {
       );
       for (const p of part) {
         const mark = svgNode('circle', {
-          cx: x(p.startDate),
+          cx: x(p),
           cy: y(p.value),
           r: 2.4,
           fill: color,
@@ -259,7 +293,7 @@ export function renderGraph(config, { plant, start, end, records }) {
               (p.source === 'excel' ? 'Excel history / Excel 历史数据' : 'revision ' + p.revision),
           ),
         );
-        svg.append(mark);
+        plot.append(mark);
       }
     }
     const item = legend[index];
@@ -321,8 +355,9 @@ export async function graphPng(svg) {
     img.src = url;
     await img.decode();
     const canvas = document.createElement('canvas');
-    canvas.width = 4000;
-    canvas.height = Number(svg.getAttribute('height')) * 4;
+    const sourceWidth = Number(svg.getAttribute('width'));
+    canvas.width = Math.min(16384, Math.max(4000, sourceWidth * 4));
+    canvas.height = Math.round((Number(svg.getAttribute('height')) * canvas.width) / sourceWidth);
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
