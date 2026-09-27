@@ -1615,6 +1615,18 @@ dialog textarea {
   min-width: 740px;
   height: auto;
 }
+.combined-period {
+  padding: 12px 16px;
+  border: 1px solid #d4dade;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #fff;
+  color: #111;
+}
+.combined-period summary {
+  cursor: pointer;
+  font-weight: 600;
+}
 .graph-prompt {
   color: #70420b;
 }

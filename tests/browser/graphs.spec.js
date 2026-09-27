@@ -144,7 +144,13 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
   expect(clipboard).toEqual({ width: 4000, pixel: [255, 255, 255, 255] });
   await page.locator('#graph-end').fill('2026-09-09');
   await expect(first.locator('svg')).toContainText('2026-09-01 to 2026-09-09');
-  await expect(first.locator('svg text').filter({ hasText: /^09\/09$/ })).toHaveCount(1);
+  await expect(first.locator('[data-period-label]')).toHaveText([
+    '01/09',
+    '02/09',
+    '03/09',
+    '05/09',
+    '06/09',
+  ]);
   await page.locator('#graph-end').fill('2026-09-30');
   await expect(first.locator('svg')).toContainText('2026-09-01 to 2026-09-30');
   await first.screenshot({ path: info.outputPath('graph-card.png') });
@@ -306,5 +312,113 @@ test('imported consumption stays labelled and a newer release does not overwrite
   await expect(page.locator('#update-notice')).toBeVisible();
   await expect(page.locator('#app-version')).toHaveText(version);
   await expect(page.locator('#report-preview')).toHaveValue(draft);
+  expect(state.errors).toEqual([]);
+});
+
+test('all period labels survive monthly exports and manual Y limits change only the view', async ({
+  page,
+}, info) => {
+  const state = await setup(page);
+  const { shiftDate } = await import('../../numbers.js');
+  const rows = Array.from({ length: 30 }, (_, i) => i + 1)
+    .filter((d) => d !== 19 && d !== 20)
+    .map((d) => ({
+      id: 'period-' + d,
+      source: 'excel',
+      revision: null,
+      sourceLabel: 'synthetic.xlsx',
+      startDate: shiftDate('2026-09-01', d - 1),
+      endDate: d === 18 ? '2026-09-21' : shiftDate('2026-09-01', d),
+      days: d === 18 ? 3 : 1,
+      overlap: false,
+      values: { w1: 100 + d, w2: 0 },
+    }));
+  await page.route('**/api/graphs?**', (r) =>
+    r.fulfill({ json: { plant: 'JRE', start: '2026-09-01', end: '2026-09-30', records: rows } }),
+  );
+  await page.locator('#open-graphs').click();
+  const first = page.locator('.graph-card').first();
+  const labels = first.locator('[data-period-label]');
+  await expect(labels).toHaveCount(28);
+  await expect(labels.filter({ hasText: /^18–20\/09$/ })).toHaveCount(1);
+  await expect(labels.filter({ hasText: /^19\/09$/ })).toHaveCount(0);
+  await expect(first.locator('circle[data-series="w1"]')).toHaveCount(28);
+  const original = await first
+    .locator('circle[data-series="w1"]')
+    .first()
+    .locator('title')
+    .textContent();
+  const downloaded = page.waitForEvent('download');
+  await first.locator('[data-graph-export="svg"]').click();
+  const file = info.outputPath('all-periods.svg');
+  await (await downloaded).saveAs(file);
+  const svg = await readFile(file, 'utf8');
+  expect(svg.match(/data-period-label/g)).toHaveLength(28);
+  expect(svg).toContain('18–20/09');
+  const dimensions = await first.locator('svg').evaluate((el) => ({
+    width: Number(el.getAttribute('width')),
+    height: Number(el.getAttribute('height')),
+  }));
+  const pngDownload = page.waitForEvent('download');
+  await first.locator('[data-graph-export="png"]').click();
+  const pngFile = info.outputPath('all-periods.png');
+  await (await pngDownload).saveAs(pngFile);
+  const bytes = await readFile(pngFile);
+  expect(bytes.readUInt32BE(16)).toBe(Math.max(4000, dimensions.width * 4));
+  expect(bytes.readUInt32BE(20)).toBe(
+    Math.round((dimensions.height * bytes.readUInt32BE(16)) / dimensions.width),
+  );
+  await first.locator('.graph-settings summary').click();
+  await first.locator('[data-graph-axis]').selectOption('manual');
+  await expect(first.locator('[data-graph-export="svg"]')).toBeDisabled();
+  await first.locator('[data-graph-bound="min"]').fill('100');
+  await first.locator('[data-graph-bound="max"]').fill('150');
+  await expect(first.locator('[data-axis-note]')).toContainText('Values outside view');
+  await expect(first.locator('circle[data-series="w1"]').first().locator('title')).toHaveText(
+    original,
+  );
+  await first.locator('[data-graph-bound="max"]').fill('50');
+  await expect(first.locator('[data-graph-export="svg"]')).toBeDisabled();
+  await expect(first.locator('svg')).toHaveCount(0);
+  await first.locator('[data-graph-bound="max"]').fill('150');
+  await first.locator('.graph-settings summary').click();
+  await first.screenshot({ path: info.outputPath('all-periods-card.png') });
+  await expect(page.locator('#graphs-dialog')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.reload();
+  await page.locator('#open-graphs').click();
+  await expect(first.locator('[data-axis-note]')).toContainText('100 to 150');
+  await first.locator('.graph-settings summary').click();
+  await first.locator('[data-graph-axis]').selectOption('auto');
+  await expect(first.locator('[data-axis-note]')).toHaveCount(0);
+  await expect(first.locator('circle[data-series="w1"]').first().locator('title')).toHaveText(
+    original,
+  );
+  expect(state.errors).toEqual([]);
+});
+
+test('weekend picker keeps inclusive consumption dates as one unchanged reading delta', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  const total = await page.locator('#main-total').textContent();
+  await page.locator('.combined-period summary').click();
+  await page.locator('#combined-start').fill('2026-09-18');
+  await page.locator('#combined-last').fill('2026-09-20');
+  await expect(page.locator('#combined-preview')).toContainText('18–20/09');
+  await expect(page.locator('#combined-preview')).toContainText('2026-09-21 08:00');
+  await page.locator('#combined-apply').click();
+  await expect(page.locator('#start-date')).toHaveValue('2026-09-18');
+  await expect(page.locator('#end-date')).toHaveValue('2026-09-21');
+  await expect(page.locator('#main-total')).toHaveText(total);
+  const report = await page.locator('#report-preview').inputValue();
+  for (const language of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(language);
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+    await expect(page.locator('#combined-preview')).toContainText('18–20/09');
+  }
+  await page.locator('#combined-last').fill('2026-09-17');
+  await expect(page.locator('#combined-apply')).toBeDisabled();
+  await expect(page.locator('#end-date')).toHaveValue('2026-09-21');
   expect(state.errors).toEqual([]);
 });

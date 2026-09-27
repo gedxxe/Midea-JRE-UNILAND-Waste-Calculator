@@ -1,4 +1,5 @@
 import { createGraphs } from './ui/graphs.js';
+import { createPeriodPicker } from './ui/period.js';
 import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
 import { createAccounts } from './ui/accounts.js';
@@ -41,6 +42,16 @@ let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
 const current = () => drafts[plant];
+const periodPicker = createPeriodPicker({
+  current,
+  apply(start, end) {
+    rememberUndo();
+    current().startDate = start;
+    current().endDate = end;
+    mountPlant();
+    changed();
+  },
+});
 const rawExport = createRawExport({ current, toast });
 const gasPanel = createGasPanel({
   current,
@@ -120,6 +131,7 @@ function changed() {
   renderResults();
 }
 function mountPlant() {
+  periodPicker.sync();
   $('start-date').value = current().startDate;
   $('end-date').value = current().endDate;
   $('table-plant').textContent = plant;
@@ -282,6 +294,7 @@ async function syncTime() {
     }
     $('start-date').value = current().startDate;
     $('end-date').value = current().endDate;
+    periodPicker.sync();
     renderResults();
   }
   renderClock();
@@ -349,6 +362,7 @@ for (const [id, field] of [
 ]) {
   $(id).addEventListener('change', () => {
     current()[field] = $(id).value;
+    periodPicker.sync();
     changed();
   });
 }

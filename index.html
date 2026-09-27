@@ -216,6 +216,27 @@
           </div>
         </section>
         <p class="notice" id="period-note">The report uses the start date.</p>
+        <details class="combined-period">
+          <summary data-i18n="combinedPeriod">Weekend / combined period</summary>
+          <p data-i18n="combinedHint">
+            Choose the consumption dates covered by one reading. The final meter reading is at 08:00
+            the following morning. This keeps one period total.
+          </p>
+          <div class="graph-toolbar">
+            <label
+              ><span data-i18n="combinedStart">First consumption date</span
+              ><input type="date" id="combined-start" min="2000-01-01" max="2099-12-30"
+            /></label>
+            <label
+              ><span data-i18n="combinedLast">Last consumption date (included)</span
+              ><input type="date" id="combined-last" min="2000-01-01" max="2099-12-30"
+            /></label>
+            <button id="combined-apply" class="button secondary" data-i18n="combinedApply">
+              Use this period
+            </button>
+          </div>
+          <p id="combined-preview" aria-live="polite"></p>
+        </details>
         <div id="example-note" class="notice warning" hidden>
           <span data-i18n="exampleNote"
             >Example data for testing. Replace it with actual readings before making an operational

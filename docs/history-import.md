@@ -4,7 +4,7 @@ This maintenance workflow imports already-calculated consumption, not cumulative
 
 ## Reference scope
 
-The user chose September 2026 JRE and UNILAND from the supplied Daily Energy Data & Graph Monitoring workbook. Read the two September sheets, including cached formula values, and validate the current graph worksheet mappings. Do not import April–August, monthly summaries or UNUSED. Rows with no explicit numeric source readings are blank templates even if a SUM formula returns zero. Preserve explicit zeros in populated rows. A label such as 11–13 means one consumption total for those dates, stored from September 11 at 08:00 to September 14 at 08:00 WIB. Never divide or interpolate it into artificial daily values.
+Confirm the target owner and selected sheets/date range for each import. Read cached formula values and validate the graph worksheet mappings. Exclude unrequested sheets and summaries. Rows with no explicit numeric source readings are blank templates even if a SUM formula returns zero. Preserve explicit zeros in populated rows. A label such as 11–13 means one consumption total for those dates, stored from September 11 at 08:00 to September 14 at 08:00 WIB. Never divide or interpolate it into artificial daily values.
 
 ## Data contract
 

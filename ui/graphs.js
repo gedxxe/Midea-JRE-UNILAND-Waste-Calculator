@@ -9,6 +9,7 @@ import {
 } from '../graph-schema.js';
 import { dayDiff, validDate, formatNumber } from '../numbers.js';
 import { renderGraph, exportGraph, copyGraph } from './graph-renderer.js';
+import { validYAxis } from '../graph-axis.js';
 export function createGraphs({ current, request, toast }) {
   let user = null,
     epoch = 0,
@@ -25,7 +26,13 @@ export function createGraphs({ current, request, toast }) {
   function store() {
     if (!user) return;
     try {
-      localStorage.setItem(key(), JSON.stringify({ version: 1, layouts }));
+      const saved = Object.fromEntries(
+        Object.entries(layouts).map(([plant, configs]) => [
+          plant,
+          configs.map((c) => ({ ...c, yAxis: validYAxis(c.yAxis) ? c.yAxis : { mode: 'auto' } })),
+        ]),
+      );
+      localStorage.setItem(key(), JSON.stringify({ version: 1, layouts: saved }));
     } catch {
       toast(t('graphLayoutError'));
     }
@@ -157,6 +164,11 @@ export function createGraphs({ current, request, toast }) {
       unit.addEventListener('change', () => {
         config.unit = unit.value;
         config.series = [];
+        config.yAxis = { mode: 'auto' };
+        axisMode.value = 'auto';
+        axisMin.value = '';
+        axisMax.value = '';
+        axisMin.disabled = axisMax.disabled = true;
         store();
         variables();
         draw();
@@ -164,6 +176,56 @@ export function createGraphs({ current, request, toast }) {
       unitLabel.append(unit);
       fields.append(unitLabel);
       controls.append(fields);
+      const axisFields = node('div', undefined, 'graph-toolbar');
+      const axisMode = node('select'),
+        axisMin = node('input'),
+        axisMax = node('input');
+      axisMode.dataset.graphAxis = '';
+      for (const mode of ['auto', 'manual']) {
+        const option = node('option', t(mode === 'auto' ? 'graphAuto' : 'graphManual'));
+        option.value = mode;
+        axisMode.append(option);
+      }
+      config.yAxis ??= { mode: 'auto' };
+      axisMode.value = config.yAxis.mode;
+      for (const [input, name] of [
+        [axisMin, 'min'],
+        [axisMax, 'max'],
+      ]) {
+        input.type = 'number';
+        input.step = 'any';
+        input.min = '0';
+        input.max = '1000000000000000';
+        input.dataset.graphBound = name;
+        input.value = config.yAxis[name] ?? '';
+        input.disabled = config.yAxis.mode !== 'manual';
+      }
+      for (const [input, label] of [
+        [axisMode, 'graphYAxis'],
+        [axisMin, 'graphMinimum'],
+        [axisMax, 'graphMaximum'],
+      ]) {
+        const wrapper = node('label', t(label));
+        wrapper.append(input);
+        axisFields.append(wrapper);
+      }
+      function updateAxis() {
+        axisMin.disabled = axisMax.disabled = axisMode.value !== 'manual';
+        config.yAxis =
+          axisMode.value === 'auto'
+            ? { mode: 'auto' }
+            : {
+                mode: 'manual',
+                min: axisMin.valueAsNumber,
+                max: axisMax.valueAsNumber,
+              };
+        if (validYAxis(config.yAxis)) store();
+        draw();
+      }
+      axisMode.addEventListener('change', updateAxis);
+      axisMin.addEventListener('input', updateAxis);
+      axisMax.addEventListener('input', updateAxis);
+      controls.append(axisFields, node('p', t('graphAxisHint'), 'graph-help'));
       const options = node('fieldset', undefined, 'graph-options');
       controls.append(options);
       function variables() {
@@ -275,19 +337,21 @@ export function createGraphs({ current, request, toast }) {
       $('graph-cards').append(card);
       function draw() {
         const chosen = GRAPH_METRICS[plant].filter((m) => config.series.includes(m.key));
-        const valid = config.series.length && config.titleEn.trim() && config.titleZh.trim();
+        const axisValid = validYAxis(config.yAxis);
+        const valid =
+          config.series.length && config.titleEn.trim() && config.titleZh.trim() && axisValid;
         const usable = data?.records.some(
           (r) =>
             !r.overlap && !r.superseded && chosen.some((m) => Number.isFinite(r.values[m.key])),
         );
         exports.forEach((b) => (b.disabled = !valid || !usable || loading));
-        prompt.textContent = valid ? '' : t('graphSelect');
+        prompt.textContent = !axisValid ? t('graphAxisInvalid') : valid ? '' : t('graphSelect');
         frame.replaceChildren();
         svg = null;
-        if (data) {
+        if (data && axisValid) {
           svg = renderGraph(config, data);
           frame.append(svg);
-        } else
+        } else if (!data)
           frame.append(
             node('p', loading ? t('graphLoading') : status ? t(status) : t('graphEmpty')),
           );

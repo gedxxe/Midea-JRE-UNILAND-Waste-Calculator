@@ -4,7 +4,35 @@ import { graphValues, graphRecords, graphSegments } from '../graph-data.js';
 import { defaultGraphs, GRAPH_METRICS, validGraph } from '../graph-schema.js';
 import { reportSnapshot } from '../server/report-data.js';
 import { exampleDraft } from '../examples.js';
+import { periodLabel, graphYAxis } from '../graph-axis.js';
 const saved = (plant = 'JRE') => reportSnapshot(exampleDraft(plant));
+
+test('period labels show every included consumption date without treating the final reading as another day', () => {
+  assert.equal(periodLabel('2026-09-18', '2026-09-21'), '18–20/09');
+  assert.equal(periodLabel('2026-09-18', '2026-09-19'), '18/09');
+  assert.equal(periodLabel('2026-09-30', '2026-10-03'), '30/09–02/10');
+  assert.equal(periodLabel('2026-12-31', '2027-01-03'), '31/12/26–02/01/27');
+  assert.equal(periodLabel('2028-02-28', '2028-03-01'), '28–29/02');
+});
+
+test('manual axis bounds validate saved layouts, retain exact limits and detect clipped values', () => {
+  const values = [null, 0, 150, 210];
+  const auto = graphYAxis(values);
+  assert.equal(auto.min, 0);
+  assert.ok(auto.max >= 210);
+  const manual = graphYAxis(values, { mode: 'manual', min: 100, max: 200 });
+  assert.equal(manual.min, 100);
+  assert.equal(manual.max, 200);
+  assert.equal(manual.clipped, true);
+  assert.equal(manual.ticks.length, 6);
+  assert.equal(graphYAxis(values, { mode: 'manual', min: 10, max: 10 }), null);
+  assert.equal(graphYAxis(values, { mode: 'manual', min: 0, max: 1e-100 }), null);
+  const old = { ...defaultGraphs('JRE')[0] };
+  delete old.yAxis;
+  assert.deepEqual(validGraph('JRE', old).yAxis, { mode: 'auto' });
+  assert.equal(validGraph('JRE', { ...old, yAxis: { mode: 'manual', min: -1, max: 10 } }), null);
+  assert.deepEqual(values, [null, 0, 150, 210]);
+});
 test('workbook graph presets keep 9 JRE and 7 UNILAND charts and correct Window aliases', () => {
   assert.equal(defaultGraphs('JRE').length, 9);
   assert.equal(defaultGraphs('UNILAND').length, 7);
