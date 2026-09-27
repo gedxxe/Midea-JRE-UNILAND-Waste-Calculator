@@ -1,3 +1,4 @@
+import { graphMessages } from './graphs.js';
 import { gasMessages } from './gas.js';
 import { accountMessages } from './accounts.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
@@ -5,6 +6,7 @@ import { accountMessages } from './accounts.js';
 export const catalog = {
   ...accountMessages,
   ...gasMessages,
+  ...graphMessages,
   exportRaw: ['Export Raw Table Data', '导出原始表格数据', 'Ekspor Data Mentah Tabel'],
   rawExportHint: [
     'Copy cumulative electricity readings for this factory. No consumption calculation, gas, or water data.',

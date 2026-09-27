@@ -1,7 +1,13 @@
 import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
 
-export function createAccounts({ current, loadDraft, identityChanged, toast }) {
+export function createAccounts({
+  current,
+  loadDraft,
+  identityChanged,
+  toast,
+  reportSaved = () => {},
+}) {
   let user = null;
   let available = false;
   let ready = false;
@@ -231,6 +237,7 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
           ...(samePeriod ? { id: previous.id, baseRevision: previous.revision } : {}),
         };
         const result = await request('/api/reports', { body });
+        reportSaved();
         links[draft.plantKey] = {
           id: result.id,
           revision: result.revision,
@@ -424,5 +431,5 @@ export function createAccounts({ current, loadDraft, identityChanged, toast }) {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void refresh();
   });
-  return { start: refresh, render, getUser: () => user };
+  return { start: refresh, render, request, getUser: () => user };
 }
