@@ -1,3 +1,4 @@
+import { createGraphs } from './ui/graphs.js';
 import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
 import { createAccounts } from './ui/accounts.js';
@@ -47,11 +48,13 @@ const gasPanel = createGasPanel({
   rememberUndo,
   rebuildUtilities: () => table.buildUtilities(),
 });
+let graphs;
 let accountUser = null;
 let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  graphs?.reset(user);
   rawExport.reset();
   try {
     if (accountUser) sessionStorage.removeItem(draftKey());
@@ -87,6 +90,7 @@ function accountChanged(user) {
 const accounts = createAccounts({
   current,
   identityChanged: accountChanged,
+  reportSaved: () => graphs?.saved(),
   toast,
   loadDraft(draft) {
     plant = draft.plantKey;
@@ -96,6 +100,7 @@ const accounts = createAccounts({
     changed();
   },
 });
+graphs = createGraphs({ current, request: (...args) => accounts.request(...args), toast });
 function toast(message) {
   $('toast').textContent = message;
   $('toast').hidden = false;
@@ -323,6 +328,7 @@ $('language-select').addEventListener('change', () => {
   mountPlant();
   renderClock();
   accounts.render();
+  graphs.render();
 });
 void showBuildInfo();
 void accounts.start();

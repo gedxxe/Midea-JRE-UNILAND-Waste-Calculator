@@ -1,3 +1,4 @@
+import { graphsHandler } from '../../server/graphs.js';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -28,6 +29,7 @@ let server, origin, admin, operator, other, reportId;
 const routes = {
   '/api/auth': authHandler(() => runtime, env),
   '/api/users': usersHandler(() => runtime, env),
+  '/api/graphs': graphsHandler(() => runtime, env),
   '/api/reports': reportsHandler(() => runtime, env),
 };
 async function call(path, { body, actor, headers = {}, method } = {}) {
@@ -228,6 +230,45 @@ test('concurrent edits keep one winner and preserve the old revision', async () 
   assert.equal(
     (await call('/api/reports?id=' + reportId, { actor: operator })).value.latestRevision,
     2,
+  );
+});
+test('graphs use only the current owner latest revisions and validate the date range', async () => {
+  const path = '/api/graphs?plant=JRE&start=2026-09-01&end=2026-09-30';
+  assert.equal((await call(path)).status, 401);
+  const own = await call(path, { actor: operator });
+  assert.equal(own.status, 200);
+  assert.equal(own.value.records.length, 1);
+  assert.equal(own.value.records[0].id, reportId);
+  assert.equal(own.value.records[0].revision, 2);
+  const foreign = await call(path, { actor: other });
+  assert.equal(foreign.value.records.length, 1);
+  assert.notEqual(foreign.value.records[0].id, reportId);
+  assert.deepEqual((await call(path, { actor: admin })).value.records, []);
+  assert.equal(
+    (await call(path + '&owner_id=' + other.id, { actor: operator })).value.records[0].id,
+    reportId,
+  );
+  assert.equal(
+    (await call('/api/graphs?plant=JRE&start=2026-02-31&end=2026-09-30', { actor: operator }))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await call('/api/graphs?plant=JRE&start=2025-01-01&end=2026-09-30', { actor: operator }))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await call('/api/graphs?plant=JRE&start=2026-10-01&end=2026-10-30', { actor: operator })).value
+      .records.length,
+    0,
+  );
+  const latest = await call('/api/reports?id=' + reportId, { actor: operator });
+  assert.match(latest.value.snapshot.output.reportText, /^1\. Total: -$/m);
+  assert.equal(
+    own.value.records[0].values.r0,
+    null,
+    'latest unavailable result must not reuse an older total',
   );
 });
 test('admin account management does not grant access to private reports; reset and disable revoke sessions', async () => {

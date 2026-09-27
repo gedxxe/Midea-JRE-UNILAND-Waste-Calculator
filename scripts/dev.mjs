@@ -1,3 +1,4 @@
+import graphs from '../api/graphs.js';
 import { PUBLIC_FILES } from './assets.mjs';
 import { buildInfo } from './build-info.mjs';
 import { createServer } from 'node:http';
@@ -15,7 +16,13 @@ if (!process.env.CI && process.env.METER_SKIP_LOCAL_ENV !== '1') {
     if (error.code !== 'ENOENT') throw error;
   }
 }
-const api = { '/api/time': time, '/api/auth': auth, '/api/users': users, '/api/reports': reports };
+const api = {
+  '/api/graphs': graphs,
+  '/api/time': time,
+  '/api/auth': auth,
+  '/api/users': users,
+  '/api/reports': reports,
+};
 const root = resolve(import.meta.dirname, '..');
 const built = process.argv.includes('--built');
 const staticRoot = built ? resolve(root, 'dist') : root;

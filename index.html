@@ -10,7 +10,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"
     />
     <title>Daily Energy Report | Midea</title>
     <link rel="icon" type="image/webp" href="./asset/Midea.webp" />
@@ -159,6 +159,7 @@
           <button id="save-report" class="button primary" data-i18n="saveReport">
             Save report
           </button>
+          <button id="open-graphs" class="button secondary" data-i18n="graphs">Graphs</button>
           <button id="open-history" class="button secondary" data-i18n="history">Historian</button>
           <button id="open-users" class="text-button" data-i18n="manageUsers" hidden>
             Manage accounts
@@ -450,6 +451,36 @@
         </details>
       </div>
     </main>
+    <dialog id="graphs-dialog" aria-labelledby="graphs-title">
+      <div class="dialog-heading">
+        <h2 id="graphs-title" data-i18n="graphs">Graphs</h2>
+        <button class="text-button" data-close-dialog="graphs-dialog" data-i18n="close">
+          Close
+        </button>
+      </div>
+      <p data-i18n="graphHint"></p>
+      <div class="graph-toolbar">
+        <label
+          ><span data-i18n="graphFactory">Factory</span
+          ><select id="graph-plant">
+            <option value="JRE">Branch 1 / JRE / 一厂</option>
+            <option value="UNILAND">Branch 2 / UNILAND / 二厂</option>
+          </select></label
+        >
+        <label><span data-i18n="graphStart"></span><input type="date" id="graph-start" /></label>
+        <label><span data-i18n="graphEnd"></span><input type="date" id="graph-end" /></label>
+        <button id="graph-refresh" class="button primary" data-i18n="graphLoad"></button>
+      </div>
+      <p id="graph-status" role="status"></p>
+      <div id="graph-warnings"></div>
+      <div class="graph-actions">
+        <button id="graph-presets" class="button secondary" data-i18n="graphPresets"></button
+        ><button id="graph-add" class="button secondary" data-i18n="graphAdd"></button>
+      </div>
+      <p class="graph-help" data-i18n="graphLayoutNote"></p>
+      <p class="hint" data-i18n="graphImageNote"></p>
+      <div id="graph-cards"></div>
+    </dialog>
     <dialog id="raw-export-dialog" aria-labelledby="raw-export-title">
       <div class="dialog-heading">
         <h2 id="raw-export-title" data-i18n="exportRaw">Export Raw Table Data</h2>

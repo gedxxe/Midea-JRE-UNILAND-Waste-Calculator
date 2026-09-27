@@ -1523,3 +1523,132 @@ dialog textarea {
     padding: 14px;
   }
 }
+
+#graphs-dialog {
+  width: min(1160px, 96vw);
+  max-width: 1160px;
+  max-height: 94vh;
+  padding: 24px;
+}
+.graph-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin: 18px 0;
+}
+.graph-toolbar label,
+.graph-fields label {
+  display: grid;
+  gap: 6px;
+  color: #111;
+}
+.graph-toolbar input,
+.graph-toolbar select {
+  min-width: 0;
+  max-width: 100%;
+}
+.graph-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0;
+}
+.graph-help {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #37434a;
+}
+.graph-card {
+  border: 1px solid #d4dade;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 24px;
+  background: white;
+  min-width: 0;
+}
+.graph-settings summary,
+.graph-data summary {
+  cursor: pointer;
+  padding: 8px 0;
+  font-weight: 600;
+}
+.graph-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 110px;
+  gap: 12px;
+  margin: 10px 0;
+}
+.graph-fields input {
+  min-width: 0;
+  width: 100%;
+  font-size: 16px;
+  color: black;
+}
+.graph-options {
+  padding: 14px;
+  border: 1px solid #d4dade;
+  min-width: 0;
+}
+.graph-variable-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-bottom: 14px;
+}
+.graph-variable-group strong {
+  flex-basis: 100%;
+  color: #111;
+}
+.graph-variable-group .check-label {
+  color: #111;
+  font-size: 15px;
+}
+.graph-frame {
+  overflow-x: auto;
+  background: #fff;
+}
+.graph-frame svg {
+  display: block;
+  width: 100%;
+  min-width: 740px;
+  height: auto;
+}
+.graph-prompt {
+  color: #70420b;
+}
+.graph-prompt:empty {
+  display: none;
+}
+.graph-data-scroll {
+  overflow-x: auto;
+  max-height: 360px;
+}
+.graph-data table {
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 100%;
+}
+.graph-data th,
+.graph-data td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e0e4e7;
+  text-align: right;
+  white-space: nowrap;
+}
+.graph-data th:first-child,
+.graph-data td:first-child {
+  text-align: left;
+}
+@media (max-width: 700px) {
+  #graphs-dialog {
+    padding: 14px;
+  }
+  .graph-fields {
+    grid-template-columns: 1fr;
+  }
+  .graph-card {
+    padding: 10px;
+  }
+}
