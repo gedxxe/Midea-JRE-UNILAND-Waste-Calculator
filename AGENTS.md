@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.6.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.7.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -31,6 +31,8 @@ Current milestone: v0.6.0-alpha in package.json. Preserved baseline: v0.1.0-alph
 
 - Graph decisions confirmed 2026-09-27: graphs synchronize from saved energy records; default department splits follow the reference workbook (9 JRE, 7 UNILAND). Branch 1 is JRE, Branch 2 is UNILAND. White background, thin lines, bold Arial/Helvetica titles, English/Chinese titles and department names. Operators can choose variables and split charts. User explicitly chose Excel legend aliases Window A = Window and Window B = Dehumidifier, for graphs only. Also provide Copy graph as a high-resolution clipboard image alongside SVG/PNG downloads; date ranges adapt automatically and data tables expand/collapse.
 
+- User requested importing September 2026 JRE and UNILAND consumption from the reference workbook into their confirmed production account. April–August and monthly summaries are excluded. Preserve existing saved reports; skip empty template rows; keep combined dates as full periods. Imported consumption is graph history, not cumulative meter readings or editable factory reports. Never invent a starting meter value from consumption.
+
 New user instructions override older choices here. Update this decision record, README, and changelog when requirements change. Record what was actually decided, not inferred preferences or invented chat memory. Do not store credentials or operational readings in documentation.
 
 ## Architecture
@@ -38,6 +40,7 @@ New user instructions override older choices here. Update this decision record, 
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
 - engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.
 - gas.js owns pure JRE interpolation, event validation and consumption; gas-tables.js contains mass calibration data only. ui/gas.js renders entry; i18n/gas.js owns translations. Read docs/gas.md before changes. Never commit source operational workbooks or readings.
+- server/history-import.js validates owner-scoped maintenance imports and requires a reviewed plan hash before atomic writes. Migration 002 stores immutable import provenance and consumption separately from meter reports. Runtime reads imports only; saved reports supersede imported overlapping periods. Source data stays outside Git and public assets.
 - graph-schema.js owns workbook chart groups and aliases. graph-data.js extracts immutable saved output, preserves null gaps and detects overlapping periods. server/graphs.js reads only the session owner’s latest report revisions. ui/graphs.js owns per-account browser layout settings and clears fetched data on identity changes; ui/graph-renderer.js owns SVG/PNG rendering. Read docs/graphs.md before graph changes. Never recalculate old historian values with the current engine or invent readings for missing dates.
 - raw-export.js validates and formats one raw reading column independently of calculated reports. ui/raw-export.js owns its preview/copy dialog and clears it on account changes.
 - importer.js parses and validates a complete input before applying it. Never partially apply a failed paste.

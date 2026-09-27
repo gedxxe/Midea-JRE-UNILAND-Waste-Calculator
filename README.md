@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.6.0-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.7.0-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+Graphs can also include imported Excel consumption history, labelled with its workbook source. Imports retain combined periods, skip existing saved reports and never invent cumulative readings. Future reports saved normally join the same graph. Historical consumption cannot populate Next day meter readings. Imports are a maintenance operation, not a workbook upload button. See [historical import instructions](docs/history-import.md). An update notice asks you to save your draft and reload when a new release is available; the footer identifies the page actually loaded.
 
 **Graphs** builds charts from your saved energy reports. Select JRE (Branch 1) or UNILAND (Branch 2), choose report dates, then configure variables and English/Chinese titles for each chart. The Excel presets contain 9 JRE and 7 UNILAND charts. JRE legends use Window A for Window and Window B for Dehumidifier. Add, duplicate or remove charts to arrange your own groups. Use **Copy graph** to paste a 4000-pixel PNG into a document or chat (400 DPI metadata; the destination may resize it). The date range adapts the axes, and data tables expand or collapse. Export white-background SVG or 4000-pixel-wide PNG with thin lines and Arial/Helvetica titles. Refresh reads the latest saved revisions; unsaved table edits are not included. Settings stay in this browser per account. Missing values remain gaps, overlapping periods are excluded from plots, and multi-day values remain period totals. See [graph rules and workbook mapping](docs/graphs.md).
 
@@ -64,6 +66,7 @@ Vercel uses **Other**, repository root, Node 22.x, and `vercel.json`. The Git in
 | ------------ | -------------------------------------------------------------------------------- |
 | v0.1.0-alpha | Preserved baseline: tables, meter rules, asynchronous NTP                        |
 | v0.2.0-alpha | Language switch, build metadata, version history, CI                             |
+| v0.7.0-alpha | Private Excel consumption history and safe page-update notice                    |
 | v0.6.0-alpha | Configurable bilingual charts from saved reports, SVG and PNG export             |
 | v0.5.0-alpha | JRE raw gas readings, temperature interpolation, refill accounting and historian |
 | v0.4.0-alpha | Copy raw cumulative readings by column and date, without utilities               |
@@ -79,6 +82,8 @@ Modules: `engine.js`, `numbers.js`, and `worksheet.js` hold pure calculation log
 This is an alpha reporting tool. Scheduled backups, restore drills, runtime monitoring, and independent security review remain deployment responsibilities. See [SECURITY.md](SECURITY.md). Rolling back code does not roll back database data; preserve revisions and use compatible forward migrations.
 
 ## 中文
+
+图表也支持导入的 Excel 用量历史，并显示工作簿来源。导入保留合并时段，跳过已有报告，不虚构累计读数。之后正常保存的报告会接入同一图表。历史用量不能用作下一天的电表起始读数。导入通过维护命令完成，网站没有工作簿上传按钮。参见[历史导入说明](docs/history-import.md)。有新版本时会提示先保存草稿再刷新；页脚显示当前实际加载的版本。
 
 **图表**使用个人已保存的能耗报告。选择 JRE（一厂）或 UNILAND（二厂）及报告日期，为每张图配置变量和中英文标题。Excel 预设包含 9 张 JRE 和 7 张 UNILAND 图表。JRE 图例 Window A 对应 Window，Window B 对应 Dehumidifier。可添加、复制或删除图表，自行分组。**复制图表**可将宽 4000 像素、含 400 DPI 元数据的 PNG 粘贴到文档或聊天中，目标应用可能调整尺寸。日期范围自动调整坐标轴，数据表可展开或折叠。支持白底 SVG 和宽 4000 像素的 PNG，使用细线与 Arial/Helvetica 标题。刷新读取最新已保存修订，未保存的表格修改不计入。设置按账户保存在本浏览器。缺失数据留空，重叠时段不绘制，多日数值保留为时段合计。详见[图表规则与工作簿映射](docs/graphs.md)。
 
@@ -116,13 +121,15 @@ Vercel 使用 Other 预设、仓库根目录和 Node 22.x。Git 集成创建 Pre
 
 ### 版本、维护与限制
 
-v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语言切换、构建信息与 CI；v0.3.0-alpha 增加账户、私人历史报告、修订和数据库测试；v0.3.1-alpha 增加登录首页并改善表格可读性；v0.4.0-alpha 增加原始电表读数导出；v0.5.0-alpha 增加 JRE 原始气体读数、温度插值、补充记录及历史保存；v0.6.0-alpha 增加可配置双语图表、日期筛选和高清图片复制/导出。`package.json` 为版本来源。在 `codex/vX.Y.Z-alpha` 开发，通过 Quality gate 后提交 PR，保留不可修改的发布分支和附注标签，禁止强制推送。参见 [CHANGELOG.md](CHANGELOG.md)、[AGENTS.md](AGENTS.md) 和[发布说明](docs/releases.md)。
+v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语言切换、构建信息与 CI；v0.3.0-alpha 增加账户、私人历史报告、修订和数据库测试；v0.3.1-alpha 增加登录首页并改善表格可读性；v0.4.0-alpha 增加原始电表读数导出；v0.5.0-alpha 增加 JRE 原始气体读数、温度插值、补充记录及历史保存；v0.6.0-alpha 增加可配置双语图表、日期筛选和高清图片复制/导出。v0.7.0-alpha 增加私人 Excel 用量历史和页面更新提示。`package.json` 为版本来源。在 `codex/vX.Y.Z-alpha` 开发，通过 Quality gate 后提交 PR，保留不可修改的发布分支和附注标签，禁止强制推送。参见 [CHANGELOG.md](CHANGELOG.md)、[AGENTS.md](AGENTS.md) 和[发布说明](docs/releases.md)。
 
 页脚及 build-info.json 显示版本、提交、构建时间和源文件哈希。浏览器异步同步 NTP，服务器先查询 Cloudflare，失败时使用 Google，缓存 60 秒。失败状态明确显示，仍可手动输入。数据库记录写入时间，浏览器时钟不是经过认证的审计时钟。
 
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Grafik juga bisa memakai histori konsumsi Excel dengan penanda sumber workbook. Impor mempertahankan periode gabungan, melewati laporan tersimpan yang sudah ada, dan tidak membuat cumulative reading fiktif. Laporan berikutnya yang disimpan normal akan masuk ke grafik yang sama. Histori konsumsi tidak bisa menjadi reading awal untuk Next day. Impor dilakukan lewat perintah maintenance, belum ada tombol upload workbook. Lihat [panduan impor histori](docs/history-import.md). Jika ada versi baru, muncul pemberitahuan untuk menyimpan draft sebelum reload; footer menunjukkan versi halaman yang benar-benar dimuat.
 
 **Grafik** memakai energy report yang tersimpan di akunmu. Pilih JRE (Branch 1) atau UNILAND (Branch 2), rentang tanggal laporan, lalu atur variabel dan judul English/Chinese per grafik. Preset Excel berisi 9 grafik JRE dan 7 UNILAND. Legend JRE memakai Window A untuk Window dan Window B untuk Dehumidifier. Tambah, duplikat, atau hapus grafik untuk membuat kelompok sendiri. **Copy grafik** menyalin PNG 4000 piksel dengan metadata 400 DPI untuk ditempel ke dokumen atau chat; aplikasi tujuan bisa mengubah ukurannya. Rentang tanggal menyesuaikan sumbu otomatis dan tabel data bisa dibuka/tutup. Ekspor SVG atau PNG selebar 4000 piksel, berlatar putih, garis tipis, dan judul Arial/Helvetica. Refresh mengambil revisi tersimpan terbaru; perubahan tabel yang belum disimpan belum masuk grafik. Pengaturan disimpan di browser per akun. Data kosong menjadi celah, periode tumpang tindih tidak diplot, dan nilai beberapa hari tetap berupa total periode. Lihat [aturan grafik dan pemetaan workbook](docs/graphs.md).
 
@@ -160,7 +167,7 @@ Vercel memakai preset Other, root repo, dan Node 22.x. Integrasi Git membuat pre
 
 ### Versi, pemeliharaan, dan batasan
 
-v0.1.0-alpha menyimpan baseline tabel, aturan meter, dan NTP. v0.2.0-alpha menambahkan bahasa, informasi build, dan CI. v0.3.0-alpha menambahkan akun, historian pribadi, revisi, serta tes database. v0.3.1-alpha menambahkan halaman login dan memperjelas teks tabel. v0.4.0-alpha menambahkan ekspor reading listrik mentah. v0.5.0-alpha menambahkan reading gas JRE, interpolasi suhu, perhitungan refill, dan penyimpanan historian. Versi bersumber dari `package.json`. Kerjakan di `codex/vX.Y.Z-alpha`, lolos Quality gate, lalu gunakan PR. Simpan milestone melalui branch rilis dan annotated tag yang tidak dipindahkan. Jangan force push. Lihat [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), dan [panduan rilis](docs/releases.md).
+v0.1.0-alpha menyimpan baseline tabel, aturan meter, dan NTP. v0.2.0-alpha menambahkan bahasa, informasi build, dan CI. v0.3.0-alpha menambahkan akun, historian pribadi, revisi, serta tes database. v0.3.1-alpha menambahkan halaman login dan memperjelas teks tabel. v0.4.0-alpha menambahkan ekspor reading listrik mentah. v0.5.0-alpha menambahkan reading gas JRE, interpolasi suhu, perhitungan refill, dan penyimpanan historian. v0.7.0-alpha menambah histori konsumsi Excel privat dan pemberitahuan versi baru. Versi bersumber dari `package.json`. Kerjakan di `codex/vX.Y.Z-alpha`, lolos Quality gate, lalu gunakan PR. Simpan milestone melalui branch rilis dan annotated tag yang tidak dipindahkan. Jangan force push. Lihat [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), dan [panduan rilis](docs/releases.md).
 
 Footer dan build-info.json menunjukkan versi, commit, waktu build, serta hash sumber. NTP berjalan asynchronous melalui Cloudflare dengan Google sebagai cadangan dan cache server 60 detik. Kegagalan ditampilkan dan input manual tetap tersedia. Waktu pencatatan memakai server database; clock browser bukan waktu audit terautentikasi.
 

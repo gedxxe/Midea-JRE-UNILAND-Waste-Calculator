@@ -4,6 +4,11 @@ import { accountMessages } from './accounts.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  updateAvailable: [
+    'A newer version is available. Save your draft, then reload this page to see the new features.',
+    '有新版本。请先保存草稿，再刷新页面查看新功能。',
+    'Versi baru tersedia. Simpan draft, lalu muat ulang halaman untuk membuka fitur terbaru.',
+  ],
   ...accountMessages,
   ...gasMessages,
   ...graphMessages,

@@ -2,7 +2,7 @@
 
 ## Reference and decisions
 
-Reference: 每日能耗数据与图表监控 Daily Energy Data & Graph Monitoring.xlsx, inspected 2026-09-27. Source workbooks and operational readings are not committed or imported. Eight sheets contain 29 charts: nine on JRE Daily Electrical Month 9, seven on UNILAND Electrical Month 9, eight monthly charts on hidden sheets, and five old charts on UNUSED. Hidden monthly sheets and UNUSED are not the default daily presets. Their dates, placeholder zeros and hidden rows are not copied into account history.
+Reference: 每日能耗数据与图表监控 Daily Energy Data & Graph Monitoring.xlsx, inspected 2026-09-27. Source workbooks and operational readings are not committed. The user subsequently authorized importing populated September daily consumption into their confirmed account; see docs/history-import.md. Eight sheets contain 29 charts: nine on JRE Daily Electrical Month 9, seven on UNILAND Electrical Month 9, eight monthly charts on hidden sheets, and five old charts on UNUSED. Hidden monthly sheets and UNUSED are not the default daily presets. Their dates, placeholder zeros and hidden rows are not copied into account history.
 
 The user requested white charts, thin lines, bold Arial/Helvetica titles, English/Chinese titles and department names, configurable legend entries and manual chart splits. Branch 1 is JRE; Branch 2 is UNILAND. On 2026-09-27 the user explicitly chose the Excel aliases Window A = Window and Window B = Dehumidifier. These aliases never rename inputs, reports or raw exports.
 
@@ -24,6 +24,8 @@ Semicolons separate charts. Worksheet columns define grouped values: JRE Piping 
 
 ## Saved records and correctness
 
+Imported consumption has its own immutable source records and no cumulative meter draft. Graph tables and tooltips label it as Excel history. A saved meter report supersedes any imported interval that overlaps it; the imported record remains stored and visible in the data table but is not plotted.
+
 The authenticated GET /api/graphs endpoint uses the session owner, factory and inclusive report START-date range, joining only the latest revision. Administrators do not gain access to other owners. Responses are private and not cached. Maximum range: 366 dates; maximum records: 1000. Larger requests fail explicitly instead of truncating.
 
 Historian snapshots already retain English report and worksheet output strings. graph-data.js extracts these saved outputs using exact canonical labels and units; it does not recalculate old readings with the current engine. Worksheet output supplies grouped department series, report output supplies other meters and utilities. An absent, duplicate or malformed label becomes null. New output formats require a compatible extractor. Tests cover old manual utilities and calculated gas output. Electrical MWh is converted to kWh for chart display only. Each chart uses one unit; kg gas consumption is distinct from raw tank levels.
@@ -38,6 +40,6 @@ Up to 32 graphs per factory; select any available variables with the same unit. 
 
 SVG exports preserve vector lines/text on a white background. PNG exports and Copy graph are 4000 pixels wide with 400 DPI pHYs metadata. At 400 DPI this supports a 10-inch (25.4 cm) image width. The clipboard or destination app may strip DPI metadata or resize the pasted image; pixel dimensions are the reliable resolution measure. Copy requires a secure context and clipboard permission, and uses image/png. If denied or unsupported, download PNG remains available. Font stack: Arial, Helvetica, Microsoft YaHei, Noto Sans CJK SC, sans-serif; the available device fonts determine Chinese glyphs. Thin 1.4 px series and small markers follow the reference line-chart style, with light grid lines. SVG and PNG share the same renderer. Larger numbers use scientific axis notation. Mobile charts scroll horizontally to keep labels readable.
 
-No new runtime dependency, database table or migration is required. Tests use synthetic examples, never workbook operating data.
+v0.7.0 adds migration 002 for imported history, without a new runtime dependency. Tests use synthetic examples, never workbook operating data.
 
 References: [PNG physical pixel dimensions](https://www.w3.org/TR/png-3/#11pHYs), [Clipboard image writing](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write).

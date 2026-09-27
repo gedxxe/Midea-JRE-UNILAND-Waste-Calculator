@@ -40,6 +40,10 @@ try {
         pg.escapeIdentifier(role),
     );
     await client.query(
+      'GRANT SELECT ON meter_app.consumption_history,meter_app.consumption_imports TO ' +
+        pg.escapeIdentifier(role),
+    );
+    await client.query(
       'GRANT SELECT,INSERT ON meter_app.report_revisions,meter_app.audit_events TO ' +
         pg.escapeIdentifier(role),
     );

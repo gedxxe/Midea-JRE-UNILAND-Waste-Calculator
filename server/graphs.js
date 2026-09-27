@@ -24,7 +24,13 @@ export function graphsHandler(database = getPool, env = process.env) {
       'SELECT r.id,r.revision,r.start_date::text,r.end_date::text,v.snapshot FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date ORDER BY r.start_date,r.end_date,r.id LIMIT 1001',
       [user.id, plant, start, end],
     );
-    if (rows.length > 1000) fail(422, 'GRAPH_RANGE_TOO_LARGE');
-    send(res, 200, { plant, start, end, records: graphRecords(rows, plant) });
+    const history = (
+      await db.query(
+        'SELECT h.id,h.start_date::text,h.end_date::text,h.metric_values,h.source_sheet,h.source_range,b.source_name FROM meter_app.consumption_history h JOIN meter_app.consumption_imports b ON b.id=h.import_id AND b.owner_id=h.owner_id WHERE h.owner_id=$1 AND h.plant=$2 AND h.start_date >= $3::date AND h.start_date <= $4::date ORDER BY h.start_date,h.end_date,h.id LIMIT 1001',
+        [user.id, plant, start, end],
+      )
+    ).rows;
+    if (rows.length + history.length > 1000) fail(422, 'GRAPH_RANGE_TOO_LARGE');
+    send(res, 200, { plant, start, end, records: graphRecords(rows, plant, history) });
   });
 }
