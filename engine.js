@@ -54,6 +54,7 @@ export function calculateDraft(draft) {
       'NOTICE',
     );
 
+  const scaledEnergy = new Map();
   const calculatedRows = schema.rows.map((row, ri) => {
     const input = draft.rows[ri];
     const meters = [];
@@ -149,7 +150,41 @@ export function calculateDraft(draft) {
       meter.energy = Number(converted) / 1e8;
       meter.diff = diff;
     });
+    if (!missing) scaledEnergy.set(row.name, energyScaled);
     return { ...row, meters, missing, totalEnergy: missing ? null : Number(energyScaled) / 1e8 };
+  });
+
+  // Subtract included branch usage before rounding, reporting or adding sub-meter totals.
+  calculatedRows.forEach((row, ri) => {
+    if (!row.subtractUsageOf) return;
+    row.grossEnergy = row.totalEnergy;
+    const included = scaledEnergy.get(row.subtractUsageOf);
+    row.deductedEnergy = included === undefined ? null : Number(included) / 1e8;
+    if (row.missing) return;
+    if (included === undefined) {
+      row.missing = true;
+      row.totalEnergy = null;
+      issue(
+        issues,
+        'DEPENDENCY_UNAVAILABLE',
+        `${row.name}: net usage needs valid ${row.subtractUsageOf} readings.`,
+        ri,
+      );
+      return;
+    }
+    const net = scaledEnergy.get(row.name) - included;
+    if (net < 0n) {
+      row.missing = true;
+      row.totalEnergy = null;
+      issue(
+        issues,
+        'NET_USAGE_NEGATIVE',
+        `${row.name}: included ${row.subtractUsageOf} usage exceeds the parent meter usage. Check both readings for the same period.`,
+        ri,
+      );
+      return;
+    }
+    row.totalEnergy = Number(net) / 1e8;
   });
 
   const gasResults = [];

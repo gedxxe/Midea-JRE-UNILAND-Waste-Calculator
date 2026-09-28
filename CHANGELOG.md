@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.1-alpha - 2026-09-28
+
+- Deduct Piping Building 1# consumption from JRE Structural Laboratory usage before reports, worksheets and sub-meter totals. Preserve raw readings and saved history; flag missing inputs or negative net usage.
+
 ## v0.9.0-alpha - 2026-09-28
 
 - Show combined reading periods as neutral notices, with inclusive dates and day counts in copied reports.

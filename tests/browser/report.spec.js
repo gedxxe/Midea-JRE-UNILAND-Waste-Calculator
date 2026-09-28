@@ -45,6 +45,39 @@ test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
 });
 
+test('Structural shows net usage with original inputs and translated guidance', async ({
+  page,
+}, info) => {
+  await page.locator('#load-example').click();
+  await cell(page, 19).fill('1000');
+  await cell(page, 19, 'end').fill('1150');
+  await cell(page, 15).fill('10');
+  await cell(page, 15, 'end').fill('11');
+  const row = page.locator('#meter-body tr[data-row="19"]');
+  await expect(row.locator('.energy > span')).toHaveText('110.00');
+  await expect(row.locator('.energy')).toHaveAttribute(
+    'title',
+    /150 - Piping Building 1# \(40\) = 110.00 kWh/,
+  );
+  const report = await page.locator('#report-preview').inputValue();
+  for (const language of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(language);
+    await expect(row.locator('.equipment > small')).toContainText('Piping Building 1#');
+    await expect(cell(page, 19, 'end')).toHaveValue('1150');
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+  }
+  await row.locator('.equipment').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('structural-net.png') });
+  await cell(page, 15, 'end').fill('');
+  await expect(row.locator('.energy > span')).toHaveText('-');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await cell(page, 15, 'end').fill('20');
+  await expect(row.locator('.energy > span')).toHaveText('-');
+  await expect(page.locator('#report-preview')).toHaveValue(
+    /included Piping Building 1# usage exceeds/,
+  );
+});
+
 test('language changes preserve readings, report bytes, and the saved draft', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('#copy-report')).toBeDisabled();

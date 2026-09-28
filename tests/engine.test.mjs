@@ -6,6 +6,7 @@ import { scaledReading, parseFlexibleNumber, shiftDate } from '../numbers.js';
 import { worksheetRowToTSV } from '../worksheet.js';
 import { parseReading, planTablePaste } from '../importer.js';
 import { restoreDrafts, nextDayDraft } from '../storage.js';
+import { exportRawReading } from '../raw-export.js';
 
 function complete(plant = 'JRE', start = '2026-09-16', end = '2026-09-17') {
   const draft = createDraft(plant, start, end);
@@ -59,17 +60,68 @@ test('JRE main, Office, Utility and Piping use the documented examples', () => {
   set(d, 'Utility Area', ['660,610', '29,09'], ['660,700', '29,53']);
   set(d, 'Piping Building 1#', '100', '100.25');
   set(d, 'Piping Building 3#', '200', '205');
+  set(d, 'Structural Laboratory', '1000', '1010');
   const r = calculateDraft(d);
   assert.equal(value(r, 'Total'), 25283);
   assert.equal(value(r, 'All Office Building'), 400);
   assert.equal(value(r, 'Utility Area'), 107.6);
   assert.equal(r.worksheet.derived.pipingAll, 15);
+  assert.equal(value(r, 'Structural Laboratory'), 0);
   assert.equal(r.subAreasSumKWh, 522.6);
   assert.equal(r.gapKWh, 24760.4);
   assert.match(r.reportSectionText, /18\. All Office Building: 400\.00 kWh/);
   assert.match(r.reportSectionText, /28\. Utility Area: 107\.60 kWh/);
   assert.match(r.reportSectionText, /CROSS-CHECK:/);
   assert.equal(r.issues.length, 0);
+});
+
+test('Structural excludes converted Piping 1 usage once while preserving raw readings and main Total', () => {
+  const d = complete();
+  set(d, 'Total', '1000', '1200');
+  set(d, 'Structural Laboratory', '1000', '1150');
+  set(d, 'Piping Building 1#', '10', '11');
+  set(d, 'Piping Building 3#', '100', '105');
+  const original = structuredClone(d);
+  const result = calculateDraft(d);
+  assert.equal(value(result, 'Structural Laboratory'), 110);
+  assert.equal(value(result, 'Piping Building 1#'), 40);
+  assert.equal(value(result, 'Total'), 200);
+  assert.equal(result.subAreasSumKWh, 155);
+  assert.equal(result.gapKWh, 45);
+  assert.equal(result.worksheet.values[result.worksheet.headers.indexOf('Structural')], 110);
+  assert.match(result.mainText, /20\. Structural Laboratory: 110\.00 kWh/);
+  assert.match(exportRawReading(d, 'end').text, /20\. Structural Laboratory: 1150/);
+  assert.deepEqual(d, original);
+  assert.doesNotThrow(() => JSON.stringify(result));
+});
+
+test('Structural subtraction preserves small differences before output rounding', () => {
+  const d = complete();
+  set(d, 'Structural Laboratory', '0', '999999999960.000001');
+  set(d, 'Piping Building 1#', '0', '24999999999');
+  assert.equal(value(calculateDraft(d), 'Structural Laboratory'), 0.000001);
+});
+
+test('Structural stays unavailable when either meter is missing or the net consumption is negative', () => {
+  for (const reading of ['', '-', 'bad', '9']) {
+    const d = complete();
+    set(d, 'Structural Laboratory', '1000', '1150');
+    set(d, 'Piping Building 1#', '10', reading);
+    const result = calculateDraft(d);
+    assert.equal(value(result, 'Structural Laboratory'), null);
+    assert.equal(result.subAreasSumKWh, null);
+    assert.ok(result.issues.some((issue) => issue.code === 'DEPENDENCY_UNAVAILABLE'));
+  }
+  const d = complete();
+  set(d, 'Structural Laboratory', '1000', '1010');
+  set(d, 'Piping Building 1#', '10', '11');
+  const result = calculateDraft(d);
+  assert.equal(value(result, 'Structural Laboratory'), null);
+  assert.equal(result.gapKWh, null);
+  assert.match(result.mainText, /20\. Structural Laboratory: -\n/);
+  assert.ok(result.issues.some((issue) => issue.code === 'NET_USAGE_NEGATIVE'));
+  set(d, 'Structural Laboratory', '-', '1010');
+  assert.equal(value(calculateDraft(d), 'Structural Laboratory'), null);
 });
 test('multi-meter factors apply to paired differences before adding', () => {
   const d = complete();
