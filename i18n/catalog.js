@@ -1,9 +1,11 @@
+import { draftMessages } from './drafts.js';
 import { graphMessages } from './graphs.js';
 import { gasMessages } from './gas.js';
 import { accountMessages } from './accounts.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  ...draftMessages,
   updateAvailable: [
     'A newer version is available. Save your draft, then reload this page to see the new features.',
     '有新版本。请先保存草稿，再刷新页面查看新功能。',
@@ -57,6 +59,11 @@ export const catalog = {
     '累计读数 · 自动计算',
     'Reading kumulatif · Hasil dihitung otomatis',
   ],
+  combinedNotice: [
+    'This reading covers {days} days ({start} 08:00 to {end} 08:00 WIB). Please confirm the dates for this combined period.',
+    '本次读数涵盖 {days} 天（{start} 08:00 至 {end} 08:00 WIB）。请确认合并时段的日期。',
+    'Reading ini mencakup {days} hari ({start} 08.00 sampai {end} 08.00 WIB). Pastikan tanggalnya sesuai periode rekap.',
+  ],
   period: ['Reading period', '读数周期', 'Periode reading'],
   combinedPeriod: ['Weekend / combined period', '周末 / 合并时段', 'Weekend / periode gabungan'],
   combinedStart: ['First consumption date', '用量开始日期', 'Tanggal konsumsi pertama'],
@@ -72,9 +79,9 @@ export const catalog = {
     'Pilih tanggal konsumsi yang direkap dalam satu reading. Reading akhir diambil pukul 08.00 pada pagi setelah tanggal terakhir. Hasilnya satu total periode; laporan lama tidak digabung otomatis.',
   ],
   combinedPreview: [
-    'Graph label: {period}. Readings: {start} 08:00 to {end} 08:00 WIB ({hours} h).',
-    '图表标签：{period}。读数：{start} 08:00 至 {end} 08:00 WIB（{hours} 小时）。',
-    'Label grafik: {period}. Reading: {start} 08.00 sampai {end} 08.00 WIB ({hours} jam).',
+    'Graph label: {period}. Readings: {start} 08:00 to {end} 08:00 WIB ({days} days).',
+    '图表标签：{period}。读数：{start} 08:00 至 {end} 08:00 WIB（{days} 天）。',
+    'Label grafik: {period}. Reading: {start} 08.00 sampai {end} 08.00 WIB ({days} hari).',
   ],
   combinedInvalid: [
     'Choose valid consumption dates in order.',

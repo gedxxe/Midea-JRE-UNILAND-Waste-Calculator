@@ -93,9 +93,9 @@ export const graphMessages = {
     'Terlalu banyak record pada rentang ini. Pilih tanggal yang lebih pendek.',
   ],
   graphMulti: [
-    '{count} reports cover more than 24 hours. Values are period totals, not daily averages.',
-    '{count} 份报告超过 24 小时。数值为时段合计，不是日平均值。',
-    '{count} laporan mencakup lebih dari 24 jam. Nilainya total periode, bukan rata-rata harian.',
+    '{count} combined periods. Each point shows the total for the labelled dates.',
+    '{count} 个合并时段。每个点表示标签日期的用量合计。',
+    '{count} periode gabungan. Setiap titik menampilkan total untuk tanggal pada label.',
   ],
   graphOverlap: [
     '{count} reports overlap another period and are excluded from plots. Review their dates in the data table and historian.',

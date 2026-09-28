@@ -69,3 +69,37 @@ export function formatReportDate(value) {
     .format(new Date(`${value}T00:00:00Z`))
     .toUpperCase();
 }
+
+export function formatReportPeriod(start, end) {
+  const days = dayDiff(start, end);
+  if (days === null || days <= 0) return 'DATE UNKNOWN';
+  if (days === 1) return formatReportDate(start);
+  const last = shiftDate(end, -1);
+  const month = (date) =>
+    new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' })
+      .format(new Date(date + 'T00:00:00Z'))
+      .toUpperCase();
+  if (start.slice(0, 7) === last.slice(0, 7))
+    return (
+      Number(start.slice(8)) +
+      '-' +
+      Number(last.slice(8)) +
+      ' ' +
+      month(start) +
+      ' ' +
+      start.slice(0, 4)
+    );
+  return (
+    Number(start.slice(8)) +
+    ' ' +
+    month(start) +
+    ' ' +
+    start.slice(0, 4) +
+    ' - ' +
+    Number(last.slice(8)) +
+    ' ' +
+    month(last) +
+    ' ' +
+    last.slice(0, 4)
+  );
+}

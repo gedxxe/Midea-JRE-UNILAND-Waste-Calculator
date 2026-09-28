@@ -32,7 +32,7 @@ try {
     );
     await client.query('GRANT USAGE ON SCHEMA meter_app TO ' + pg.escapeIdentifier(role));
     await client.query(
-      'GRANT SELECT,INSERT,UPDATE ON meter_app.users,meter_app.reports TO ' +
+      'GRANT SELECT,INSERT,UPDATE ON meter_app.users,meter_app.reports,meter_app.working_drafts TO ' +
         pg.escapeIdentifier(role),
     );
     await client.query(

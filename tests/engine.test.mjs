@@ -112,12 +112,25 @@ test('combined report enforces both endpoints, even when report dates match', ()
   const jre = calculateDraft(complete());
   const uni = calculateDraft(complete('UNILAND', '2026-09-16', '2026-09-18'));
   assert.throws(() => generateFullIndonesiaReport(jre, uni), /periods must match/);
-  assert.match(uni.mainText, /48 HOURS/);
+  assert.match(uni.mainText, /16-17 SEPTEMBER 2026 - 2 DAYS/);
   assert.ok(uni.issues.some((i) => i.code === 'DATE_GAP'));
+  assert.equal(uni.issues.find((i) => i.code === 'DATE_GAP').level, 'NOTICE');
+  assert.equal(uni.checks, '');
   assert.throws(
     () => generateFullIndonesiaReport(jre, calculateDraft(createDraft('UNILAND'))),
     /Complete the readings/,
   );
+});
+
+test('weekend reports show inclusive dates and days without a raw-data warning', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const report = calculateDraft(complete(plant, '2026-09-18', '2026-09-21'));
+    assert.match(report.mainText, /18-20 SEPTEMBER 2026 - 3 DAYS/);
+    assert.doesNotMatch(report.reportSectionText, /72 HOURS|CHECK RAW DATA/);
+    assert.equal(report.success, true);
+    const crossing = calculateDraft(complete(plant, '2026-09-30', '2026-10-03'));
+    assert.match(crossing.mainText, /30 SEPTEMBER 2026 - 2 OCTOBER 2026 - 3 DAYS/);
+  }
 });
 test('zero main meter produces no invalid gap percentage', () => {
   const r = calculateDraft(complete());

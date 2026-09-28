@@ -85,7 +85,10 @@ export function createGraphs({ current, request, toast }) {
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
         ['graphSuperseded', data.records.filter((r) => r.superseded).length],
       ])
-        if (count) $('graph-warnings').append(node('p', t(key, { count }), 'notice warning'));
+        if (count)
+          $('graph-warnings').append(
+            node('p', t(key, { count }), key === 'graphMulti' ? 'notice' : 'notice warning'),
+          );
     renderCards();
   }
   async function load() {
@@ -377,8 +380,8 @@ export function createGraphs({ current, request, toast }) {
                 ' 08:00 → ' +
                 record.endDate +
                 ' 08:00 (' +
-                record.days * 24 +
-                ' h)' +
+                record.days +
+                (record.days === 1 ? ' day)' : ' days)') +
                 (record.overlap
                   ? ' · ' + t('graphExcluded')
                   : record.superseded

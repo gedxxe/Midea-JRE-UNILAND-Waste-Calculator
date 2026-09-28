@@ -18,6 +18,9 @@
     },
     "api/graphs.js": {
       "maxDuration": 30
+    },
+    "api/drafts.js": {
+      "maxDuration": 30
     }
   },
   "headers": [

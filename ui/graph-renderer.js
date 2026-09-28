@@ -288,8 +288,8 @@ export function renderGraph(config, { plant, start, end, records }) {
               ' 08:00 to ' +
               p.endDate +
               ' 08:00 WIB | ' +
-              p.days * 24 +
-              ' h | ' +
+              p.days +
+              (p.days === 1 ? ' day | ' : ' days | ') +
               (p.source === 'excel' ? 'Excel history / Excel 历史数据' : 'revision ' + p.revision),
           ),
         );

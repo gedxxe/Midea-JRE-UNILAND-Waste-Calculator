@@ -27,7 +27,7 @@ The bootstrap command refuses to create a second admin or overwrite a credential
 Migrations/bootstrap use a privileged database connection. For the API, create a dedicated login role and grant only:
 
 - USAGE on schema meter_app.
-- SELECT, INSERT, UPDATE on users and reports.
+- SELECT, INSERT, UPDATE on users, reports and working_drafts (migration 003).
 - SELECT, INSERT, UPDATE, DELETE on sessions and rate_limits.
 - SELECT, INSERT on report_revisions and audit_events.
 - SELECT only on consumption_history and consumption_imports after migration 002. Maintenance imports use a separate privileged connection; no web import or runtime write grant is added.
@@ -73,3 +73,13 @@ Rolling back to v0.2.0-alpha disables the account UI/APIs but leaves database re
 Unit tests cover password hashing, cookie/origin policy, and server calculation. Integration tests use real PostgreSQL and HTTP requests for ownership, temporary passwords, revocation, rate limiting, immutable revisions, and concurrent updates. Browser tests cover login, account draft isolation, language switching, historical output, and logout on desktop/mobile.
 
 Runtime API error logs contain request IDs and fixed codes only. They omit bodies, cookies, passwords, connection strings, SQL, and readings. Audit tables record report revisions and account-management actions; they are not a certified or tamper-proof audit system.
+
+## Working draft autosave
+
+One active workspace per account contains both factories and their report-edit references. Drafts are structurally validated but may have empty or unfinished readings. They live in working_drafts, not reports/report_revisions, and do not feed graphs. Its version is only a concurrency token; updates replace the row and do not append revisions. Clearing leaves a null workspace with an advanced token so a stale tab cannot recreate a deleted draft silently. Reads and writes always derive ownership from the session; runtime has no DELETE grant.
+
+Each edit first replaces an account-scoped sessionStorage backup. Remote autosave waits for 30 seconds idle or 120 seconds continuous editing, with at least 30 seconds between automatic writes. Unchanged edits do not resubmit; the API also treats identical retries as no-ops. Failed requests retry with backoff up to five minutes, with a visible status and explicit retry action. A tab-local backup survives reload, not closing the tab; pending sync prompts before leaving. Offline data must finish syncing before closing or signing out to retain it in the account.
+
+On reopening, a clean local copy loads the account draft. Unsynced local edits are retained. Conflicting copies pause autosave until the operator chooses Load saved draft or Keep this draft after confirmation. Identity changes clear local recovery and discard late responses. Save draft always stores the workspace; Save stores incomplete current-factory data as a draft or submits a complete report through the existing revision workflow. Draft storage never finalizes a report automatically. Report references retain optimistic revision checks when a saved draft resumes on another device.
+
+Apply migration 003 with the maintenance connection before deploying this release; no additional Vercel environment variables are required for production. Code rollback preserves the draft row; older code does not synchronize it.

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { readFile } from 'node:fs/promises';
 import { exampleDraft } from '../../examples.js';
 import { reportSnapshot } from '../../server/report-data.js';
@@ -230,12 +230,12 @@ test('graphs show gaps and period warnings and clear old data after an empty ref
     });
   });
   await page.locator('#open-graphs').click();
-  await expect(page.locator('#graph-warnings')).toContainText('more than 24 hours');
+  await expect(page.locator('#graph-warnings')).toContainText('combined periods');
   await expect(page.locator('#graph-warnings')).toContainText('2 reports overlap');
   const first = page.locator('.graph-card').first();
   await expect(first.locator('circle[data-series="w1"]')).toHaveCount(2);
   await first.locator('.graph-data summary').click();
-  await expect(first.locator('table')).toContainText('48 h');
+  await expect(first.locator('table')).toContainText('2 days');
   await expect(first.locator('table')).toContainText('Overlapping period: not plotted');
   failed = true;
   await page.locator('#graph-refresh').click();
@@ -294,7 +294,7 @@ test('imported consumption stays labelled and a newer release does not overwrite
   await first.locator('.graph-data summary').click();
   await expect(first.locator('table')).toContainText('Excel history');
   await expect(first.locator('table')).toContainText('synthetic.xlsx');
-  await expect(first.locator('table')).toContainText('48 h');
+  await expect(first.locator('table')).toContainText('2 days');
   await page.locator('[data-close-dialog="graphs-dialog"]').click();
   const draft = await page.locator('#report-preview').inputValue();
   const version = await page.locator('#app-version').textContent();

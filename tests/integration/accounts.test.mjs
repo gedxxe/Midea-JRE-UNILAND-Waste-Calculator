@@ -1,3 +1,5 @@
+import { draftsHandler } from '../../server/drafts.js';
+import { createDraft } from '../../engine.js';
 import { importHistory } from '../../server/history-import.js';
 import { graphsHandler } from '../../server/graphs.js';
 import { test, before, after } from 'node:test';
@@ -26,10 +28,72 @@ const env = {
 const ids = [];
 const names = [];
 const password = 'Test-only initial passphrase 123';
+test('working drafts replace partial entries without report revisions and reject stale or foreign writes', async () => {
+  const workspace = {
+    version: 4,
+    drafts: { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') },
+  };
+  workspace.drafts.JRE.rows[0].start[0] = '123.';
+  const initial = await call('/api/drafts', { actor: operator });
+  assert.equal(initial.status, 200);
+  assert.equal(initial.value.version, 0);
+  assert.equal((await call('/api/drafts')).status, 401);
+  assert.equal(
+    (
+      await call('/api/drafts', {
+        actor: operator,
+        body: { workspace, baseVersion: 0 },
+        headers: { Origin: 'https://other.invalid' },
+      })
+    ).status,
+    403,
+  );
+  const saved = await call('/api/drafts', {
+    actor: operator,
+    body: { workspace, baseVersion: 0, owner_id: admin.id },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.value.version, 1);
+  assert.equal((await call('/api/drafts', { actor: admin })).value.workspace, null);
+  const repeat = await call('/api/drafts', {
+    actor: operator,
+    body: { workspace, baseVersion: 0 },
+  });
+  assert.equal(repeat.value.version, 1);
+  assert.equal(repeat.value.unchanged, true);
+  assert.equal((await call('/api/reports', { actor: operator })).value.reports.length, 0);
+  const replacements = ['124', '125'].map((value) => {
+    const copy = structuredClone(workspace);
+    copy.drafts.JRE.rows[0].start[0] = value;
+    return call('/api/drafts', { actor: operator, body: { workspace: copy, baseVersion: 1 } });
+  });
+  const results = await Promise.all(replacements);
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+  assert.equal(results.find((r) => r.status === 409).value.error, 'DRAFT_CONFLICT');
+  const latest = await call('/api/drafts', { actor: operator });
+  assert.equal(latest.value.version, 2);
+  assert.equal(latest.value.workspace.drafts.JRE.rows[0].end[0], '');
+  assert.equal(
+    (await call('/api/drafts', { actor: operator, body: { workspace: {}, baseVersion: 2 } }))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await call('/api/drafts', { actor: operator, body: { workspace: null, baseVersion: 2 } }))
+      .status,
+    200,
+  );
+  assert.equal(
+    (await call('/api/drafts', { actor: operator, body: { workspace, baseVersion: 0 } })).status,
+    409,
+  );
+  assert.equal((await call('/api/drafts', { actor: operator })).value.workspace, null);
+});
 let server, origin, admin, operator, other, reportId;
 const routes = {
   '/api/auth': authHandler(() => runtime, env),
   '/api/users': usersHandler(() => runtime, env),
+  '/api/drafts': draftsHandler(() => runtime, env),
   '/api/graphs': graphsHandler(() => runtime, env),
   '/api/reports': reportsHandler(() => runtime, env),
 };
@@ -117,7 +181,7 @@ after(async () => {
       const keys = [
         'auth:ip:127.0.0.1',
         ...names.map((n) => 'login:user:' + n),
-        ...ids.flatMap((id) => ['password:' + id, 'reports:' + id, 'admin:' + id]),
+        ...ids.flatMap((id) => ['password:' + id, 'reports:' + id, 'admin:' + id, 'drafts:' + id]),
       ].map((k) => rateKey(k, env));
       await client.query('DELETE FROM meter_app.rate_limits WHERE key_hash=ANY($1::text[])', [
         keys,
