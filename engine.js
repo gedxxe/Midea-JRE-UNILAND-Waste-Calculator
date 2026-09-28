@@ -6,7 +6,7 @@ import {
   round,
   formatNumber,
   dayDiff,
-  formatReportDate,
+  formatReportPeriod,
 } from './numbers.js';
 import { buildWorksheet, worksheetPreview } from './worksheet.js';
 
@@ -48,7 +48,10 @@ export function calculateDraft(draft) {
     issue(
       issues,
       'DATE_GAP',
-      `Period is ${days} days (${draft.startDate} to ${draft.endDate}), not 24 hours.`,
+      `This reading covers ${days} days. Please confirm both reading dates for this combined period.`,
+      null,
+      null,
+      'NOTICE',
     );
 
   const calculatedRows = schema.rows.map((row, ri) => {
@@ -225,9 +228,9 @@ export function calculateDraft(draft) {
     gapKWh !== null && totalDirectEnergy !== 0 ? (gapKWh / totalDirectEnergy) * 100 : null;
   // Both reports use the historian date, confirmed by the operator.
   const reportDate = draft.startDate;
-  const duration = days === 1 ? '24 HOURS' : days > 0 ? `${days * 24} HOURS` : 'PERIOD UNKNOWN';
+  const duration = days === 1 ? '24 HOURS' : days > 0 ? `${days} DAYS` : 'PERIOD UNKNOWN';
   const lines = [
-    `${schema.reportPrefix}) ${schema.name} (${formatReportDate(reportDate)} - ${duration})`,
+    `${schema.reportPrefix}) ${schema.name} (${formatReportPeriod(draft.startDate, draft.endDate)} - ${duration})`,
   ];
   for (const row of calculatedRows) {
     lines.push(
@@ -236,8 +239,9 @@ export function calculateDraft(draft) {
   }
   lines.push(...utilities);
   const mainText = lines.join('\n');
-  const checks = issues.length
-    ? `CHECK RAW DATA:\n${issues.map((item) => `- ${item.message}`).join('\n')}`
+  const warnings = issues.filter((item) => item.level !== 'NOTICE');
+  const checks = warnings.length
+    ? `CHECK RAW DATA:\n${warnings.map((item) => `- ${item.message}`).join('\n')}`
     : '';
   const crossCheckText =
     draft.plantKey === 'JRE'
@@ -281,7 +285,9 @@ export function generateFullIndonesiaReport(jre, uniland) {
     throw new Error('JRE and UNILAND reading periods must match.');
   }
   const checkLines = [jre, uniland].flatMap((report) =>
-    report.issues.map((item) => '- ' + report.plantKey + ': ' + item.message),
+    report.issues
+      .filter((item) => item.level !== 'NOTICE')
+      .map((item) => '- ' + report.plantKey + ': ' + item.message),
   );
   const sections = [jre.mainText, uniland.mainText, jre.crossCheckText];
   if (checkLines.length) sections.push('CHECK RAW DATA:\n' + checkLines.join('\n'));

@@ -1,3 +1,4 @@
+import drafts from '../api/drafts.js';
 import graphs from '../api/graphs.js';
 import { PUBLIC_FILES } from './assets.mjs';
 import { buildInfo } from './build-info.mjs';
@@ -18,6 +19,7 @@ if (!process.env.CI && process.env.METER_SKIP_LOCAL_ENV !== '1') {
 }
 const api = {
   '/api/graphs': graphs,
+  '/api/drafts': drafts,
   '/api/time': time,
   '/api/auth': auth,
   '/api/users': users,

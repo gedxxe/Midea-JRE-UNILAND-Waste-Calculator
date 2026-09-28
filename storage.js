@@ -3,6 +3,29 @@ import { createDraft } from './engine.js';
 import { validDate, shiftDate, decimalText } from './numbers.js';
 
 export const STORAGE_KEY = 'midea_energy_draft_v4';
+export function restoreWorkspace(raw) {
+  const saved = JSON.parse(raw);
+  const drafts = restoreDrafts(raw),
+    reportLinks = {};
+  for (const plant of ['JRE', 'UNILAND']) {
+    const link = saved.reportLinks?.[plant];
+    if (
+      link &&
+      /^[0-9a-f-]{36}$/i.test(link.id || '') &&
+      Number.isSafeInteger(link.revision) &&
+      link.revision > 0 &&
+      validDate(link.startDate) &&
+      validDate(link.endDate)
+    )
+      reportLinks[plant] = {
+        id: link.id,
+        revision: link.revision,
+        startDate: link.startDate,
+        endDate: link.endDate,
+      };
+  }
+  return { version: 4, drafts, reportLinks };
+}
 export function restoreDrafts(raw) {
   const saved = JSON.parse(raw);
   if (saved.version !== 4) throw new Error('Draft version does not match.');

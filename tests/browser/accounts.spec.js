@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { reportSnapshot } from '../../server/report-data.js';
 

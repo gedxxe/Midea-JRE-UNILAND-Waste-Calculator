@@ -9,9 +9,9 @@ export const accountMessages = {
     'Login untuk mengisi reading dan membuka laporan. Hubungi admin untuk akun.',
   ],
   accountPrivate: [
-    'Reports belong to your account. Save draft keeps a temporary copy in this tab.',
-    '报告归您的账户所有。保存草稿仅在此标签页保留临时副本。',
-    'Laporan tersimpan di akunmu. Simpan draft menyimpan salinan sementara di tab ini.',
+    'Drafts autosave to your account. Save stores incomplete entries as a draft and complete entries as a report.',
+    '草稿自动保存至账户。保存按钮将未完成的输入保存为草稿，完整输入保存为报告。',
+    'Draft tersimpan otomatis ke akunmu. Save menyimpan isian belum lengkap sebagai draft dan isian lengkap sebagai laporan.',
   ],
   accountUnavailable: [
     'Cannot connect to the account service. Try again.',
@@ -23,7 +23,7 @@ export const accountMessages = {
   signIn: ['Sign in', '登录', 'Login'],
   signOut: ['Sign out', '退出登录', 'Logout'],
   history: ['Historian', '历史报告', 'Historian'],
-  saveReport: ['Save report', '保存报告', 'Simpan laporan'],
+  saveReport: ['Save', '保存', 'Simpan'],
   manageUsers: ['Manage accounts', '管理账户', 'Kelola akun'],
   changePassword: ['Change password', '修改密码', 'Ganti password'],
   passwordRequired: [

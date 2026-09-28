@@ -7,6 +7,8 @@ export function createAccounts({
   identityChanged,
   toast,
   reportSaved = () => {},
+  saveIncomplete = async () => false,
+  canSaveReport = () => true,
 }) {
   let user = null;
   let available = false;
@@ -24,7 +26,8 @@ export function createAccounts({
 
   function applyIdentity(next) {
     refreshSequence++;
-    const changed = !ready || user?.id !== next?.id;
+    const changed =
+      !ready || user?.id !== next?.id || user?.mustChangePassword !== next?.mustChangePassword;
     lastError = null;
     user = next;
     ready = true;
@@ -49,7 +52,7 @@ export function createAccounts({
       /* Same-tab auth still works. */
     }
   }
-  async function request(path, { body, personal = true } = {}) {
+  async function request(path, { body, personal = true, signal } = {}) {
     const epoch = generation;
     const headers = {};
     if (body) headers['Content-Type'] = 'application/json';
@@ -58,6 +61,7 @@ export function createAccounts({
       method: body ? 'POST' : 'GET',
       credentials: 'same-origin',
       cache: 'no-store',
+      signal,
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -228,6 +232,10 @@ export function createAccounts({
     'click',
     () =>
       void action(async () => {
+        if (!canSaveReport()) {
+          await saveIncomplete();
+          return;
+        }
         const draft = structuredClone(current());
         const previous = links[draft.plantKey];
         const samePeriod =
@@ -237,13 +245,13 @@ export function createAccounts({
           ...(samePeriod ? { id: previous.id, baseRevision: previous.revision } : {}),
         };
         const result = await request('/api/reports', { body });
-        reportSaved();
         links[draft.plantKey] = {
           id: result.id,
           revision: result.revision,
           startDate: draft.startDate,
           endDate: draft.endDate,
         };
+        reportSaved();
         toast(t('reportSaved', { revision: result.revision }));
       }),
   );
@@ -431,5 +439,14 @@ export function createAccounts({
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void refresh();
   });
-  return { start: refresh, render, request, getUser: () => user };
+  return {
+    start: refresh,
+    render,
+    request,
+    getUser: () => user,
+    getLinks: () => structuredClone(links),
+    setLinks: (value) => {
+      links = value || {};
+    },
+  };
 }

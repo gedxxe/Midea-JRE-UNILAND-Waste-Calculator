@@ -65,7 +65,7 @@
           </p>
         </div>
         <div id="draft-controls" class="save-controls" hidden>
-          <span id="save-status" class="muted" role="status"
+          <span aria-live="polite" id="save-status" class="muted" role="status"
             ><span data-i18n="unsaved">Draft not saved</span></span
           ><button id="save-draft" class="button secondary">
             <span data-i18n="save">Save draft</span>
@@ -237,6 +237,17 @@
           </div>
           <p id="combined-preview" aria-live="polite"></p>
         </details>
+        <div id="draft-sync-actions" class="notice" hidden>
+          <button id="draft-retry" class="button secondary" data-i18n="draftRetry">
+            Retry draft sync
+          </button>
+          <button id="draft-load-cloud" class="button secondary" data-i18n="draftLoadCloud">
+            Load saved draft
+          </button>
+          <button id="draft-keep-local" class="button secondary" data-i18n="draftKeepLocal">
+            Keep this draft
+          </button>
+        </div>
         <div id="example-note" class="notice warning" hidden>
           <span data-i18n="exampleNote"
             >Example data for testing. Replace it with actual readings before making an operational

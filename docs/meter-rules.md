@@ -4,7 +4,7 @@ The supplied factory templates and the operator's confirmed date/unit decisions 
 
 ## Dates and numbers
 
-Both plants use the starting reading date. The normal period is 08:00 WIB to 08:00 WIB the next day. Combined reports require equal start dates AND equal end dates. A longer period produces a warning and its actual hour count.
+Both plants use the starting reading date. The normal period is 08:00 WIB to 08:00 WIB the next day. Combined reports require equal start dates AND equal end dates. A longer period produces a neutral notice. Its report title uses inclusive consumption dates and a day count: 18 September 08:00 to 21 September 08:00 becomes 18-20 SEPTEMBER 2026 - 3 DAYS. It keeps the total unchanged and does not add a CHECK RAW DATA warning. Normal daily titles retain their existing 24 HOURS wording.
 
 Use nonnegative cumulative numbers with at most six decimal places and a maximum of 1000000000000. A single comma or dot is a decimal separator. Thousands separators, exponent notation, unit suffixes, and mixed separators are rejected. Scaled BigInt subtraction preserves small deltas on large counters. Configured factors have at most two decimal places; energy is accumulated at eight-place precision.
 

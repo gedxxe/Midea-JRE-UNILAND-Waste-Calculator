@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.8.0-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.0-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+Incomplete readings autosave to one replaceable account draft for JRE and UNILAND. A local tab backup is immediate; database sync follows 30 seconds idle or two minutes of continuous editing. Watch the save status before closing the tab. Conflicts require choosing a copy. Save stores unfinished entries as a draft, and complete entries as a report; only reports have revisions. Combined readings use a neutral notice and a title such as 18-20 SEPTEMBER 2026 - 3 DAYS, without dividing the total. See [draft behavior](docs/accounts.md#working-draft-autosave).
 
 Each graph labels every consumption period, including combined dates such as 18–20/09. Wide graphs scroll horizontally. Configure graph → Y-axis scale offers Auto or manual minimum/maximum; the data stays unchanged. Weekend / combined period lets you choose inclusive consumption dates and previews the final reading on the following morning. PNG/clipboard width adapts from 4000 to 16384 pixels; SVG remains vector. Import values live in the private database, not in Git; removal is a separate batch-specific maintenance operation, not a website button.
 
@@ -21,7 +23,7 @@ Enter cumulative readings in a table, check consumption, and copy the official f
 1. Select a factory and reading dates. Both reports use the **start date**: 16 September 08:00 to 17 September 08:00 WIB is a 16 September report.
 2. Fill the table or paste one or two Excel columns. Decimal commas and dots are accepted; thousands separators are not. Missing readings use `-`; empty or invalid entries block copying and cloud saving.
 3. Check the report. Combined reports require matching start and end dates for both factories.
-4. **Save draft** keeps both factories locally. Signed-in drafts use this tab's sessionStorage and are cleared on logout or account change. Existing guest drafts are preserved separately and never uploaded automatically.
+4. **Save draft** syncs both factories to the account draft. The local sessionStorage backup is cleared on logout or account change; the saved account draft remains. Existing guest drafts are preserved separately and never uploaded automatically.
 5. **Save report** sends the current factory to your account. The server validates and recalculates it. Historian lets you view the original saved output, choose a revision, and load readings into the editor. Saving an edited report adds a revision. A conflicting edit from another device is rejected so you can reopen the latest version.
 
 **Export Raw Table Data** below the meter table opens a copy-ready list for the current factory. Choose start or end readings (end is the default). The export uses that column’s date in DD/MM/YYYY, preserves entered decimal precision, and lists ratios without multiplying or subtracting readings. Only electricity meter rows are included, including direct MWh Trafo readings and electric meters whose equipment name mentions LPG. Daily gas, water, and other utility fields are excluded. Every selected meter must be filled or explicitly marked `-`; the other reading column is not required. UNILAND follows the current 28-row table, without inventing additional meters or equipment.
@@ -85,6 +87,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+未完成的读数也会自动保存为一个包含 JRE 和 UNILAND 的账户草稿，持续替换而不创建报告修订。本标签页立即备份，停止输入 30 秒或连续编辑两分钟后同步数据库。关闭前请检查保存状态；有冲突时需选择保留的版本。保存按钮将未完成输入保存为草稿，完整输入保存为报告。合并读数仅显示普通提示，标题如 18-20 SEPTEMBER 2026 - 3 DAYS，总量不拆分。
+
 图表显示每个用量时段，包括 18–20/09 等合并日期；宽图可横向滚动。设置图表 → Y 轴范围可选择自动或手动最小值/最大值，不改变数据。周末 / 合并时段可选择包含首尾日期的用量范围，并预览次日上午的结束读数。PNG/剪贴板宽度为 4000 至 16384 像素，SVG 保留矢量细节。导入数值存储在私有数据库中，不进入 Git；删除需按具体批次维护，网站没有删除按钮。
 
 图表也支持导入的 Excel 用量历史，并显示工作簿来源。导入保留合并时段，跳过已有报告，不虚构累计读数。之后正常保存的报告会接入同一图表。历史用量不能用作下一天的电表起始读数。导入通过维护命令完成，网站没有工作簿上传按钮。参见[历史导入说明](docs/history-import.md)。有新版本时会提示先保存草稿再刷新；页脚显示当前实际加载的版本。
@@ -100,7 +104,7 @@ JRE 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) 和 R32 (mm) �
 1. 选择工厂和日期。两家工厂都使用**开始日期**：WIB 9 月 16 日 08:00 至 17 日 08:00，报告日期为 16 日。
 2. 填写表格或从 Excel 粘贴一列或两列。逗号和点均为小数分隔符，不支持千位分隔符。不可获取的数据填 `-`；空白或无效输入会阻止复制和云端保存。
 3. 检查报告。合并报告要求两家工厂的开始与结束日期一致。
-4. **保存草稿**在本地保留两家工厂的数据。登录后的草稿使用当前标签页的 sessionStorage，退出或切换账户时清除。旧访客草稿单独保留，不会自动上传。
+4. **保存草稿**将两家工厂的数据同步到账户草稿。退出或切换账户时清除本地 sessionStorage 备份，已保存的账户草稿仍保留。旧访客草稿单独保留，不会自动上传。
 5. **保存报告**将当前工厂的数据提交到账户。服务器重新验证和计算。历史报告可查看原始输出、选择修订版、载入读数。修改后保存会新增修订版；其他设备已修改时，系统拒绝覆盖并要求重新打开最新版本。
 
 表格下方的**导出原始表格数据**可复制当前工厂的读数清单。选择开始或结束读数，默认为结束列；日期使用所选列的 DD/MM/YYYY。保留输入的小数精度，比例仅作标注，不相乘或计算差值。包含电表数据及直接以 MWh 读取的变压器数据，也保留名称含 LPG 的电表；不导出日常燃气、用水等辅助数据。所选列必须全部填写，无数据时明确填 `-`，另一列无需填写。UNILAND 按当前 28 行表格导出，不虚构其他电表或设备。
@@ -133,6 +137,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 
 ## Indonesia
 
+Reading yang belum lengkap ikut autosave ke satu draft akun berisi JRE dan UNILAND. Cadangan tab langsung diperbarui; database disinkron setelah 30 detik berhenti mengetik atau dua menit mengetik terus. Periksa status simpan sebelum menutup tab. Konflik perlu memilih salinan. Save menyimpan isian belum lengkap sebagai draft dan isian lengkap sebagai laporan; revisi hanya untuk laporan. Rekap memakai notice biasa dan judul seperti 18-20 SEPTEMBER 2026 - 3 DAYS, tanpa membagi totalnya.
+
 Setiap periode memiliki label tanggal, termasuk rekap seperti 18–20/09. Grafik lebar bisa digeser horizontal. Atur grafik → Skala sumbu Y menyediakan Otomatis atau minimum/maksimum manual tanpa mengubah data. Weekend / periode gabungan memakai tanggal konsumsi inklusif dan menampilkan preview reading akhir pada pagi berikutnya. Lebar PNG/clipboard menyesuaikan dari 4000 hingga 16384 piksel; SVG tetap vektor. Nilai impor berada di database privat, bukan di Git; penghapusan dilakukan lewat maintenance untuk batch tertentu, belum melalui tombol website.
 
 Grafik juga bisa memakai histori konsumsi Excel dengan penanda sumber workbook. Impor mempertahankan periode gabungan, melewati laporan tersimpan yang sudah ada, dan tidak membuat cumulative reading fiktif. Laporan berikutnya yang disimpan normal akan masuk ke grafik yang sama. Histori konsumsi tidak bisa menjadi reading awal untuk Next day. Impor dilakukan lewat perintah maintenance, belum ada tombol upload workbook. Lihat [panduan impor histori](docs/history-import.md). Jika ada versi baru, muncul pemberitahuan untuk menyimpan draft sebelum reload; footer menunjukkan versi halaman yang benar-benar dimuat.
@@ -148,7 +154,7 @@ Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi 
 1. Pilih pabrik dan tanggal. Kedua laporan menggunakan **tanggal awal**: 16 September 08.00 sampai 17 September 08.00 WIB menjadi laporan 16 September.
 2. Isi tabel atau tempel satu atau dua kolom Excel. Koma dan titik berarti desimal, bukan ribuan. Data tidak tersedia memakai `-`; isian kosong atau invalid memblokir penyalinan dan penyimpanan ke akun.
 3. Periksa laporan. Laporan gabungan membutuhkan tanggal awal dan akhir yang sama.
-4. **Simpan draft** menyimpan kedua pabrik secara lokal. Draft akun memakai sessionStorage di tab ini dan dibersihkan saat logout atau berganti akun. Draft tamu lama disimpan terpisah dan tidak diunggah otomatis.
+4. **Simpan draft** menyinkronkan kedua pabrik ke draft akun. Cadangan sessionStorage dibersihkan saat logout atau berganti akun; draft yang tersimpan di akun tetap ada. Draft tamu lama disimpan terpisah dan tidak diunggah otomatis.
 5. **Simpan laporan** mengirim pabrik yang sedang dibuka ke akun. Server memvalidasi dan menghitung ulang reading. Historian menampilkan laporan asli, pilihan revisi, dan tombol untuk memuat reading. Koreksi menghasilkan revisi baru. Perubahan bersamaan dari perangkat lain ditolak agar pengguna membuka revisi terbaru.
 
 **Ekspor Data Mentah Tabel** di bawah tabel membuka daftar siap salin untuk pabrik yang sedang dipilih. Pilih reading awal atau akhir (default akhir). Tanggal mengikuti kolom terpilih dengan format DD/MM/YYYY. Presisi desimal dipertahankan; ratio hanya ditulis, tanpa perkalian atau pengurangan. Hanya baris meter listrik yang diekspor, termasuk Trafo dalam MWh dan meter listrik bernama LPG. Isian utility harian seperti gas dan air tidak ikut. Semua meter pada kolom terpilih harus diisi atau diberi `-`; kolom satunya tidak wajib lengkap. UNILAND mengikuti 28 baris tabel saat ini, tanpa membuat rincian meter atau equipment tambahan.

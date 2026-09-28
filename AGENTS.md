@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.8.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -37,6 +37,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Graph refinement confirmed 2026-09-27: every plotted period must have a visible date label, with combined consumption dates kept as one point (18–20 ends at the 21st reading). Provide a combined-period entry helper. Y-axis bounds may adjust the view only; automatic zero-based scaling is the default. Keep changelogs about product changes, not operational import jobs. Imported data is database content, never hardcoded or committed; deleting it requires an explicit batch-specific maintenance request.
 
+- On 2026-09-28 the user confirmed one active replaceable draft per account containing JRE and UNILAND. Incomplete entries must autosave; Save routes incomplete data to draft storage and complete data to the existing report workflow. Autosave must not create report revisions or write on every keystroke. Detect cross-tab/device conflicts instead of silently overwriting them.
+
 ## Architecture
 
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
@@ -46,6 +48,7 @@ New user instructions override older choices here. Update this decision record, 
 - graph-axis.js owns consumption-period labels and validated Y-axis domains; ui/period.js translates inclusive consumption dates into existing reading endpoints. graph-schema.js owns workbook chart groups and aliases. graph-data.js extracts immutable saved output, preserves null gaps and detects overlapping periods. server/graphs.js reads only the session owner’s latest report revisions. ui/graphs.js owns per-account browser layout settings and clears fetched data on identity changes; ui/graph-renderer.js owns SVG/PNG rendering. Read docs/graphs.md before graph changes. Never recalculate old historian values with the current engine or invent readings for missing dates.
 - raw-export.js validates and formats one raw reading column independently of calculated reports. ui/raw-export.js owns its preview/copy dialog and clears it on account changes.
 - importer.js parses and validates a complete input before applying it. Never partially apply a failed paste.
+- server/drafts.js owns a separate owner-scoped working_drafts row with an optimistic concurrency token, not revision history. ui/drafts.js owns immediate sessionStorage recovery, 30-second idle/120-second continuous-edit sync, bounded retry and explicit conflict choices. Account changes clear local data and invalidate in-flight work. Migration 003 is explicit, never a build step.
 - storage.js validates version-4 drafts. Preserve existing drafts across UI/language releases.
 - app.js coordinates events and state. ui/table.js owns table rendering and navigation; ui/dom.js provides DOM helpers; ui/build-info.js displays release metadata.
 - i18n/catalog.js contains English, Simplified Chinese, and Indonesian UI strings. Render translated/user text with textContent or value, never innerHTML.
@@ -75,7 +78,7 @@ Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
 - Missing data is never silently zero. Empty/invalid values block copying; explicit unavailable or decreasing readings become `-` with check notes. One missing meter invalidates the whole equipment result. Never show a partial JRE sub-meter sum as complete.
 - Decimal comma or dot, no thousands separators/exponents/suffixes. Maximum six decimals and cumulative 1000000000000. Preserve BigInt scaled subtraction.
 - JRE nonzero output has two decimals; zero is 0. UNILAND trims up to eight decimals without exponential notation.
-- Both reports use start date. Combined reports require matching BOTH endpoints. Non-daily intervals show actual hours and a warning.
+- Both reports use start date. Combined reports require matching BOTH endpoints. Combined periods show a neutral notice, inclusive consumption-date range and number of days. Daily report wording stays unchanged.
 - JRE worksheet has date plus 18 values; UNILAND has 16 values without a date. UNILAND grouped areas are worksheet-only.
 
 ## Verification and release work

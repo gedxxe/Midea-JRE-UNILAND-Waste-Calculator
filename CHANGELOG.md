@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.0-alpha - 2026-09-28
+
+- Show combined reading periods as neutral notices, with inclusive dates and day counts in copied reports.
+- Autosave one replaceable account draft for both factories, including incomplete entries, with local recovery, delayed synchronization and conflict handling.
+- Save incomplete entries as a draft; keep revisions for completed reports. Add a separate working-draft table.
+
 ## v0.8.0-alpha - 2026-09-28
 
 - Show every consumption-period label, including combined dates, with wider scrollable charts and matching exports.

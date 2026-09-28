@@ -1,3 +1,4 @@
+import { createDraftAutosave } from './ui/drafts.js';
 import { createGraphs } from './ui/graphs.js';
 import { createPeriodPicker } from './ui/period.js';
 import { createGasPanel } from './ui/gas.js';
@@ -14,7 +15,7 @@ import {
   formatRowValue,
   generateFullIndonesiaReport,
 } from './engine.js';
-import { formatNumber, formatReportDate, shiftDate } from './numbers.js';
+import { formatNumber, formatReportDate, shiftDate, dayDiff } from './numbers.js';
 import { worksheetRowToTSV } from './worksheet.js';
 import { parseReading } from './importer.js';
 import { STORAGE_KEY, restoreDrafts, nextDayDraft } from './storage.js';
@@ -59,7 +60,7 @@ const gasPanel = createGasPanel({
   rememberUndo,
   rebuildUtilities: () => table.buildUtilities(),
 });
-let graphs;
+let graphs, autosave;
 let accountUser = null;
 let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
@@ -68,7 +69,10 @@ function accountChanged(user) {
   graphs?.reset(user);
   rawExport.reset();
   try {
-    if (accountUser) sessionStorage.removeItem(draftKey());
+    if (accountUser) {
+      sessionStorage.removeItem(draftKey());
+      sessionStorage.removeItem(draftKey() + '_sync');
+    }
   } catch {
     /* No persisted tab draft. */
   }
@@ -97,11 +101,21 @@ function accountChanged(user) {
   firstIdentity = false;
   $('save-status').textContent = t(saveStatus);
   mountPlant();
+  autosave?.reset(user);
 }
 const accounts = createAccounts({
   current,
   identityChanged: accountChanged,
-  reportSaved: () => graphs?.saved(),
+  reportSaved: () => {
+    graphs?.saved();
+    autosave?.changed();
+    void autosave?.flush();
+  },
+  canSaveReport: () => calculateDraft(current()).success,
+  saveIncomplete: async () => {
+    autosave.changed();
+    await autosave.flush();
+  },
   toast,
   loadDraft(draft) {
     plant = draft.plantKey;
@@ -109,6 +123,21 @@ const accounts = createAccounts({
     drafts[plant] = draft;
     mountPlant();
     changed();
+  },
+});
+autosave = createDraftAutosave({
+  request: (...args) => accounts.request(...args),
+  read: () => ({ version: 4, drafts, reportLinks: accounts.getLinks() }),
+  apply(workspace) {
+    drafts = workspace?.drafts || { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
+    accounts.setLinks(workspace?.reportLinks);
+    dirty = false;
+    undo = null;
+    $('undo-change').hidden = true;
+    mountPlant();
+  },
+  localSaved: () => {
+    dirty = false;
   },
 });
 graphs = createGraphs({ current, request: (...args) => accounts.request(...args), toast });
@@ -129,6 +158,7 @@ function changed() {
   saveStatus = 'changed';
   $('save-status').textContent = t(saveStatus);
   renderResults();
+  autosave?.changed();
 }
 function mountPlant() {
   periodPicker.sync();
@@ -153,10 +183,16 @@ function renderResults() {
   $('report-date-label').textContent = current().startDate
     ? formatReportDate(current().startDate)
     : t('selectPeriod');
-  const dateIssue = report.issues.find((i) => i.code.startsWith('DATE_'));
+  const dateIssue = report.issues.find((i) => i.code.startsWith('DATE_') && i.level !== 'NOTICE');
   $('period-note').textContent = dateIssue
     ? dateIssue.message
-    : t('periodNote', { start: current().startDate, end: current().endDate });
+    : dayDiff(current().startDate, current().endDate) > 1
+      ? t('combinedNotice', {
+          days: dayDiff(current().startDate, current().endDate),
+          start: current().startDate,
+          end: current().endDate,
+        })
+      : t('periodNote', { start: current().startDate, end: current().endDate });
   $('period-note').classList.toggle('warning', !!dateIssue && !!current().startDate);
   $('example-note').hidden = !current().isExample;
   $('completion-progress').max = report.calculatedRows.length;
@@ -168,11 +204,14 @@ function renderResults() {
   $('main-total').textContent = formatRowValue(plant, report.calculatedRows[0]);
   $('main-unit').textContent = report.totalDirectUnit;
   $('result-state').textContent = report.success
-    ? report.issues.length
+    ? report.issues.filter((i) => i.level !== 'NOTICE').length
       ? t('needsCheck')
       : t('ready')
     : t('incomplete');
-  $('result-state').classList.toggle('ready', report.success && !report.issues.length);
+  $('result-state').classList.toggle(
+    'ready',
+    report.success && !report.issues.some((i) => i.level !== 'NOTICE'),
+  );
   if (plant === 'JRE') {
     $('derived-one-label').textContent = 'Sub-meter 2-29';
     $('derived-two-label').textContent = t('gapLabel');
@@ -207,7 +246,7 @@ function renderResults() {
     : t('noteCount', { count: otherIssues.length });
   $('validation-panel').hidden = !showValidation;
   if (showValidation) {
-    $('validation-summary').textContent = report.issues.length
+    $('validation-summary').textContent = report.issues.filter((i) => i.level !== 'NOTICE').length
       ? t('validation', { count: report.issues.length })
       : t('valid');
     $('validation-list').replaceChildren(
@@ -253,12 +292,13 @@ function renderResults() {
   $('copy-worksheet').disabled = !report.success;
   $('copy-note').textContent = !report.success
     ? t('copyIncomplete')
-    : report.issues.length
+    : report.issues.filter((i) => i.level !== 'NOTICE').length
       ? t('copyWarnings')
       : t('copyPeriod');
   filterTable();
   rawExport.render();
   gasPanel.update();
+  autosave?.render();
 }
 async function copyText(text) {
   try {
@@ -415,29 +455,10 @@ $('copy-worksheet').addEventListener('click', () => {
   if (reports[plant].success) void copyText(worksheetRowToTSV(reports[plant].worksheet));
 });
 $('save-draft').addEventListener('click', () => {
-  try {
-    draftStorage().setItem(draftKey(), JSON.stringify({ version: 4, drafts }));
-    dirty = false;
-    saveStatus = 'saved';
-    $('save-status').textContent = t(saveStatus);
-    toast(t('savedBoth'));
-  } catch {
-    toast(t('saveError'));
-  }
+  autosave.changed();
+  void autosave.flush();
 });
-$('forget-draft').addEventListener('click', () => {
-  try {
-    draftStorage().removeItem(draftKey());
-    for (const key of accountUser ? [] : ['JRE', 'UNILAND'])
-      localStorage.removeItem(`midea_energy_baseline_${key}_v3`);
-    dirty = true;
-    saveStatus = 'deleted';
-    $('save-status').textContent = t(saveStatus);
-    toast(t('deletedDetail'));
-  } catch {
-    toast(t('deleteError'));
-  }
-});
+$('forget-draft').addEventListener('click', () => void autosave.forget());
 $('next-day').addEventListener('click', () => {
   try {
     const next = nextDayDraft(current());
@@ -496,7 +517,7 @@ $('apply-import').addEventListener('click', () => {
   toast(parsed.issues.length ? t('importedWarnings') : t('imported'));
 });
 window.addEventListener('beforeunload', (event) => {
-  if (dirty) {
+  if (dirty || autosave?.pending()) {
     event.preventDefault();
     event.returnValue = '';
   }

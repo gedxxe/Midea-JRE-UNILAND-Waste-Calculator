@@ -1,5 +1,5 @@
 import { exportRawReading } from '../../raw-export.js';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { calculateDraft, generateFullIndonesiaReport } from '../../engine.js';
 

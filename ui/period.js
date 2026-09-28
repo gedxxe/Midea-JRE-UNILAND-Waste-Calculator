@@ -16,7 +16,7 @@ export function createPeriodPicker({ current, apply }) {
           period: periodLabel(start, end),
           start,
           end,
-          hours: (days + 1) * 24,
+          days: days + 1,
         })
       : t('combinedInvalid');
   }
