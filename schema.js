@@ -24,7 +24,7 @@ export const PLANT_SCHEMAS = {
       { name: 'Piping Building 3#', unit: 'kWh' },
       { name: 'All Office Building', unit: 'kWh', factors: [1000] },
       { name: 'Electricity Building 2#', unit: 'kWh' },
-      { name: 'Structural Laboratory', unit: 'kWh' },
+      { name: 'Structural Laboratory', unit: 'kWh', subtractUsageOf: 'Piping Building 1#' },
       { name: 'Test Control Room', unit: 'kWh', factors: [1, 1] },
       { name: 'IQC and OQC Room', unit: 'kWh' },
       { name: 'New Laboratory', unit: 'kWh' },

@@ -513,6 +513,12 @@ label {
   display: block;
   margin-bottom: 2px;
 }
+.equipment > small {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.85em;
+  font-weight: 400;
+}
 .equipment .check-label {
   margin-top: 10px;
   white-space: normal;

@@ -32,6 +32,8 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             node('span', String(ri + 1).padStart(2, '0'), 'equipment-number'),
             node('span', row.name),
           );
+          if (row.subtractUsageOf)
+            equipment.append(node('small', t('netUsageHint', { name: row.subtractUsageOf })));
           if (row.allowInactive) {
             const label = node('label', undefined, 'check-label');
             const check = node('input');
@@ -210,6 +212,16 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             `${m.start || '?'} → ${m.end || '?'} × ${m.factor} = ${formatNumber(m.energy, 8)} ${row.unit}`,
         )
         .join('\n');
+      if (row.subtractUsageOf)
+        output.title +=
+          '\n' +
+          t('netUsageCalculation', {
+            gross: formatNumber(row.grossEnergy, 8),
+            name: row.subtractUsageOf,
+            deducted: formatNumber(row.deductedEnergy, 8),
+            net: formatRowValue(getPlant(), row),
+            unit: row.unit,
+          });
       inputNodes[ri].forEach((pair, mi) => {
         const relevant = rowIssues.filter((i) => i.meterIndex === mi && i.code !== 'EMPTY_READING');
         for (const input of Object.values(pair)) {

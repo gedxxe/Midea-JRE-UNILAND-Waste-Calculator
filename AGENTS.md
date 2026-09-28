@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -38,6 +38,8 @@ New user instructions override older choices here. Update this decision record, 
 - Graph refinement confirmed 2026-09-27: every plotted period must have a visible date label, with combined consumption dates kept as one point (18–20 ends at the 21st reading). Provide a combined-period entry helper. Y-axis bounds may adjust the view only; automatic zero-based scaling is the default. Keep changelogs about product changes, not operational import jobs. Imported data is database content, never hardcoded or committed; deleting it requires an explicit batch-specific maintenance request.
 
 - On 2026-09-28 the user confirmed one active replaceable draft per account containing JRE and UNILAND. Incomplete entries must autosave; Save routes incomplete data to draft storage and complete data to the existing report workflow. Autosave must not create report revisions or write on every keystroke. Detect cross-tab/device conflicts instead of silently overwriting them.
+
+- JRE Structural correction confirmed 2026-09-28: Piping Building 1# is included in the Structural meter. Structural net usage is its raw meter delta minus Piping Building 1# consumption after x40. Preserve original cumulative readings; apply the net result to new reports, worksheets, sub-meter cross-checks and saved graph output. Do not recalculate stored reports or imported history automatically.
 
 ## Architecture
 

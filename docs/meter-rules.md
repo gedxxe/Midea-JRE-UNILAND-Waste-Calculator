@@ -23,13 +23,14 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 - Heat Exchanger: x40, x1, x1, x1. Injection Molding: 13 direct meters.
 - Cooling water: two direct meters. Dryer: two direct meters. Control: two direct meters. Server Room: two direct meters.
 - Piping Building 1#: x40. Piping Building 3#: direct. Office: x1000.
+- Structural Laboratory meter includes Piping Building 1#. Net Structural usage = direct Structural delta minus Piping 1 delta x40, for the same reading period. Subtract at scaled precision before rounding. Keep meter readings and gross meter detail unchanged; reports, worksheet Structural and new graph snapshots use net usage. A missing dependency or negative result becomes unavailable with a check note, never zero. Existing saved reports and imported history are not recalculated.
 - Warehouse: x40, x1, x1. Utility Area: x1000, x40. Heater: x40.
 - Other factors remain as defined in schema.js, not editable through the UI or import.
 - Only Air Compressor 1# and New Air Compressor 2# may interpret an unavailable reading as zero after the operator marks the unit inactive. Next day clears this confirmation.
 
 Examples: Office `394,850` to `395,250` = `400.00 kWh`. Utility `660,610 + 29,09` to `660,700 + 29,53` = `107.60 kWh`.
 
-Cross-check compares Total to equipment 2 through 29. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
+Cross-check compares Total to equipment 2 through 29, using net Structural usage so Piping 1 is counted once. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
 
 Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an ISO date plus 18 values. Piping All is Piping Building 1# + Piping Building 3# and does not add a report row.
 
@@ -64,7 +65,7 @@ These sums appear only in the worksheet. Individual equipment remain separate in
 
 Text import accepts one date and a complete factory snapshot, including wrapped Injection Molding entries. Meter counts, duplicate/missing equipment, and numeric syntax are validated before replacement. Wrong imported ratios produce a warning and never override the schema. One- or two-column Excel pastes are planned atomically; an invalid cell or oversized block changes nothing.
 
-Utilities are optional direct consumption values, except enabled JRE tank gas calculations described in [gas rules](gas.md). Those gas values come from converted raw observations and refill events. A note without a value blocks copying. Water notes are retained. Drafts use localStorage key midea_energy_draft_v4 and are written only on Save draft. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and does not save automatically.
+Utilities are optional direct consumption values, except enabled JRE tank gas calculations described in [gas rules](gas.md). Those gas values come from converted raw observations and refill events. A note without a value blocks copying. Water notes are retained. Drafts use an account-scoped sessionStorage backup and synchronize to one replaceable account workspace, including incomplete entries. Legacy guest localStorage drafts stay separate. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and autosaves the unfinished draft. See docs/accounts.md for synchronization and conflict handling.
 
 ## Raw reading export
 

@@ -5,7 +5,37 @@ import { defaultGraphs, GRAPH_METRICS, validGraph } from '../graph-schema.js';
 import { reportSnapshot } from '../server/report-data.js';
 import { exampleDraft } from '../examples.js';
 import { periodLabel, graphYAxis } from '../graph-axis.js';
+import { PLANT_SCHEMAS } from '../schema.js';
 const saved = (plant = 'JRE') => reportSnapshot(exampleDraft(plant));
+
+test('new Structural snapshots graph net usage while historical snapshots retain their saved values', () => {
+  const draft = exampleDraft('JRE');
+  const structural = PLANT_SCHEMAS.JRE.rows.findIndex(
+    (row) => row.name === 'Structural Laboratory',
+  );
+  const piping = PLANT_SCHEMAS.JRE.rows.findIndex((row) => row.name === 'Piping Building 1#');
+  draft.rows[structural].start = ['1000'];
+  draft.rows[structural].end = ['1150'];
+  draft.rows[piping].start = ['10'];
+  draft.rows[piping].end = ['11'];
+  const snapshot = reportSnapshot(draft);
+  assert.match(snapshot.output.reportText, /20\. Structural Laboratory: 110\.00 kWh/);
+  assert.equal(graphValues(snapshot, 'JRE').w11, 110);
+  assert.deepEqual(snapshot.draft.rows[structural], draft.rows[structural]);
+  const historical = structuredClone(snapshot);
+  historical.engineVersion = '0.9.0-alpha';
+  historical.output.worksheetText = historical.output.worksheetText.replace(
+    /^Structural:.*$/m,
+    'Structural: 150',
+  );
+  historical.output.reportText = historical.output.reportText.replace(
+    'Structural Laboratory: 110.00',
+    'Structural Laboratory: 150.00',
+  );
+  assert.equal(graphValues(historical, 'JRE').w11, 150);
+  draft.rows[piping].end = ['20'];
+  assert.equal(graphValues(reportSnapshot(draft), 'JRE').w11, null);
+});
 
 test('period labels show every included consumption date without treating the final reading as another day', () => {
   assert.equal(periodLabel('2026-09-18', '2026-09-21'), '18–20/09');

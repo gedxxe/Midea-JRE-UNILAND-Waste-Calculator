@@ -5,6 +5,16 @@ import { accountMessages } from './accounts.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  netUsageHint: [
+    'Enter original readings. Usage excludes {name}.',
+    '填写原始读数。用量已扣除 {name}。',
+    'Isi reading asli. Pemakaian dikurangi {name}.',
+  ],
+  netUsageCalculation: [
+    'Net: {gross} - {name} ({deducted}) = {net} {unit}',
+    '净用量：{gross} - {name} ({deducted}) = {net} {unit}',
+    'Murni: {gross} - {name} ({deducted}) = {net} {unit}',
+  ],
   ...draftMessages,
   updateAvailable: [
     'A newer version is available. Save your draft, then reload this page to see the new features.',
