@@ -111,6 +111,12 @@ test('language changes preserve readings, report bytes, and the saved draft', as
   await page.locator('#load-example').click();
   const report = await page.locator('#report-preview').inputValue();
   const reading = await cell(page).inputValue();
+  const gap = calculateDraft(exampleDraft('JRE')).gapKWh.toFixed(2);
+  expect(Number(gap)).toBeLessThan(0);
+  await expect(page.locator('#derived-two')).toHaveText(`${gap} kWh`);
+  await expect(page.locator('#report-preview')).toHaveValue(
+    new RegExp(`Gap: ${gap.replace('.', '\\.')} kWh`),
+  );
   await expect(page.locator('#copy-report')).toBeEnabled();
   for (const [language, label] of [
     ['zh-CN', '保存草稿'],

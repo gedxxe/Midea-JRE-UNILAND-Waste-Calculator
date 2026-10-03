@@ -68,7 +68,7 @@ test('JRE main, Office, Utility and Piping use the documented examples', () => {
   assert.equal(r.worksheet.derived.pipingAll, 15);
   assert.equal(value(r, 'Structural Laboratory'), 0);
   assert.equal(r.subAreasSumKWh, 522.6);
-  assert.equal(r.gapKWh, 24760.4);
+  assert.equal(r.gapKWh, -24760.4);
   assert.match(r.reportSectionText, /18\. All Office Building: 400\.00 kWh/);
   assert.match(r.reportSectionText, /28\. Utility Area: 107\.60 kWh/);
   assert.match(r.reportSectionText, /CROSS-CHECK:/);
@@ -87,7 +87,7 @@ test('Structural excludes converted Piping 1 usage once while preserving raw rea
   assert.equal(value(result, 'Piping Building 1#'), 40);
   assert.equal(value(result, 'Total'), 200);
   assert.equal(result.subAreasSumKWh, 155);
-  assert.equal(result.gapKWh, 45);
+  assert.equal(result.gapKWh, -45);
   assert.equal(result.worksheet.values[result.worksheet.headers.indexOf('Structural')], 110);
   assert.match(result.mainText, /20\. Structural Laboratory: 110\.00 kWh/);
   assert.match(exportRawReading(d, 'end').text, /20\. Structural Laboratory: 1150/);
@@ -135,7 +135,7 @@ test('JRE Air Compressor 1 uses x40 while new compressors remain direct and raw 
   assert.equal(value(r, 'New Air Compressor 2#'), 1.5);
   assert.equal(r.totalDirectEnergy, 100);
   assert.equal(r.subAreasSumKWh, 63);
-  assert.equal(r.gapKWh, 37);
+  assert.equal(r.gapKWh, -37);
   assert.match(r.mainText, /12\. Air Compressor 1#: 60\.00 kWh/);
   const exported = exportRawReading(d, 'end').text;
   assert.match(exported, /12\. Air Compressor 1#: 101,75 \(Ratio 40\)/);
@@ -212,6 +212,32 @@ test('zero main meter produces no invalid gap percentage', () => {
   assert.equal(r.gapPercent, null);
   assert.match(r.mainText, /1\. Total: 0 kWh/);
   assert.doesNotMatch(r.reportSectionText, /NaN|Infinity/);
+});
+
+test('JRE gap is sub-meter minus main with signed percent relative to main', () => {
+  const d = complete();
+  set(d, 'Total', '1000', '1100');
+  for (const [usage, gap] of [
+    [80, -20],
+    [100, 0],
+    [120, 20],
+  ]) {
+    set(d, 'Crusher Machine', '1000', String(1000 + usage));
+    const result = calculateDraft(d);
+    assert.equal(result.gapKWh, gap);
+    assert.equal(result.gapPercent, gap);
+    assert.equal(result.totalDirectEnergy, 100);
+    assert.equal(result.subAreasSumKWh, usage);
+    assert.equal(result.issues.length, 0);
+    assert.ok(result.crossCheckText.includes(`Gap: ${gap.toFixed(2)} kWh`));
+    assert.ok(result.crossCheckText.includes(`Gap: ${gap.toFixed(2)}%`));
+  }
+  set(d, 'Total', '1000', '1000');
+  assert.equal(calculateDraft(d).gapKWh, 120);
+  assert.equal(calculateDraft(d).gapPercent, null);
+  set(d, 'Total', '-', '1000');
+  assert.equal(calculateDraft(d).gapKWh, null);
+  assert.equal(calculateDraft(d).gapPercent, null);
 });
 test('missing meters never become zero or a misleading partial total', () => {
   const d = complete();

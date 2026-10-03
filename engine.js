@@ -258,7 +258,7 @@ export function calculateDraft(draft) {
       : null;
   const gapKWh =
     subAreasSumKWh !== null && totalDirectEnergy !== null
-      ? round(totalDirectEnergy - subAreasSumKWh, 8)
+      ? round(subAreasSumKWh - totalDirectEnergy, 8)
       : null;
   const gapPercent =
     gapKWh !== null && totalDirectEnergy !== 0 ? (gapKWh / totalDirectEnergy) * 100 : null;
