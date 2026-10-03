@@ -8,6 +8,25 @@ import { periodLabel, graphYAxis } from '../graph-axis.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 const saved = (plant = 'JRE') => reportSnapshot(exampleDraft(plant));
 
+test('Air Compressor 1 server snapshots apply x40 once and graphs preserve older saved output', () => {
+  const draft = exampleDraft('JRE');
+  draft.rows[11].start = ['100.25'];
+  draft.rows[11].end = ['101.75'];
+  draft.rows[11].factor = 1;
+  const snapshot = reportSnapshot(draft);
+  assert.match(snapshot.output.reportText, /12\. Air Compressor 1#: 60\.00 kWh/);
+  assert.equal(snapshot.draft.rows[11].end[0], '101.75');
+  const metric = GRAPH_METRICS.JRE.find((m) => m.label === 'Air Compressor 1#').key;
+  assert.equal(graphValues(snapshot, 'JRE')[metric], 60);
+  const historical = structuredClone(snapshot);
+  historical.engineVersion = '0.9.1-alpha';
+  historical.output.reportText = historical.output.reportText.replace(
+    '12. Air Compressor 1#: 60.00',
+    '12. Air Compressor 1#: 1.50',
+  );
+  assert.equal(graphValues(historical, 'JRE')[metric], 1.5);
+});
+
 test('new Structural snapshots graph net usage while historical snapshots retain their saved values', () => {
   const draft = exampleDraft('JRE');
   const structural = PLANT_SCHEMAS.JRE.rows.findIndex(

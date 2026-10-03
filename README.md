@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.1-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.2-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+JRE Air Compressor 1# (row 12) uses reading difference x40. New Air Compressor 1# and 2# remain direct. Raw export keeps original readings and adds Ratio 40. Existing saved history is unchanged; correcting an old report requires saving a revision.
 
 JRE Structural Laboratory consumption now excludes Piping Building 1#: Structural meter delta minus Piping 1 delta x40. Enter original cumulative readings. Reports, worksheets and graphs from newly saved reports use net Structural usage; stored history stays unchanged. Missing inputs or a negative net result show `-` with a check note.
 
@@ -89,6 +91,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+JRE Air Compressor 1#（第12行）用量为读数差值 x40。New Air Compressor 1# 和 2# 仍按直接差值计算。原始导出保留读数并标注 Ratio 40。已保存的历史记录不变；修改旧报告需保存新修订版。
+
 JRE Structural Laboratory 用量现在扣除 Piping Building 1#：Structural 电表差值减去 Piping 1 电表差值 x40。填写原始累计读数。新保存的报告、工作表及图表使用净用量，已有历史记录保持不变。缺少读数或净值为负时显示 `-` 并提示检查。
 
 未完成的读数也会自动保存为一个包含 JRE 和 UNILAND 的账户草稿，持续替换而不创建报告修订。本标签页立即备份，停止输入 30 秒或连续编辑两分钟后同步数据库。关闭前请检查保存状态；有冲突时需选择保留的版本。保存按钮将未完成输入保存为草稿，完整输入保存为报告。合并读数仅显示普通提示，标题如 18-20 SEPTEMBER 2026 - 3 DAYS，总量不拆分。
@@ -140,6 +144,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Air Compressor 1# JRE (baris 12) memakai selisih reading x40. New Air Compressor 1# dan 2# tetap direct. Ekspor mentah mempertahankan reading asli dengan keterangan Ratio 40. Histori tersimpan tetap sama; koreksi laporan lama perlu disimpan sebagai revisi.
 
 Pemakaian Structural Laboratory JRE sekarang dikurangi Piping Building 1#: selisih meter Structural dikurangi selisih meter Piping 1 x40. Masukkan reading kumulatif asli. Laporan, worksheet, dan grafik dari laporan baru memakai Structural murni; histori tersimpan tetap sama. Reading tidak tersedia atau hasil negatif menjadi `-` dengan catatan pemeriksaan.
 

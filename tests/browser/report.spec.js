@@ -93,6 +93,7 @@ test('language changes preserve readings, report bytes, and the saved draft', as
     await page.locator('#language-select').selectOption(language);
     await expect(page.locator('html')).toHaveAttribute('lang', language);
     await expect(page.locator('#save-draft')).toHaveText(label);
+    await expect(page.locator('#meter-body tr[data-row="11"] .ratio strong')).toHaveText('× 40');
     await expect(cell(page)).toHaveValue(reading);
     await expect(page.locator('#report-preview')).toHaveValue(report);
   }
