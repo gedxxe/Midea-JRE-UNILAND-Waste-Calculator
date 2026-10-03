@@ -176,7 +176,7 @@ export const catalog = {
     '本周期总表读数差值',
     'Selisih reading total pada periode ini',
   ],
-  gapLabel: ['Gap to main meter', '与总表的差值', 'Gap ke main meter'],
+  gapLabel: ['Sub-meter - main meter', '分表合计 - 总表', 'Sub-meter - main meter'],
   gapPending: [
     'The gap is calculated when all sub-meters are complete.',
     '所有分表填写完整后才计算差值。',
