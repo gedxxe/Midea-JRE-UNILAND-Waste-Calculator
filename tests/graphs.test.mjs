@@ -25,6 +25,21 @@ test('Air Compressor 1 server snapshots apply x40 once and graphs preserve older
     '12. Air Compressor 1#: 1.50',
   );
   assert.equal(graphValues(historical, 'JRE')[metric], 1.5);
+  draft.rows[11].end = [...draft.rows[11].start];
+  draft.importIssues = [
+    {
+      code: 'RATIO_MISMATCH',
+      level: 'WARNING',
+      rowIndex: 11,
+      meterIndex: 0,
+      message:
+        'Air Compressor 1#, meter 1: input ratio 40, template ratio 1. Using the template ratio.',
+    },
+  ];
+  const zero = reportSnapshot(draft);
+  assert.equal(zero.output.checks, '');
+  assert.equal(graphValues(zero, 'JRE')[metric], 0);
+  assert.deepEqual(zero.draft.importIssues, []);
 });
 
 test('new Structural snapshots graph net usage while historical snapshots retain their saved values', () => {

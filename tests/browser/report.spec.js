@@ -45,6 +45,33 @@ test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
 });
 
+test('an old account draft drops obsolete compressor ratio warnings and keeps zero consumption', async ({
+  page,
+}) => {
+  const drafts = { JRE: exampleDraft('JRE'), UNILAND: exampleDraft('UNILAND') };
+  drafts.JRE.rows[11].end = [...drafts.JRE.rows[11].start];
+  drafts.JRE.importIssues = [
+    {
+      code: 'RATIO_MISMATCH',
+      level: 'WARNING',
+      rowIndex: 11,
+      meterIndex: 0,
+      message:
+        'Air Compressor 1#, meter 1: input ratio 40, template ratio 1. Using the template ratio.',
+    },
+  ];
+  await page.route('**/api/drafts', (route) =>
+    route.fulfill({ json: { version: 1, workspace: { version: 4, drafts } } }),
+  );
+  await page.reload();
+  await expect(cell(page, 11)).toHaveValue(drafts.JRE.rows[11].start[0]);
+  await expect(cell(page, 11, 'end')).toHaveValue(drafts.JRE.rows[11].start[0]);
+  await expect(page.locator('#meter-body tr[data-row="11"] .energy > span')).toHaveText('0');
+  await expect(page.locator('#report-preview')).not.toHaveValue(/input ratio|template ratio/);
+  await expect(page.locator('#report-preview')).toHaveValue(/12\. Air Compressor 1#: 0 kWh/);
+  await expect(page.locator('#copy-report')).toBeEnabled();
+});
+
 test('Structural shows net usage with original inputs and translated guidance', async ({
   page,
 }, info) => {

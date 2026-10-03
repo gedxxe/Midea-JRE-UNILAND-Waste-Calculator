@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.3-alpha - 2026-10-03
+
+- Recheck saved import ratio warnings against current meter factors, removing obsolete warnings when reopening drafts or calculating new reports. Equal compressor readings correctly remain zero consumption.
+
 ## v0.9.2-alpha - 2026-10-03
 
 - Correct JRE Air Compressor 1# to use ratio 40 in consumption and raw-export annotations. Keep the inactive exception and stored history unchanged.
