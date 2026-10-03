@@ -332,6 +332,52 @@ test('importer validates ratios and preserves their warning in calculated report
   d.importIssues = parsed.issues;
   assert.match(calculateDraft(d).reportSectionText, /input ratio 1, template ratio 1000/);
 });
+
+test('equal compressor readings yield zero and obsolete ratio warnings disappear without changing raw data', () => {
+  const d = complete();
+  const old = {
+    code: 'RATIO_MISMATCH',
+    level: 'WARNING',
+    rowIndex: 11,
+    meterIndex: 0,
+    message:
+      'Air Compressor 1#, meter 1: input ratio 40, template ratio 1. Using the template ratio.',
+  };
+  for (const warning of [old, { ...old, inputRatio: 40 }]) {
+    d.importIssues = [warning];
+    const before = structuredClone(d);
+    const result = calculateDraft(d);
+    assert.equal(value(result, 'Air Compressor 1#'), 0);
+    assert.equal(result.checks, '');
+    assert.match(result.mainText, /12\. Air Compressor 1#: 0 kWh/);
+    assert.deepEqual(d, before);
+    const restored = restoreDrafts(
+      JSON.stringify({ version: 4, drafts: { JRE: d, UNILAND: complete('UNILAND') } }),
+    );
+    assert.deepEqual(restored.JRE.rows, d.rows);
+    assert.deepEqual(restored.JRE.importIssues, []);
+  }
+  d.importIssues = [
+    {
+      ...old,
+      message: old.message.replace(
+        'input ratio 40, template ratio 1',
+        'input ratio 1, template ratio 250',
+      ),
+    },
+  ];
+  assert.match(calculateDraft(d).checks, /input ratio 1, template ratio 40/);
+  const parsed = parseReading(
+    raw(d).replace(
+      '12. Air Compressor 1#: 1000 (Ratio 40)',
+      '12. Air Compressor 1#: 1000 (Ratio 1)',
+    ),
+    'JRE',
+  );
+  assert.equal(parsed.issues[0].inputRatio, 1);
+  d.importIssues = parsed.issues;
+  assert.match(calculateDraft(d).checks, /input ratio 1, template ratio 40/);
+});
 test('importer blocks two days, duplicate equipment, missing meter and junk suffixes', () => {
   const text = raw(complete());
   for (const changed of [

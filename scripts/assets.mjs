@@ -23,6 +23,7 @@ export const PUBLIC_FILES = [
   'raw-export.js',
   'ui/raw-export.js',
   'importer.js',
+  'import-ratios.js',
   'storage.js',
   'examples.js',
   'clock.js',

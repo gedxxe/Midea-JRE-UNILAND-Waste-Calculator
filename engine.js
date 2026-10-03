@@ -1,5 +1,6 @@
 import { createGasDraft, calculateGas, GASES, GAS_TABLE_VERSION, gasMassText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
+import { currentRatioIssues } from './import-ratios.js';
 import {
   decimalText,
   scaledReading,
@@ -38,7 +39,7 @@ function issue(issues, code, message, rowIndex = null, meterIndex = null, level 
 export function calculateDraft(draft) {
   const schema = PLANT_SCHEMAS[draft.plantKey];
   if (!schema) throw new Error('Unknown factory.');
-  const issues = [...(draft.importIssues || [])];
+  const issues = currentRatioIssues(draft.plantKey, draft.importIssues);
   const days = dayDiff(draft.startDate, draft.endDate);
   if (days === null)
     issue(issues, 'DATE_INVALID', 'Enter valid start and end dates.', null, null, 'ERROR');

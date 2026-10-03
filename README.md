@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.2-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.3-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+Saved draft ratio warnings are checked against current factors. Obsolete warnings clear when reopening a draft; equal valid readings produce zero consumption. Genuine ratio mismatches remain visible.
 
 JRE Air Compressor 1# (row 12) uses reading difference x40. New Air Compressor 1# and 2# remain direct. Raw export keeps original readings and adds Ratio 40. Existing saved history is unchanged; correcting an old report requires saving a revision.
 
@@ -91,6 +93,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+草稿中的比例提示会按当前系数重新检查。重新打开草稿时清除过时提示；有效读数相同则用量为零。实际比例不匹配仍会提示。
+
 JRE Air Compressor 1#（第12行）用量为读数差值 x40。New Air Compressor 1# 和 2# 仍按直接差值计算。原始导出保留读数并标注 Ratio 40。已保存的历史记录不变；修改旧报告需保存新修订版。
 
 JRE Structural Laboratory 用量现在扣除 Piping Building 1#：Structural 电表差值减去 Piping 1 电表差值 x40。填写原始累计读数。新保存的报告、工作表及图表使用净用量，已有历史记录保持不变。缺少读数或净值为负时显示 `-` 并提示检查。
@@ -144,6 +148,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Catatan ratio pada draft diperiksa ulang sesuai faktor saat ini. Catatan lama yang sudah tidak berlaku dibersihkan saat draft dibuka; reading valid yang sama menghasilkan konsumsi nol. Ratio yang memang berbeda tetap diberi catatan.
 
 Air Compressor 1# JRE (baris 12) memakai selisih reading x40. New Air Compressor 1# dan 2# tetap direct. Ekspor mentah mempertahankan reading asli dengan keterangan Ratio 40. Histori tersimpan tetap sama; koreksi laporan lama perlu disimpan sebagai revisi.
 

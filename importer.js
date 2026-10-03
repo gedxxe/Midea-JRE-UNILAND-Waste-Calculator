@@ -88,6 +88,7 @@ export function parseReading(text, plantKey) {
             code: 'RATIO_MISMATCH',
             rowIndex: ri,
             meterIndex: mi,
+            inputRatio: factor,
             message: `${row.name}, meter ${mi + 1}: input ratio ${factor}, template ratio ${row.factors[mi]}. Using the template ratio.`,
           });
       }

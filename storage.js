@@ -1,5 +1,6 @@
 import { restoreGasDraft, nextGasDay } from './gas.js';
 import { createDraft } from './engine.js';
+import { currentRatioIssues } from './import-ratios.js';
 import { validDate, shiftDate, decimalText } from './numbers.js';
 
 export const STORAGE_KEY = 'midea_energy_draft_v4';
@@ -68,27 +69,7 @@ export function restoreDrafts(raw) {
         value[field] = text;
       }
     });
-    // Only import warnings from this app's known parser can survive a saved draft.
-    draft.importIssues = (Array.isArray(input.importIssues) ? input.importIssues : [])
-      .filter(
-        (i) =>
-          i &&
-          i.code === 'RATIO_MISMATCH' &&
-          typeof i.message === 'string' &&
-          Number.isInteger(i.rowIndex) &&
-          i.rowIndex >= 0 &&
-          i.rowIndex < draft.rows.length &&
-          Number.isInteger(i.meterIndex) &&
-          i.meterIndex >= 0 &&
-          i.meterIndex < draft.rows[i.rowIndex].start.length,
-      )
-      .map((i) => ({
-        code: i.code,
-        message: i.message.slice(0, 500),
-        level: 'WARNING',
-        rowIndex: i.rowIndex,
-        meterIndex: i.meterIndex,
-      }));
+    draft.importIssues = currentRatioIssues(plant, input.importIssues);
     result[plant] = draft;
   }
   return result;
