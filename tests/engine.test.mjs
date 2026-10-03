@@ -123,6 +123,29 @@ test('Structural stays unavailable when either meter is missing or the net consu
   set(d, 'Structural Laboratory', '-', '1010');
   assert.equal(value(calculateDraft(d), 'Structural Laboratory'), null);
 });
+test('JRE Air Compressor 1 uses x40 while new compressors remain direct and raw exports stay raw', () => {
+  const d = complete();
+  set(d, 'Total', '1000', '1100');
+  set(d, 'Air Compressor 1#', '100,25', '101,75');
+  set(d, 'New Air Compressor 1#', '100.25', '101.75');
+  set(d, 'New Air Compressor 2#', '100.25', '101.75');
+  const r = calculateDraft(d);
+  assert.equal(value(r, 'Air Compressor 1#'), 60);
+  assert.equal(value(r, 'New Air Compressor 1#'), 1.5);
+  assert.equal(value(r, 'New Air Compressor 2#'), 1.5);
+  assert.equal(r.totalDirectEnergy, 100);
+  assert.equal(r.subAreasSumKWh, 63);
+  assert.equal(r.gapKWh, 37);
+  assert.match(r.mainText, /12\. Air Compressor 1#: 60\.00 kWh/);
+  const exported = exportRawReading(d, 'end').text;
+  assert.match(exported, /12\. Air Compressor 1#: 101,75 \(Ratio 40\)/);
+  const imported = parseReading(exported, 'JRE');
+  assert.equal(imported.success, true);
+  assert.deepEqual(imported.issues, []);
+  set(d, 'Air Compressor 1#', '999999999.123456', '999999999.123457');
+  assert.equal(value(calculateDraft(d), 'Air Compressor 1#'), 0.00004);
+});
+
 test('multi-meter factors apply to paired differences before adding', () => {
   const d = complete();
   set(d, 'Window', ['100', '200', '300', '400', '500'], ['110', '201', '302', '403', '504']);

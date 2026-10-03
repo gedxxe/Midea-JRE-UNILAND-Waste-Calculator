@@ -32,7 +32,7 @@ test('JRE exports the chosen raw column, ratios and date without applying consum
   assert.ok(
     output.text.includes('2. Indoor: 12.3400 (Ratio 250) + 999999999999.999999 (Ratio 40)'),
   );
-  assert.ok(output.text.includes('12. Air Compressor 1#: -'));
+  assert.ok(output.text.includes('12. Air Compressor 1#: - (Ratio 40)\n'));
   assert.ok(output.text.includes('14. New Air Compressor 2#: 0'));
   assert.ok(
     output.text.includes('28. Utility Area: 125,250000 (Ratio 1000) + 125,250000 (Ratio 40)'),

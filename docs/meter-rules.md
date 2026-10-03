@@ -21,6 +21,7 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 - Total is the direct main-meter delta, never a sub-meter sum or x1000.
 - Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40.
 - Heat Exchanger: x40, x1, x1, x1. Injection Molding: 13 direct meters.
+- Air Compressor 1#: x40. New Air Compressor 1# and New Air Compressor 2#: direct. The confirmed inactive exception remains available for the same two rows.
 - Cooling water: two direct meters. Dryer: two direct meters. Control: two direct meters. Server Room: two direct meters.
 - Piping Building 1#: x40. Piping Building 3#: direct. Office: x1000.
 - Structural Laboratory meter includes Piping Building 1#. Net Structural usage = direct Structural delta minus Piping 1 delta x40, for the same reading period. Subtract at scaled precision before rounding. Keep meter readings and gross meter detail unchanged; reports, worksheet Structural and new graph snapshots use net usage. A missing dependency or negative result becomes unavailable with a check note, never zero. Existing saved reports and imported history are not recalculated.

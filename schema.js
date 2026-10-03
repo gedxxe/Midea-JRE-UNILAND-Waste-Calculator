@@ -16,7 +16,7 @@ export const PLANT_SCHEMAS = {
       { name: 'Cooling Tower and Water Pump Injection Molding', unit: 'kWh', factors: [1, 1] },
       { name: 'Electricity Building 3#', unit: 'kWh' },
       { name: 'Nitrogen and Refrigerant Station', unit: 'kWh' },
-      { name: 'Air Compressor 1#', unit: 'kWh', allowInactive: true },
+      { name: 'Air Compressor 1#', unit: 'kWh', factors: [40], allowInactive: true },
       { name: 'New Air Compressor 1#', unit: 'kWh' },
       { name: 'New Air Compressor 2#', unit: 'kWh', allowInactive: true },
       { name: 'Dryer and Cooling Tower New Air Compressor', unit: 'kWh', factors: [1, 1] },

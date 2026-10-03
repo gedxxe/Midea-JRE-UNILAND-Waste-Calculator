@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.2-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -40,6 +40,8 @@ New user instructions override older choices here. Update this decision record, 
 - On 2026-09-28 the user confirmed one active replaceable draft per account containing JRE and UNILAND. Incomplete entries must autosave; Save routes incomplete data to draft storage and complete data to the existing report workflow. Autosave must not create report revisions or write on every keystroke. Detect cross-tab/device conflicts instead of silently overwriting them.
 
 - JRE Structural correction confirmed 2026-09-28: Piping Building 1# is included in the Structural meter. Structural net usage is its raw meter delta minus Piping Building 1# consumption after x40. Preserve original cumulative readings; apply the net result to new reports, worksheets, sub-meter cross-checks and saved graph output. Do not recalculate stored reports or imported history automatically.
+
+- Air Compressor 1# JRE (row 12) ratio correction confirmed 2026-10-03: use x40, not direct. New Air Compressor 1# and 2# remain direct. Preserve the existing confirmed inactive-to-zero exception and raw cumulative readings; do not recalculate saved history automatically.
 
 ## Architecture
 

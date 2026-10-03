@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.2-alpha - 2026-10-03
+
+- Correct JRE Air Compressor 1# to use ratio 40 in consumption and raw-export annotations. Keep the inactive exception and stored history unchanged.
+
 ## v0.9.1-alpha - 2026-09-28
 
 - Deduct Piping Building 1# consumption from JRE Structural Laboratory usage before reports, worksheets and sub-meter totals. Preserve raw readings and saved history; flag missing inputs or negative net usage.
