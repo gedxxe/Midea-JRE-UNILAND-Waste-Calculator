@@ -41,6 +41,13 @@ export function formatNumber(value, digits = 6) {
   return trimmed === '-0' ? '0' : trimmed;
 }
 
+export function formatSignedNumber(value, digits = 2) {
+  if (!Number.isFinite(value)) return '-';
+  const fixed = value.toFixed(digits);
+  if (Number(fixed) === 0) return (0).toFixed(digits);
+  return value > 0 ? '+' + fixed : fixed;
+}
+
 export function validDate(value) {
   if (!/^20\d{2}-\d{2}-\d{2}$/.test(value || '')) return false;
   const date = new Date(`${value}T00:00:00Z`);

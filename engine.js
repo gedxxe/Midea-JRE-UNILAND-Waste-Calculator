@@ -6,6 +6,7 @@ import {
   scaledReading,
   round,
   formatNumber,
+  formatSignedNumber,
   dayDiff,
   formatReportPeriod,
 } from './numbers.js';
@@ -285,8 +286,8 @@ export function calculateDraft(draft) {
           'CROSS-CHECK:',
           `Sub-meter 2-29: ${subAreasSumKWh === null ? 'incomplete' : `${subAreasSumKWh.toFixed(2)} kWh`}`,
           `Main Total: ${totalDirectEnergy === null ? '-' : `${totalDirectEnergy.toFixed(2)} kWh`}`,
-          `Gap: ${gapKWh === null ? '-' : `${gapKWh.toFixed(2)} kWh`}`,
-          `Gap: ${gapPercent === null ? '-' : `${gapPercent.toFixed(2)}%`}`,
+          `Gap: ${gapKWh === null ? '-' : `${formatSignedNumber(gapKWh)} kWh`}`,
+          `Gap: ${gapPercent === null ? '-' : `${formatSignedNumber(gapPercent)}%`}`,
         ].join('\n')
       : '';
   const worksheet = buildWorksheet(draft.plantKey, reportDate, calculatedRows);

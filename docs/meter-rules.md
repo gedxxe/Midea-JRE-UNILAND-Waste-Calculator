@@ -31,7 +31,7 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 
 Examples: Office `394,850` to `395,250` = `400.00 kWh`. Utility `660,610 + 29,09` to `660,700 + 29,53` = `107.60 kWh`.
 
-Cross-check compares Total to equipment 2 through 29, using net Structural usage so Piping 1 is counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
+Cross-check compares Total to equipment 2 through 29, using net Structural usage so Piping 1 is counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. The panel and copied reports use the same signed two-decimal format for both kWh and percentage: +20.00, -20.00, or unsigned 0.00. Values rounded to zero never show +0.00 or -0.00. This changes presentation only; stored numeric values and historical output are unchanged. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
 
 Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an ISO date plus 18 values. Piping All is Piping Building 1# + Piping Building 3# and does not add a report row.
 

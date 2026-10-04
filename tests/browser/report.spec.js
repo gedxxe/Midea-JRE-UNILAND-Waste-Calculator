@@ -1,7 +1,7 @@
 import { exportRawReading } from '../../raw-export.js';
 import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
-import { calculateDraft, generateFullIndonesiaReport } from '../../engine.js';
+import { createDraft, calculateDraft, generateFullIndonesiaReport } from '../../engine.js';
 
 const cell = (page, row = 0, side = 'start', meter = 0) =>
   page.locator(`.meter-input[data-row="${row}"][data-side="${side}"][data-meter="${meter}"]`);
@@ -43,6 +43,56 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
+});
+
+test('gap signs match the panel, percentage and copied report across languages', async ({
+  page,
+  context,
+}, info) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const d = createDraft('JRE', '2026-10-01', '2026-10-02');
+  d.rows.forEach((row) => {
+    row.start.fill('1000');
+    row.end.fill('1000');
+  });
+  d.rows[0].end = ['1100'];
+  d.rows[7].end = ['1120'];
+  await page.route('**/api/drafts', (route) =>
+    route.fulfill({
+      json: {
+        version: 1,
+        workspace: { version: 4, drafts: { JRE: d, UNILAND: exampleDraft('UNILAND') } },
+      },
+    }),
+  );
+  await page.reload();
+  for (const [reading, sign] of [
+    ['1120', '+20.00'],
+    ['1080', '-20.00'],
+    ['1100', '0.00'],
+  ]) {
+    await cell(page, 7, 'end').fill(reading);
+    for (const language of ['en', 'zh-CN', 'id']) {
+      await page.locator('#language-select').selectOption(language);
+      await expect(page.locator('#derived-two')).toHaveText(`${sign} kWh`);
+      await expect(page.locator('#metric-note')).toContainText(`${sign}%`);
+      const report = await page.locator('#report-preview').inputValue();
+      expect(report).toContain(`Gap: ${sign} kWh`);
+      expect(report).toContain(`Gap: ${sign}%`);
+      await page.locator('#copy-report').click();
+      await expect
+        .poll(() =>
+          page.evaluate(async () =>
+            (await navigator.clipboard.readText()).replaceAll('\r\n', '\n'),
+          ),
+        )
+        .toBe(report);
+      if (reading === '1120' && language === 'en') {
+        await page.locator('#derived-two').scrollIntoViewIfNeeded();
+        await page.screenshot({ path: info.outputPath('positive-gap.png') });
+      }
+    }
+  }
 });
 
 test('an old account draft drops obsolete compressor ratio warnings and keeps zero consumption', async ({
