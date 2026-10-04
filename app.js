@@ -15,7 +15,13 @@ import {
   formatRowValue,
   generateFullIndonesiaReport,
 } from './engine.js';
-import { formatNumber, formatReportDate, shiftDate, dayDiff } from './numbers.js';
+import {
+  formatNumber,
+  formatSignedNumber,
+  formatReportDate,
+  shiftDate,
+  dayDiff,
+} from './numbers.js';
 import { worksheetRowToTSV } from './worksheet.js';
 import { parseReading } from './importer.js';
 import { STORAGE_KEY, restoreDrafts, nextDayDraft } from './storage.js';
@@ -217,13 +223,16 @@ function renderResults() {
     $('derived-two-label').textContent = t('gapLabel');
     $('derived-one').textContent =
       report.subAreasSumKWh === null ? '-' : `${report.subAreasSumKWh.toFixed(2)} kWh`;
-    $('derived-two').textContent = report.gapKWh === null ? '-' : `${report.gapKWh.toFixed(2)} kWh`;
+    $('derived-two').textContent =
+      report.gapKWh === null ? '-' : `${formatSignedNumber(report.gapKWh)} kWh`;
     $('metric-note').textContent =
       report.gapKWh === null
         ? t('gapPending')
         : t('gap', {
             value:
-              report.gapPercent === null ? t('undefinedGap') : report.gapPercent.toFixed(2) + '%',
+              report.gapPercent === null
+                ? t('undefinedGap')
+                : formatSignedNumber(report.gapPercent) + '%',
           });
   } else {
     $('derived-one-label').textContent = 'Indoor Area';

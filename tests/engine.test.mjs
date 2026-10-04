@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { createDraft, calculateDraft, generateFullIndonesiaReport } from '../engine.js';
-import { scaledReading, parseFlexibleNumber, shiftDate } from '../numbers.js';
+import { scaledReading, parseFlexibleNumber, shiftDate, formatSignedNumber } from '../numbers.js';
 import { worksheetRowToTSV } from '../worksheet.js';
 import { parseReading, planTablePaste } from '../importer.js';
 import { restoreDrafts, nextDayDraft } from '../storage.js';
@@ -229,8 +229,14 @@ test('JRE gap is sub-meter minus main with signed percent relative to main', () 
     assert.equal(result.totalDirectEnergy, 100);
     assert.equal(result.subAreasSumKWh, usage);
     assert.equal(result.issues.length, 0);
-    assert.ok(result.crossCheckText.includes(`Gap: ${gap.toFixed(2)} kWh`));
-    assert.ok(result.crossCheckText.includes(`Gap: ${gap.toFixed(2)}%`));
+    const text = gap > 0 ? '+20.00' : gap < 0 ? '-20.00' : '0.00';
+    assert.ok(result.crossCheckText.includes(`Gap: ${text} kWh`));
+    assert.ok(result.crossCheckText.includes(`Gap: ${text}%`));
+    assert.ok(
+      generateFullIndonesiaReport(result, calculateDraft(complete('UNILAND'))).includes(
+        `Gap: ${text} kWh`,
+      ),
+    );
   }
   set(d, 'Total', '1000', '1000');
   assert.equal(calculateDraft(d).gapKWh, 120);
@@ -238,6 +244,22 @@ test('JRE gap is sub-meter minus main with signed percent relative to main', () 
   set(d, 'Total', '-', '1000');
   assert.equal(calculateDraft(d).gapKWh, null);
   assert.equal(calculateDraft(d).gapPercent, null);
+});
+
+test('signed gap formatting keeps positive and negative signs but never displays signed zero', () => {
+  for (const [value, text] of [
+    [20, '+20.00'],
+    [-20, '-20.00'],
+    [0, '0.00'],
+    [-0, '0.00'],
+    [0.004, '0.00'],
+    [-0.004, '0.00'],
+    [0.006, '+0.01'],
+    [-0.006, '-0.01'],
+    [null, '-'],
+    [NaN, '-'],
+  ])
+    assert.equal(formatSignedNumber(value), text);
 });
 test('missing meters never become zero or a misleading partial total', () => {
   const d = complete();

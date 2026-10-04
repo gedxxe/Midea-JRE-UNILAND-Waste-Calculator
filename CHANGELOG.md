@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.5-alpha - 2026-10-04
+
+- Show an explicit + for positive gaps in the results panel and copied reports, including percentages. Keep negative signs and display rounded zero without a sign.
+
 ## v0.9.4-alpha - 2026-10-03
 
 - Calculate the JRE cross-check gap as sub-meter total minus main meter, with the same sign in its percentage and copied report. Label the direction in the results panel.

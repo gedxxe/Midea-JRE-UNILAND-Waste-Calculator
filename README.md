@@ -1,12 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.4-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.5-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
 
-JRE cross-check gap = sub-meter total - main meter. The percentage uses the main meter as its denominator. A lower sub-meter total gives a negative gap. Existing saved reports retain their original output.
+JRE cross-check gap = sub-meter total - main meter. The percentage uses the main meter as its denominator. A lower sub-meter total gives a negative gap. Both the panel and copied reports show + for positive gaps and - for negative gaps, including percentages; rounded zero has no sign. Existing saved reports retain their original output.
 
 Saved draft ratio warnings are checked against current factors. Obsolete warnings clear when reopening a draft; equal valid readings produce zero consumption. Genuine ratio mismatches remain visible.
 
@@ -95,7 +95,7 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
-JRE 核对差值 = 分表合计 - 总表，百分比以总表用量为分母。分表合计低于总表时差值为负。已保存报告保留原始输出。
+JRE 核对差值 = 分表合计 - 总表，百分比以总表用量为分母。分表合计低于总表时差值为负。页面和复制报告的差值及百分比统一显示正号 + 或负号 -；舍入为零时不显示符号。已保存报告保留原始输出。
 
 草稿中的比例提示会按当前系数重新检查。重新打开草稿时清除过时提示；有效读数相同则用量为零。实际比例不匹配仍会提示。
 
@@ -153,7 +153,7 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 
 ## Indonesia
 
-Selisih pengecekan JRE = total sub-meter - main meter. Persentase memakai main meter sebagai pembagi. Jika total sub-meter lebih kecil, selisihnya negatif. Laporan tersimpan tetap mempertahankan hasil aslinya.
+Selisih pengecekan JRE = total sub-meter - main meter. Persentase memakai main meter sebagai pembagi. Jika total sub-meter lebih kecil, selisihnya negatif. Panel dan laporan salinan memakai + untuk selisih positif serta - untuk negatif, termasuk persentasenya; hasil yang dibulatkan ke nol tidak memakai tanda. Laporan tersimpan tetap mempertahankan hasil aslinya.
 
 Catatan ratio pada draft diperiksa ulang sesuai faktor saat ini. Catatan lama yang sudah tidak berlaku dibersihkan saat draft dibuka; reading valid yang sama menghasilkan konsumsi nol. Ratio yang memang berbeda tetap diberi catatan.
 
