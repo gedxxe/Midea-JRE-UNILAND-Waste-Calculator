@@ -45,6 +45,109 @@ test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
 });
 
+test('latest period and manual dates move readings by date in either edit order, with undo and recovery', async ({
+  page,
+}, info) => {
+  await page.route('**/api/time', (route) =>
+    route.fulfill({
+      json: {
+        unixMs: Date.UTC(2026, 9, 5, 1),
+        source: 'time.cloudflare.com',
+        protocol: 'NTP',
+        sampleAgeMs: 0,
+        uncertaintyMs: 5,
+        stratum: 3,
+      },
+    }),
+  );
+  await page.reload();
+  for (const plant of ['JRE', 'UNILAND']) {
+    await page.locator(`[data-plant="${plant}"]`).click();
+    await page.locator('#start-date').fill('2026-10-03');
+    await page.locator('#end-date').fill('2026-10-04');
+    await cell(page).fill('100');
+    await cell(page, 0, 'end').fill('125');
+    await page.locator('#use-today').click();
+    await expect(cell(page)).toHaveValue('125');
+    await expect(cell(page, 0, 'end')).toHaveValue('');
+    await expect(page.locator('#start-reading-date')).toHaveText('2026-10-04');
+    await expect(page.locator('#end-reading-date')).toHaveText('2026-10-05');
+    await expect(page.locator('#copy-report')).toBeDisabled();
+    await page.locator('#use-today').click(); // Same period must not clear current input or undo.
+    await page.locator('#undo-change').click();
+    await expect(cell(page)).toHaveValue('100');
+    await expect(cell(page, 0, 'end')).toHaveValue('125');
+    for (const order of [
+      ['start', 'end'],
+      ['end', 'start'],
+    ]) {
+      for (const side of order)
+        await page.locator(`#${side}-date`).fill(side === 'start' ? '2026-10-04' : '2026-10-05');
+      await expect(cell(page)).toHaveValue('125');
+      await expect(cell(page, 0, 'end')).toHaveValue('');
+      await page.locator('#undo-change').click();
+      await expect(cell(page)).toHaveValue('100');
+      await expect(page.locator('#start-date')).toHaveValue('2026-10-03');
+    }
+    await page.locator('#use-today').click();
+    await cell(page, 0, 'end').fill('150');
+    const report = await page.locator('#report-preview').inputValue();
+    for (const language of ['zh-CN', 'id', 'en']) {
+      await page.locator('#language-select').selectOption(language);
+      await expect(page.locator('#start-reading-date')).toHaveText('2026-10-04');
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+    }
+    await page.locator('#save-draft').click();
+    await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+    await page.reload();
+    await page.locator(`[data-plant="${plant}"]`).click();
+    await expect(cell(page)).toHaveValue('125');
+    await expect(cell(page, 0, 'end')).toHaveValue('150');
+    await page.locator('#meter-table').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`dated-columns-${plant}.png`) });
+  }
+});
+
+test('import editor follows the chosen column and keeps edits separate until validated apply', async ({
+  page,
+}, info) => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    await page.locator(`[data-plant="${plant}"]`).click();
+    await page.locator('#load-example').click();
+    const d = exampleDraft(plant);
+    const start = exportRawReading(d, 'start').text,
+      end = exportRawReading(d, 'end').text;
+    await page.locator('#open-import').click();
+    await page.locator('#import-side').selectOption('start');
+    await expect(page.locator('#import-text')).toHaveValue(start);
+    await expect(page.locator('#import-side option:checked')).toContainText(d.startDate);
+    await page.locator('#import-text').fill('invalid unfinished paste');
+    await page.locator('#apply-import').click();
+    await expect(page.locator('#import-feedback')).not.toBeEmpty();
+    await page.locator('#import-side').selectOption('end');
+    await expect(page.locator('#import-text')).toHaveValue(end);
+    await expect(page.locator('#import-feedback')).toBeEmpty();
+    await page.locator('#import-side').selectOption('start');
+    await expect(page.locator('#import-text')).toHaveValue('invalid unfinished paste');
+    await page.locator('#import-side').selectOption('end');
+    const replacement = end.replace(`1. Total: ${d.rows[0].end[0]}`, '1. Total: 999999');
+    await page.locator('#import-text').fill(replacement);
+    await page.screenshot({ path: info.outputPath(`import-column-${plant}.png`) });
+    await expect(cell(page, 0, 'end')).toHaveValue(d.rows[0].end[0]);
+    await page.locator('#apply-import').click();
+    await expect(page.locator('#import-dialog')).not.toBeVisible();
+    await expect(cell(page, 0, 'end')).toHaveValue('999999');
+    await expect(cell(page)).toHaveValue(d.rows[0].start[0]);
+    await page.locator('#open-import').click();
+    await expect(page.locator('#import-text')).toHaveValue(replacement);
+    await page.locator('#import-side').selectOption('start');
+    await expect(page.locator('#import-text')).toHaveValue(start);
+    await page.locator('#import-dialog form button').click();
+    await page.locator('#undo-change').click();
+    await expect(cell(page, 0, 'end')).toHaveValue(d.rows[0].end[0]);
+  }
+});
+
 test('gap signs match the panel, percentage and copied report across languages', async ({
   page,
   context,

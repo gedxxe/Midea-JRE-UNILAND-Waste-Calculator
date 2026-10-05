@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.5-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.6-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -47,6 +47,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Gap display confirmed 2026-10-04: show + for positive gaps and - for negative gaps consistently in kWh, percentages, the web panel and copied reports. Rounded zero is 0.00 without a sign. Keep saved historical output immutable.
 
+- Period editing confirmed 2026-10-05: when 3-4 becomes 4-5, the old End reading at date 4 becomes Start and date 5 is empty. Apply matching-date movement to manual dates, latest period and combined periods. Import text shows the selected table column; keep unapplied Start/End text separate and apply only after full validation.
+
 ## Architecture
 
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
@@ -58,6 +60,7 @@ New user instructions override older choices here. Update this decision record, 
 - import-ratios.js revalidates persisted ratio warnings against the current schema, including legacy version-4 messages. Equal valid readings are zero consumption, not a ratio mismatch. Retain genuine mismatches and preserve original stored report output.
 - importer.js parses and validates a complete input before applying it. Never partially apply a failed paste.
 - server/drafts.js owns a separate owner-scoped working_drafts row with an optimistic concurrency token, not revision history. ui/drafts.js owns immediate sessionStorage recovery, 30-second idle/120-second continuous-edit sync, bounded retry and explicit conflict choices. Account changes clear local data and invalidate in-flight work. Migration 003 is explicit, never a build step.
+- ui/import.js owns the column-specific import editor. storage.js changeDraftPeriod maps observations by date; app.js retains the original endpoints during consecutive date edits and clears that temporary reference after other edits or identity changes.
 - storage.js validates version-4 drafts. Preserve existing drafts across UI/language releases.
 - app.js coordinates events and state. ui/table.js owns table rendering and navigation; ui/dom.js provides DOM helpers; ui/build-info.js displays release metadata.
 - i18n/catalog.js contains English, Simplified Chinese, and Indonesian UI strings. Render translated/user text with textContent or value, never innerHTML.

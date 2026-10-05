@@ -88,3 +88,53 @@ export function nextDayDraft(draft) {
   });
   return next;
 }
+
+// Dates identify observations. Never relabel a known reading with a different date.
+// The origin retains endpoints while the operator edits the two date fields in either order.
+export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
+  if (draft.startDate === startDate && draft.endDate === endDate) return structuredClone(draft);
+  if (
+    origin.plantKey === draft.plantKey &&
+    origin.startDate === startDate &&
+    origin.endDate === endDate
+  )
+    return structuredClone(origin);
+  const next = createDraft(draft.plantKey, startDate, endDate);
+  next.isExample = draft.isExample;
+  next.importIssues = [];
+  for (const side of ['start', 'end']) {
+    const date = next[side + 'Date'];
+    let source;
+    for (const candidate of [draft, origin]) {
+      if (candidate.plantKey !== draft.plantKey) continue;
+      const match = [side, side === 'start' ? 'end' : 'start'].find(
+        (key) => date && candidate[key + 'Date'] === date,
+      );
+      if (match) {
+        source = { draft: candidate, side: match };
+        break;
+      }
+    }
+    // Undated input can be assigned its first date without discarding it.
+    if (!source && !draft[side + 'Date']) source = { draft, side };
+    if (source) {
+      for (const issue of source.draft.importIssues || []) {
+        if (
+          !next.importIssues.some((existing) => JSON.stringify(existing) === JSON.stringify(issue))
+        )
+          next.importIssues.push(structuredClone(issue));
+      }
+      next.rows.forEach((row, i) => {
+        row[side] = [...source.draft.rows[i][source.side]];
+      });
+      next.gas?.entries.forEach((entry, i) => {
+        const old = source.draft.gas?.entries[i];
+        if (old) entry[side] = { ...old[source.side] };
+      });
+    }
+  }
+  next.gas?.entries.forEach((entry, i) => {
+    entry.enabled = draft.gas?.entries[i]?.enabled === true;
+  });
+  return next;
+}

@@ -3,6 +3,13 @@ import { decimalText, validDate } from './numbers.js';
 
 // Export one cumulative reading column. Never apply factors or compare endpoints.
 export function exportRawReading(draft, side = 'end') {
+  const result = formatReadingColumn(draft, side);
+  return result.issues.length ? { ...result, text: '' } : result;
+}
+
+// The import editor also needs an editable template for incomplete columns.
+// Keep empty cells empty; only exportRawReading permits copy-ready output.
+export function formatReadingColumn(draft, side) {
   const schema = PLANT_SCHEMAS[draft?.plantKey];
   if (
     !schema?.rows ||
@@ -35,7 +42,7 @@ export function exportRawReading(draft, side = 'end') {
     });
     return `${row.no}. ${row.name}: ${terms.join(' + ')}`;
   });
-  if (issues.length) return { text: '', issues };
-  const [year, month, day] = date.split('-');
-  return { text: `${schema.name}\n\n${day}/${month}/${year}\n\n${lines.join('\n')}`, issues };
+  const [year, month, day] = validDate(date) ? date.split('-') : [];
+  const dateText = validDate(date) ? `${day}/${month}/${year}` : '';
+  return { text: `${schema.name}\n\n${dateText}\n\n${lines.join('\n')}`, issues };
 }

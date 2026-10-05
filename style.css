@@ -464,6 +464,12 @@ label {
   font-size: 14px;
   table-layout: fixed;
 }
+.meter-card th small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85em;
+  font-weight: 400;
+}
 .meter-card th {
   position: sticky;
   top: 0;

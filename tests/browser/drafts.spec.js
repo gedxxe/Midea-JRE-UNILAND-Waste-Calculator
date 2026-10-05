@@ -118,6 +118,8 @@ test('combined readings show a neutral notice and inclusive report dates in days
   await page.locator('#load-example').click();
   await page.locator('#start-date').fill('2026-09-18');
   await page.locator('#end-date').fill('2026-09-21');
+  // Date changes no longer relabel example readings. Enter the new period's observation.
+  await page.locator('.meter-input').first().fill('100');
   await expect(page.locator('#period-note')).toContainText('covers 3 days');
   await expect(page.locator('#period-note')).not.toHaveClass(/warning/);
   await expect(page.locator('#report-preview')).toHaveValue(/18-20 SEPTEMBER 2026 - 3 DAYS/);
