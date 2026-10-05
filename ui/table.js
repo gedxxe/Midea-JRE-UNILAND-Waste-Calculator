@@ -188,6 +188,8 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
     $('no-matches').hidden = visible !== 0;
   }
   function update(report) {
+    for (const side of ['start', 'end'])
+      $(side + '-reading-date').textContent = current()[side + 'Date'] || '-';
     report.gasResults?.forEach((result) => {
       const index = ['LPG', 'O2', 'N2', 'R32'].indexOf(result.gas);
       const input = document.querySelector(`[data-utility="${index}"]`);

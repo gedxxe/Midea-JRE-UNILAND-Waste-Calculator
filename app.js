@@ -3,6 +3,7 @@ import { createGraphs } from './ui/graphs.js';
 import { createPeriodPicker } from './ui/period.js';
 import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
+import { createImportEditor } from './ui/import.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
@@ -23,8 +24,7 @@ import {
   dayDiff,
 } from './numbers.js';
 import { worksheetRowToTSV } from './worksheet.js';
-import { parseReading } from './importer.js';
-import { STORAGE_KEY, restoreDrafts, nextDayDraft } from './storage.js';
+import { STORAGE_KEY, restoreDrafts, nextDayDraft, changeDraftPeriod } from './storage.js';
 import { NetworkClock, wibDate } from './clock.js';
 import { exampleDraft } from './examples.js';
 
@@ -42,6 +42,7 @@ let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
 let reports = {};
 let undo = null;
+let periodOrigin = null;
 let dirty = false;
 let saveStatus = 'unsaved';
 let showValidation = false;
@@ -52,14 +53,30 @@ const current = () => drafts[plant];
 const periodPicker = createPeriodPicker({
   current,
   apply(start, end) {
+    changePeriod(start, end);
+  },
+});
+const rawExport = createRawExport({ current, toast });
+const importEditor = createImportEditor({
+  current,
+  toast,
+  apply(parsed, side) {
     rememberUndo();
-    current().startDate = start;
-    current().endDate = end;
+    drafts[plant] = changeDraftPeriod(
+      current(),
+      side === 'start' ? parsed.date : current().startDate,
+      side === 'end' ? parsed.date : current().endDate,
+      periodOrigin || current(),
+    );
+    parsed.values.forEach((values, ri) => {
+      current().rows[ri][side] = values;
+    });
+    current().importIssues = [...(current().importIssues || []), ...parsed.issues];
+    current().isExample = false;
     mountPlant();
     changed();
   },
 });
-const rawExport = createRawExport({ current, toast });
 const gasPanel = createGasPanel({
   current,
   changed,
@@ -85,12 +102,12 @@ function accountChanged(user) {
   accountUser = user;
   drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
   undo = null;
+  periodOrigin = null;
   dirty = false;
   showValidation = false;
   saveStatus = 'unsaved';
   $('undo-change').hidden = true;
-  $('import-text').value = '';
-  $('import-feedback').textContent = '';
+  importEditor.reset();
   $('import-dialog').close();
   $('toast').hidden = true;
   if (user || firstIdentity) {
@@ -139,6 +156,7 @@ autosave = createDraftAutosave({
     accounts.setLinks(workspace?.reportLinks);
     dirty = false;
     undo = null;
+    periodOrigin = null;
     $('undo-change').hidden = true;
     mountPlant();
   },
@@ -159,12 +177,24 @@ function rememberUndo() {
   undo = { plant, draft: structuredClone(current()) };
   $('undo-change').hidden = false;
 }
-function changed() {
+function changed(periodOnly = false) {
+  if (!periodOnly) periodOrigin = null;
   dirty = true;
   saveStatus = 'changed';
   $('save-status').textContent = t(saveStatus);
   renderResults();
   autosave?.changed();
+}
+function changePeriod(start, end) {
+  if (current().startDate === start && current().endDate === end) return;
+  if (!periodOrigin) {
+    rememberUndo();
+    periodOrigin = structuredClone(current());
+  }
+  drafts[plant] = changeDraftPeriod(current(), start, end, periodOrigin);
+  mountPlant();
+  changed(true);
+  toast(t('periodReadingsMoved'));
 }
 function mountPlant() {
   periodPicker.sync();
@@ -399,6 +429,7 @@ renderClock();
 void syncTime();
 document.querySelectorAll('[data-plant]').forEach((button) =>
   button.addEventListener('click', () => {
+    periodOrigin = null;
     plant = button.dataset.plant;
     $('search-meter').value = '';
     showValidation = false;
@@ -410,9 +441,10 @@ for (const [id, field] of [
   ['end-date', 'endDate'],
 ]) {
   $(id).addEventListener('change', () => {
-    current()[field] = $(id).value;
-    periodPicker.sync();
-    changed();
+    changePeriod(
+      field === 'startDate' ? $(id).value : current().startDate,
+      field === 'endDate' ? $(id).value : current().endDate,
+    );
   });
 }
 $('use-today').addEventListener('click', async () => {
@@ -421,11 +453,8 @@ $('use-today').addEventListener('click', async () => {
     toast(t('manualDate'));
     return;
   }
-  rememberUndo();
-  current().endDate = wibDate(clock.now());
-  current().startDate = shiftDate(current().endDate, -1);
-  mountPlant();
-  changed();
+  const end = wibDate(clock.now());
+  changePeriod(shiftDate(end, -1), end);
 });
 $('sync-clock').addEventListener('click', syncTime);
 setInterval(() => {
@@ -503,27 +532,6 @@ $('undo-change').addEventListener('click', () => {
   $('undo-change').hidden = true;
   mountPlant();
   changed();
-});
-$('open-import').addEventListener('click', () => {
-  $('import-feedback').textContent = '';
-  $('import-dialog').showModal();
-});
-$('apply-import').addEventListener('click', () => {
-  const parsed = parseReading($('import-text').value, plant);
-  $('import-feedback').textContent = parsed.issues.map((i) => i.message).join('\n');
-  if (!parsed.success) return;
-  rememberUndo();
-  const side = $('import-side').value;
-  parsed.values.forEach((values, ri) => {
-    current().rows[ri][side] = values;
-  });
-  current()[side === 'start' ? 'startDate' : 'endDate'] = parsed.date;
-  current().importIssues = [...(current().importIssues || []), ...parsed.issues];
-  current().isExample = false;
-  mountPlant();
-  changed();
-  $('import-dialog').close();
-  toast(parsed.issues.length ? t('importedWarnings') : t('imported'));
 });
 window.addEventListener('beforeunload', (event) => {
   if (dirty || autosave?.pending()) {

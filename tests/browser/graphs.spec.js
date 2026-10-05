@@ -397,11 +397,10 @@ test('all period labels survive monthly exports and manual Y limits change only 
   expect(state.errors).toEqual([]);
 });
 
-test('weekend picker keeps inclusive consumption dates as one unchanged reading delta', async ({
+test('weekend picker maps endpoints to inclusive consumption dates without relabelling old readings', async ({
   page,
 }) => {
   const state = await setup(page);
-  const total = await page.locator('#main-total').textContent();
   await page.locator('.combined-period summary').click();
   await page.locator('#combined-start').fill('2026-09-18');
   await page.locator('#combined-last').fill('2026-09-20');
@@ -410,7 +409,9 @@ test('weekend picker keeps inclusive consumption dates as one unchanged reading 
   await page.locator('#combined-apply').click();
   await expect(page.locator('#start-date')).toHaveValue('2026-09-18');
   await expect(page.locator('#end-date')).toHaveValue('2026-09-21');
-  await expect(page.locator('#main-total')).toHaveText(total);
+  await expect(page.locator('#main-total')).toHaveText('-');
+  await expect(page.locator('.meter-input').first()).toHaveValue('');
+  await expect(page.locator('#end-reading-date')).toHaveText('2026-09-21');
   const report = await page.locator('#report-preview').inputValue();
   for (const language of ['zh-CN', 'id', 'en']) {
     await page.locator('#language-select').selectOption(language);

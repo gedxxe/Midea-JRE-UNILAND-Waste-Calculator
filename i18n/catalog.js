@@ -104,6 +104,11 @@ export const catalog = {
   reportDate: ['Report date', '报告日期', 'Tanggal laporan'],
   selectPeriod: ['Select a period', '选择周期', 'Pilih periode'],
   latest: ['Use latest period', '使用最近周期', 'Gunakan periode terakhir'],
+  periodReadingsMoved: [
+    'Readings follow their dates. New dates are empty; period utilities and refills are cleared. Undo restores the previous period.',
+    '读数随日期移动。新日期留空，用量及补充记录已清空。撤销可恢复原周期。',
+    'Reading mengikuti tanggalnya. Tanggal baru kosong; utilitas dan refill periode dikosongkan. Undo mengembalikan periode sebelumnya.',
+  ],
   periodNote: [
     '{start} 08:00 to {end} 08:00 WIB. The report uses the start date.',
     '{start} 08:00 至 {end} 08:00 WIB。报告日期使用开始日期。',
@@ -246,9 +251,9 @@ export const catalog = {
   importTitle: ['Import readings from text', '从文本导入读数', 'Impor reading dari teks'],
   close: ['Close', '关闭', 'Tutup'],
   importHint: [
-    'Paste one date and all equipment from the template. Import replaces one reading column for this factory.',
-    '粘贴模板中的一个日期和所有设备。导入会替换当前工厂的一列读数。',
-    'Tempel satu tanggal beserta semua equipment dari template. Hasil impor mengganti satu kolom reading pada pabrik ini.',
+    'The selected column appears below. Edit it or paste one date and all equipment. Check & fill table applies the changes; switching columns keeps your pending text separate.',
+    '下方显示所选列。编辑或粘贴一个日期和全部设备后，点击检查并填入表格。切换列时分别保留未应用的文本。',
+    'Isi kolom pilihan tampil di bawah. Edit atau tempel satu tanggal dan semua equipment, lalu Periksa & masukkan ke tabel. Teks yang belum diterapkan disimpan terpisah saat pindah kolom.',
   ],
   destination: ['Destination column', '目标列', 'Kolom tujuan'],
   readingText: ['Reading text', '读数文本', 'Teks reading'],

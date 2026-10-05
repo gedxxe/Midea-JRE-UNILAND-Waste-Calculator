@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.5-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.6-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+Changing the reading period moves existing readings to matching dates and leaves unknown dates empty. This also applies to Use latest period and Weekend / combined period. Date fields can be edited in either order; Undo restores the prior period while editing. Gas observations and temperatures follow the same dates; period utilities, refill events and inactive confirmations reset. Column headers show their dates. Import text opens the selected table column; switching Start/End keeps pending edits separate until Check & fill table succeeds. Closing the dialog discards unapplied text.
 
 JRE cross-check gap = sub-meter total - main meter. The percentage uses the main meter as its denominator. A lower sub-meter total gives a negative gap. Both the panel and copied reports show + for positive gaps and - for negative gaps, including percentages; rounded zero has no sign. Existing saved reports retain their original output.
 
@@ -95,6 +97,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+更改读数周期时，现有读数按日期对应移动，新日期留空。使用最近周期及周末合并周期也遵循此规则。可按任意顺序编辑起止日期，编辑时可撤销以恢复原周期。气体读数和温度随日期移动，用量、补充记录及未运行确认重置。表头显示日期。文本导入显示所选列，切换起止列时分别保留未应用的编辑，通过检查后才写入表格。关闭窗口会丢弃未应用文本。
+
 JRE 核对差值 = 分表合计 - 总表，百分比以总表用量为分母。分表合计低于总表时差值为负。页面和复制报告的差值及百分比统一显示正号 + 或负号 -；舍入为零时不显示符号。已保存报告保留原始输出。
 
 草稿中的比例提示会按当前系数重新检查。重新打开草稿时清除过时提示；有效读数相同则用量为零。实际比例不匹配仍会提示。
@@ -152,6 +156,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Perubahan periode memindahkan reading ke tanggal yang sesuai dan mengosongkan tanggal yang belum diketahui. Gunakan periode terakhir dan periode gabungan memakai aturan yang sama. Tanggal awal/akhir bisa diedit dalam urutan mana pun; Undo mengembalikan periode sebelumnya selama pengeditan. Reading gas dan suhu mengikuti tanggal; utilitas periode, refill, dan konfirmasi unit tidak aktif direset. Tanggal tampil pada judul kolom. Import text menampilkan kolom tabel pilihan; teks Start/End yang belum diterapkan tetap terpisah sampai pemeriksaan berhasil. Menutup dialog membuang teks yang belum diterapkan.
 
 Selisih pengecekan JRE = total sub-meter - main meter. Persentase memakai main meter sebagai pembagi. Jika total sub-meter lebih kecil, selisihnya negatif. Panel dan laporan salinan memakai + untuk selisih positif serta - untuk negatif, termasuk persentasenya; hasil yang dibulatkan ke nol tidak memakai tanda. Laporan tersimpan tetap mempertahankan hasil aslinya.
 
