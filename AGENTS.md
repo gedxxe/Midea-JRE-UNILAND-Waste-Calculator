@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.6-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.7-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -39,7 +39,7 @@ New user instructions override older choices here. Update this decision record, 
 
 - On 2026-09-28 the user confirmed one active replaceable draft per account containing JRE and UNILAND. Incomplete entries must autosave; Save routes incomplete data to draft storage and complete data to the existing report workflow. Autosave must not create report revisions or write on every keystroke. Detect cross-tab/device conflicts instead of silently overwriting them.
 
-- JRE Structural correction confirmed 2026-09-28: Piping Building 1# is included in the Structural meter. Structural net usage is its raw meter delta minus Piping Building 1# consumption after x40. Preserve original cumulative readings; apply the net result to new reports, worksheets, sub-meter cross-checks and saved graph output. Do not recalculate stored reports or imported history automatically.
+- JRE Structural correction confirmed 2026-09-28: Piping Building 1# is included in the Structural meter. Structural net usage is its raw meter delta minus the original Piping Building 1# meter 1 consumption after x40. Preserve original cumulative readings; apply the net result to new reports, worksheets, sub-meter cross-checks and saved graph output. Do not recalculate stored reports or imported history automatically.
 
 - Air Compressor 1# JRE (row 12) ratio correction confirmed 2026-10-03: use x40, not direct. New Air Compressor 1# and 2# remain direct. Preserve the existing confirmed inactive-to-zero exception and raw cumulative readings; do not recalculate saved history automatically.
 
@@ -49,8 +49,14 @@ New user instructions override older choices here. Update this decision record, 
 
 - Period editing confirmed 2026-10-05: when 3-4 becomes 4-5, the old End reading at date 4 becomes Start and date 5 is empty. Apply matching-date movement to manual dates, latest period and combined periods. Import text shows the selected table column; keep unapplied Start/End text separate and apply only after full validation.
 
+- Confirmed 2026-10-06: move JRE Warehouse meter 3 (direct) to Window as meter 6; move Warehouse meter 2 (direct) to Piping 1 as meter 2, keeping its existing meter 1 x40. Warehouse retains only meter 1 x40. Only Piping 1 meter 1 is included in Structural; the added direct meter is not deducted. Show individual meter consumption without hover and preserve a readable layout.
+- Water confirmed 2026-10-06: JRE only, cumulative m³ end minus start, attributed to the start date/combined period. Place Water below gas. Move manual JRE gas entries into the gas section so the old Daily utilities section is replaced by Water. Keep consumption-only historical values without inventing raw readings; leave UNILAND utilities unchanged.
+- Version policy confirmed 2026-10-06: continue alpha patch numbers, including 0.9.9 to 0.9.10 and beyond. Do not advance to beta or 1.0.0 without an explicit release decision.
+
 ## Architecture
 
+- meter-layout.js maps legacy JRE editable drafts and complete text imports into the current layout exactly once. New reports require the current meterLayout marker so stale clients must reload before finalizing reports. Stored outputs stay immutable.
+- water.js owns pure cumulative water validation and subtraction; ui/water.js owns JRE entry and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
 - engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.
 - gas.js owns pure JRE interpolation, event validation and consumption; gas-tables.js contains mass calibration data only. ui/gas.js renders entry; i18n/gas.js owns translations. Read docs/gas.md before changes. Never commit source operational workbooks or readings.

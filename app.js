@@ -4,6 +4,7 @@ import { createPeriodPicker } from './ui/period.js';
 import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
 import { createImportEditor } from './ui/import.js';
+import { createWaterPanel } from './ui/water.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
@@ -83,6 +84,7 @@ const gasPanel = createGasPanel({
   rememberUndo,
   rebuildUtilities: () => table.buildUtilities(),
 });
+const waterPanel = createWaterPanel({ current, changed, rememberUndo });
 let graphs, autosave;
 let accountUser = null;
 let firstIdentity = true;
@@ -207,6 +209,7 @@ function mountPlant() {
     button.setAttribute('aria-pressed', String(selected));
   });
   gasPanel.rebuild();
+  waterPanel.rebuild();
   table.rebuild();
   renderResults();
 }
@@ -337,6 +340,7 @@ function renderResults() {
   filterTable();
   rawExport.render();
   gasPanel.update();
+  waterPanel.update();
   autosave?.render();
 }
 async function copyText(text) {

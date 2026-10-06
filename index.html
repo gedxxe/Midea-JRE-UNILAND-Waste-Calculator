@@ -313,7 +313,7 @@
                         ><small id="end-reading-date"></small>
                       </th>
                       <th scope="col" class="numeric">
-                        <span data-i18n="consumption">Consumption</span>
+                        <span data-i18n="equipmentTotal">Equipment total</span>
                       </th>
                     </tr>
                   </thead>
@@ -357,7 +357,51 @@
                 observation. LPG uses the workbook's corrected reference values.
               </p>
             </section>
-            <details class="card utilities-card">
+            <section id="water-section" class="card gas-card" aria-labelledby="water-title">
+              <h2 id="water-title" data-i18n="waterTitle">Water consumption</h2>
+              <p data-i18n="waterHint">
+                Enter cumulative flow-meter readings in m³. End minus start gives consumption for
+                the starting date or combined period.
+              </p>
+              <div id="water-legacy" hidden>
+                <p id="water-legacy-text"></p>
+                <button
+                  id="water-use-readings"
+                  class="button secondary"
+                  data-i18n="waterUseReadings"
+                >
+                  Use flow-meter readings
+                </button>
+              </div>
+              <div id="water-readings" class="gas-pair">
+                <label
+                  ><span><span data-i18n="startReading">Start reading</span> (m³)</span
+                  ><span id="water-start-date"></span
+                  ><input
+                    id="water-start"
+                    inputmode="decimal"
+                    maxlength="50"
+                    autocomplete="off"
+                    aria-describedby="water-status"
+                /></label>
+                <label
+                  ><span><span data-i18n="endReading">End reading</span> (m³)</span
+                  ><span id="water-end-date"></span
+                  ><input
+                    id="water-end"
+                    inputmode="decimal"
+                    maxlength="50"
+                    autocomplete="off"
+                    aria-describedby="water-status"
+                /></label>
+              </div>
+              <output id="water-total" class="gas-total"></output>
+              <p id="water-status" role="status"></p>
+              <label
+                ><span data-i18n="note">Note, if any</span><input id="water-note" maxlength="500"
+              /></label>
+            </section>
+            <details id="utilities-section" class="card utilities-card">
               <summary>
                 <span
                   ><strong><span data-i18n="utilities">Daily utilities</span></strong

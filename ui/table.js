@@ -10,15 +10,18 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
   const rowNodes = [];
   const inputNodes = [];
   const outputNodes = [];
+  const meterUsageNodes = [];
   function buildTable() {
     coordinates.length = 0;
     rowNodes.length = 0;
     inputNodes.length = 0;
     outputNodes.length = 0;
+    meterUsageNodes.length = 0;
     const fragment = document.createDocumentFragment();
     PLANT_SCHEMAS[getPlant()].rows.forEach((row, ri) => {
       rowNodes[ri] = [];
       inputNodes[ri] = [];
+      meterUsageNodes[ri] = [];
       row.factors.forEach((factor, mi) => {
         coordinates.push({ ri, mi });
         const tr = node('tr');
@@ -33,7 +36,12 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             node('span', row.name),
           );
           if (row.subtractUsageOf)
-            equipment.append(node('small', t('netUsageHint', { name: row.subtractUsageOf })));
+            equipment.append(
+              node(
+                'small',
+                t('netUsageHint', { name: row.subtractUsageOf, meter: row.subtractMeter + 1 }),
+              ),
+            );
           if (row.allowInactive) {
             const label = node('label', undefined, 'check-label');
             const check = node('input');
@@ -85,6 +93,13 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
           input.addEventListener('keydown', handleGridKey);
           inputNodes[ri][mi][side] = input;
           td.append(input);
+          if (side === 'end') {
+            const usage = node('div', undefined, 'meter-usage');
+            usage.dataset.meterUsage = `${ri}-${mi}`;
+            usage.append(node('span', t('meterUsage')), node('strong', '-'));
+            meterUsageNodes[ri][mi] = usage.lastChild;
+            td.append(usage);
+          }
           tr.append(td);
         }
         if (mi === 0) {
@@ -137,38 +152,41 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
     }
   }
   function buildUtilities() {
-    $('utility-fields').replaceChildren(
-      ...UTILITIES[getPlant()].map(([name, unit], i) => {
-        const wrapper = node('div', undefined, 'utility-entry');
-        const label = node('label', `${name}${unit ? ` (${unit})` : ''}`);
-        const input = node('input');
-        input.dataset.utility = i;
-        input.disabled = getPlant() === 'JRE' && i < 4 && current().gas?.entries[i]?.enabled;
-        if (input.disabled) label.append(node('span', t('gasCalculated')));
-        input.type = 'text';
-        input.inputMode = 'decimal';
-        input.maxLength = 50;
-        input.placeholder = t('empty');
-        input.value = current().utilities[i].value;
-        input.addEventListener('input', () => {
-          current().utilities[i].value = input.value;
-          changed();
-        });
-        label.append(input);
-        const note = node('input', undefined, 'utility-note');
-        note.type = 'text';
-        note.maxLength = 500;
-        note.placeholder = t('note');
-        note.value = current().utilities[i].note;
-        note.setAttribute('aria-label', t('noteLabel', { name }));
-        note.addEventListener('input', () => {
-          current().utilities[i].note = note.value;
-          changed();
-        });
-        wrapper.append(label, note);
-        return wrapper;
-      }),
-    );
+    const jre = getPlant() === 'JRE';
+    $('utilities-section').hidden = jre;
+    $('utility-fields').replaceChildren();
+    UTILITIES[getPlant()].forEach(([name, unit], i) => {
+      if (jre && i === 4) return;
+      const wrapper = node('div', undefined, 'utility-entry');
+      const label = node('label', `${name}${unit ? ` (${unit})` : ''}`);
+      const input = node('input');
+      input.dataset.utility = i;
+      input.disabled = getPlant() === 'JRE' && i < 4 && current().gas?.entries[i]?.enabled;
+      if (input.disabled) label.append(node('span', t('gasCalculated')));
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.maxLength = 50;
+      input.placeholder = t('empty');
+      input.value = current().utilities[i].value;
+      input.addEventListener('input', () => {
+        current().utilities[i].value = input.value;
+        changed();
+      });
+      label.append(input);
+      const note = node('input', undefined, 'utility-note');
+      note.type = 'text';
+      note.maxLength = 500;
+      note.placeholder = t('note');
+      note.value = current().utilities[i].note;
+      note.setAttribute('aria-label', t('noteLabel', { name }));
+      note.addEventListener('input', () => {
+        current().utilities[i].note = note.value;
+        changed();
+      });
+      wrapper.append(label, note);
+      if (jre) $('gas-utility-' + i)?.replaceChildren(wrapper);
+      else $('utility-fields').append(wrapper);
+    });
   }
   function filterTable() {
     const query = normalizeName($('search-meter').value);
@@ -220,11 +238,18 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
           t('netUsageCalculation', {
             gross: formatNumber(row.grossEnergy, 8),
             name: row.subtractUsageOf,
+            meter: row.subtractMeter + 1,
             deducted: formatNumber(row.deductedEnergy, 8),
             net: formatRowValue(getPlant(), row),
             unit: row.unit,
           });
       inputNodes[ri].forEach((pair, mi) => {
+        const meter = row.meters[mi];
+        const value = formatRowValue(getPlant(), {
+          totalEnergy: meter?.energy,
+          missing: meter?.energy == null,
+        });
+        meterUsageNodes[ri][mi].textContent = `${value} ${row.unit}`;
         const relevant = rowIssues.filter((i) => i.meterIndex === mi && i.code !== 'EMPTY_READING');
         for (const input of Object.values(pair)) {
           input.setAttribute('aria-invalid', String(relevant.length > 0));

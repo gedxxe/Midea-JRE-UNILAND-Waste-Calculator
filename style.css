@@ -556,6 +556,28 @@ label {
   color: #111;
   opacity: 1;
 }
+.meter-usage {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 5px 0 3px;
+  color: #111;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.meter-usage strong {
+  margin-left: auto;
+  font-weight: 600;
+}
+#water-section input {
+  color: #111;
+  font-size: 16px;
+}
+#gas-fields .utility-note {
+  width: 100%;
+  margin-top: 6px;
+}
 .meter-card tr:hover .meter-input {
   border-color: #a9c9cb;
 }

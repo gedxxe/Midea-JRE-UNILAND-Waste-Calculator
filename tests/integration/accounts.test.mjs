@@ -34,6 +34,7 @@ test('working drafts replace partial entries without report revisions and reject
     drafts: { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') },
   };
   workspace.drafts.JRE.rows[0].start[0] = '123.';
+  workspace.drafts.JRE.water = { start: '100,25', end: '' };
   const initial = await call('/api/drafts', { actor: operator });
   assert.equal(initial.status, 200);
   assert.equal(initial.value.version, 0);
@@ -73,6 +74,7 @@ test('working drafts replace partial entries without report revisions and reject
   const latest = await call('/api/drafts', { actor: operator });
   assert.equal(latest.value.version, 2);
   assert.equal(latest.value.workspace.drafts.JRE.rows[0].end[0], '');
+  assert.deepEqual(latest.value.workspace.drafts.JRE.water, workspace.drafts.JRE.water);
   assert.equal(
     (await call('/api/drafts', { actor: operator, body: { workspace: {}, baseVersion: 2 } }))
       .status,
@@ -248,6 +250,7 @@ test('temporary accounts must change their password; the old session is revoked'
 });
 test('report ownership comes from the session; server output and raw readings are retained', async () => {
   const draft = exampleDraft('JRE');
+  draft.water = { start: '100,25', end: '125.75' };
   draft.gas.entries[3] = {
     enabled: true,
     start: { reading: '587', temperature: '33.5' },
@@ -264,6 +267,8 @@ test('report ownership comes from the session; server output and raw readings ar
   const own = await call('/api/reports?id=' + reportId, { actor: operator });
   assert.equal(own.value.snapshot.draft.rows[0].start[0], draft.rows[0].start[0]);
   assert.deepEqual(own.value.snapshot.draft.gas, draft.gas);
+  assert.deepEqual(own.value.snapshot.draft.water, draft.water);
+  assert.equal(own.value.snapshot.output.water.value, '25.5');
   assert.equal(own.value.snapshot.output.gas[0].calibration, draft.gas.version);
   assert.ok(Math.abs(own.value.snapshot.output.gas[0].kg - 154.2086) < 1e-7);
   assert.equal((await call('/api/reports?id=' + reportId, { actor: other })).status, 404);

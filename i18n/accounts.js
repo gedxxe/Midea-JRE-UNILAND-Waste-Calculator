@@ -182,4 +182,9 @@ export const accountMessages = {
     '无法连接账户存储，当前输入仍保留在页面上，请重试。',
     'Penyimpanan akun tidak dapat dihubungi. Isian saat ini tetap di layar. Coba lagi.',
   ],
+  error_METER_LAYOUT_CHANGED: [
+    'The meter grouping has changed. Save your draft, reload the page and review the readings before saving a report.',
+    '电表分组已更新。请保存草稿、刷新页面并核对读数后再保存报告。',
+    'Susunan meter berubah. Simpan draft, muat ulang halaman, lalu periksa reading sebelum menyimpan laporan.',
+  ],
 };

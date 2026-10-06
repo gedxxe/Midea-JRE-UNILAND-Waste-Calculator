@@ -47,3 +47,5 @@ SVG exports preserve vector lines/text on a white background. PNG exports and Co
 v0.7.0 adds migration 002 for imported history, without a new runtime dependency. Tests use synthetic examples, never workbook operating data.
 
 References: [PNG physical pixel dimensions](https://www.w3.org/TR/png-3/#11pHYs), [Clipboard image writing](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write).
+
+New v0.9.7 JRE reports use the revised Window/Piping/Warehouse grouping; stored graph values remain immutable. Water u4 receives the calculated flow-meter delta from new reports, while older consumption-only history keeps its saved value.
