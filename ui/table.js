@@ -68,7 +68,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         tr.append(ratio);
         inputNodes[ri][mi] = {};
         for (const side of ['start', 'end']) {
-          const td = node('td');
+          const td = node('td', undefined, 'reading-cell');
           const input = node('input', undefined, 'meter-input');
           input.type = 'text';
           input.inputMode = 'decimal';

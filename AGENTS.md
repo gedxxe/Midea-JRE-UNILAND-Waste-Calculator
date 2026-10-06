@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.7-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.8-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -49,7 +49,7 @@ New user instructions override older choices here. Update this decision record, 
 
 - Period editing confirmed 2026-10-05: when 3-4 becomes 4-5, the old End reading at date 4 becomes Start and date 5 is empty. Apply matching-date movement to manual dates, latest period and combined periods. Import text shows the selected table column; keep unapplied Start/End text separate and apply only after full validation.
 
-- Confirmed 2026-10-06: move JRE Warehouse meter 3 (direct) to Window as meter 6; move Warehouse meter 2 (direct) to Piping 1 as meter 2, keeping its existing meter 1 x40. Warehouse retains only meter 1 x40. Only Piping 1 meter 1 is included in Structural; the added direct meter is not deducted. Show individual meter consumption without hover and preserve a readable layout.
+- Confirmed 2026-10-06: move JRE Warehouse meter 3 (direct) to Window as meter 6; move Warehouse meter 2 (direct) to Piping 1 as meter 2, keeping its existing meter 1 x40. Warehouse retains only meter 1 x40. Only Piping 1 meter 1 is included in Structural; the added direct meter is not deducted. Show individual meter consumption without hover and preserve a readable layout. Keep Start and End inputs level when individual usage is displayed below End; meter labels must not shift down.
 - Water confirmed 2026-10-06: JRE only, cumulative m³ end minus start, attributed to the start date/combined period. Place Water below gas. Move manual JRE gas entries into the gas section so the old Daily utilities section is replaced by Water. Keep consumption-only historical values without inventing raw readings; leave UNILAND utilities unchanged.
 - Version policy confirmed 2026-10-06: continue alpha patch numbers, including 0.9.9 to 0.9.10 and beyond. Do not advance to beta or 1.0.0 without an explicit release decision.
 

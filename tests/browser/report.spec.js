@@ -46,6 +46,47 @@ test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
 });
 
+test('start and end readings stay aligned with individual usage in both plants and all languages', async ({
+  page,
+}, info) => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    await page.locator(`[data-plant="${plant}"]`).click();
+    await page.locator('#load-example').click();
+    const report = await page.locator('#report-preview').inputValue();
+    for (const language of ['en', 'zh-CN', 'id']) {
+      await page.locator('#language-select').selectOption(language);
+      const offsets = await page.locator('.meter-input[data-side="start"]').evaluateAll((inputs) =>
+        inputs.map((start) => {
+          const row = start.closest('tr');
+          const end = row.querySelector('[data-side="end"]');
+          const usage = row.querySelector('.meter-usage');
+          const a = start.getBoundingClientRect(),
+            b = end.getBoundingClientRect(),
+            u = usage.getBoundingClientRect();
+          return {
+            top: Math.abs(a.top - b.top),
+            height: Math.abs(a.height - b.height),
+            gap: u.top - b.bottom,
+          };
+        }),
+      );
+      expect(offsets.length).toBeGreaterThanOrEqual(28);
+      for (const offset of offsets) {
+        expect(offset.top).toBeLessThan(1);
+        expect(offset.height).toBeLessThan(1);
+        expect(offset.gap).toBeGreaterThanOrEqual(0);
+      }
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+      if (language === 'en') {
+        await cell(page, 0, 'end').scrollIntoViewIfNeeded();
+        await page
+          .locator('.table-scroll')
+          .screenshot({ path: info.outputPath(`aligned-${plant}.png`) });
+      }
+    }
+  }
+});
+
 test('legacy meters move once and show individual usage without hover, with unchanged report bytes across languages', async ({
   page,
 }, info) => {

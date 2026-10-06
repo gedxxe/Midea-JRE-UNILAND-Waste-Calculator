@@ -1,12 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.7-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.8-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
 
-JRE Warehouse meter 3 now belongs to Window as direct meter 6; Warehouse meter 2 belongs to Piping 1 as its second, direct meter. Warehouse keeps only its first ×40 meter. Structural still subtracts only Piping 1 meter 1 ×40. Legacy drafts and complete legacy text imports move the original readings once into the new layout; saved report and graph output stays unchanged. Individual meter usage is visible below each end reading, with equipment totals separate.
+JRE Warehouse meter 3 now belongs to Window as direct meter 6; Warehouse meter 2 belongs to Piping 1 as its second, direct meter. Warehouse keeps only its first ×40 meter. Structural still subtracts only Piping 1 meter 1 ×40. Legacy drafts and complete legacy text imports move the original readings once into the new layout; saved report and graph output stays unchanged. Start and End inputs stay level. Individual meter usage is visible below each end reading, with equipment totals separate.
 
 JRE Water below the gas section uses cumulative flow-meter m³: end minus start, reported for the start date or full combined period. Partial readings can be saved as drafts; missing, invalid and decreasing values are never assumed to be zero. Raw water readings follow Next day and date changes. Older consumption-only entries remain available without invented readings. Manual gas values and notes are in their gas cards. UNILAND utilities retain their existing entry method.
 
@@ -103,7 +103,7 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
-JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。每个结束读数下方直接显示该电表用量，设备合计单独显示。
+JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。起止读数输入框保持对齐。每个结束读数下方直接显示该电表用量，设备合计单独显示。
 
 JRE 气体区下方的 Water 使用累计流量计读数（m³）：结束减开始，归属开始日期或完整合并周期。未完成读数可保存为草稿，缺失、无效或下降读数不会当作零。原始水表读数随下一天和日期调整移动。旧用量数据继续保留，不虚构水表读数。手动气体用量及备注移至相应气体卡片。UNILAND 保持原录入方式。
 
@@ -169,7 +169,7 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 
 ## Indonesia
 
-Meter 3 Warehouse JRE pindah ke Window sebagai meter ke-6 direct. Meter 2 Warehouse pindah ke Piping 1 sebagai meter kedua direct. Warehouse tinggal meter pertama ×40. Structural hanya dikurangi meter pertama Piping 1 ×40. Draft lama dan impor teks lengkap format lama memindahkan reading asli sekali ke susunan baru; hasil laporan dan grafik tersimpan tetap utuh. Konsumsi tiap meter terlihat di bawah reading akhir, terpisah dari total equipment.
+Meter 3 Warehouse JRE pindah ke Window sebagai meter ke-6 direct. Meter 2 Warehouse pindah ke Piping 1 sebagai meter kedua direct. Warehouse tinggal meter pertama ×40. Structural hanya dikurangi meter pertama Piping 1 ×40. Draft lama dan impor teks lengkap format lama memindahkan reading asli sekali ke susunan baru; hasil laporan dan grafik tersimpan tetap utuh. Input Start dan End tetap sejajar. Konsumsi tiap meter terlihat di bawah reading akhir, terpisah dari total equipment.
 
 Water JRE di bawah gas memakai reading kumulatif flow meter m³: akhir dikurangi awal, untuk tanggal awal atau seluruh periode gabungan. Isian parsial bisa disimpan sebagai draft; reading kosong, tidak valid, atau menurun tidak dianggap nol. Reading air mengikuti Next day dan perubahan tanggal. Konsumsi lama tetap tersedia tanpa mengarang reading. Nilai gas manual dan catatannya berada dalam kartu gas masing-masing. Cara pengisian utilitas UNILAND tetap.
 
