@@ -2,7 +2,7 @@
 
 ## Version policy
 
-package.json is the version source; package-lock.json must match it. Use v0.MINOR.PATCH-alpha. Increment PATCH for fixes and MINOR for features; reset PATCH to zero for a minor release. Stable v1.0.0 requires an explicit release decision. Do not infer stability from successful tests.
+package.json is the version source; package-lock.json must match it. Use v0.MINOR.PATCH-alpha. Continue PATCH for the current alpha improvements. Patch numbers are integers: 0.9.9 is followed by 0.9.10, then 0.9.11. A future minor milestone requires a deliberate scope decision. Beta and stable 1.0.0 require explicit release decisions. Do not infer stability from successful tests.
 
 - Work branch: codex/v0.3.0-alpha (or a short fix branch for an existing milestone).
 - Preserved baseline: release/v0.1.0-alpha and annotated tag v0.1.0-alpha, both at 8e5bb21aa97344dff5d1c29826f71566b6f870f2.

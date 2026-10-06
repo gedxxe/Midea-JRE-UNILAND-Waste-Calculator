@@ -43,7 +43,7 @@ test('fixed schemas match every meter in the supplied templates', () => {
   const jre = PLANT_SCHEMAS.JRE.rows;
   assert.deepEqual(
     jre.map((r) => r.factors.length),
-    [1, 2, 2, 5, 1, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 2, 2, 1],
+    [1, 2, 2, 6, 1, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1],
   );
   assert.deepEqual(jre[17].factors, [1000]);
   assert.deepEqual(jre[27].factors, [1000, 40]);
@@ -58,7 +58,7 @@ test('JRE main, Office, Utility and Piping use the documented examples', () => {
   set(d, 'Total', '5079757', '5105040');
   set(d, 'All Office Building', '394,850', '395,250');
   set(d, 'Utility Area', ['660,610', '29,09'], ['660,700', '29,53']);
-  set(d, 'Piping Building 1#', '100', '100.25');
+  set(d, 'Piping Building 1#', ['100', '1000'], ['100.25', '1000']);
   set(d, 'Piping Building 3#', '200', '205');
   set(d, 'Structural Laboratory', '1000', '1010');
   const r = calculateDraft(d);
@@ -79,7 +79,7 @@ test('Structural excludes converted Piping 1 usage once while preserving raw rea
   const d = complete();
   set(d, 'Total', '1000', '1200');
   set(d, 'Structural Laboratory', '1000', '1150');
-  set(d, 'Piping Building 1#', '10', '11');
+  set(d, 'Piping Building 1#', ['10', '1000'], ['11', '1000']);
   set(d, 'Piping Building 3#', '100', '105');
   const original = structuredClone(d);
   const result = calculateDraft(d);
@@ -98,7 +98,7 @@ test('Structural excludes converted Piping 1 usage once while preserving raw rea
 test('Structural subtraction preserves small differences before output rounding', () => {
   const d = complete();
   set(d, 'Structural Laboratory', '0', '999999999960.000001');
-  set(d, 'Piping Building 1#', '0', '24999999999');
+  set(d, 'Piping Building 1#', ['0', '1000'], ['24999999999', '1000']);
   assert.equal(value(calculateDraft(d), 'Structural Laboratory'), 0.000001);
 });
 
@@ -106,7 +106,7 @@ test('Structural stays unavailable when either meter is missing or the net consu
   for (const reading of ['', '-', 'bad', '9']) {
     const d = complete();
     set(d, 'Structural Laboratory', '1000', '1150');
-    set(d, 'Piping Building 1#', '10', reading);
+    set(d, 'Piping Building 1#', ['10', '1000'], [reading, '1000']);
     const result = calculateDraft(d);
     assert.equal(value(result, 'Structural Laboratory'), null);
     assert.equal(result.subAreasSumKWh, null);
@@ -114,7 +114,7 @@ test('Structural stays unavailable when either meter is missing or the net consu
   }
   const d = complete();
   set(d, 'Structural Laboratory', '1000', '1010');
-  set(d, 'Piping Building 1#', '10', '11');
+  set(d, 'Piping Building 1#', ['10', '1000'], ['11', '1000']);
   const result = calculateDraft(d);
   assert.equal(value(result, 'Structural Laboratory'), null);
   assert.equal(result.gapKWh, null);
@@ -148,7 +148,12 @@ test('JRE Air Compressor 1 uses x40 while new compressors remain direct and raw 
 
 test('multi-meter factors apply to paired differences before adding', () => {
   const d = complete();
-  set(d, 'Window', ['100', '200', '300', '400', '500'], ['110', '201', '302', '403', '504']);
+  set(
+    d,
+    'Window',
+    ['100', '200', '300', '400', '500', '600'],
+    ['110', '201', '302', '403', '504', '600'],
+  );
   assert.equal(value(calculateDraft(d), 'Window'), 560);
 });
 test('UNILAND ratios, units, precision and worksheet sums match the examples', () => {

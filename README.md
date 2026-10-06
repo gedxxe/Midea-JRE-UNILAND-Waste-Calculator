@@ -1,10 +1,16 @@
 # Midea Daily Energy Report
 
-**v0.9.6-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.7-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+JRE Warehouse meter 3 now belongs to Window as direct meter 6; Warehouse meter 2 belongs to Piping 1 as its second, direct meter. Warehouse keeps only its first ×40 meter. Structural still subtracts only Piping 1 meter 1 ×40. Legacy drafts and complete legacy text imports move the original readings once into the new layout; saved report and graph output stays unchanged. Individual meter usage is visible below each end reading, with equipment totals separate.
+
+JRE Water below the gas section uses cumulative flow-meter m³: end minus start, reported for the start date or full combined period. Partial readings can be saved as drafts; missing, invalid and decreasing values are never assumed to be zero. Raw water readings follow Next day and date changes. Older consumption-only entries remain available without invented readings. Manual gas values and notes are in their gas cards. UNILAND utilities retain their existing entry method.
+
+Releases remain alpha. Patch numbers continue through 0.9.9, 0.9.10, 0.9.11 and onward; beta or 1.0.0 requires an explicit release decision.
 
 Changing the reading period moves existing readings to matching dates and leaves unknown dates empty. This also applies to Use latest period and Weekend / combined period. Date fields can be edited in either order; Undo restores the prior period while editing. Gas observations and temperatures follow the same dates; period utilities, refill events and inactive confirmations reset. Column headers show their dates. Import text opens the selected table column; switching Start/End keeps pending edits separate until Check & fill table succeeds. Closing the dialog discards unapplied text.
 
@@ -97,6 +103,12 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。每个结束读数下方直接显示该电表用量，设备合计单独显示。
+
+JRE 气体区下方的 Water 使用累计流量计读数（m³）：结束减开始，归属开始日期或完整合并周期。未完成读数可保存为草稿，缺失、无效或下降读数不会当作零。原始水表读数随下一天和日期调整移动。旧用量数据继续保留，不虚构水表读数。手动气体用量及备注移至相应气体卡片。UNILAND 保持原录入方式。
+
+版本保持 alpha，补丁号可继续为 0.9.9、0.9.10、0.9.11 等。只有明确确认后才能发布 beta 或 1.0.0。
+
 更改读数周期时，现有读数按日期对应移动，新日期留空。使用最近周期及周末合并周期也遵循此规则。可按任意顺序编辑起止日期，编辑时可撤销以恢复原周期。气体读数和温度随日期移动，用量、补充记录及未运行确认重置。表头显示日期。文本导入显示所选列，切换起止列时分别保留未应用的编辑，通过检查后才写入表格。关闭窗口会丢弃未应用文本。
 
 JRE 核对差值 = 分表合计 - 总表，百分比以总表用量为分母。分表合计低于总表时差值为负。页面和复制报告的差值及百分比统一显示正号 + 或负号 -；舍入为零时不显示符号。已保存报告保留原始输出。
@@ -156,6 +168,12 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Meter 3 Warehouse JRE pindah ke Window sebagai meter ke-6 direct. Meter 2 Warehouse pindah ke Piping 1 sebagai meter kedua direct. Warehouse tinggal meter pertama ×40. Structural hanya dikurangi meter pertama Piping 1 ×40. Draft lama dan impor teks lengkap format lama memindahkan reading asli sekali ke susunan baru; hasil laporan dan grafik tersimpan tetap utuh. Konsumsi tiap meter terlihat di bawah reading akhir, terpisah dari total equipment.
+
+Water JRE di bawah gas memakai reading kumulatif flow meter m³: akhir dikurangi awal, untuk tanggal awal atau seluruh periode gabungan. Isian parsial bisa disimpan sebagai draft; reading kosong, tidak valid, atau menurun tidak dianggap nol. Reading air mengikuti Next day dan perubahan tanggal. Konsumsi lama tetap tersedia tanpa mengarang reading. Nilai gas manual dan catatannya berada dalam kartu gas masing-masing. Cara pengisian utilitas UNILAND tetap.
+
+Versi tetap alpha. Nomor patch dapat lanjut 0.9.9, 0.9.10, 0.9.11, dan seterusnya; beta atau 1.0.0 harus melalui keputusan rilis tersendiri.
 
 Perubahan periode memindahkan reading ke tanggal yang sesuai dan mengosongkan tanggal yang belum diketahui. Gunakan periode terakhir dan periode gabungan memakai aturan yang sama. Tanggal awal/akhir bisa diedit dalam urutan mana pun; Undo mengembalikan periode sebelumnya selama pengeditan. Reading gas dan suhu mengikuti tanggal; utilitas periode, refill, dan konfirmasi unit tidak aktif direset. Tanggal tampil pada judul kolom. Import text menampilkan kolom tabel pilihan; teks Start/End yang belum diterapkan tetap terpisah sampai pemeriksaan berhasil. Menutup dialog membuang teks yang belum diterapkan.
 

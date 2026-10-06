@@ -15,23 +15,23 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 29 equipment rows, 57 meters. Counts in template order:
 
 ```text
-1,2,2,5,1,4,13,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,3,2,2,1
+1,2,2,6,1,4,13,1,2,1,1,1,1,1,2,2,1,1,1,1,2,1,1,1,1,1,2,2,1
 ```
 
 - Total is the direct main-meter delta, never a sub-meter sum or x1000.
-- Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40.
+- Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40, x1. The sixth meter was Warehouse meter 3.
 - Heat Exchanger: x40, x1, x1, x1. Injection Molding: 13 direct meters.
 - Air Compressor 1#: x40. New Air Compressor 1# and New Air Compressor 2#: direct. The confirmed inactive exception remains available for the same two rows.
 - Cooling water: two direct meters. Dryer: two direct meters. Control: two direct meters. Server Room: two direct meters.
-- Piping Building 1#: x40. Piping Building 3#: direct. Office: x1000.
-- Structural Laboratory meter includes Piping Building 1#. Net Structural usage = direct Structural delta minus Piping 1 delta x40, for the same reading period. Subtract at scaled precision before rounding. Keep meter readings and gross meter detail unchanged; reports, worksheet Structural and new graph snapshots use net usage. A missing dependency or negative result becomes unavailable with a check note, never zero. Existing saved reports and imported history are not recalculated.
-- Warehouse: x40, x1, x1. Utility Area: x1000, x40. Heater: x40.
+- Piping Building 1#: x40 and direct. The direct meter was Warehouse meter 2. Piping Building 3#: direct. Office: x1000.
+- Structural Laboratory includes only Piping Building 1# meter 1 x40. Net Structural usage = direct Structural delta minus Piping 1 meter 1 delta x40, for the same reading period. Subtract at scaled precision before rounding. Keep meter readings and gross meter detail unchanged; reports, worksheet Structural and new graph snapshots use net usage. A missing dependency or negative result becomes unavailable with a check note, never zero. Existing saved reports and imported history are not recalculated.
+- Warehouse: x40 only. Utility Area: x1000, x40. Heater: x40.
 - Other factors remain as defined in schema.js, not editable through the UI or import.
 - Only Air Compressor 1# and New Air Compressor 2# may interpret an unavailable reading as zero after the operator marks the unit inactive. Next day clears this confirmation.
 
 Examples: Office `394,850` to `395,250` = `400.00 kWh`. Utility `660,610 + 29,09` to `660,700 + 29,53` = `107.60 kWh`.
 
-Cross-check compares Total to equipment 2 through 29, using net Structural usage so Piping 1 is counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. The panel and copied reports use the same signed two-decimal format for both kWh and percentage: +20.00, -20.00, or unsigned 0.00. Values rounded to zero never show +0.00 or -0.00. This changes presentation only; stored numeric values and historical output are unchanged. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
+Cross-check compares Total to equipment 2 through 29, using net Structural usage so its included Piping 1 meter is counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. The panel and copied reports use the same signed two-decimal format for both kWh and percentage: +20.00, -20.00, or unsigned 0.00. Values rounded to zero never show +0.00 or -0.00. This changes presentation only; stored numeric values and historical output are unchanged. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
 
 Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an ISO date plus 18 values. Piping All is Piping Building 1# + Piping Building 3# and does not add a report row.
 
@@ -71,3 +71,9 @@ Utilities are optional direct consumption values, except enabled JRE tank gas ca
 ## Raw reading export
 
 Raw export is a dated observation, not a consumption report. It uses the selected start/end column and its own date, defaults to end, and includes all electricity rows in schema order. It preserves decimal comma/dot, trailing zeros, and explicit `-`; it removes only surrounding whitespace and a redundant leading plus. Ratio annotations are never applied to the values. Decreases remain the observed cumulative numbers, and inactive-unit flags never invent raw zero readings. Empty/invalid selected readings or dates block copying; the opposite column and daily utilities do not affect raw export. Output can be imported back as a single reading column.
+
+## JRE water and layout upgrades
+
+Water uses cumulative m³ end minus start at scaled precision, with up to six decimal places and the same cumulative input limit as electricity. It belongs to the starting report date or full combined period; do not divide a multi-day total. Blank water fields are optional; one missing or malformed reading blocks a completed report but remains saveable as a draft. Explicit unavailable or decreasing readings report - with a check note. Zero is valid. Raw water readings follow matching dates and Next day; legacy consumption-only utilities remain available without invented readings. New raw readings replace the manual amount for calculation. UNILAND utility entry is unchanged.
+
+JRE meter layout 2 has 6 Window, 2 Piping 1 and 1 Warehouse meters, retaining 57 meters total. A complete legacy layout is recognized by all meter counts; old Warehouse meter 2 moves to Piping 1 meter 2 and meter 3 moves to Window meter 6. Raw precision and warning coordinates are preserved. Draft restore, historian loading for editing and full legacy text import use this mapping; mixed or unknown layouts fail validation. Stored snapshots and imported history are never rewritten. Current raw export uses only the new layout. A stale client must reload before saving a completed JRE report.

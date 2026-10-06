@@ -2,6 +2,7 @@ import { exportRawReading } from '../../raw-export.js';
 import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { createDraft, calculateDraft, generateFullIndonesiaReport } from '../../engine.js';
+import { legacyDraft, legacyText } from '../fixtures/legacy-layout.mjs';
 
 const cell = (page, row = 0, side = 'start', meter = 0) =>
   page.locator(`.meter-input[data-row="${row}"][data-side="${side}"][data-meter="${meter}"]`);
@@ -43,6 +44,161 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
+});
+
+test('legacy meters move once and show individual usage without hover, with unchanged report bytes across languages', async ({
+  page,
+}, info) => {
+  const old = legacyDraft();
+  let workspace = { version: 4, drafts: { JRE: old, UNILAND: exampleDraft('UNILAND') } },
+    version = 1;
+  await page.route('**/api/drafts', (route) => {
+    if (route.request().method() === 'POST') {
+      workspace = route.request().postDataJSON().workspace;
+      version++;
+    }
+    return route.fulfill({ json: { workspace, version } });
+  });
+  await page.reload();
+  await expect(cell(page, 3, 'start', 5)).toHaveValue('30.03');
+  await expect(cell(page, 15, 'start', 1)).toHaveValue('20.02');
+  await expect(page.locator('.meter-input[data-row="25"]')).toHaveCount(2);
+  await expect(page.locator('.meter-input')).toHaveCount(114);
+  await expect(page.locator('[data-meter-usage="3-5"]')).toContainText('3.00 kWh');
+  await expect(page.locator('[data-meter-usage="15-1"]')).toContainText('2.00 kWh');
+  await expect(page.locator('[data-meter-usage="19-0"]')).toContainText('150.00 kWh');
+  await expect(page.locator('tr[data-row="19"] .energy > span')).toHaveText('110.00');
+  await page.locator('#search-meter').fill('Window');
+  await page.locator('[data-meter-usage="3-5"]').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('individual-meter-usage.png') });
+  const report = await page.locator('#report-preview').inputValue();
+  for (const language of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(language);
+    await expect(page.locator('[data-meter-usage="3-5"]')).toContainText('3.00 kWh');
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+  }
+  await page.locator('#search-meter').fill('');
+  await cell(page, 15, 'end', 1).fill('');
+  await expect(page.locator('[data-meter-usage="15-1"]')).toContainText('- kWh');
+  await expect(page.locator('tr[data-row="19"] .energy > span')).toHaveText('110.00');
+  await expect(page.locator('tr[data-row="15"] .energy > span')).toHaveText('-');
+  await page.locator('#open-import').click();
+  await page.locator('#import-side').selectOption('end');
+  await page.locator('#import-text').fill(legacyText(old, 'end'));
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await page.reload();
+  await expect(cell(page, 3, 'end', 5)).toHaveValue('33.03');
+  await expect(cell(page, 15, 'end', 1)).toHaveValue('22.02');
+  await expect(page.locator('.meter-input')).toHaveCount(114);
+});
+
+test('legacy historian output stays unchanged while its editable copy moves meters', async ({
+  page,
+}) => {
+  const draft = legacyDraft();
+  const reportText = 'Original historical report. Warehouse includes three meters.';
+  const snapshot = { draft, output: { reportText } };
+  const original = JSON.stringify(snapshot);
+  let writes = 0;
+  await page.route('**/api/reports**', (route) => {
+    if (route.request().method() !== 'GET') writes++;
+    return route.fulfill({
+      json: new URL(route.request().url()).searchParams.has('id')
+        ? { id: 'old-report', revision: 1, latestRevision: 1, snapshot }
+        : {
+            hasMore: false,
+            reports: [
+              {
+                id: 'old-report',
+                plant: 'JRE',
+                start_date: draft.startDate,
+                end_date: draft.endDate,
+                revision: 1,
+              },
+            ],
+          },
+    });
+  });
+  await page.locator('#open-history').click();
+  await page.locator('#history-list button').click();
+  await expect(page.locator('#history-snapshot')).toHaveValue(reportText);
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.locator('#use-history').click();
+  await expect(cell(page, 3, 'end', 5)).toHaveValue('33.03');
+  await expect(cell(page, 15, 'end', 1)).toHaveValue('22.02');
+  await expect(page.locator('.meter-input[data-row="25"]')).toHaveCount(2);
+  await page.locator('#open-history').click();
+  await page.locator('#history-list button').click();
+  await expect(page.locator('#history-snapshot')).toHaveValue(reportText);
+  expect(JSON.stringify(snapshot)).toBe(original);
+  expect(writes).toBe(0);
+});
+
+test('JRE water calculates the daily delta, persists partial readings and follows dates and next day', async ({
+  page,
+}, info) => {
+  await page.locator('#load-example').click();
+  await expect(page.locator('#utilities-section')).toBeHidden();
+  await expect(page.locator('#gas-section [data-utility="0"]')).toBeVisible();
+  await page.locator('#gas-section [data-utility="0"]').fill('12.5');
+  await page.locator('#water-start').fill('100,25');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await page.reload();
+  await expect(page.locator('#water-start')).toHaveValue('100,25');
+  await expect(page.locator('#water-end')).toHaveValue('');
+  await page.locator('#water-end').fill('125.75');
+  await expect(page.locator('#water-total')).toContainText('25.5 m³');
+  await expect(page.locator('#report-preview')).toHaveValue(/Water: 25.5 m³/);
+  await expect(page.locator('#report-preview')).toHaveValue(/LPG: 12.5 Kg/);
+  const report = await page.locator('#report-preview').inputValue();
+  for (const language of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(language);
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+    await expect(page.locator('#water-start')).toHaveValue('100,25');
+  }
+  await page.locator('#water-section').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('water-consumption.png') });
+  await page.locator('#next-day').click();
+  await expect(page.locator('#water-start')).toHaveValue('125.75');
+  await expect(page.locator('#water-end')).toHaveValue('');
+  await page.locator('#undo-change').click();
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  await page.locator('#water-end').fill('90');
+  await expect(page.locator('#water-total')).toContainText('- m³');
+  await expect(page.locator('#water-status')).toContainText('decreased');
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(page.locator('#water-section')).toBeHidden();
+  await expect(page.locator('#utilities-section')).toBeVisible();
+});
+
+test('legacy water consumption remains visible without fabricated readings and conversion to raw input can be undone', async ({
+  page,
+}) => {
+  const d = exampleDraft('JRE');
+  d.utilities[4] = { value: '42.5', note: 'Existing consumption' };
+  await page.route('**/api/drafts', (r) =>
+    r.fulfill({
+      json: {
+        version: 1,
+        workspace: { version: 4, drafts: { JRE: d, UNILAND: exampleDraft('UNILAND') } },
+      },
+    }),
+  );
+  await page.reload();
+  await expect(page.locator('#water-legacy')).toContainText('42.5 m³');
+  await expect(page.locator('#water-readings')).toBeHidden();
+  await expect(page.locator('#report-preview')).toHaveValue(/Water: 42.5 m³/);
+  await page.locator('#water-use-readings').click();
+  await expect(page.locator('#water-start')).toHaveValue('');
+  await expect(page.locator('#water-end')).toHaveValue('');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#undo-change').click();
+  await expect(page.locator('#water-legacy')).toContainText('42.5 m³');
 });
 
 test('latest period and manual dates move readings by date in either edit order, with undo and recovery', async ({
@@ -237,7 +393,7 @@ test('Structural shows net usage with original inputs and translated guidance', 
   await expect(row.locator('.energy > span')).toHaveText('110.00');
   await expect(row.locator('.energy')).toHaveAttribute(
     'title',
-    /150 - Piping Building 1# \(40\) = 110.00 kWh/,
+    /150 - Piping Building 1#, meter 1 \(40\) = 110.00 kWh/,
   );
   const report = await page.locator('#report-preview').inputValue();
   for (const language of ['zh-CN', 'id', 'en']) {

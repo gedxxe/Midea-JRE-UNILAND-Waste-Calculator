@@ -1,6 +1,8 @@
 import { restoreGasDraft, nextGasDay } from './gas.js';
 import { createDraft } from './engine.js';
 import { currentRatioIssues } from './import-ratios.js';
+import { migrateMeterLayout } from './meter-layout.js';
+import { restoreWater, nextWaterDay } from './water.js';
 import { validDate, shiftDate, decimalText } from './numbers.js';
 
 export const STORAGE_KEY = 'midea_energy_draft_v4';
@@ -32,7 +34,7 @@ export function restoreDrafts(raw) {
   if (saved.version !== 4) throw new Error('Draft version does not match.');
   const result = {};
   for (const plant of ['JRE', 'UNILAND']) {
-    const input = saved.drafts?.[plant];
+    const input = migrateMeterLayout(saved.drafts?.[plant]);
     const draft = createDraft(plant);
     if (
       !input ||
@@ -45,6 +47,7 @@ export function restoreDrafts(raw) {
     )
       throw new Error('Draft meter layout does not match.');
     if (plant === 'JRE') draft.gas = restoreGasDraft(input.gas);
+    if (plant === 'JRE' && input.water !== undefined) draft.water = restoreWater(input.water);
     draft.isExample = input.isExample === true;
     draft.startDate = input.startDate;
     draft.endDate = input.endDate;
@@ -83,6 +86,7 @@ export function nextDayDraft(draft) {
     throw new Error('Correct invalid end readings before moving to the next day.');
   const next = createDraft(draft.plantKey, draft.endDate, shiftDate(draft.endDate, 1));
   if (draft.plantKey === 'JRE') next.gas = nextGasDay(draft.gas);
+  if (draft.plantKey === 'JRE' && draft.water) next.water = nextWaterDay(draft.water);
   next.rows.forEach((row, i) => {
     row.start = [...draft.rows[i].end];
   });
@@ -102,6 +106,8 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
   const next = createDraft(draft.plantKey, startDate, endDate);
   next.isExample = draft.isExample;
   next.importIssues = [];
+  if (draft.plantKey === 'JRE' && (draft.water || origin.water))
+    next.water = { start: '', end: '' };
   for (const side of ['start', 'end']) {
     const date = next[side + 'Date'];
     let source;
@@ -118,6 +124,7 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
     // Undated input can be assigned its first date without discarding it.
     if (!source && !draft[side + 'Date']) source = { draft, side };
     if (source) {
+      if (next.water) next.water[side] = source.draft.water?.[source.side] || '';
       for (const issue of source.draft.importIssues || []) {
         if (
           !next.importIssues.some((existing) => JSON.stringify(existing) === JSON.stringify(issue))

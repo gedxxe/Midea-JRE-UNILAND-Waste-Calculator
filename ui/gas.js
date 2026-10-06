@@ -26,13 +26,15 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         rememberUndo();
         entry.enabled = toggle.checked;
         rebuild();
-        rebuildUtilities();
         changed();
       });
       toggleLabel.append(toggle, node('span', t('gasEnable')));
       card.append(toggleLabel);
+      const utility = node('div', undefined, 'utility-entry');
+      utility.id = 'gas-utility-' + index;
       if (!entry.enabled) {
         card.append(node('p', t('gasDisabled'), 'gas-help'));
+        card.append(utility);
         $('gas-fields').append(card);
         return;
       }
@@ -140,8 +142,10 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       view.output.className = 'gas-total';
       view.status.setAttribute('role', 'status');
       card.append(add, node('p', t('gasFormula'), 'gas-help'), view.output, view.status);
+      card.append(utility);
       $('gas-fields').append(card);
     });
+    rebuildUtilities();
     update();
   }
   function update() {

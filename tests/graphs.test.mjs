@@ -50,8 +50,8 @@ test('new Structural snapshots graph net usage while historical snapshots retain
   const piping = PLANT_SCHEMAS.JRE.rows.findIndex((row) => row.name === 'Piping Building 1#');
   draft.rows[structural].start = ['1000'];
   draft.rows[structural].end = ['1150'];
-  draft.rows[piping].start = ['10'];
-  draft.rows[piping].end = ['11'];
+  draft.rows[piping].start = ['10', '1000'];
+  draft.rows[piping].end = ['11', '1000'];
   const snapshot = reportSnapshot(draft);
   assert.match(snapshot.output.reportText, /20\. Structural Laboratory: 110\.00 kWh/);
   assert.equal(graphValues(snapshot, 'JRE').w11, 110);
@@ -67,7 +67,7 @@ test('new Structural snapshots graph net usage while historical snapshots retain
     'Structural Laboratory: 150.00',
   );
   assert.equal(graphValues(historical, 'JRE').w11, 150);
-  draft.rows[piping].end = ['20'];
+  draft.rows[piping].end = ['20', '1000'];
   assert.equal(graphValues(reportSnapshot(draft), 'JRE').w11, null);
 });
 

@@ -1,5 +1,7 @@
 import { createGasDraft, calculateGas, GASES, GAS_TABLE_VERSION, gasMassText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
+import { JRE_METER_LAYOUT } from './meter-layout.js';
+import { calculateWater } from './water.js';
 import { currentRatioIssues } from './import-ratios.js';
 import {
   decimalText,
@@ -14,7 +16,7 @@ import { buildWorksheet, worksheetPreview } from './worksheet.js';
 
 export function createDraft(plantKey, startDate = '', endDate = '') {
   return {
-    ...(plantKey === 'JRE' ? { gas: createGasDraft() } : {}),
+    ...(plantKey === 'JRE' ? { gas: createGasDraft(), meterLayout: JRE_METER_LAYOUT } : {}),
     plantKey,
     startDate,
     endDate,
@@ -57,6 +59,7 @@ export function calculateDraft(draft) {
     );
 
   const scaledEnergy = new Map();
+  const scaledMeters = new Map();
   const calculatedRows = schema.rows.map((row, ri) => {
     const input = draft.rows[ri];
     const meters = [];
@@ -148,6 +151,7 @@ export function calculateDraft(draft) {
       }
       // Configured factors have at most 2 decimals; accumulate at 1e-8 precision.
       const converted = delta * BigInt(Math.round(factor * 100));
+      scaledMeters.set(`${row.name}:${mi}`, converted);
       energyScaled += converted;
       meter.energy = Number(converted) / 1e8;
       meter.diff = diff;
@@ -160,7 +164,10 @@ export function calculateDraft(draft) {
   calculatedRows.forEach((row, ri) => {
     if (!row.subtractUsageOf) return;
     row.grossEnergy = row.totalEnergy;
-    const included = scaledEnergy.get(row.subtractUsageOf);
+    const included =
+      row.subtractMeter === undefined
+        ? scaledEnergy.get(row.subtractUsageOf)
+        : scaledMeters.get(`${row.subtractUsageOf}:${row.subtractMeter}`);
     row.deductedEnergy = included === undefined ? null : Number(included) / 1e8;
     if (row.missing) return;
     if (included === undefined) {
@@ -190,11 +197,32 @@ export function calculateDraft(draft) {
   });
 
   const gasResults = [];
+  const waterResult = draft.plantKey === 'JRE' ? calculateWater(draft.water) : null;
   const utilities = [];
   if (draft.plantKey === 'JRE' && draft.gas && draft.gas.version !== GAS_TABLE_VERSION)
     issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
   UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
+    if (draft.plantKey === 'JRE' && i === 4 && waterResult.active) {
+      value = waterResult.value;
+      if (waterResult.error) {
+        const messages = {
+          waterIncomplete: 'Water: enter both flow-meter readings.',
+          waterInvalid: 'Water: use nonnegative decimal readings with up to six decimal places.',
+          waterDecreased:
+            'Water: the flow-meter reading decreased. Check readings or a meter reset.',
+        };
+        issue(
+          issues,
+          'WATER_READING',
+          messages[waterResult.error],
+          null,
+          null,
+          waterResult.error === 'waterDecreased' ? 'WARNING' : 'ERROR',
+        );
+      } else if (value === '-')
+        issue(issues, 'WATER_UNAVAILABLE', 'Water: a flow-meter reading is unavailable.');
+    }
     if (draft.plantKey === 'JRE' && i < GASES.length && draft.gas?.entries[i]?.enabled) {
       const result = calculateGas(GASES[i].id, draft.gas.entries[i]);
       gasResults.push({ gas: GASES[i].id, calibration: GAS_TABLE_VERSION, ...result });
@@ -300,6 +328,7 @@ export function calculateDraft(draft) {
     issues,
     calculatedRows,
     gasResults,
+    waterResult,
     mainText,
     reportSectionText: [mainText, crossCheckText, checks].filter(Boolean).join('\n\n'),
     checks,

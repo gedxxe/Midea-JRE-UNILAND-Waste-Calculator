@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.7-alpha - 2026-10-06
+
+- Move two JRE Warehouse meters into Window and Piping 1, with legacy draft/text compatibility. Structural deducts only the original Piping 1 x40 meter.
+- Show individual meter usage beside readings while keeping equipment totals separate.
+- Add JRE cumulative water readings in m³ below gas, move manual gas values into their gas cards, and preserve historical consumption-only water entries.
+
 ## v0.9.6-alpha - 2026-10-05
 
 - Move meter and gas observations with their dates when changing periods; show dates on reading columns and keep Undo recovery. Clear period-specific utilities and refills for a new period.

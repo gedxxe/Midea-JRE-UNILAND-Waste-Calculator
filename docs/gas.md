@@ -12,7 +12,7 @@ Each observation is converted to kg first. Consumption is initial kg + sum(after
 
 Next day carries enabled gases' final raw readings and temperatures into the next initial reading, then clears final readings and refills. Invalid final readings block this action. Undo restores removed refills and previous drafts. Language changes do not change canonical report text.
 
-Disabled tank calculations preserve existing manual utility data. Enabling a gas replaces its report value with the calculated result and makes its manual value field read-only. Disabling it restores the preserved manual value. Notes remain available under Daily utilities. No old kg value is reverse-converted into an invented raw reading.
+Disabled tank calculations preserve existing manual utility data. Enabling a gas replaces its report value with the calculated result and makes its manual value field read-only. Disabling it restores the preserved manual value. Manual values and notes remain available within each gas card. The JRE section below gas is Water, entered as cumulative m³ flow-meter readings. No old kg value is reverse-converted into an invented raw reading.
 
 ## Reference data and provenance
 

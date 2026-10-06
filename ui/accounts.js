@@ -1,5 +1,7 @@
 import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
+import { createDraft } from '../engine.js';
+import { restoreDrafts } from '../storage.js';
 
 export function createAccounts({
   current,
@@ -94,6 +96,7 @@ export function createAccounts({
       'FORBIDDEN',
       'NOT_CONFIGURED',
       'PERIOD_CHANGED',
+      'METER_LAYOUT_CHANGED',
     ];
     return t('error_' + (known.includes(error.message) ? error.message : 'SERVICE_UNAVAILABLE'));
   }
@@ -334,19 +337,33 @@ export function createAccounts({
         if (selected) await openReport(selected.id, $('history-revision').value);
       }),
   );
-  $('use-history').addEventListener('click', () => {
-    if (!selected || !confirm(t('loadReportConfirm'))) return;
-    const draft = selected.snapshot.draft;
-    links[draft.plantKey] = {
-      id: selected.id,
-      revision: selected.latestRevision,
-      startDate: draft.startDate,
-      endDate: draft.endDate,
-    };
-    loadDraft(structuredClone(draft));
-    $('history-dialog').close();
-    toast(t('reportLoaded'));
-  });
+  $('use-history').addEventListener(
+    'click',
+    () =>
+      void action(async () => {
+        if (!selected || !confirm(t('loadReportConfirm'))) return;
+        const source = selected.snapshot.draft;
+        const draft = restoreDrafts(
+          JSON.stringify({
+            version: 4,
+            drafts: {
+              JRE: createDraft('JRE'),
+              UNILAND: createDraft('UNILAND'),
+              [source.plantKey]: source,
+            },
+          }),
+        )[source.plantKey];
+        links[draft.plantKey] = {
+          id: selected.id,
+          revision: selected.latestRevision,
+          startDate: draft.startDate,
+          endDate: draft.endDate,
+        };
+        loadDraft(structuredClone(draft));
+        $('history-dialog').close();
+        toast(t('reportLoaded'));
+      }),
+  );
   async function users() {
     const data = await request('/api/users');
     $('users-list').replaceChildren();

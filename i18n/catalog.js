@@ -2,18 +2,20 @@ import { draftMessages } from './drafts.js';
 import { graphMessages } from './graphs.js';
 import { gasMessages } from './gas.js';
 import { accountMessages } from './accounts.js';
+import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  ...waterMessages,
   netUsageHint: [
-    'Enter original readings. Usage excludes {name}.',
-    '填写原始读数。用量已扣除 {name}。',
-    'Isi reading asli. Pemakaian dikurangi {name}.',
+    'Enter original readings. Usage excludes {name}, meter {meter} only.',
+    '填写原始读数。仅扣除 {name} 的第 {meter} 个电表用量。',
+    'Isi reading asli. Pemakaian hanya dikurangi {name}, meter {meter}.',
   ],
   netUsageCalculation: [
-    'Net: {gross} - {name} ({deducted}) = {net} {unit}',
-    '净用量：{gross} - {name} ({deducted}) = {net} {unit}',
-    'Murni: {gross} - {name} ({deducted}) = {net} {unit}',
+    'Net: {gross} - {name}, meter {meter} ({deducted}) = {net} {unit}',
+    '净用量：{gross} - {name} 第 {meter} 个电表 ({deducted}) = {net} {unit}',
+    'Murni: {gross} - {name}, meter {meter} ({deducted}) = {net} {unit}',
   ],
   ...draftMessages,
   updateAvailable: [
@@ -140,6 +142,8 @@ export const catalog = {
   ],
   ratio: ['Meter / ratio', '电表 / 倍率', 'Meter / ratio'],
   startReading: ['Start reading', '开始读数', 'Reading awal'],
+  meterUsage: ['Usage', '用量', 'Pemakaian'],
+  equipmentTotal: ['Equipment total', '设备合计', 'Total equipment'],
   endReading: ['End reading', '结束读数', 'Reading akhir'],
   consumption: ['Consumption', '用量', 'Konsumsi'],
   noMatches: ['No matching equipment.', '没有匹配的设备。', 'Tidak ada equipment yang cocok.'],

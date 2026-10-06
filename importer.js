@@ -1,5 +1,6 @@
 import { PLANT_SCHEMAS } from './schema.js';
 import { normalizeName, decimalText, validDate } from './numbers.js';
+import { LEGACY_JRE_FACTORS, moveLegacyValues, moveLegacyIssues } from './meter-layout.js';
 
 export function parseReading(text, plantKey) {
   const schema = PLANT_SCHEMAS[plantKey];
@@ -7,7 +8,7 @@ export function parseReading(text, plantKey) {
   schema.rows.forEach((row, i) =>
     [row.name, ...(row.aliases || [])].forEach((name) => lookup.set(normalizeName(name), i)),
   );
-  const values = schema.rows.map((row) => row.factors.map(() => ''));
+  let values = schema.rows.map((row) => row.factors.map(() => ''));
   const issues = [];
   const seen = new Set();
   const dates = [];
@@ -46,8 +47,21 @@ export function parseReading(text, plantKey) {
       code: 'IMPORT_DATE',
       message: 'Paste one reading with one valid date line, for example 16/09/2026.',
     });
+  const legacy =
+    plantKey === 'JRE' &&
+    Object.entries(LEGACY_JRE_FACTORS).every(([ri, factors]) => {
+      const matches = entries.filter((entry) => entry.ri === Number(ri));
+      return (
+        matches.length === 1 &&
+        (matches[0].expr.trim() === '-' || matches[0].expr.split('+').length === factors.length)
+      );
+    });
   for (const { ri, expr } of entries) {
-    const row = schema.rows[ri];
+    const row =
+      legacy && LEGACY_JRE_FACTORS[ri]
+        ? { ...schema.rows[ri], factors: LEGACY_JRE_FACTORS[ri] }
+        : schema.rows[ri];
+    if (legacy) values[ri] = row.factors.map(() => '');
     if (seen.has(ri)) {
       issues.push({
         level: 'ERROR',
@@ -102,7 +116,13 @@ export function parseReading(text, plantKey) {
         message: `${row.name}: row not found.`,
       });
   });
-  return { values, date: dates[0], issues, success: !issues.some((i) => i.level === 'ERROR') };
+  const success = !issues.some((i) => i.level === 'ERROR');
+  return {
+    values: legacy && success ? moveLegacyValues(values) : values,
+    date: dates[0],
+    issues: legacy && success ? moveLegacyIssues(issues) : issues,
+    success,
+  };
 }
 
 // Plan the complete paste before changing any cells, so an oversized block cannot partially overwrite data.
