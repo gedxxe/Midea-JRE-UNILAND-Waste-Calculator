@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.8-alpha - 2026-10-06
+
+- Align Start and End reading inputs in JRE and UNILAND while keeping individual usage below End. Keep meter labels aligned at the top of each row.
+
 ## v0.9.7-alpha - 2026-10-06
 
 - Move two JRE Warehouse meters into Window and Piping 1, with legacy draft/text compatibility. Structural deducts only the original Piping 1 x40 meter.

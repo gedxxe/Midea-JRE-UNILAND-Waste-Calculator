@@ -532,8 +532,13 @@ label {
   line-height: 1.4;
 }
 .meter-card td.ratio {
+  vertical-align: top;
+  padding-top: 14px;
   font-size: 12px;
   color: #111;
+}
+.meter-card td.reading-cell {
+  vertical-align: top;
 }
 .ratio span {
   display: block;
