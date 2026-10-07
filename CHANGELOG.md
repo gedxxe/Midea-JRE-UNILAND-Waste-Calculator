@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.10-alpha - 2026-10-07
+
+- Add blank JRE and UNILAND electricity reading templates with copy and .txt download, available before login or data entry. Keep every current meter and ratio without including entered readings.
+
 ## v0.9.9-alpha - 2026-10-07
 
 - Add a pre-login Midea logo reconstruction with optional replay, reduced-motion fallback and a static-logo switch. Keep sign-in available during playback in development and production.

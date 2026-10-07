@@ -1,6 +1,25 @@
 import { PLANT_SCHEMAS } from './schema.js';
 import { decimalText, validDate } from './numbers.js';
 
+function ratioAnnotation(row, meterIndex) {
+  if (row.ratioLabel?.includes('/')) {
+    const [numerator, denominator] = row.ratioLabel.split('/');
+    return ` ((Ratio ${numerator})/${denominator})`;
+  }
+  return row.factors[meterIndex] === 1 ? '' : ` (Ratio ${row.factors[meterIndex]})`;
+}
+
+// Schema only: never read a draft, session, date or previously entered value.
+export function formatBlankReadingTemplate(plantKey) {
+  const schema = PLANT_SCHEMAS[plantKey];
+  if (!schema?.rows) throw new RangeError('Unknown factory');
+  const lines = schema.rows.map(
+    (row) =>
+      `${row.no}. ${row.name}: ${row.factors.map((_, mi) => '____' + ratioAnnotation(row, mi)).join(' + ')}`,
+  );
+  return `${schema.name}\n\nDD/MM/YYYY\n\n${lines.join('\n')}`;
+}
+
 // Export one cumulative reading column. Never apply factors or compare endpoints.
 export function exportRawReading(draft, side = 'end') {
   const result = formatReadingColumn(draft, side);
@@ -8,7 +27,7 @@ export function exportRawReading(draft, side = 'end') {
 }
 
 // The import editor also needs an editable template for incomplete columns.
-// Keep empty cells empty; only exportRawReading permits copy-ready output.
+// Keep empty cells empty; exportRawReading validates filled exports before copying.
 export function formatReadingColumn(draft, side) {
   const schema = PLANT_SCHEMAS[draft?.plantKey];
   if (
@@ -31,14 +50,7 @@ export function formatReadingColumn(draft, side) {
         issues.push({ code: raw ? 'INVALID' : 'EMPTY', rowIndex, meterIndex });
       // A leading plus is redundant and would collide with the meter separator.
       const reading = raw.replace(/^\+/, '');
-      let annotation = '';
-      if (row.ratioLabel?.includes('/')) {
-        const [numerator, denominator] = row.ratioLabel.split('/');
-        annotation = ` ((Ratio ${numerator})/${denominator})`;
-      } else if (row.factors[meterIndex] !== 1) {
-        annotation = ` (Ratio ${row.factors[meterIndex]})`;
-      }
-      return reading + annotation;
+      return reading + ratioAnnotation(row, meterIndex);
     });
     return `${row.no}. ${row.name}: ${terms.join(' + ')}`;
   });

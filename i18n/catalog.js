@@ -28,6 +28,20 @@ export const catalog = {
   ...gasMessages,
   ...graphMessages,
   exportRaw: ['Export Raw Table Data', '导出原始表格数据', 'Ekspor Data Mentah Tabel'],
+  rawTemplate: ['Blank reading template', '空白读数模板', 'Template reading kosong'],
+  rawTemplateHint: [
+    'Blank electricity readings for JRE or UNILAND. No entered data is included. Download a copy now to fill in outside the website.',
+    'JRE 或 UNILAND 电表空白读数模板，不含任何已填写数据。可先下载副本，之后在网站外填写。',
+    'Template reading listrik kosong untuk JRE atau UNILAND, tanpa data yang sudah diisi. Unduh salinannya sekarang untuk diisi di luar website.',
+  ],
+  rawTemplateHelp: [
+    'Replace DD/MM/YYYY with the reading date and each ____ with a meter reading. Keep equipment names, + separators and ratios. Use - only for an unavailable reading. Once complete, paste into Import text and select Start or End.',
+    '将 DD/MM/YYYY 替换为抄表日期，将每个 ____ 替换为电表读数。保留设备名称、+ 分隔符和倍率。仅在读数无法获取时填 -。填写完整后，粘贴至文本导入并选择开始或结束列。',
+    'Ganti DD/MM/YYYY dengan tanggal reading dan setiap ____ dengan angka meter. Pertahankan nama equipment, pemisah +, dan ratio. Gunakan - hanya jika reading tidak tersedia. Setelah lengkap, tempel ke Import text lalu pilih Start atau End.',
+  ],
+  rawTemplateFactory: ['Factory', '工厂', 'Pabrik'],
+  copyRawTemplate: ['Copy template', '复制模板', 'Salin template'],
+  downloadRawTemplate: ['Download .txt', '下载 .txt', 'Unduh .txt'],
   rawExportHint: [
     'Copy cumulative electricity readings for this factory. No consumption calculation, gas, or water data.',
     '复制当前工厂的电表累计读数，不计算用量，不包含气体或用水数据。',

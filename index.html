@@ -466,13 +466,14 @@
                 >
               </div>
             </section>
-            <button
-              id="open-raw-export"
-              class="button secondary full raw-export-button"
-              data-i18n="exportRaw"
-            >
-              Export Raw Table Data
-            </button>
+            <div class="raw-export-actions raw-export-button">
+              <button id="open-raw-export" class="button secondary" data-i18n="exportRaw">
+                Export Raw Table Data
+              </button>
+              <button class="button secondary" data-open-raw-template data-i18n="rawTemplate">
+                Blank reading template
+              </button>
+            </div>
             <section id="gas-section" class="card gas-card" aria-labelledby="gas-title">
               <h2 id="gas-title" data-i18n="gasTitle">JRE gas consumption</h2>
               <p data-i18n="gasHint">
@@ -654,6 +655,9 @@
       </div>
       <div class="release-footer">
         <span>made in &lt;3 by gede</span>
+        <button class="text-button" data-open-raw-template data-i18n="rawTemplate">
+          Blank reading template
+        </button>
         <details id="build-details">
           <summary>
             <span id="app-version">Alpha</span> · <span data-i18n="build">Build details</span>
@@ -698,6 +702,40 @@
       <p class="graph-help" data-i18n="graphLayoutNote"></p>
       <p class="hint" data-i18n="graphImageNote"></p>
       <div id="graph-cards"></div>
+    </dialog>
+    <dialog id="raw-template-dialog" aria-labelledby="raw-template-title">
+      <div class="dialog-heading">
+        <h2 id="raw-template-title" data-i18n="rawTemplate">Blank reading template</h2>
+        <button class="text-button" data-close-dialog="raw-template-dialog" data-i18n="close">
+          Close
+        </button>
+      </div>
+      <p data-i18n="rawTemplateHint"></p>
+      <label>
+        <span data-i18n="rawTemplateFactory">Factory</span>
+        <select id="raw-template-plant">
+          <option value="JRE">JRE</option>
+          <option value="UNILAND">UNILAND</option>
+        </select>
+      </label>
+      <p id="raw-template-help" class="hint" data-i18n="rawTemplateHelp"></p>
+      <textarea
+        id="raw-template-preview"
+        rows="12"
+        readonly
+        spellcheck="false"
+        aria-label="Blank reading template"
+        data-i18n-aria-label="rawTemplate"
+        aria-describedby="raw-template-help"
+      ></textarea>
+      <div class="raw-export-actions">
+        <button id="copy-raw-template" class="button primary" data-i18n="copyRawTemplate">
+          Copy template
+        </button>
+        <button id="download-raw-template" class="button secondary" data-i18n="downloadRawTemplate">
+          Download .txt
+        </button>
+      </div>
     </dialog>
     <dialog id="raw-export-dialog" aria-labelledby="raw-export-title">
       <div class="dialog-heading">

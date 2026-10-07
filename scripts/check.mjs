@@ -64,7 +64,7 @@ for (const file of PUBLIC_FILES) {
     }
   }
 }
-// Includes tank/water calculations, SVG graphs and legacy meter-layout mapping and the SVG/CSS logo intro; no browser dependencies.
-assert.ok(size < 336000, `Static assets grew to ${size} bytes; review the footprint.`);
+// Includes tank/water calculations, graphs, legacy meter mapping, logo intro and blank templates; no browser dependencies.
+assert.ok(size < 340000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

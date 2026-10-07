@@ -3,6 +3,7 @@ import { createGraphs } from './ui/graphs.js';
 import { createPeriodPicker } from './ui/period.js';
 import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
+import { initRawTemplate } from './ui/raw-template.js';
 import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
 import { initLogoIntro } from './ui/logo.js';
@@ -61,6 +62,7 @@ const periodPicker = createPeriodPicker({
   },
 });
 const rawExport = createRawExport({ current, toast });
+initRawTemplate({ getPlant: () => plant, toast });
 const importEditor = createImportEditor({
   current,
   toast,
