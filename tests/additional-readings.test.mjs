@@ -8,8 +8,8 @@ import { reportSnapshot } from '../server/report-data.js';
 import { exportRawReading, formatBlankReadingTemplate } from '../raw-export.js';
 import { graphValues } from '../graph-data.js';
 
-test('UNILAND T1–T4 add precise unnumbered notes without changing meters, raw export, worksheet or graphs', () => {
-  const d = exampleDraft('UNILAND'),
+test('JRE T1–T4 add precise unnumbered notes without changing meters, raw export, worksheet or graphs', () => {
+  const d = exampleDraft('JRE'),
     before = calculateDraft(d),
     raw = exportRawReading(d).text;
   const previous = reportSnapshot(d);
@@ -35,18 +35,18 @@ test('UNILAND T1–T4 add precise unnumbered notes without changing meters, raw 
     'worksheetText',
   ])
     assert.deepEqual(result[key], before[key]);
-  assert.deepEqual(graphValues(snapshot, 'UNILAND'), graphValues(previous, 'UNILAND'));
+  assert.deepEqual(graphValues(snapshot, 'JRE'), graphValues(previous, 'JRE'));
   assert.equal(exportRawReading(d).text, raw);
-  assert.doesNotMatch(formatBlankReadingTemplate('UNILAND'), /T[1-4]/);
+  assert.doesNotMatch(formatBlankReadingTemplate('JRE'), /T[1-4]/);
   assert.deepEqual(snapshot.draft.additionalReadings, d.additionalReadings);
   assert.equal(snapshot.output.additionalReadings[1].value, '3.5');
   assert.match(
-    generateFullIndonesiaReport(calculateDraft(exampleDraft('JRE')), result),
+    generateFullIndonesiaReport(result, calculateDraft(exampleDraft('UNILAND'))),
     /T4 consumption: 15 kWh/,
   );
-  const jre = exampleDraft('JRE');
-  jre.additionalReadings = d.additionalReadings;
-  assert.doesNotMatch(calculateDraft(jre).mainText, /T[1-4] consumption/);
+  const other = exampleDraft('UNILAND');
+  other.additionalReadings = d.additionalReadings;
+  assert.doesNotMatch(calculateDraft(other).mainText, /T[1-4] consumption/);
   assert.doesNotMatch(previous.output.reportText, /Additional readings/);
   d.endDate = '2026-09-19';
   const combinedPeriod = calculateDraft(d);
@@ -55,7 +55,7 @@ test('UNILAND T1–T4 add precise unnumbered notes without changing meters, raw 
 });
 
 test('empty optional pairs are omitted; partial and invalid pairs cannot become completed reports', () => {
-  const d = exampleDraft('UNILAND');
+  const d = exampleDraft('JRE');
   d.additionalReadings = emptyAdditionalReadings();
   assert.equal(calculateDraft(d).success, true);
   assert.doesNotMatch(calculateDraft(d).mainText, /Additional readings/);
@@ -75,11 +75,11 @@ test('empty optional pairs are omitted; partial and invalid pairs cannot become 
 });
 
 test('additional pairs survive partial draft restore and date movement without inventing observations', () => {
-  const d = exampleDraft('UNILAND');
+  const d = exampleDraft('JRE');
   const restore = (input) =>
     restoreDrafts(
-      JSON.stringify({ version: 4, drafts: { JRE: createDraft('JRE'), UNILAND: input } }),
-    ).UNILAND;
+      JSON.stringify({ version: 4, drafts: { UNILAND: createDraft('UNILAND'), JRE: input } }),
+    ).JRE;
   assert.equal(restore(d).additionalReadings, undefined);
   d.additionalReadings = emptyAdditionalReadings();
   d.additionalReadings[0] = { start: '100,00', end: '120.50' };
@@ -103,4 +103,22 @@ test('additional pairs survive partial draft restore and date movement without i
   assert.throws(() => restore(d), /additional readings/);
   d.additionalReadings = [];
   assert.throws(() => restore(d), /additional readings/);
+});
+
+test('legacy UNILAND pairs remain recoverable but never become JRE readings or new UNILAND notes', () => {
+  const legacy = exampleDraft('UNILAND');
+  legacy.additionalReadings = emptyAdditionalReadings();
+  legacy.additionalReadings[0] = { start: '100.25', end: 'unfinished' };
+  const before = structuredClone(legacy);
+  const restored = restoreDrafts(
+    JSON.stringify({ version: 4, drafts: { JRE: createDraft('JRE'), UNILAND: legacy } }),
+  );
+  assert.deepEqual(restored.UNILAND.additionalReadings, legacy.additionalReadings);
+  assert.equal(restored.JRE.additionalReadings, undefined);
+  const snapshot = reportSnapshot(restored.UNILAND);
+  assert.deepEqual(snapshot.draft.additionalReadings, legacy.additionalReadings);
+  assert.doesNotMatch(snapshot.output.reportText, /T[1-4] consumption|Additional readings/);
+  assert.equal(calculateDraft(restored.UNILAND).success, true);
+  assert.equal(nextDayDraft(restored.UNILAND).additionalReadings[0].start, 'unfinished');
+  assert.deepEqual(legacy, before);
 });

@@ -35,7 +35,7 @@ test('working drafts replace partial entries without report revisions and reject
   };
   workspace.drafts.JRE.rows[0].start[0] = '123.';
   workspace.drafts.JRE.water = { start: '100,25', end: '' };
-  workspace.drafts.UNILAND.additionalReadings = [
+  workspace.drafts.JRE.additionalReadings = [
     { start: '100,25', end: '' },
     { start: '', end: '' },
     { start: '', end: '' },
@@ -82,8 +82,8 @@ test('working drafts replace partial entries without report revisions and reject
   assert.equal(latest.value.workspace.drafts.JRE.rows[0].end[0], '');
   assert.deepEqual(latest.value.workspace.drafts.JRE.water, workspace.drafts.JRE.water);
   assert.deepEqual(
-    latest.value.workspace.drafts.UNILAND.additionalReadings,
-    workspace.drafts.UNILAND.additionalReadings,
+    latest.value.workspace.drafts.JRE.additionalReadings,
+    workspace.drafts.JRE.additionalReadings,
   );
   assert.equal(
     (await call('/api/drafts', { actor: operator, body: { workspace: {}, baseVersion: 2 } }))
@@ -261,6 +261,10 @@ test('temporary accounts must change their password; the old session is revoked'
 test('report ownership comes from the session; server output and raw readings are retained', async () => {
   const draft = exampleDraft('JRE');
   draft.water = { start: '100,25', end: '125.75' };
+  draft.additionalReadings = [
+    { start: '10.25', end: '14.5' },
+    ...Array.from({ length: 3 }, () => ({ start: '', end: '' })),
+  ];
   draft.gas.entries[3] = {
     enabled: true,
     start: { reading: '587', temperature: '33.5' },
@@ -279,6 +283,8 @@ test('report ownership comes from the session; server output and raw readings ar
   assert.deepEqual(own.value.snapshot.draft.gas, draft.gas);
   assert.deepEqual(own.value.snapshot.draft.water, draft.water);
   assert.equal(own.value.snapshot.output.water.value, '25.5');
+  assert.deepEqual(own.value.snapshot.draft.additionalReadings, draft.additionalReadings);
+  assert.match(own.value.snapshot.output.reportText, /T1 consumption: 4.25 kWh/);
   assert.equal(own.value.snapshot.output.gas[0].calibration, draft.gas.version);
   assert.ok(Math.abs(own.value.snapshot.output.gas[0].kg - 154.2086) < 1e-7);
   assert.equal((await call('/api/reports?id=' + reportId, { actor: other })).status, 404);

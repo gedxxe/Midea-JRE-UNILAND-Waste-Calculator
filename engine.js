@@ -305,7 +305,7 @@ export function calculateDraft(draft) {
   }
   lines.push(...utilities);
   const additionalReadings =
-    draft.plantKey === 'UNILAND' ? calculateAdditionalReadings(draft.additionalReadings) : [];
+    draft.plantKey === 'JRE' ? calculateAdditionalReadings(draft.additionalReadings) : [];
   const additionalNotes = [];
   for (const result of additionalReadings) {
     if (!result.active) continue;

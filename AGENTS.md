@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.11-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.12-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -57,7 +57,7 @@ New user instructions override older choices here. Update this decision record, 
 
 - Blank raw template confirmed 2026-10-07: provide an entirely unfilled electricity reading template for use outside the website, independent of entered data. Implementation offers copy and .txt download for both factories, including before login. Generate equipment, meter slots and ratios from the current schema; use ____ and DD/MM/YYYY placeholders, never zeros or saved readings. Filled templates use the existing validated text import.
 
-- T1–T4 confirmed 2026-10-07: UNILAND only, direct kWh end minus start, shown as unnumbered notes in completed reports. Exclude from raw exports, blank raw templates, main/sub-meter sums and gaps. Optional unused pairs stay omitted; incomplete pairs remain drafts. additional-readings.js owns validation and subtraction; ui/additional-readings.js owns entry. Preserve raw pairs in version-4 drafts and report snapshots, move observations by matching dates, and leave historical output unchanged.
+- T1–T4 corrected 2026-10-07: JRE only (supersedes the earlier UNILAND instruction), direct kWh end minus start, shown as unnumbered notes in completed reports. Exclude from raw exports, blank raw templates, main/sub-meter sums and gaps. Optional unused pairs stay omitted; incomplete pairs remain drafts. additional-readings.js owns validation and subtraction; ui/additional-readings.js owns entry. Preserve raw pairs in version-4 drafts and report snapshots, move observations by matching dates, and leave historical output unchanged. Legacy UNILAND pairs remain recoverable in stored drafts but are not included in new UNILAND reports or transferred to JRE.
 
 ## Architecture
 
