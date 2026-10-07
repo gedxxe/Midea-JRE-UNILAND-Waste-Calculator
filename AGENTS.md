@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.8-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.9-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -53,8 +53,11 @@ New user instructions override older choices here. Update this decision record, 
 - Water confirmed 2026-10-06: JRE only, cumulative m³ end minus start, attributed to the start date/combined period. Place Water below gas. Move manual JRE gas entries into the gas section so the old Daily utilities section is replaced by Water. Keep consumption-only historical values without inventing raw readings; leave UNILAND utilities unchanged.
 - Version policy confirmed 2026-10-06: continue alpha patch numbers, including 0.9.9 to 0.9.10 and beyond. Do not advance to beta or 1.0.0 without an explicit release decision.
 
+- Logo animation requested 2026-10-06: show a reconstruction of the original logo before login in both development and production; keep it lightweight and reversible. A finite intro, optional replay, reduced-motion static fallback and an HTML motion-off switch implement this without touching authentication or readings.
+
 ## Architecture
 
+- logo.css owns login-only reconstruction and layout; ui/logo.js replays CSS animations without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
 - meter-layout.js maps legacy JRE editable drafts and complete text imports into the current layout exactly once. New reports require the current meterLayout marker so stale clients must reload before finalizing reports. Stored outputs stay immutable.
 - water.js owns pure cumulative water validation and subtraction; ui/water.js owns JRE entry and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.

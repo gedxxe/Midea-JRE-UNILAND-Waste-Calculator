@@ -15,6 +15,7 @@
     <title>Daily Energy Report | Midea</title>
     <link rel="icon" type="image/webp" href="./asset/Midea.webp" />
     <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./logo.css" />
     <script type="module" src="./app.js"></script>
   </head>
   <body class="login-page">
@@ -54,6 +55,134 @@
       </div>
     </header>
     <main class="workspace">
+      <div id="logo-intro" class="logo-intro" data-motion="on">
+        <svg class="logo-scene" viewBox="-240 -240 2400 1220" role="img" aria-label="Midea">
+          <defs>
+            <clipPath id="logo-piece-0">
+              <polygon points="0,0 250,0 175,370 230,740 0,740 0,370" />
+            </clipPath>
+            <clipPath id="logo-piece-1">
+              <polygon points="250,0 450,0 505,370 480,740 230,740 175,370" />
+            </clipPath>
+            <clipPath id="logo-piece-2">
+              <polygon points="450,0 710,0 660,370 760,740 480,740 505,370" />
+            </clipPath>
+            <clipPath id="logo-piece-3">
+              <polygon points="710,0 970,0 1050,370 940,740 760,740 660,370" />
+            </clipPath>
+            <clipPath id="logo-piece-4">
+              <polygon points="970,0 1250,0 1190,370 1280,740 940,740 1050,370" />
+            </clipPath>
+            <clipPath id="logo-piece-5">
+              <polygon points="1250,0 1490,0 1550,370 1490,740 1280,740 1190,370" />
+            </clipPath>
+            <clipPath id="logo-piece-6">
+              <polygon points="1490,0 1730,0 1680,370 1750,740 1490,740 1550,370" />
+            </clipPath>
+            <clipPath id="logo-piece-7">
+              <polygon points="1730,0 1920,0 1920,370 1920,740 1750,740 1680,370" />
+            </clipPath>
+          </defs>
+          <g class="logo-guides" fill="none" aria-hidden="true">
+            <ellipse class="logo-orbit" cx="960" cy="370" rx="1070" ry="510" />
+            <path
+              class="logo-registration"
+              d="M-80 120V-80H120 M1800-80H2000V120 M2000 620V820H1800 M120 820H-80V620 M-150 370H-30 M1950 370H2070"
+            />
+            <path class="logo-scan" d="M-110-160V900" />
+          </g>
+          <g class="logo-pieces" aria-hidden="true">
+            <g class="logo-fragment fragment-0">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-0)"
+              />
+            </g>
+            <g class="logo-fragment fragment-1">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-1)"
+              />
+            </g>
+            <g class="logo-fragment fragment-2">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-2)"
+              />
+            </g>
+            <g class="logo-fragment fragment-3">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-3)"
+              />
+            </g>
+            <g class="logo-fragment fragment-4">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-4)"
+              />
+            </g>
+            <g class="logo-fragment fragment-5">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-5)"
+              />
+            </g>
+            <g class="logo-fragment fragment-6">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-6)"
+              />
+            </g>
+            <g class="logo-fragment fragment-7">
+              <image
+                href="./asset/Midea.webp"
+                width="1920"
+                height="740"
+                clip-path="url(#logo-piece-7)"
+              />
+            </g>
+          </g>
+          <image class="logo-whole" href="./asset/Midea.webp" width="1920" height="740" />
+        </svg>
+        <button
+          id="replay-logo"
+          class="logo-replay"
+          type="button"
+          data-i18n-aria-label="replayLogo"
+          aria-label="Replay logo animation"
+          data-i18n-title="replayLogo"
+          title="Replay logo animation"
+          hidden
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="M4 10a8 8 0 1 1 1 6M4 4v6h6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+
       <div class="page-heading">
         <div>
           <p class="eyebrow">JRE / UNILAND</p>

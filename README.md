@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.8-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.9-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+The login page reconstructs the original Midea logo once in 2.6 seconds, before sign-in, in development and production. Replay is optional; reduced-motion preferences show a static logo. Login stays usable during playback. To disable motion, set `data-motion="off"` on `#logo-intro` in index.html; reverting the animation PR removes the feature.
 
 JRE Warehouse meter 3 now belongs to Window as direct meter 6; Warehouse meter 2 belongs to Piping 1 as its second, direct meter. Warehouse keeps only its first ×40 meter. Structural still subtracts only Piping 1 meter 1 ×40. Legacy drafts and complete legacy text imports move the original readings once into the new layout; saved report and graph output stays unchanged. Start and End inputs stay level. Individual meter usage is visible below each end reading, with equipment totals separate.
 
@@ -103,6 +105,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+登录页在登录前播放一次 2.6 秒的美的原标志重组动画，开发和生产环境均可使用。可手动重播；启用减少动态效果时显示静态标志。动画不阻止登录。将 index.html 中 `#logo-intro` 的 `data-motion` 改为 `off` 可关闭动画，也可回退动画 PR 移除此功能。
+
 JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。起止读数输入框保持对齐。每个结束读数下方直接显示该电表用量，设备合计单独显示。
 
 JRE 气体区下方的 Water 使用累计流量计读数（m³）：结束减开始，归属开始日期或完整合并周期。未完成读数可保存为草稿，缺失、无效或下降读数不会当作零。原始水表读数随下一天和日期调整移动。旧用量数据继续保留，不虚构水表读数。手动气体用量及备注移至相应气体卡片。UNILAND 保持原录入方式。
@@ -168,6 +172,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Halaman login menampilkan rekonstruksi logo Midea asli selama 2,6 detik sebelum sign-in, di development maupun production. Animasi diputar sekali dan bisa diulang; reduced motion menampilkan logo statis. Form login tetap bisa digunakan. Untuk menonaktifkan animasi, ubah `data-motion="off"` pada `#logo-intro` di index.html; revert PR animasi untuk menghapus fiturnya.
 
 Meter 3 Warehouse JRE pindah ke Window sebagai meter ke-6 direct. Meter 2 Warehouse pindah ke Piping 1 sebagai meter kedua direct. Warehouse tinggal meter pertama ×40. Structural hanya dikurangi meter pertama Piping 1 ×40. Draft lama dan impor teks lengkap format lama memindahkan reading asli sekali ke susunan baru; hasil laporan dan grafik tersimpan tetap utuh. Input Start dan End tetap sejajar. Konsumsi tiap meter terlihat di bawah reading akhir, terpisah dari total equipment.
 
