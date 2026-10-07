@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.9-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.10-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -55,6 +55,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Logo animation requested 2026-10-06: show a reconstruction of the original logo before login in both development and production; keep it lightweight and reversible. A finite intro, optional replay, reduced-motion static fallback and an HTML motion-off switch implement this without touching authentication or readings.
 
+- Blank raw template confirmed 2026-10-07: provide an entirely unfilled electricity reading template for use outside the website, independent of entered data. Implementation offers copy and .txt download for both factories, including before login. Generate equipment, meter slots and ratios from the current schema; use ____ and DD/MM/YYYY placeholders, never zeros or saved readings. Filled templates use the existing validated text import.
+
 ## Architecture
 
 - logo.css owns login-only reconstruction and layout; ui/logo.js replays CSS animations without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
@@ -65,7 +67,7 @@ New user instructions override older choices here. Update this decision record, 
 - gas.js owns pure JRE interpolation, event validation and consumption; gas-tables.js contains mass calibration data only. ui/gas.js renders entry; i18n/gas.js owns translations. Read docs/gas.md before changes. Never commit source operational workbooks or readings.
 - server/history-import.js validates owner-scoped maintenance imports and requires a reviewed plan hash before atomic writes. Migration 002 stores immutable import provenance and consumption separately from meter reports. Runtime reads imports only; saved reports supersede imported overlapping periods. Source data stays outside Git and public assets.
 - graph-axis.js owns consumption-period labels and validated Y-axis domains; ui/period.js translates inclusive consumption dates into existing reading endpoints. graph-schema.js owns workbook chart groups and aliases. graph-data.js extracts immutable saved output, preserves null gaps and detects overlapping periods. server/graphs.js reads only the session owner’s latest report revisions. ui/graphs.js owns per-account browser layout settings and clears fetched data on identity changes; ui/graph-renderer.js owns SVG/PNG rendering. Read docs/graphs.md before graph changes. Never recalculate old historian values with the current engine or invent readings for missing dates.
-- raw-export.js validates and formats one raw reading column independently of calculated reports. ui/raw-export.js owns its preview/copy dialog and clears it on account changes.
+- raw-export.js validates and formats one raw reading column independently of calculated reports, and generates blank schema-only templates. ui/raw-export.js owns the filled preview/copy dialog and clears it on account changes. ui/raw-template.js owns public blank template copy/download without reading drafts or requiring accounts.
 - import-ratios.js revalidates persisted ratio warnings against the current schema, including legacy version-4 messages. Equal valid readings are zero consumption, not a ratio mismatch. Retain genuine mismatches and preserve original stored report output.
 - importer.js parses and validates a complete input before applying it. Never partially apply a failed paste.
 - server/drafts.js owns a separate owner-scoped working_drafts row with an optimistic concurrency token, not revision history. ui/drafts.js owns immediate sessionStorage recovery, 30-second idle/120-second continuous-edit sync, bounded retry and explicit conflict choices. Account changes clear local data and invalidate in-flight work. Migration 003 is explicit, never a build step.

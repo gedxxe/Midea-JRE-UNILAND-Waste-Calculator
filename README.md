@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.9-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.10-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+**Blank reading template** is available below the electricity table and in the page footer, including before login. Choose JRE or UNILAND, then copy or download the .txt file before an outage. It contains the current equipment names, all meter slots and ratios, with `____` for readings and `DD/MM/YYYY` for the date. No entered readings are included, even if the table is already filled. Fill the saved file outside the website, then use **Import text** once all readings and the date are complete. This template covers electricity only; the existing **Export Raw Table Data** still copies filled readings.
 
 The login page reconstructs the original Midea logo once in 2.6 seconds, before sign-in, in development and production. Replay is optional; reduced-motion preferences show a static logo. Login stays usable during playback. To disable motion, set `data-motion="off"` on `#logo-intro` in index.html; reverting the animation PR removes the feature.
 
@@ -105,6 +107,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+电表下方和页脚提供**空白读数模板**，登录前也可使用。选择 JRE 或 UNILAND 后，可复制或提前下载 .txt 文件备用。模板按当前设备、电表数量和倍率生成，读数使用 `____`，日期使用 `DD/MM/YYYY`。即使表格已填写，也不会包含已输入的数据。在网站外填写保存的文件，补全日期和所有读数后使用**文本导入**。此模板仅包含电表；原有的**导出原始表格数据**仍用于复制已填写读数。
+
 登录页在登录前播放一次 2.6 秒的美的原标志重组动画，开发和生产环境均可使用。可手动重播；启用减少动态效果时显示静态标志。动画不阻止登录。将 index.html 中 `#logo-intro` 的 `data-motion` 改为 `off` 可关闭动画，也可回退动画 PR 移除此功能。
 
 JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。起止读数输入框保持对齐。每个结束读数下方直接显示该电表用量，设备合计单独显示。
@@ -172,6 +176,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+**Template reading kosong** tersedia di bawah tabel listrik dan footer, termasuk sebelum login. Pilih JRE atau UNILAND, lalu salin atau unduh .txt sebelum terjadi gangguan. Isinya mengikuti nama equipment, jumlah meter, dan ratio terbaru, dengan `____` untuk reading serta `DD/MM/YYYY` untuk tanggal. Tidak ada reading yang ikut disalin meskipun tabel sudah terisi. Isi file yang disimpan di luar website, lalu gunakan **Import text** setelah tanggal dan seluruh reading lengkap. Template ini hanya untuk listrik; **Ekspor Data Mentah Tabel** tetap menyalin reading yang sudah diisi.
 
 Halaman login menampilkan rekonstruksi logo Midea asli selama 2,6 detik sebelum sign-in, di development maupun production. Animasi diputar sekali dan bisa diulang; reduced motion menampilkan logo statis. Form login tetap bisa digunakan. Untuk menonaktifkan animasi, ubah `data-motion="off"` pada `#logo-intro` di index.html; revert PR animasi untuk menghapus fiturnya.
 

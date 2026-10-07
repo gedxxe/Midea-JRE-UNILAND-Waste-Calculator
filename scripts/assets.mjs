@@ -28,6 +28,7 @@ export const PUBLIC_FILES = [
   'worksheet.js',
   'raw-export.js',
   'ui/raw-export.js',
+  'ui/raw-template.js',
   'ui/import.js',
   'importer.js',
   'import-ratios.js',

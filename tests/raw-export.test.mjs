@@ -3,7 +3,48 @@ import assert from 'node:assert/strict';
 import { createDraft } from '../engine.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { parseReading } from '../importer.js';
-import { exportRawReading } from '../raw-export.js';
+import { exportRawReading, formatBlankReadingTemplate } from '../raw-export.js';
+
+test('blank templates contain every current meter slot and can be filled then imported', () => {
+  for (const plant of Object.keys(PLANT_SCHEMAS)) {
+    const template = formatBlankReadingTemplate(plant);
+    const rows = PLANT_SCHEMAS[plant].rows;
+    assert.ok(template.startsWith(`${plant}\n\nDD/MM/YYYY\n\n`));
+    assert.equal(template.split('\n').filter((line) => /^\d+\./.test(line)).length, rows.length);
+    assert.equal(
+      [...template.matchAll(/____/g)].length,
+      rows.reduce((n, row) => n + row.factors.length, 0),
+    );
+    assert.equal(parseReading(template, plant).success, false);
+    assert.equal(parseReading(template.replace('DD/MM/YYYY', '07/10/2026'), plant).success, false);
+    let index = 0;
+    const completed = template
+      .replace('DD/MM/YYYY', '07/10/2026')
+      .replaceAll('____', () => `${++index},125000`);
+    const parsed = parseReading(completed, plant);
+    assert.equal(parsed.success, true);
+    assert.deepEqual(parsed.issues, []);
+    assert.equal(parsed.date, '2026-10-07');
+    index = 0;
+    assert.deepEqual(
+      parsed.values,
+      rows.map((row) => row.factors.map(() => `${++index},125000`)),
+    );
+  }
+  const jre = formatBlankReadingTemplate('JRE');
+  assert.ok(
+    jre.includes(
+      '4. Window: ____ + ____ (Ratio 90) + ____ (Ratio 90) + ____ (Ratio 40) + ____ (Ratio 40) + ____\n',
+    ),
+  );
+  assert.ok(jre.includes('16. Piping Building 1#: ____ (Ratio 40) + ____\n'));
+  assert.ok(jre.includes('26. Warehouse Area: ____ (Ratio 40)\n'));
+  assert.ok(jre.includes('12. Air Compressor 1#: ____ (Ratio 40)\n'));
+  const uniland = formatBlankReadingTemplate('UNILAND');
+  assert.ok(uniland.includes('1. Total: ____ ((Ratio 3200)/1000)\n'));
+  assert.ok(uniland.includes('2. Trafo 1: ____\n'));
+  assert.throws(() => formatBlankReadingTemplate('other'), RangeError);
+});
 
 function filled(plant = 'JRE') {
   const draft = createDraft(plant, '2026-09-24', '2026-09-25');

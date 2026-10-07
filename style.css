@@ -1265,6 +1265,7 @@ dialog textarea {
 }
 .release-footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: start;
   gap: 16px;
@@ -1458,12 +1459,23 @@ dialog textarea {
   margin-top: 16px;
   white-space: normal;
 }
-#raw-export-dialog {
+.raw-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.raw-export-actions > button {
+  flex: 1 1 180px;
+  white-space: normal;
+}
+#raw-export-dialog,
+#raw-template-dialog {
   width: min(820px, calc(100vw - 32px));
   max-height: 90dvh;
   overflow-y: auto;
 }
-#raw-export-preview {
+#raw-export-preview,
+#raw-template-preview {
   width: 100%;
   color: #111;
   font-size: 14px;
