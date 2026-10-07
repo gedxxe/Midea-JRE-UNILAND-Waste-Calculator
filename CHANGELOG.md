@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.11-alpha - 2026-10-07
+
+- Add optional UNILAND T1–T4 cumulative kWh readings as unnumbered consumption notes. Preserve them in drafts and dated periods without changing totals, worksheets or raw exports.
+
 ## v0.9.10-alpha - 2026-10-07
 
 - Add blank JRE and UNILAND electricity reading templates with copy and .txt download, available before login or data entry. Keep every current meter and ratio without including entered readings.

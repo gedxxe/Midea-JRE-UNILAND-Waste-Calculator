@@ -531,6 +531,31 @@
                 ><span data-i18n="note">Note, if any</span><input id="water-note" maxlength="500"
               /></label>
             </section>
+            <section id="additional-section" class="card gas-card" hidden>
+              <h2 data-i18n="additionalTitle">Additional readings T1–T4</h2>
+              <p data-i18n="additionalHint"></p>
+              <div class="additional-scroll">
+                <table class="additional-table">
+                  <thead>
+                    <tr>
+                      <th scope="col" data-i18n="additionalMeter">Meter</th>
+                      <th scope="col">
+                        <span data-i18n="startReading">Start reading</span> (kWh)<small
+                          id="additional-start-date"
+                        ></small>
+                      </th>
+                      <th scope="col">
+                        <span data-i18n="endReading">End reading</span> (kWh)<small
+                          id="additional-end-date"
+                        ></small>
+                      </th>
+                      <th scope="col" data-i18n="consumption">Consumption</th>
+                    </tr>
+                  </thead>
+                  <tbody id="additional-body"></tbody>
+                </table>
+              </div>
+            </section>
             <details id="utilities-section" class="card utilities-card">
               <summary>
                 <span

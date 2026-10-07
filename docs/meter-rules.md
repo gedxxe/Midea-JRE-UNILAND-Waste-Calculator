@@ -62,6 +62,10 @@ Outdoor Area = Outdoor + Vacum box outdoor + Line compressor outdoor
 
 These sums appear only in the worksheet. Individual equipment remain separate in the main report. A missing component makes its grouped value `-`.
 
+## UNILAND additional T1–T4 readings
+
+T1–T4 are optional direct kWh cumulative pairs, separate from the existing Trafo 1–3 MWh rows. End minus start belongs to the start date or combined consumption period. Both blank means omitted; partial/invalid pairs block final reports but remain valid drafts. Explicit unavailable or decreasing readings produce - and a check note. No ratios, main/sub-meter aggregation, gaps, worksheet columns or graph series are added. Completed reports append unnumbered T1–T4 consumption notes. Raw exports and blank templates exclude them. Store raw pairs and calculated notes in new snapshots; do not rewrite saved history.
+
 ## Import, utility data, and storage
 
 Text import accepts one date and a complete factory snapshot, including wrapped Injection Molding entries. Meter counts, duplicate/missing equipment, and numeric syntax are validated before replacement. Wrong imported ratios produce a warning and never override the schema. Saved warnings are revalidated against current factors during draft restore and calculation, including legacy warnings stored only as text. Resolved mismatches are removed; remaining messages use the current factor. Equal valid readings produce zero consumption and do not themselves create ratio warnings. Saved report output is never rewritten. One- or two-column Excel pastes are planned atomically; an invalid cell or oversized block changes nothing.

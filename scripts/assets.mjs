@@ -7,6 +7,8 @@ export const PUBLIC_FILES = [
   'schema.js',
   'meter-layout.js',
   'water.js',
+  'additional-readings.js',
+  'ui/additional-readings.js',
   'ui/water.js',
   'i18n/water.js',
   'engine.js',
