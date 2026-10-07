@@ -5,6 +5,7 @@ import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
 import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
+import { initLogoIntro } from './ui/logo.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
@@ -28,6 +29,8 @@ import { worksheetRowToTSV } from './worksheet.js';
 import { STORAGE_KEY, restoreDrafts, nextDayDraft, changeDraftPeriod } from './storage.js';
 import { NetworkClock, wibDate } from './clock.js';
 import { exampleDraft } from './examples.js';
+
+initLogoIntro();
 
 const table = createMeterTable({
   getPlant: () => plant,

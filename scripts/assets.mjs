@@ -1,6 +1,8 @@
 export const PUBLIC_FILES = [
   'index.html',
   'style.css',
+  'logo.css',
+  'ui/logo.js',
   'app.js',
   'schema.js',
   'meter-layout.js',

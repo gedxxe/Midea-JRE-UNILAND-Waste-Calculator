@@ -6,6 +6,7 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  replayLogo: ['Replay logo animation', '重播标志动画', 'Putar ulang animasi logo'],
   ...waterMessages,
   netUsageHint: [
     'Enter original readings. Usage excludes {name}, meter {meter} only.',
