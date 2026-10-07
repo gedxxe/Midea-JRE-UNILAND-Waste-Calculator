@@ -6,6 +6,25 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  additionalTitle: ['Additional readings T1–T4', '附加读数 T1–T4', 'Reading tambahan T1–T4'],
+  additionalMeter: ['Meter', '电表', 'Meter'],
+  additionalHint: [
+    'Optional direct kWh readings. End minus start appears as report notes only; excluded from totals, gaps and raw exports.',
+    '可选的直读 kWh。结束减开始，仅作为报告附注，不计入合计、差额或原始读数导出。',
+    'Reading direct kWh opsional. Akhir dikurangi awal, hanya sebagai catatan laporan; tidak masuk total, gap, atau ekspor raw.',
+  ],
+  additionalIncomplete: ['Enter both readings.', '请填写起止读数。', 'Isi kedua reading.'],
+  additionalInvalid: [
+    'Use valid nonnegative decimal readings.',
+    '请填写有效的非负小数读数。',
+    'Gunakan reading desimal nonnegatif yang valid.',
+  ],
+  additionalUnavailable: ['Reading unavailable.', '读数不可用。', 'Reading tidak tersedia.'],
+  additionalDecreased: [
+    'Reading decreased. Check for a meter reset.',
+    '读数下降，请检查是否重置电表。',
+    'Reading menurun. Periksa apakah meter di-reset.',
+  ],
   replayLogo: ['Replay logo animation', '重播标志动画', 'Putar ulang animasi logo'],
   ...waterMessages,
   netUsageHint: [

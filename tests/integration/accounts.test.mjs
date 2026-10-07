@@ -35,6 +35,12 @@ test('working drafts replace partial entries without report revisions and reject
   };
   workspace.drafts.JRE.rows[0].start[0] = '123.';
   workspace.drafts.JRE.water = { start: '100,25', end: '' };
+  workspace.drafts.UNILAND.additionalReadings = [
+    { start: '100,25', end: '' },
+    { start: '', end: '' },
+    { start: '', end: '' },
+    { start: '', end: '' },
+  ];
   const initial = await call('/api/drafts', { actor: operator });
   assert.equal(initial.status, 200);
   assert.equal(initial.value.version, 0);
@@ -75,6 +81,10 @@ test('working drafts replace partial entries without report revisions and reject
   assert.equal(latest.value.version, 2);
   assert.equal(latest.value.workspace.drafts.JRE.rows[0].end[0], '');
   assert.deepEqual(latest.value.workspace.drafts.JRE.water, workspace.drafts.JRE.water);
+  assert.deepEqual(
+    latest.value.workspace.drafts.UNILAND.additionalReadings,
+    workspace.drafts.UNILAND.additionalReadings,
+  );
   assert.equal(
     (await call('/api/drafts', { actor: operator, body: { workspace: {}, baseVersion: 2 } }))
       .status,

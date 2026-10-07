@@ -1459,6 +1459,70 @@ dialog textarea {
   margin-top: 16px;
   white-space: normal;
 }
+.additional-scroll {
+  overflow-x: auto;
+}
+.additional-table {
+  width: 100%;
+  min-width: 540px;
+  color: #111;
+}
+.additional-table th,
+.additional-table td {
+  padding: 10px;
+  vertical-align: top;
+}
+.additional-table input {
+  width: 100%;
+  min-width: 120px;
+  color: #111;
+  font-size: 18px;
+}
+.additional-table small {
+  display: block;
+  font-weight: normal;
+}
+.additional-table output {
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .additional-table {
+    min-width: 0;
+  }
+  .additional-table thead {
+    display: none;
+  }
+  .additional-table tbody {
+    display: block;
+  }
+  .additional-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-top: 1px solid var(--border);
+  }
+  .additional-table th {
+    grid-column: 1 / -1;
+    text-align: left;
+    padding-bottom: 0;
+  }
+  .additional-table td {
+    display: block;
+    padding: 8px 4px;
+  }
+  .additional-table td::before {
+    content: attr(data-label);
+    display: block;
+    white-space: pre-line;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .additional-table td:last-child {
+    grid-column: 1 / -1;
+  }
+  .additional-table input {
+    min-width: 0;
+  }
+}
 .raw-export-actions {
   display: flex;
   flex-wrap: wrap;

@@ -6,6 +6,7 @@ import { createRawExport } from './ui/raw-export.js';
 import { initRawTemplate } from './ui/raw-template.js';
 import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
+import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
 import { initLogoIntro } from './ui/logo.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
@@ -90,6 +91,7 @@ const gasPanel = createGasPanel({
   rebuildUtilities: () => table.buildUtilities(),
 });
 const waterPanel = createWaterPanel({ current, changed, rememberUndo });
+const additionalPanel = createAdditionalReadingsPanel({ current, changed });
 let graphs, autosave;
 let accountUser = null;
 let firstIdentity = true;
@@ -215,6 +217,7 @@ function mountPlant() {
   });
   gasPanel.rebuild();
   waterPanel.rebuild();
+  additionalPanel.rebuild();
   table.rebuild();
   renderResults();
 }
@@ -346,6 +349,7 @@ function renderResults() {
   rawExport.render();
   gasPanel.update();
   waterPanel.update();
+  additionalPanel.update();
   autosave?.render();
 }
 async function copyText(text) {

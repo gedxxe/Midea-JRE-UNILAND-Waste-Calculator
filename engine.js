@@ -2,6 +2,7 @@ import { createGasDraft, calculateGas, GASES, GAS_TABLE_VERSION, gasMassText } f
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { JRE_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
+import { calculateAdditionalReadings } from './additional-readings.js';
 import { currentRatioIssues } from './import-ratios.js';
 import {
   decimalText,
@@ -303,6 +304,30 @@ export function calculateDraft(draft) {
     );
   }
   lines.push(...utilities);
+  const additionalReadings =
+    draft.plantKey === 'UNILAND' ? calculateAdditionalReadings(draft.additionalReadings) : [];
+  const additionalNotes = [];
+  for (const result of additionalReadings) {
+    if (!result.active) continue;
+    if (result.error) {
+      const messages = {
+        additionalIncomplete: 'enter both start and end readings.',
+        additionalInvalid: 'use nonnegative decimal readings with up to six decimal places.',
+        additionalUnavailable: 'a reading is unavailable.',
+        additionalDecreased: 'the reading decreased. Check readings or a meter reset.',
+      };
+      issue(
+        issues,
+        'ADDITIONAL_READING',
+        `${result.name}: ${messages[result.error]}`,
+        null,
+        null,
+        ['additionalIncomplete', 'additionalInvalid'].includes(result.error) ? 'ERROR' : 'WARNING',
+      );
+    }
+    additionalNotes.push(`${result.name} consumption: ${result.value || '-'} kWh`);
+  }
+  if (additionalNotes.length) lines.push('', 'Additional readings:', ...additionalNotes);
   const mainText = lines.join('\n');
   const warnings = issues.filter((item) => item.level !== 'NOTICE');
   const checks = warnings.length
@@ -329,6 +354,7 @@ export function calculateDraft(draft) {
     calculatedRows,
     gasResults,
     waterResult,
+    additionalReadings,
     mainText,
     reportSectionText: [mainText, crossCheckText, checks].filter(Boolean).join('\n\n'),
     checks,

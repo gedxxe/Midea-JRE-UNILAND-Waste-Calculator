@@ -31,6 +31,7 @@ export function reportSnapshot(input) {
       checks: result.checks,
       gas: result.gasResults,
       water: result.waterResult,
+      additionalReadings: result.additionalReadings,
     },
   };
 }
