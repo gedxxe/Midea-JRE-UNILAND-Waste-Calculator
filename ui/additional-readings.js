@@ -8,7 +8,7 @@ import { t } from '../i18n/index.js';
 
 export function createAdditionalReadingsPanel({ current, changed }) {
   function update() {
-    if (current().plantKey !== 'UNILAND') return;
+    if (current().plantKey !== 'JRE') return;
     for (const side of ['start', 'end'])
       $('additional-' + side + '-date').textContent = current()[side + 'Date'] || '-';
     calculateAdditionalReadings(current().additionalReadings).forEach((result, i) => {
@@ -22,9 +22,9 @@ export function createAdditionalReadingsPanel({ current, changed }) {
     });
   }
   function rebuild() {
-    $('additional-section').hidden = current().plantKey !== 'UNILAND';
+    $('additional-section').hidden = current().plantKey !== 'JRE';
     $('additional-body').replaceChildren();
-    if (current().plantKey !== 'UNILAND') return;
+    if (current().plantKey !== 'JRE') return;
     ADDITIONAL_METERS.forEach((name, i) => {
       const row = node('tr');
       const heading = node('th', name);

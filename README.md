@@ -1,12 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.11-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.12-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
 
-UNILAND has optional T1–T4 start/end readings in direct kWh. Consumption appears as unnumbered report notes, excluded from totals, gaps, worksheets, graphs and raw templates/exports. Drafts retain partial pairs; complete any started pair before finalizing a report. Dates and Next day carry matching observations. Existing Trafo 1–3 readings remain separate in MWh.
+JRE has optional T1–T4 start/end readings in direct kWh. Consumption appears as unnumbered report notes, excluded from totals, gaps, worksheets, graphs and raw templates/exports. Drafts retain partial pairs; complete any started pair before finalizing a report. Dates and Next day carry matching observations. Existing UNILAND Trafo 1–3 readings remain separate in MWh.
 
 **Blank reading template** is available below the electricity table and in the page footer, including before login. Choose JRE or UNILAND, then copy or download the .txt file before an outage. It contains the current equipment names, all meter slots and ratios, with `____` for readings and `DD/MM/YYYY` for the date. No entered readings are included, even if the table is already filled. Fill the saved file outside the website, then use **Import text** once all readings and the date are complete. This template covers electricity only; the existing **Export Raw Table Data** still copies filled readings.
 
@@ -109,7 +109,7 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
-UNILAND 可选填 T1–T4 起止累计 kWh 读数，结束减开始作为不编号的报告附注，不计入合计、差额、工作表、图表或原始读数模板及导出。草稿保留未完成读数，正式报告要求已开始填写的读数对完整。日期调整及下一天按日期移动读数。原 Trafo 1–3 仍为独立的 MWh 电表。
+JRE 可选填 T1–T4 起止累计 kWh 读数，结束减开始作为不编号的报告附注，不计入合计、差额、工作表、图表或原始读数模板及导出。草稿保留未完成读数，正式报告要求已开始填写的读数对完整。日期调整及下一天按日期移动读数。UNILAND 原 Trafo 1–3 仍为独立的 MWh 电表。
 
 电表下方和页脚提供**空白读数模板**，登录前也可使用。选择 JRE 或 UNILAND 后，可复制或提前下载 .txt 文件备用。模板按当前设备、电表数量和倍率生成，读数使用 `____`，日期使用 `DD/MM/YYYY`。即使表格已填写，也不会包含已输入的数据。在网站外填写保存的文件，补全日期和所有读数后使用**文本导入**。此模板仅包含电表；原有的**导出原始表格数据**仍用于复制已填写读数。
 
@@ -181,7 +181,7 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 
 ## Indonesia
 
-UNILAND menyediakan reading awal/akhir T1–T4 direct kWh yang opsional. Konsumsi masuk sebagai catatan laporan tanpa nomor, tidak masuk total, gap, worksheet, grafik, template atau ekspor raw. Draft menyimpan pasangan yang belum lengkap; lengkapi pasangan yang mulai diisi sebelum menyimpan laporan final. Perubahan tanggal dan Next day memindahkan reading sesuai tanggal. Trafo 1–3 yang sudah ada tetap terpisah dalam MWh.
+JRE menyediakan reading awal/akhir T1–T4 direct kWh yang opsional. Konsumsi masuk sebagai catatan laporan tanpa nomor, tidak masuk total, gap, worksheet, grafik, template atau ekspor raw. Draft menyimpan pasangan yang belum lengkap; lengkapi pasangan yang mulai diisi sebelum menyimpan laporan final. Perubahan tanggal dan Next day memindahkan reading sesuai tanggal. Trafo 1–3 UNILAND yang sudah ada tetap terpisah dalam MWh.
 
 **Template reading kosong** tersedia di bawah tabel listrik dan footer, termasuk sebelum login. Pilih JRE atau UNILAND, lalu salin atau unduh .txt sebelum terjadi gangguan. Isinya mengikuti nama equipment, jumlah meter, dan ratio terbaru, dengan `____` untuk reading serta `DD/MM/YYYY` untuk tanggal. Tidak ada reading yang ikut disalin meskipun tabel sudah terisi. Isi file yang disimpan di luar website, lalu gunakan **Import text** setelah tanggal dan seluruh reading lengkap. Template ini hanya untuk listrik; **Ekspor Data Mentah Tabel** tetap menyalin reading yang sudah diisi.
 

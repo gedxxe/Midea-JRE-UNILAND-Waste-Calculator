@@ -62,9 +62,9 @@ Outdoor Area = Outdoor + Vacum box outdoor + Line compressor outdoor
 
 These sums appear only in the worksheet. Individual equipment remain separate in the main report. A missing component makes its grouped value `-`.
 
-## UNILAND additional T1–T4 readings
+## JRE additional T1–T4 readings
 
-T1–T4 are optional direct kWh cumulative pairs, separate from the existing Trafo 1–3 MWh rows. End minus start belongs to the start date or combined consumption period. Both blank means omitted; partial/invalid pairs block final reports but remain valid drafts. Explicit unavailable or decreasing readings produce - and a check note. No ratios, main/sub-meter aggregation, gaps, worksheet columns or graph series are added. Completed reports append unnumbered T1–T4 consumption notes. Raw exports and blank templates exclude them. Store raw pairs and calculated notes in new snapshots; do not rewrite saved history.
+T1–T4 are JRE-only optional direct kWh cumulative pairs, separate from the existing UNILAND Trafo 1–3 MWh rows. End minus start belongs to the start date or combined consumption period. Both blank means omitted; partial/invalid pairs block final reports but remain valid drafts. Explicit unavailable or decreasing readings produce - and a check note. No ratios, main/sub-meter aggregation, gaps, worksheet columns or graph series are added. Completed reports append unnumbered T1–T4 consumption notes. Raw exports and blank templates exclude them. Store raw pairs and calculated notes in new snapshots; do not rewrite saved history. Retain legacy UNILAND pairs in drafts without using them for new UNILAND reports or automatically transferring them to JRE.
 
 ## Import, utility data, and storage
 

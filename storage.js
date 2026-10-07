@@ -53,7 +53,8 @@ export function restoreDrafts(raw) {
       throw new Error('Draft meter layout does not match.');
     if (plant === 'JRE') draft.gas = restoreGasDraft(input.gas);
     if (plant === 'JRE' && input.water !== undefined) draft.water = restoreWater(input.water);
-    if (plant === 'UNILAND' && input.additionalReadings !== undefined)
+    // Retain legacy UNILAND pairs for recovery, without using them in new reports.
+    if (input.additionalReadings !== undefined)
       draft.additionalReadings = restoreAdditionalReadings(input.additionalReadings);
     draft.isExample = input.isExample === true;
     draft.startDate = input.startDate;
@@ -94,8 +95,11 @@ export function nextDayDraft(draft) {
   const next = createDraft(draft.plantKey, draft.endDate, shiftDate(draft.endDate, 1));
   if (draft.plantKey === 'JRE') next.gas = nextGasDay(draft.gas);
   if (draft.plantKey === 'JRE' && draft.water) next.water = nextWaterDay(draft.water);
-  if (draft.plantKey === 'UNILAND' && draft.additionalReadings)
-    next.additionalReadings = nextAdditionalReadings(draft.additionalReadings);
+  if (draft.additionalReadings)
+    next.additionalReadings =
+      draft.plantKey === 'JRE'
+        ? nextAdditionalReadings(draft.additionalReadings)
+        : draft.additionalReadings.map(({ end }) => ({ start: end, end: '' }));
   next.rows.forEach((row, i) => {
     row.start = [...draft.rows[i].end];
   });
@@ -115,7 +119,7 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
   const next = createDraft(draft.plantKey, startDate, endDate);
   next.isExample = draft.isExample;
   next.importIssues = [];
-  if (draft.plantKey === 'UNILAND' && (draft.additionalReadings || origin.additionalReadings))
+  if (draft.additionalReadings || origin.additionalReadings)
     next.additionalReadings = emptyAdditionalReadings();
   if (draft.plantKey === 'JRE' && (draft.water || origin.water))
     next.water = { start: '', end: '' };

@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.js';
 
-test('UNILAND additional readings persist, follow dates and add only report notes across languages', async ({
+test('JRE additional readings persist, follow dates and add only report notes across languages', async ({
   page,
 }, info) => {
   const errors = [];
@@ -23,8 +23,9 @@ test('UNILAND additional readings persist, follow dates and add only report note
   );
   await page.goto('/');
   await expect(page.locator('#report-workspace')).toBeVisible();
-  await expect(page.locator('#additional-section')).toBeHidden();
   await page.locator('[data-plant="UNILAND"]').click();
+  await expect(page.locator('#additional-section')).toBeHidden();
+  await page.locator('[data-plant="JRE"]').click();
   await page.locator('#load-example').click();
   await page.locator('#additional-0-start').fill('100,25');
   await expect(page.locator('#copy-report')).toBeDisabled();
@@ -46,7 +47,7 @@ test('UNILAND additional readings persist, follow dates and add only report note
   await page.locator('[data-close-dialog="raw-export-dialog"]').click();
   await page.locator('#save-draft').click();
   await page.reload();
-  await page.locator('[data-plant="UNILAND"]').click();
+  await page.locator('[data-plant="JRE"]').click();
   await expect(page.locator('#additional-0-end')).toHaveValue('120.5');
   await page.locator('#next-day').click();
   await expect(page.locator('#additional-0-start')).toHaveValue('120.5');
@@ -57,7 +58,7 @@ test('UNILAND additional readings persist, follow dates and add only report note
   await page.locator('#start-date').fill(end);
   await page.locator('#start-date').dispatchEvent('change');
   await expect(page.locator('#additional-0-start')).toHaveValue('120.5');
-  await page.locator('[data-plant="JRE"]').click();
+  await page.locator('[data-plant="UNILAND"]').click();
   await expect(page.locator('#additional-section')).toBeHidden();
   await expect(page.locator('#additional-body')).toBeEmpty();
   expect(errors).toEqual([]);
