@@ -25,6 +25,8 @@ export const catalog = {
     '读数下降，请检查是否重置电表。',
     'Reading menurun. Periksa apakah meter di-reset.',
   ],
+  pauseLogo: ['Pause logo animation', '暂停标志动画', 'Jeda animasi logo'],
+  resumeLogo: ['Resume logo animation', '继续标志动画', 'Lanjutkan animasi logo'],
   replayLogo: ['Replay logo animation', '重播标志动画', 'Putar ulang animasi logo'],
   ...waterMessages,
   netUsageHint: [

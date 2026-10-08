@@ -44,10 +44,14 @@
 .logo-whole {
   opacity: 1;
 }
-.logo-replay {
+.logo-controls {
   position: absolute;
   right: 14px;
   bottom: 14px;
+  display: flex;
+  gap: 8px;
+}
+.logo-replay {
   display: grid;
   place-items: center;
   width: 40px;
@@ -95,9 +99,11 @@
     width: min(100%, 340px);
     max-height: 148px;
   }
-  .logo-replay {
+  .logo-controls {
     right: 8px;
     bottom: 8px;
+  }
+  .logo-replay {
     width: 36px;
     height: 36px;
   }
@@ -111,27 +117,27 @@
     display: block;
     stroke: #04aee0;
     stroke-width: 3;
-    animation: logo-guides 2.6s ease both;
+    animation: logo-guides 10s ease infinite both;
   }
   .login-page [data-motion='on'] .logo-orbit {
     stroke-dasharray: 5200;
-    animation: logo-orbit 2.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+    animation: logo-orbit 10s cubic-bezier(0.2, 0.7, 0.3, 1) infinite both;
   }
   .login-page [data-motion='on'] .logo-registration {
     stroke-dasharray: 440;
-    animation: logo-register 1.4s ease both;
+    animation: logo-register 10s ease infinite both;
   }
   .login-page [data-motion='on'] .logo-scan {
-    animation: logo-scan 1.8s 0.15s cubic-bezier(0.25, 0.5, 0.35, 1) both;
+    animation: logo-scan 10s cubic-bezier(0.25, 0.5, 0.35, 1) infinite both;
   }
   .login-page [data-motion='on'] .logo-pieces {
     display: block;
-    animation: logo-pieces-out 0.12s 2.22s forwards;
+    animation: logo-pieces-out 10s linear infinite both;
   }
   .login-page [data-motion='on'] .logo-fragment {
     transform-box: fill-box;
     transform-origin: center;
-    animation: logo-assemble 1.7s var(--delay) cubic-bezier(0.18, 0.8, 0.25, 1) both;
+    animation: logo-assemble 10s var(--delay) cubic-bezier(0.18, 0.8, 0.25, 1) infinite both;
   }
   .fragment-0 {
     --dx: -180px;
@@ -182,7 +188,7 @@
     --delay: 0.52s;
   }
   .login-page [data-motion='on'] .logo-whole {
-    animation: logo-solid 0.2s 2.1s both;
+    animation: logo-solid 10s linear infinite both;
   }
 }
 [data-motion='off'] .logo-replay {
@@ -193,69 +199,117 @@
     display: none;
   }
 }
+/* All layers share a 10 s cycle: assemble to 2.6 s, hold until 7.6 s,
+   disassemble, then a quiet gap before the next entrance. */
+.login-page [data-motion='on'][data-paused='true'] .logo-scene *,
+.login-page [data-motion='on'][data-suspended='true'] .logo-scene * {
+  animation-play-state: paused;
+}
 @keyframes logo-assemble {
-  from {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(var(--dx), var(--dy)) rotate(var(--tilt)) scale(0.82);
   }
-  20% {
+  2% {
     opacity: 1;
   }
-  to {
+  17%,
+  76% {
     opacity: 1;
     transform: none;
   }
+  85%,
+  95% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--tilt)) scale(0.9);
+  }
 }
 @keyframes logo-solid {
-  from {
+  0%,
+  21%,
+  80%,
+  100% {
     opacity: 0;
   }
-  to {
+  23%,
+  76% {
     opacity: 1;
   }
 }
 @keyframes logo-pieces-out {
-  to {
-    opacity: 0;
+  0%,
+  22.2%,
+  78%,
+  90% {
+    opacity: 1;
   }
-}
-@keyframes logo-guides {
-  0% {
-    opacity: 0;
-  }
-  18%,
-  48% {
-    opacity: 0.4;
-  }
+  23.4%,
+  76%,
+  92%,
   100% {
     opacity: 0;
   }
 }
+@keyframes logo-guides {
+  0%,
+  26%,
+  76%,
+  92%,
+  100% {
+    opacity: 0;
+  }
+  4.68%,
+  12.48% {
+    opacity: 0.4;
+  }
+  81% {
+    opacity: 0.2;
+  }
+}
 @keyframes logo-orbit {
-  from {
+  0%,
+  100% {
     stroke-dashoffset: 5200;
     transform: rotate(-12deg);
     transform-origin: 960px 370px;
   }
-  to {
+  21%,
+  76% {
     stroke-dashoffset: 0;
     transform: rotate(0);
     transform-origin: 960px 370px;
   }
+  92% {
+    stroke-dashoffset: -5200;
+    transform: rotate(8deg);
+    transform-origin: 960px 370px;
+  }
 }
 @keyframes logo-register {
-  from {
+  0%,
+  100% {
     stroke-dashoffset: 440;
   }
-  to {
+  14%,
+  76% {
     stroke-dashoffset: 0;
+  }
+  92% {
+    stroke-dashoffset: -440;
   }
 }
 @keyframes logo-scan {
-  from {
+  0%,
+  1.5% {
     transform: translateX(0);
   }
-  to {
+  19.5%,
+  76% {
     transform: translateX(2180px);
+  }
+  92%,
+  100% {
+    transform: translateX(0);
   }
 }

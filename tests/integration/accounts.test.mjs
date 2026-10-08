@@ -73,6 +73,156 @@ test('API boundaries reject unauthenticated reads, forged identities, cross-site
   assert.equal((await call('/api/auth', { actor: admin })).value.user.id, admin.id);
 });
 
+test('injection corpus cannot bypass login, alter SQL queries or promote an operator', async () => {
+  const probe = await login(await seed());
+  const payloads = [
+    "' OR '1'='1",
+    "'; SELECT 1; --",
+    '\" OR 1=1 --',
+    '<svg/onload=window.__probe=1>',
+  ];
+  for (const payload of payloads) {
+    const auth = await call('/api/auth', {
+      body: { action: 'login', username: probe.name, password: payload },
+    });
+    assert.equal(auth.status, 401);
+    assert.equal(auth.cookie, undefined);
+    const invalidName = await call('/api/auth', {
+      body: { action: 'login', username: payload, password },
+    });
+    assert.equal(invalidName.status, 400);
+    const query = encodeURIComponent(payload);
+    for (const path of [
+      '/api/reports?id=' + query,
+      '/api/reports?page=' + query,
+      '/api/graphs?plant=JRE&start=' + query + '&end=2026-09-30',
+    ])
+      assert.equal((await call(path, { actor: probe })).status, 400);
+    const draft = exampleDraft('JRE');
+    draft.rows[0].end[0] = payload;
+    assert.equal(
+      (
+        await call('/api/reports', {
+          actor: probe,
+          body: { draft, owner_id: admin.id, role: 'admin' },
+        })
+      ).status,
+      422,
+    );
+  }
+  assert.equal((await call('/api/reports', { actor: probe })).value.reports.length, 0);
+  assert.equal(
+    (
+      await call('/api/users', {
+        actor: probe,
+        body: { action: 'create', username: 'not-created', role: 'admin' },
+      })
+    ).status,
+    403,
+  );
+  assert.equal((await call('/api/auth', { actor: probe })).value.user.role, 'operator');
+});
+
+test('stored hostile text stays data and prototype/owner fields are discarded through draft and report persistence', async () => {
+  const probe = await login(await seed());
+  const draft = exampleDraft('JRE');
+  const payload = "<img src=xss-probe onerror=window.__probe=1> '); SELECT 1; --";
+  draft.utilities[0] = { value: '0', note: payload };
+  const workspace = { version: 4, drafts: { JRE: draft, UNILAND: createDraft('UNILAND') } };
+  Object.defineProperty(workspace, '__proto__', {
+    value: { securityPolluted: true },
+    enumerable: true,
+  });
+  workspace.owner_id = 'forged';
+  // An own JSON __proto__ key must also be ignored without merging it into defaults.
+  Object.defineProperty(draft, '__proto__', {
+    value: { securityPolluted: true },
+    enumerable: true,
+  });
+  assert.equal(
+    (
+      await call('/api/drafts', {
+        actor: probe,
+        body: { workspace, baseVersion: 0, owner_id: admin.id },
+      })
+    ).status,
+    200,
+  );
+  const restored = (await call('/api/drafts', { actor: probe })).value.workspace;
+  assert.equal(restored.drafts.JRE.utilities[0].note, payload);
+  assert.equal(Object.hasOwn(restored, 'owner_id'), false);
+  assert.equal(Object.hasOwn(restored.drafts.JRE, '__proto__'), false);
+  assert.equal({}.securityPolluted, undefined);
+  const saved = await call('/api/reports', { actor: probe, body: { draft, owner_id: admin.id } });
+  assert.equal(saved.status, 201);
+  const own = await call('/api/reports?id=' + saved.value.id, { actor: probe });
+  assert.equal(own.value.snapshot.draft.utilities[0].note, payload);
+  assert.ok(own.value.snapshot.output.reportText.includes(payload));
+  assert.equal((await call('/api/reports?id=' + saved.value.id, { actor: admin })).status, 404);
+  assert.equal((await call('/api/users', { actor: probe })).status, 403);
+});
+
+test('malformed HTTP bodies, duplicate cookies and browser cross-site metadata cannot bypass boundaries', async () => {
+  const headers = {
+    Origin: origin,
+    'Content-Type': 'application/json',
+    Cookie: operator.cookie,
+    'X-Meter-User': operator.id,
+  };
+  for (const [body, status] of [
+    ['{', 400],
+    ['[]', 400],
+    ['null', 400],
+    [JSON.stringify({ padding: 'x'.repeat(65536) }), 413],
+  ]) {
+    const r = await fetch(origin + '/api/drafts', { method: 'POST', headers, body });
+    assert.equal(r.status, status);
+    assert.equal(r.headers.get('cache-control'), 'private, no-store');
+  }
+  for (const Cookie of [
+    operator.cookie + '; ' + operator.cookie,
+    'meter_session=' + randomBytes(32).toString('base64url'),
+  ]) {
+    const r = await fetch(origin + '/api/reports', {
+      headers: { Cookie, 'X-Meter-User': operator.id },
+    });
+    assert.equal(r.status, 401);
+  }
+  for (const Origin of ['', 'null', 'https://attacker.invalid']) {
+    const r = await fetch(origin + '/api/auth', {
+      method: 'POST',
+      headers: { ...headers, Origin },
+      body: JSON.stringify({ action: 'logout' }),
+    });
+    assert.equal(r.status, 403);
+  }
+  const r = await fetch(origin + '/api/auth', {
+    method: 'POST',
+    headers: { ...headers, 'Sec-Fetch-Site': 'cross-site' },
+    body: JSON.stringify({ action: 'logout' }),
+  });
+  assert.equal(r.status, 403);
+  assert.equal((await call('/api/auth', { actor: operator })).value.user.id, operator.id);
+  for (const path of ['/api/auth', '/api/reports', '/api/drafts', '/api/users', '/api/graphs'])
+    assert.equal((await call(path, { actor: operator, method: 'PUT' })).status, 405);
+});
+
+test('login throttling persists across handler instances and canonical username variations', async () => {
+  const probe = await seed();
+  for (let i = 0; i < 11; i++) {
+    const result = await call(i % 2 ? '/api/auth-replica' : '/api/auth', {
+      body: {
+        action: 'login',
+        username: i % 2 ? ' ' + probe.name.toUpperCase() + ' ' : probe.name,
+        password: 'wrong synthetic password',
+      },
+      headers: { 'X-Forwarded-For': '203.0.113.' + (i + 1) },
+    });
+    assert.equal(result.status, i < 10 ? 401 : 429);
+    assert.equal(result.cookie, undefined);
+  }
+});
+
 test('working drafts replace partial entries without report revisions and reject stale or foreign writes', async () => {
   const workspace = {
     version: 4,
@@ -149,6 +299,7 @@ test('working drafts replace partial entries without report revisions and reject
 let server, origin, admin, operator, other, reportId;
 const routes = {
   '/api/auth': authHandler(() => runtime, env),
+  '/api/auth-replica': authHandler(() => runtime, env),
   '/api/users': usersHandler(() => runtime, env),
   '/api/drafts': draftsHandler(() => runtime, env),
   '/api/graphs': graphsHandler(() => runtime, env),

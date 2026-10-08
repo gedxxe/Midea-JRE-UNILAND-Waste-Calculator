@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.15-alpha - 2026-10-08
+
+- Loop the login logo through reconstruction, a five-second hold and an exit, with pause/resume, hidden-tab suspension and reduced-motion support.
+- Expand API injection, stored-text/SVG safety, cookie, cross-instance login throttling and static-path regression tests.
+
 ## v0.9.14-alpha - 2026-10-08
 
 - Run deployment secret checks against the explicit runtime file list without requiring Git metadata, which Vercel removes before building. Keep the full workspace scan in CI.
