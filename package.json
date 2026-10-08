@@ -1,6 +1,6 @@
 {
   "name": "midea-jre-uniland-energy-report",
-  "version": "0.9.14-alpha",
+  "version": "0.9.15-alpha",
   "private": true,
   "type": "module",
   "engines": {

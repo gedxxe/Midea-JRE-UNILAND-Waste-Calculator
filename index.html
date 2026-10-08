@@ -159,28 +159,47 @@
           </g>
           <image class="logo-whole" href="./asset/Midea.webp" width="1920" height="740" />
         </svg>
-        <button
-          id="replay-logo"
-          class="logo-replay"
-          type="button"
-          data-i18n-aria-label="replayLogo"
-          aria-label="Replay logo animation"
-          data-i18n-title="replayLogo"
-          title="Replay logo animation"
-          hidden
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            aria-hidden="true"
+        <div class="logo-controls">
+          <button
+            id="replay-logo"
+            class="logo-replay"
+            type="button"
+            data-i18n-aria-label="replayLogo"
+            aria-label="Replay logo animation"
+            data-i18n-title="replayLogo"
+            title="Replay logo animation"
+            hidden
           >
-            <path d="M4 10a8 8 0 1 1 1 6M4 4v6h6" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 10a8 8 0 1 1 1 6M4 4v6h6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            id="pause-logo"
+            class="logo-replay"
+            type="button"
+            data-i18n-aria-label="pauseLogo"
+            aria-label="Pause logo animation"
+            data-i18n-title="pauseLogo"
+            title="Pause logo animation"
+            aria-pressed="false"
+            hidden
+          >
+            <span aria-hidden="true">Ⅱ</span>
+          </button>
+        </div>
       </div>
 
       <div class="page-heading">
