@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.13-alpha - 2026-10-08
+
+- Fetch only saved report/worksheet text for graphs, preserving historical results while reducing database response data.
+- Add a local secret guard, CI dependency audit, weekly dependency update PRs, and API boundary regression coverage.
+
 ## v0.9.12-alpha - 2026-10-07
 
 - Correct T1–T4 to JRE only. Keep unnumbered consumption notes out of raw exports and totals, and preserve legacy UNILAND reading data without reassigning it.

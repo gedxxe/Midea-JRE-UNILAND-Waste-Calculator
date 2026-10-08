@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.12-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.13-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+Security checks now run before release: a local secret guard supplements GitHub scanning, CI rejects high/critical dependency advisories, and weekly dependency PRs still require review and tests. Graph requests load only saved report/worksheet text, avoiding unused raw snapshots. See [security scope and remaining operational checks](docs/security.md). This remains an alpha tool, not a security certification.
 
 JRE has optional T1–T4 start/end readings in direct kWh. Consumption appears as unnumbered report notes, excluded from totals, gaps, worksheets, graphs and raw templates/exports. Drafts retain partial pairs; complete any started pair before finalizing a report. Dates and Next day carry matching observations. Existing UNILAND Trafo 1–3 readings remain separate in MWh.
 
@@ -109,6 +111,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+发布前增加安全检查：本地敏感信息检查补充 GitHub 扫描，CI 阻止存在高危或严重依赖漏洞的版本，每周依赖更新仍需审核和测试。图表只读取已保存的报告及工作表文本，不加载无用的原始快照。详见[安全检查范围与后续运维事项](docs/security.md)。本工具仍处于 alpha 阶段，不代表安全认证。
+
 JRE 可选填 T1–T4 起止累计 kWh 读数，结束减开始作为不编号的报告附注，不计入合计、差额、工作表、图表或原始读数模板及导出。草稿保留未完成读数，正式报告要求已开始填写的读数对完整。日期调整及下一天按日期移动读数。UNILAND 原 Trafo 1–3 仍为独立的 MWh 电表。
 
 电表下方和页脚提供**空白读数模板**，登录前也可使用。选择 JRE 或 UNILAND 后，可复制或提前下载 .txt 文件备用。模板按当前设备、电表数量和倍率生成，读数使用 `____`，日期使用 `DD/MM/YYYY`。即使表格已填写，也不会包含已输入的数据。在网站外填写保存的文件，补全日期和所有读数后使用**文本导入**。此模板仅包含电表；原有的**导出原始表格数据**仍用于复制已填写读数。
@@ -180,6 +184,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Pemeriksaan sebelum rilis ditambah: penjagaan secret lokal melengkapi pemindaian GitHub, CI menolak dependency dengan kerentanan high/critical, dan PR dependency mingguan tetap perlu review serta tes. Grafik hanya mengambil teks laporan/worksheet tersimpan tanpa raw snapshot yang tidak digunakan. Lihat [cakupan keamanan dan pemeriksaan operasional](docs/security.md). Aplikasi tetap alpha, bukan sertifikasi keamanan.
 
 JRE menyediakan reading awal/akhir T1–T4 direct kWh yang opsional. Konsumsi masuk sebagai catatan laporan tanpa nomor, tidak masuk total, gap, worksheet, grafik, template atau ekspor raw. Draft menyimpan pasangan yang belum lengkap; lengkapi pasangan yang mulai diisi sebelum menyimpan laporan final. Perubahan tanggal dan Next day memindahkan reading sesuai tanggal. Trafo 1–3 UNILAND yang sudah ada tetap terpisah dalam MWh.
 

@@ -28,6 +28,51 @@ const env = {
 const ids = [];
 const names = [];
 const password = 'Test-only initial passphrase 123';
+test('API boundaries reject unauthenticated reads, forged identities, cross-site writes and SQL-shaped input', async () => {
+  for (const path of [
+    '/api/reports',
+    '/api/drafts',
+    '/api/graphs?plant=JRE&start=2026-09-01&end=2026-09-30',
+    '/api/users',
+  ]) {
+    const response = await fetch(origin + path);
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+    assert.equal((await response.json()).error, 'LOGIN_REQUIRED');
+  }
+  for (const path of ['/api/auth', '/api/reports', '/api/drafts', '/api/users']) {
+    const result = await call(path, {
+      actor: admin,
+      body: { action: 'logout' },
+      headers: { Origin: 'https://untrusted.invalid' },
+    });
+    assert.equal(result.status, 403);
+    assert.equal(result.value.error, 'ORIGIN_REJECTED');
+  }
+  const forged = await fetch(origin + '/api/reports', {
+    headers: { Cookie: operator.cookie, 'X-Meter-User': admin.id },
+  });
+  assert.equal(forged.status, 409);
+  assert.equal((await forged.json()).error, 'ACCOUNT_CHANGED');
+  const injection = encodeURIComponent("' OR 1=1 --");
+  assert.equal((await call('/api/reports?id=' + injection, { actor: operator })).status, 400);
+  assert.equal(
+    (
+      await call('/api/graphs?plant=' + injection + '&start=2026-09-01&end=2026-09-30', {
+        actor: operator,
+      })
+    ).status,
+    400,
+  );
+  const wrongType = await call('/api/reports', {
+    actor: operator,
+    body: {},
+    headers: { 'Content-Type': 'text/plain' },
+  });
+  assert.equal(wrongType.status, 415);
+  assert.equal((await call('/api/auth', { actor: admin })).value.user.id, admin.id);
+});
+
 test('working drafts replace partial entries without report revisions and reject stale or foreign writes', async () => {
   const workspace = {
     version: 4,
