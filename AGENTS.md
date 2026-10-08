@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.12-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.14-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -59,6 +59,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - T1–T4 corrected 2026-10-07: JRE only (supersedes the earlier UNILAND instruction), direct kWh end minus start, shown as unnumbered notes in completed reports. Exclude from raw exports, blank raw templates, main/sub-meter sums and gaps. Optional unused pairs stay omitted; incomplete pairs remain drafts. additional-readings.js owns validation and subtraction; ui/additional-readings.js owns entry. Preserve raw pairs in version-4 drafts and report snapshots, move observations by matching dates, and leave historical output unchanged. Legacy UNILAND pairs remain recoverable in stored drafts but are not included in new UNILAND reports or transferred to JRE.
 
+- Security/performance requested 2026-10-08: make incremental, measured improvements and strengthen CI/CD. Treat this as an internet-accessible internal reporting tool, not certified industrial software. Keep testing non-destructive and use synthetic development data. Read docs/security.md; never print detected credentials.
+
 ## Architecture
 
 - logo.css owns login-only reconstruction and layout; ui/logo.js replays CSS animations without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
@@ -80,6 +82,8 @@ New user instructions override older choices here. Update this decision record, 
 - clock.js owns the browser clock. api/time.js and server/ntp.js provide NTP. server/log.js logs only an allowlist of service metadata.
 - scripts/assets.mjs is the public-file allowlist shared by build and local server. New browser modules must be listed. Do not expose docs, tests, scripts, or server code as static assets.
 - package.json is the only version source. Keep package-lock.json and CHANGELOG.md consistent. Build metadata is generated into dist and never committed.
+
+- scripts/security-check.mjs checks tracked/non-ignored files for private file paths and selected credential patterns. It complements GitHub secret scanning; it is not a complete secret detector. CI additionally runs npm run security:audit and weekly Dependabot PRs remain subject to Quality gate.
 
 Keep the browser runtime dependency-free. Development dependencies require a concrete benefit and exact versions. Do not add a framework, database, telemetry SDK, or AI features without a user need.
 

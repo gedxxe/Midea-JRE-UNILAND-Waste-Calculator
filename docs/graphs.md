@@ -26,7 +26,7 @@ Semicolons separate charts. Worksheet columns define grouped values: JRE Piping 
 
 Imported consumption has its own immutable source records and no cumulative meter draft. Graph tables and tooltips label it as Excel history. A saved meter report supersedes any imported interval that overlaps it; the imported record remains stored and visible in the data table but is not plotted.
 
-The authenticated GET /api/graphs endpoint uses the session owner, factory and inclusive report START-date range, joining only the latest revision. Administrators do not gain access to other owners. Responses are private and not cached. Maximum range: 366 dates; maximum records: 1000. Larger requests fail explicitly instead of truncating.
+The authenticated GET /api/graphs endpoint uses the session owner, factory and inclusive report START-date range, joining only the latest revision. Administrators do not gain access to other owners. The database query projects only saved report and worksheet text; raw readings and other unused snapshot fields do not travel to the graph handler. Responses are private and not cached. Maximum range: 366 dates; maximum records: 1000. Larger requests fail explicitly instead of truncating.
 
 Starting in v0.9.1-alpha, newly calculated JRE Structural values exclude Piping Building 1# consumption. Graph extraction uses the stored result without subtracting again. Older saved reports and imported consumption keep their original values; changing them requires an explicit correction.
 

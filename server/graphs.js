@@ -21,7 +21,7 @@ export function graphsHandler(database = getPool, env = process.env) {
     if (!['JRE', 'UNILAND'].includes(plant) || days === null || days < 0 || days > 365)
       fail(400, 'INVALID_GRAPH_RANGE');
     const { rows } = await db.query(
-      'SELECT r.id,r.revision,r.start_date::text,r.end_date::text,v.snapshot FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date ORDER BY r.start_date,r.end_date,r.id LIMIT 1001',
+      `SELECT r.id,r.revision,r.start_date::text,r.end_date::text,jsonb_build_object('output',jsonb_build_object('reportText',v.snapshot->'output'->'reportText','worksheetText',v.snapshot->'output'->'worksheetText')) AS snapshot FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date ORDER BY r.start_date,r.end_date,r.id LIMIT 1001`,
       [user.id, plant, start, end],
     );
     const history = (

@@ -39,6 +39,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: npm run security:audit
       - run: npm run verify
       - run: npm run test:integration
         env:

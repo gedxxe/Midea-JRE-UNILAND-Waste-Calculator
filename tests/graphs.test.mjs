@@ -8,6 +8,22 @@ import { periodLabel, graphYAxis } from '../graph-axis.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 const saved = (plant = 'JRE') => reportSnapshot(exampleDraft(plant));
 
+test('graphs need only immutable report and worksheet text, not private raw snapshot fields', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const snapshot = saved(plant);
+    const projection = {
+      output: {
+        reportText: snapshot.output.reportText,
+        worksheetText: snapshot.output.worksheetText,
+      },
+    };
+    assert.deepEqual(graphValues(projection, plant), graphValues(snapshot, plant));
+    assert.ok(
+      Buffer.byteLength(JSON.stringify(projection)) < Buffer.byteLength(JSON.stringify(snapshot)),
+    );
+  }
+});
+
 test('Air Compressor 1 server snapshots apply x40 once and graphs preserve older saved output', () => {
   const draft = exampleDraft('JRE');
   draft.rows[11].start = ['100.25'];
