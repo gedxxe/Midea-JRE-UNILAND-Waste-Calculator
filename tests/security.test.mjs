@@ -3,6 +3,21 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { securityFindings } from '../scripts/security-rules.mjs';
 import { readBody, endpoint } from '../server/http.js';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+test('deployment secret checks work without Git and without reading local environment files', () => {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => key.toLowerCase() !== 'path'),
+  );
+  env.PATH = '';
+  const output = execFileSync(
+    process.execPath,
+    [fileURLToPath(new URL('../scripts/security-check.mjs', import.meta.url)), '--build'],
+    { env, encoding: 'utf8' },
+  );
+  assert.match(output, /Secret guard passed for deployment runtime files/);
+});
 
 test('secret guard blocks private files and recognizable credentials without treating local test URLs as production', () => {
   for (const path of [

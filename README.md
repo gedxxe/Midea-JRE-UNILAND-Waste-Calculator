@@ -1,6 +1,6 @@
 # Midea Daily Energy Report
 
-**v0.9.13-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.14-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 

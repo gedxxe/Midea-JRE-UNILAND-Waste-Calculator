@@ -2,6 +2,10 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.14-alpha - 2026-10-08
+
+- Run deployment secret checks against the explicit runtime file list without requiring Git metadata, which Vercel removes before building. Keep the full workspace scan in CI.
+
 ## v0.9.13-alpha - 2026-10-08
 
 - Fetch only saved report/worksheet text for graphs, preserving historical results while reducing database response data.
