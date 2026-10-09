@@ -84,7 +84,7 @@ test('JRE exports the chosen raw column, ratios and date without applying consum
   assert.deepEqual(draft, before);
 });
 
-test('UNILAND exports all 28 current table rows and labels factors without converting MWh readings', () => {
+test('UNILAND exports all 30 current table rows and labels factors without converting MWh readings', () => {
   const draft = filled('UNILAND');
   draft.rows[1].end[0] = '2,040000';
   const { text, issues } = exportRawReading(draft);
@@ -94,9 +94,9 @@ test('UNILAND exports all 28 current table rows and labels factors without conve
   assert.ok(text.includes('5. Building A: 125,250000 ((Ratio 160)/1000)'));
   assert.ok(text.includes('6. Building B: 125,250000 ((Ratio 80)/1000)'));
   assert.ok(text.includes('8. SDP pompa: 125,250000 ((Ratio 20)/1000)'));
-  assert.ok(text.endsWith('28. Refrigant and LPG area: 125,250000 (Ratio 40)'));
-  assert.equal(text.split('\n').filter((line) => /^\d+\./.test(line)).length, 28);
-  assert.equal(text.includes('New office building A'), false);
+  assert.ok(text.endsWith('30. Refrigant and LPG area: 125,250000 (Ratio 40)'));
+  assert.equal(text.split('\n').filter((line) => /^\d+\./.test(line)).length, 30);
+  assert.equal(text.includes('New Office Building A'), true);
 });
 
 test('both factory exports can be imported back without losing raw precision or meter order', () => {

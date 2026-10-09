@@ -2,13 +2,15 @@ import { createDraft, calculateDraft } from '../engine.js';
 import { restoreDrafts } from '../storage.js';
 import { fail } from './http.js';
 import pkg from '../package.json' with { type: 'json' };
-import { JRE_METER_LAYOUT } from '../meter-layout.js';
+import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from '../meter-layout.js';
 
 export function reportSnapshot(input) {
   const plant = input?.plantKey;
   if (!['JRE', 'UNILAND'].includes(plant)) fail(400, 'INVALID_REPORT');
   // A stale client must reload and review the new grouping before saving a report.
   if (plant === 'JRE' && input.meterLayout !== JRE_METER_LAYOUT) fail(409, 'METER_LAYOUT_CHANGED');
+  if (plant === 'UNILAND' && input.meterLayout !== UNILAND_METER_LAYOUT)
+    fail(409, 'METER_LAYOUT_CHANGED');
   let draft;
   try {
     draft = restoreDrafts(

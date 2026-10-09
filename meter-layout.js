@@ -1,6 +1,7 @@
 import { PLANT_SCHEMAS } from './schema.js';
 
 export const JRE_METER_LAYOUT = 2;
+export const UNILAND_METER_LAYOUT = 2;
 export const LEGACY_JRE_FACTORS = { 3: [1, 90, 90, 40, 40], 15: [40], 25: [40, 1, 1] };
 
 export function moveLegacyValues(values) {
@@ -29,6 +30,30 @@ export function moveLegacyIssues(issues) {
 
 // Upgrade an editable copy only. Stored report outputs and graph history stay untouched.
 export function migrateMeterLayout(input) {
+  if (input?.plantKey === 'UNILAND') {
+    if (input.meterLayout === UNILAND_METER_LAYOUT) return input;
+    if (input.meterLayout !== undefined && input.meterLayout !== 1)
+      throw new Error('Unknown meter layout.');
+    if (
+      input.rows?.length !== 28 ||
+      input.rows.some((row) =>
+        ['start', 'end'].some((side) => !Array.isArray(row?.[side]) || row[side].length !== 1),
+      )
+    )
+      throw new Error('Invalid legacy meter layout.');
+    const next = structuredClone(input);
+    next.rows = PLANT_SCHEMAS.UNILAND.rows.map((row) =>
+      row.legacyIndex < 28
+        ? structuredClone(input.rows[row.legacyIndex])
+        : { start: row.factors.map(() => ''), end: row.factors.map(() => ''), inactive: false },
+    );
+    next.importIssues = (input.importIssues || []).map((issue) => ({
+      ...issue,
+      rowIndex: PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.legacyIndex === issue.rowIndex),
+    }));
+    next.meterLayout = UNILAND_METER_LAYOUT;
+    return next;
+  }
   if (input?.plantKey !== 'JRE') return input;
   if (input.meterLayout !== undefined && ![1, JRE_METER_LAYOUT].includes(input.meterLayout))
     throw new Error('Unknown meter layout.');

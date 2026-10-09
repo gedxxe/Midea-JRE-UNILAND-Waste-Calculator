@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.17-alpha - 2026-10-09
+
+- Add cumulative Water readings to UNILAND and move remaining manual utilities into gas, removing Daily utilities. Preserve older consumption-only values.
+- Add separate UNILAND Piping and New Office Building A rows with safe draft upgrades, updated raw templates and reports, and stable historical graph identities.
+- Include both HE and Piping in the existing worksheet group for new reports.
+
 ## v0.9.16-alpha - 2026-10-09
 
 - Add UNILAND raw gas readings, per-observation R32 temperature and refill correction using its workbook calibration tables and the JRE entry workflow.

@@ -39,7 +39,7 @@ function raw(draft, side = 'start') {
 
 test('fixed schemas match every meter in the supplied templates', () => {
   assert.equal(PLANT_SCHEMAS.JRE.rows.length, 29);
-  assert.equal(PLANT_SCHEMAS.UNILAND.rows.length, 28);
+  assert.equal(PLANT_SCHEMAS.UNILAND.rows.length, 30);
   const jre = PLANT_SCHEMAS.JRE.rows;
   assert.deepEqual(
     jre.map((r) => r.factors.length),
@@ -50,7 +50,7 @@ test('fixed schemas match every meter in the supplied templates', () => {
   assert.deepEqual(jre[0].factors, [1]);
   assert.deepEqual(
     PLANT_SCHEMAS.UNILAND.rows.map((r) => r.no),
-    Array.from({ length: 28 }, (_, i) => String(i + 1)),
+    Array.from({ length: 30 }, (_, i) => String(i + 1)),
   );
 });
 test('JRE main, Office, Utility and Piping use the documented examples', () => {
@@ -175,7 +175,7 @@ test('UNILAND ratios, units, precision and worksheet sums match the examples', (
   assert.equal(r.worksheet.derived.indoorArea, 140.15);
   assert.equal(r.worksheet.derived.outdoorArea, 585.25);
   assert.match(r.mainText, /2\. Trafo 1 : 0.125 MWh/);
-  assert.match(r.mainText, /28\. Refrigant and LPG area  : 89.2 KWh/);
+  assert.match(r.mainText, /30\. Refrigant and LPG area  : 89.2 KWh/);
   assert.equal(r.worksheet.values.length, 16);
   assert.equal(r.worksheet.headers[0], 'Indoor Area');
 });
