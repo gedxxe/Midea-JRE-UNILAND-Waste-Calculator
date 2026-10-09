@@ -1,4 +1,4 @@
-import { createGasDraft, calculateGas, GASES, GAS_TABLE_VERSION, gasMassText } from './gas.js';
+import { createGasDraft, calculateGas, gasCalibration, gasMassText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { JRE_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
@@ -17,7 +17,8 @@ import { buildWorksheet, worksheetPreview } from './worksheet.js';
 
 export function createDraft(plantKey, startDate = '', endDate = '') {
   return {
-    ...(plantKey === 'JRE' ? { gas: createGasDraft(), meterLayout: JRE_METER_LAYOUT } : {}),
+    gas: createGasDraft(plantKey),
+    ...(plantKey === 'JRE' ? { meterLayout: JRE_METER_LAYOUT } : {}),
     plantKey,
     startDate,
     endDate,
@@ -200,7 +201,8 @@ export function calculateDraft(draft) {
   const gasResults = [];
   const waterResult = draft.plantKey === 'JRE' ? calculateWater(draft.water) : null;
   const utilities = [];
-  if (draft.plantKey === 'JRE' && draft.gas && draft.gas.version !== GAS_TABLE_VERSION)
+  const calibration = gasCalibration(draft.plantKey);
+  if (draft.gas && draft.gas.version !== calibration.version)
     issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
   UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
@@ -224,9 +226,12 @@ export function calculateDraft(draft) {
       } else if (value === '-')
         issue(issues, 'WATER_UNAVAILABLE', 'Water: a flow-meter reading is unavailable.');
     }
-    if (draft.plantKey === 'JRE' && i < GASES.length && draft.gas?.entries[i]?.enabled) {
-      const result = calculateGas(GASES[i].id, draft.gas.entries[i]);
-      gasResults.push({ gas: GASES[i].id, calibration: GAS_TABLE_VERSION, ...result });
+    const gasIndex = calibration.gases.findIndex((gas) => gas.utilityIndex === i);
+    if (gasIndex >= 0 && draft.gas?.entries[gasIndex]?.enabled) {
+      const gas = calibration.gases[gasIndex];
+      const result = calculateGas(gas.id, draft.gas.entries[gasIndex], draft.plantKey);
+      gasResults.push({ gas: gas.id, calibration: calibration.version, ...result });
+      unit = 'Kg';
       for (const error of result.errors)
         issue(
           issues,

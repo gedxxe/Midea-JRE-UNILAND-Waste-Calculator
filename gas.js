@@ -1,4 +1,5 @@
 import { GAS_TABLES, GAS_TABLE_VERSION, R32_TEMPERATURES } from './gas-tables.js';
+import { UNILAND_GAS_TABLES } from './uniland-gas-tables.js';
 import { decimalText, formatNumber } from './numbers.js';
 export { GAS_TABLE_VERSION };
 export const GASES = [
@@ -7,19 +8,41 @@ export const GASES = [
   { id: 'N2', name: 'Nitrogen', unit: 'mmH2O', min: 10, max: 3060 },
   { id: 'R32', name: 'Refrigerant R32', unit: 'mm', min: 50, max: 6967 },
 ];
+const CALIBRATIONS = {
+  JRE: { version: GAS_TABLE_VERSION, tables: GAS_TABLES, utilities: [0, 1, 2, 3] },
+  UNILAND: {
+    version: 'uniland-2026-10-v1',
+    // All 1,120 R32 mass values and all temperature nodes match the supplied JRE table.
+    tables: { ...UNILAND_GAS_TABLES, R32: GAS_TABLES.R32 },
+    utilities: [0, 2, 3, 5],
+  },
+};
+for (const calibration of Object.values(CALIBRATIONS))
+  calibration.gases = GASES.map((gas, i) => ({
+    ...gas,
+    min: calibration.tables[gas.id][0][0],
+    max: calibration.tables[gas.id].at(-1)[0],
+    utilityIndex: calibration.utilities[i],
+  }));
+export function gasCalibration(plant = 'JRE') {
+  const calibration = CALIBRATIONS[plant];
+  if (!calibration) throw new Error('Unknown gas plant.');
+  return calibration;
+}
 export const MAX_REFILLS = 10;
 export const gasPoint = () => ({ reading: '', temperature: '' });
-export function createGasDraft() {
+export function createGasDraft(plant = 'JRE') {
   return {
-    version: GAS_TABLE_VERSION,
+    version: gasCalibration(plant).version,
     entries: GASES.map(() => ({ enabled: false, start: gasPoint(), end: gasPoint(), refills: [] })),
   };
 }
-export function restoreGasDraft(input) {
-  if (input === undefined) return createGasDraft();
+export function restoreGasDraft(input, plant = 'JRE') {
+  const { version } = gasCalibration(plant);
+  if (input === undefined) return createGasDraft(plant);
   if (
     !input ||
-    input.version !== GAS_TABLE_VERSION ||
+    input.version !== version ||
     !Array.isArray(input.entries) ||
     input.entries.length !== GASES.length
   )
@@ -33,7 +56,7 @@ export function restoreGasDraft(input) {
     return { reading: value.reading, temperature: value.temperature };
   }
   return {
-    version: GAS_TABLE_VERSION,
+    version,
     entries: input.entries.map((entry) => {
       if (
         !entry ||
@@ -65,8 +88,9 @@ function bracket(values, input) {
   return low;
 }
 // Return a status rather than inventing a mass for blank/out-of-table input.
-export function convertGas(id, point) {
-  const gas = GASES.find((g) => g.id === id);
+export function convertGas(id, point, plant = 'JRE') {
+  const calibration = gasCalibration(plant);
+  const gas = calibration.gases.find((g) => g.id === id);
   if (!gas) throw new Error('Unknown gas.');
   const raw = String(point?.reading ?? '').trim();
   const temp = String(point?.temperature ?? '').trim();
@@ -82,7 +106,7 @@ export function convertGas(id, point) {
     if (temperature < -20 || temperature > 50) return { error: 'gasTemperature' };
   }
   if (raw === '-') return { unavailable: true, kg: null };
-  const rows = GAS_TABLES[id];
+  const rows = calibration.tables[id];
   const i = bracket(
     rows.map((row) => row[0]),
     level,
@@ -98,11 +122,14 @@ export function convertGas(id, point) {
   }
   return { kg: lower + f * (upper - lower) };
 }
-export function calculateGas(id, entry) {
-  const points = { start: convertGas(id, entry.start), end: convertGas(id, entry.end) };
+export function calculateGas(id, entry, plant = 'JRE') {
+  const points = {
+    start: convertGas(id, entry.start, plant),
+    end: convertGas(id, entry.end, plant),
+  };
   entry.refills.forEach((event, i) => {
-    points['before' + i] = convertGas(id, event.before);
-    points['after' + i] = convertGas(id, event.after);
+    points['before' + i] = convertGas(id, event.before, plant);
+    points['after' + i] = convertGas(id, event.after, plant);
   });
   const errors = Object.entries(points)
     .filter(([, p]) => p.error)
@@ -125,13 +152,13 @@ export function calculateGas(id, entry) {
   return { points, errors, refillKg, kg: errors.length ? null : Math.max(0, kg) };
 }
 export const gasMassText = (kg) => (kg === null || kg === undefined ? '-' : formatNumber(kg, 6));
-export function nextGasDay(input) {
-  const next = createGasDraft();
+export function nextGasDay(input, plant = 'JRE') {
+  const next = createGasDraft(plant);
   if (!input) return next;
-  const restored = restoreGasDraft(input);
+  const restored = restoreGasDraft(input, plant);
   restored.entries.forEach((entry, i) => {
     if (!entry.enabled) return;
-    const point = convertGas(GASES[i].id, entry.end);
+    const point = convertGas(GASES[i].id, entry.end, plant);
     if (point.error)
       throw new Error(
         GASES[i].name + ': complete a valid ending gas reading and temperature first.',

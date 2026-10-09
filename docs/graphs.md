@@ -49,3 +49,5 @@ v0.7.0 adds migration 002 for imported history, without a new runtime dependency
 References: [PNG physical pixel dimensions](https://www.w3.org/TR/png-3/#11pHYs), [Clipboard image writing](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write).
 
 New v0.9.7 JRE reports use the revised Window/Piping/Warehouse grouping; stored graph values remain immutable. Water u4 receives the calculated flow-meter delta from new reports, while older consumption-only history keeps its saved value.
+
+UNILAND tank gas introduced in v0.9.16 uses separate kg0, kg2, kg3 and kg5 metrics, matched only to saved Kg report lines. Legacy u0 (Nm3), u2 (mmWc), and u3 (mmH2O) retain their units and remain null for new kg lines. Old raw-unit values remain null in the kg series. R32 gains a kg series; no raw-level conversion or historical recalculation is performed by graphs.

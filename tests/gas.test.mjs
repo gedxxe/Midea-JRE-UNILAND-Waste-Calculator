@@ -113,7 +113,7 @@ test('server owns conversion and calibration, preserves raw data, and blocks inc
   d.gas.version = 'forged';
   assert.throws(() => reportSnapshot(d), /INVALID_REPORT/);
   const legacy = createDraft('UNILAND');
-  assert.equal(legacy.gas, undefined);
+  assert.ok(legacy.gas.entries.every((entry) => !entry.enabled));
 });
 test('malformed or excessive events cannot enter saved drafts', () => {
   const g = createGasDraft();
