@@ -1,6 +1,6 @@
 # JRE and UNILAND tank consumption
 
-Scope: LPG, Oxygen, Nitrogen and R32 tank consumption for JRE and UNILAND. Electricity, JRE water, and other UNILAND utilities retain their existing rules. This feature uses tank inventory, not cumulative flow counters.
+Scope: LPG, Oxygen, Nitrogen and R32 tank consumption for JRE and UNILAND. Water for both plants uses cumulative flow readings; UNILAND Air Compressor and existing R454B values remain manual. This feature uses tank inventory, not cumulative flow counters.
 
 ## Operator workflow
 
@@ -12,7 +12,7 @@ Each observation is converted to kg first. Consumption is initial kg + sum(after
 
 Next day carries enabled gases' final raw readings and temperatures into the next initial reading, then clears final readings and refills. Invalid final readings block this action. Undo restores removed refills and previous drafts. Language changes do not change canonical report text.
 
-Disabled tank calculations preserve existing manual utility data. Enabling a gas replaces its report value with the calculated result and makes its manual value field read-only. Disabling it restores the preserved manual value. Manual values and notes remain available within each gas card. The JRE section below gas is Water, entered as cumulative m³ flow-meter readings. No old kg value is reverse-converted into an invented raw reading.
+Disabled tank calculations preserve existing manual utility data. Enabling a gas replaces its report value with the calculated result and makes its manual value field read-only. Disabling it restores the preserved manual value. Manual values and notes remain available within each gas card. The section below gas in both plants is Water, entered as cumulative m³ flow-meter readings. No old kg value is reverse-converted into an invented raw reading.
 
 ## Reference data and provenance
 
@@ -46,7 +46,7 @@ The hidden engines validate these ranges, use MATCH/INDEX to select neighboring 
 
 Source inconsistencies: the O2 guide still mentions 4220 in one quick-start note, but its engine C7 and full reference table both end at 4320. Use 4320. The LPG guide explicitly states that the printed density/capacity disagree with its liter/kg columns. Follow D8:D107 unchanged, as the engine does, rather than recomputing kg from liters or applying JRE corrections. The 100% node is 9470.59 kg. These bounds are calculation ranges, not approved filling limits. Supplier PDFs were not independently supplied or verified here. The N2 liquid-volume header differs from the guide; this feature uses only its Total kg column.
 
-UNILAND manual gas indices remain LPG 0, Oxygen 2, Nitrogen 3 and R32 5, preserving existing drafts. When tank calculation is enabled, the UI and report use Kg for that gas; otherwise the original manual value and unit remain. Air Compressor, Water and R454B stay in Daily utilities. Historical snapshots are never rewritten. Graphs add kg0/kg2/kg3/kg5 series and keep u0/u2/u3 in their previous units. A saved value never crosses units automatically.
+UNILAND manual gas indices remain LPG 0, Oxygen 2, Nitrogen 3 and R32 5, preserving existing drafts. When tank calculation is enabled, the UI and report use Kg for that gas; otherwise the original manual value and unit remain. Water has its own cumulative-reading section below gas. Air Compressor and existing manual R454B fields remain within gas; Daily utilities is removed. New R454B conversion and JRE support are deferred pending a datasheet. Historical snapshots are never rewritten. Graphs add kg0/kg2/kg3/kg5 series and keep u0/u2/u3 in their previous units. A saved value never crosses units automatically.
 
 ## Persistence and verification
 

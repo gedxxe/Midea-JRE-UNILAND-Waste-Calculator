@@ -37,7 +37,7 @@ Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an I
 
 ## UNILAND
 
-28 equipment rows, one meter each. Sequential numbering is 1 through 28.
+30 equipment rows, 32 meters. Piping has three meters (x40, direct, direct); New Office Building A is direct. Trafo 1–3 remain. Building A/B, hydrant, pump, power house and HE retain their existing single readings pending clarification. The unexplained duplicate 10HP lab is not added.
 
 | Equipment                 | Factor                                  | Result unit |
 | ------------------------- | --------------------------------------- | ----------- |
@@ -49,7 +49,7 @@ Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an I
 | Refrigant and LPG area    | 40                                      | kWh         |
 | Remaining equipment       | Direct                                  | kWh         |
 
-Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant/LPG row. Utilities follow all 28 equipment rows.
+Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant/LPG row. Utilities follow all 30 equipment rows.
 
 Keep relevant decimals up to eight places without thousands separators or exponent notation. Example: Building A `3691.4` to `3695.72` = `0.6912 MWh`.
 
@@ -58,6 +58,7 @@ The worksheet has 16 values without a date:
 ```text
 Indoor Area = Indoor + Vacum box indoor
 Outdoor Area = Outdoor + Vacum box outdoor + Line compressor outdoor
+HE & Piping = Heat Exchanger + Piping
 ```
 
 These sums appear only in the worksheet. Individual equipment remain separate in the main report. A missing component makes its grouped value `-`.
@@ -70,14 +71,16 @@ T1–T4 are JRE-only optional direct kWh cumulative pairs, separate from the exi
 
 Text import accepts one date and a complete factory snapshot, including wrapped Injection Molding entries. Meter counts, duplicate/missing equipment, and numeric syntax are validated before replacement. Wrong imported ratios produce a warning and never override the schema. Saved warnings are revalidated against current factors during draft restore and calculation, including legacy warnings stored only as text. Resolved mismatches are removed; remaining messages use the current factor. Equal valid readings produce zero consumption and do not themselves create ratio warnings. Saved report output is never rewritten. One- or two-column Excel pastes are planned atomically; an invalid cell or oversized block changes nothing.
 
-Utilities are optional. Manual utilities retain direct values and their original units. Enabled JRE and UNILAND tank gas calculations use converted raw observations and refill events described in [gas rules](gas.md); JRE Water uses the cumulative readings described below. A note without a value blocks copying. Water notes are retained. Drafts use an account-scoped sessionStorage backup and synchronize to one replaceable account workspace, including incomplete entries. Legacy guest localStorage drafts stay separate. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and autosaves the unfinished draft. See docs/accounts.md for synchronization and conflict handling.
+Utilities are optional. Manual utilities retain direct values and their original units. Enabled JRE and UNILAND tank gas calculations use converted raw observations and refill events described in [gas rules](gas.md); JRE and UNILAND Water use the cumulative readings described below. A note without a value blocks copying. Water notes are retained. Drafts use an account-scoped sessionStorage backup and synchronize to one replaceable account workspace, including incomplete entries. Legacy guest localStorage drafts stay separate. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and autosaves the unfinished draft. See docs/accounts.md for synchronization and conflict handling.
 
 ## Raw reading export
 
 Raw export is a dated observation, not a consumption report. It uses the selected start/end column and its own date, defaults to end, and includes all electricity rows in schema order. It preserves decimal comma/dot, trailing zeros, and explicit `-`; it removes only surrounding whitespace and a redundant leading plus. Ratio annotations are never applied to the values. Decreases remain the observed cumulative numbers, and inactive-unit flags never invent raw zero readings. Empty/invalid selected readings or dates block copying; the opposite column and daily utilities do not affect raw export. Output can be imported back as a single reading column.
 
-## JRE water and layout upgrades
+## Water and layout upgrades
 
-Water uses cumulative m³ end minus start at scaled precision, with up to six decimal places and the same cumulative input limit as electricity. It belongs to the starting report date or full combined period; do not divide a multi-day total. Blank water fields are optional; one missing or malformed reading blocks a completed report but remains saveable as a draft. Explicit unavailable or decreasing readings report - with a check note. Zero is valid. Raw water readings follow matching dates and Next day; legacy consumption-only utilities remain available without invented readings. New raw readings replace the manual amount for calculation. UNILAND Water entry is unchanged.
+Water uses cumulative m³ end minus start at scaled precision, with up to six decimal places and the same cumulative input limit as electricity. It belongs to the starting report date or full combined period; do not divide a multi-day total. Blank water fields are optional; one missing or malformed reading blocks a completed report but remains saveable as a draft. Explicit unavailable or decreasing readings report - with a check note. Zero is valid. Raw water readings follow matching dates and Next day; legacy consumption-only utilities remain available without invented readings. New raw readings replace the manual amount for calculation. Both plants use this workflow. Daily utilities is removed; existing manual UNILAND Air Compressor and R454B fields remain in the gas section. R454B conversion and JRE support are deferred.
 
 JRE meter layout 2 has 6 Window, 2 Piping 1 and 1 Warehouse meters, retaining 57 meters total. A complete legacy layout is recognized by all meter counts; old Warehouse meter 2 moves to Piping 1 meter 2 and meter 3 moves to Window meter 6. Raw precision and warning coordinates are preserved. Draft restore, historian loading for editing and full legacy text import use this mapping; mixed or unknown layouts fail validation. Stored snapshots and imported history are never rewritten. Current raw export uses only the new layout. A stale client must reload before saving a completed JRE report.
+
+UNILAND layout 2 preserves all 28 legacy rows by stable identity and adds blank Piping and Office readings. Stale clients cannot finalize reports. New raw templates contain all 30 rows; older text missing new equipment fails atomically until completed. Stored report numbers and graph keys remain readable without recalculating historical output.

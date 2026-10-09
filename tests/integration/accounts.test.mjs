@@ -467,6 +467,7 @@ test('UNILAND tank gas persists incomplete drafts, recalculates on the server an
     end: point(''),
     refills: [{ before: point('50'), after: point('80') }],
   };
+  draft.water = { start: '100,25', end: '' };
   const workspace = { version: 4, drafts: { JRE: createDraft('JRE'), UNILAND: draft } };
   assert.equal(
     (await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } })).status,
@@ -474,12 +475,14 @@ test('UNILAND tank gas persists incomplete drafts, recalculates on the server an
   );
   const restored = (await call('/api/drafts', { actor })).value.workspace;
   assert.deepEqual(restored.drafts.UNILAND.gas, draft.gas);
+  assert.deepEqual(restored.drafts.UNILAND.water, draft.water);
   assert.equal(
     (await call('/api/reports', { actor, body: { id: legacy.value.id, baseRevision: 1, draft } }))
       .status,
     422,
   );
   draft.gas.entries[0].end.reading = '40';
+  draft.water.end = '125.75';
   draft.gas.entries[0].kg = 999999;
   const saved = await call('/api/reports', {
     actor,
@@ -490,6 +493,8 @@ test('UNILAND tank gas persists incomplete drafts, recalculates on the server an
   assert.equal(own.draft.gas.version, 'uniland-2026-10-v1');
   assert.equal(own.draft.gas.entries[0].kg, undefined);
   assert.equal(own.draft.utilities[0].value, '12.5');
+  assert.deepEqual(own.draft.water, draft.water);
+  assert.equal(own.output.water.value, '25.5');
   assert.match(own.output.reportText, /LPG: 4735.29 Kg/);
   assert.ok(Math.abs(own.output.gas[0].kg - 4735.29) < 1e-7);
   const original = await call('/api/reports?id=' + saved.value.id + '&revision=1', { actor });
@@ -499,6 +504,7 @@ test('UNILAND tank gas persists incomplete drafts, recalculates on the server an
   assert.equal(graphs.status, 200);
   assert.equal(graphs.value.records[0].values.kg0, 4735.29);
   assert.equal(graphs.value.records[0].values.u0, null);
+  assert.equal(graphs.value.records[0].values.u4, 25.5);
   assert.equal((await call('/api/reports?id=' + saved.value.id, { actor: other })).status, 404);
   draft.gas.version = createDraft('JRE').gas.version;
   assert.equal(

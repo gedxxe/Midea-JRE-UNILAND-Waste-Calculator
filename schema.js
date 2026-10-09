@@ -116,6 +116,22 @@ export const PLANT_SCHEMAS = {
   },
 };
 
+// Stable identities preserve saved graph selections and editable legacy drafts.
+PLANT_SCHEMAS.UNILAND.rows.forEach((row, i) => {
+  row.legacyIndex = i;
+});
+PLANT_SCHEMAS.UNILAND.rows.splice(12, 0, {
+  name: 'Piping',
+  unit: 'kWh',
+  factors: [40, 1, 1],
+  legacyIndex: 28,
+});
+PLANT_SCHEMAS.UNILAND.rows.splice(15, 0, {
+  name: 'New Office Building A',
+  unit: 'kWh',
+  legacyIndex: 29,
+});
+
 for (const schema of Object.values(PLANT_SCHEMAS)) {
   schema.rows.forEach((row, i) => {
     row.no = String(i + 1);

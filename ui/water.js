@@ -25,7 +25,6 @@ export function createWaterPanel({ current, changed, rememberUndo }) {
     $('water-start').focus();
   });
   function update() {
-    if (current().plantKey !== 'JRE') return;
     const draft = current();
     const legacy = !draft.water && Boolean(draft.utilities[4].value.trim());
     $('water-legacy').hidden = !legacy;
@@ -47,19 +46,6 @@ export function createWaterPanel({ current, changed, rememberUndo }) {
       $('water-' + side).setAttribute('aria-invalid', String(Boolean(result.error)));
   }
   function rebuild() {
-    $('water-section').hidden = current().plantKey !== 'JRE';
-    if (current().plantKey !== 'JRE') {
-      for (const id of ['water-start', 'water-end', 'water-note']) $(id).value = '';
-      for (const id of [
-        'water-start-date',
-        'water-end-date',
-        'water-total',
-        'water-status',
-        'water-legacy-text',
-      ])
-        $(id).textContent = '';
-      return;
-    }
     for (const side of ['start', 'end']) $('water-' + side).value = current().water?.[side] || '';
     $('water-note').value = current().utilities[4].note;
     update();

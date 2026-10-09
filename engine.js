@@ -1,6 +1,6 @@
 import { createGasDraft, calculateGas, gasCalibration, gasMassText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
-import { JRE_METER_LAYOUT } from './meter-layout.js';
+import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
 import { calculateAdditionalReadings } from './additional-readings.js';
 import { currentRatioIssues } from './import-ratios.js';
@@ -18,7 +18,7 @@ import { buildWorksheet, worksheetPreview } from './worksheet.js';
 export function createDraft(plantKey, startDate = '', endDate = '') {
   return {
     gas: createGasDraft(plantKey),
-    ...(plantKey === 'JRE' ? { meterLayout: JRE_METER_LAYOUT } : {}),
+    meterLayout: plantKey === 'JRE' ? JRE_METER_LAYOUT : UNILAND_METER_LAYOUT,
     plantKey,
     startDate,
     endDate,
@@ -199,14 +199,14 @@ export function calculateDraft(draft) {
   });
 
   const gasResults = [];
-  const waterResult = draft.plantKey === 'JRE' ? calculateWater(draft.water) : null;
+  const waterResult = calculateWater(draft.water);
   const utilities = [];
   const calibration = gasCalibration(draft.plantKey);
   if (draft.gas && draft.gas.version !== calibration.version)
     issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
   UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
-    if (draft.plantKey === 'JRE' && i === 4 && waterResult.active) {
+    if (i === 4 && waterResult.active) {
       value = waterResult.value;
       if (waterResult.error) {
         const messages = {

@@ -35,8 +35,13 @@ export function graphValues(snapshot, plant) {
     });
   const schema = PLANT_SCHEMAS[plant];
   schema.rows.forEach((row, i) => {
-    const value = extract(report, row.no + '. ' + (row.displayName || row.name) + ': ', row.unit);
-    values['r' + i] =
+    const numbers = new Set([row.no]);
+    if (plant === 'UNILAND' && row.legacyIndex < 28) numbers.add(String(row.legacyIndex + 1));
+    const prefixes = [...numbers].map((no) => no + '. ' + (row.displayName || row.name) + ': ');
+    const matching = report.filter((line) => prefixes.some((prefix) => line.startsWith(prefix)));
+    const prefix = prefixes.find((p) => matching[0]?.startsWith(p));
+    const value = matching.length === 1 ? extract(matching, prefix, row.unit) : null;
+    values['r' + (row.legacyIndex ?? i)] =
       value === null ? null : round(value * (row.unit.toLowerCase() === 'mwh' ? 1000 : 1), 8);
   });
   UTILITIES[plant].forEach(([name, unit], i) => {

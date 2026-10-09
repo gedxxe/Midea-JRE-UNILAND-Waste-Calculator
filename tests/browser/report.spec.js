@@ -178,44 +178,52 @@ test('legacy historian output stays unchanged while its editable copy moves mete
   expect(writes).toBe(0);
 });
 
-test('JRE water calculates the daily delta, persists partial readings and follows dates and next day', async ({
-  page,
-}, info) => {
-  await page.locator('#load-example').click();
-  await expect(page.locator('#utilities-section')).toBeHidden();
-  await expect(page.locator('#gas-section [data-utility="0"]')).toBeVisible();
-  await page.locator('#gas-section [data-utility="0"]').fill('12.5');
-  await page.locator('#water-start').fill('100,25');
-  await expect(page.locator('#copy-report')).toBeDisabled();
-  await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
-  await page.reload();
-  await expect(page.locator('#water-start')).toHaveValue('100,25');
-  await expect(page.locator('#water-end')).toHaveValue('');
-  await page.locator('#water-end').fill('125.75');
-  await expect(page.locator('#water-total')).toContainText('25.5 m³');
-  await expect(page.locator('#report-preview')).toHaveValue(/Water: 25.5 m³/);
-  await expect(page.locator('#report-preview')).toHaveValue(/LPG: 12.5 Kg/);
-  const report = await page.locator('#report-preview').inputValue();
-  for (const language of ['zh-CN', 'id', 'en']) {
-    await page.locator('#language-select').selectOption(language);
-    await expect(page.locator('#report-preview')).toHaveValue(report);
-    await expect(page.locator('#water-start')).toHaveValue('100,25');
-  }
-  await page.locator('#water-section').scrollIntoViewIfNeeded();
-  await page.screenshot({ path: info.outputPath('water-consumption.png') });
-  await page.locator('#next-day').click();
-  await expect(page.locator('#water-start')).toHaveValue('125.75');
-  await expect(page.locator('#water-end')).toHaveValue('');
-  await page.locator('#undo-change').click();
-  await expect(page.locator('#report-preview')).toHaveValue(report);
-  await page.locator('#water-end').fill('90');
-  await expect(page.locator('#water-total')).toContainText('- m³');
-  await expect(page.locator('#water-status')).toContainText('decreased');
-  await page.locator('[data-plant="UNILAND"]').click();
-  await expect(page.locator('#water-section')).toBeHidden();
-  await expect(page.locator('#utilities-section')).toBeVisible();
-});
+for (const plant of ['JRE', 'UNILAND']) {
+  test(
+    plant +
+      ' water calculates the daily delta, persists partial readings and follows dates and next day',
+    async ({ page }, info) => {
+      await page.locator(`[data-plant="${plant}"]`).click();
+      await page.locator('#load-example').click();
+      await expect(page.locator('#utilities-section')).toHaveCount(0);
+      await expect(page.locator('#gas-section [data-utility="0"]')).toBeVisible();
+      await page.locator('#gas-section [data-utility="0"]').fill('12.5');
+      await page.locator('#water-start').fill('100,25');
+      await expect(page.locator('#copy-report')).toBeDisabled();
+      await page.locator('#save-draft').click();
+      await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+      await page.reload();
+      await page.locator(`[data-plant="${plant}"]`).click();
+      await expect(page.locator('#water-start')).toHaveValue('100,25');
+      await expect(page.locator('#water-end')).toHaveValue('');
+      await page.locator('#water-end').fill('125.75');
+      await expect(page.locator('#water-total')).toContainText('25.5 m³');
+      await expect(page.locator('#report-preview')).toHaveValue(/Water: 25.5 m³/);
+      await expect(page.locator('#report-preview')).toHaveValue(
+        plant === 'JRE' ? /LPG: 12.5 Kg/ : /LPG: 12.5 Nm3/,
+      );
+      const report = await page.locator('#report-preview').inputValue();
+      for (const language of ['zh-CN', 'id', 'en']) {
+        await page.locator('#language-select').selectOption(language);
+        await expect(page.locator('#report-preview')).toHaveValue(report);
+        await expect(page.locator('#water-start')).toHaveValue('100,25');
+      }
+      await page.locator('#water-section').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: info.outputPath('water-consumption.png') });
+      await page.locator('#next-day').click();
+      await expect(page.locator('#water-start')).toHaveValue('125.75');
+      await expect(page.locator('#water-end')).toHaveValue('');
+      await page.locator('#undo-change').click();
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+      await page.locator('#water-end').fill('90');
+      await expect(page.locator('#water-total')).toContainText('- m³');
+      await expect(page.locator('#water-status')).toContainText('decreased');
+      await page.locator('[data-plant="UNILAND"]').click();
+      await expect(page.locator('#water-section')).toBeVisible();
+      await expect(page.locator('#utilities-section')).toHaveCount(0);
+    },
+  );
+}
 
 test('legacy water consumption remains visible without fabricated readings and conversion to raw input can be undone', async ({
   page,
@@ -727,7 +735,7 @@ test('UNILAND tank gas uses separate calibration, preserves manual units and sur
   await r32.locator('[data-gas-temperature="end"]').fill('33.5');
   await expect(r32.locator('.gas-total')).toHaveText('Consumption: 154.2086 kg');
   await expect(page.locator('#copy-report')).toBeEnabled();
-  await expect(page.locator('#utility-fields [data-utility]')).toHaveCount(3);
+  await expect(page.locator('#utility-fields [data-utility]')).toHaveCount(2);
   await expect(page.locator('#utility-fields [data-utility="1"]')).toHaveValue('');
   await expect(oxygen.locator('[data-utility="2"]')).toHaveValue('34.5');
   await expect(lpg.locator('[data-utility="0"]')).toBeDisabled();

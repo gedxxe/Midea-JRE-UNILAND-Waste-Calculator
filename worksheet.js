@@ -62,6 +62,10 @@ export function buildWorksheet(plantKey, reportDate, rows) {
   }
 
   const indoor = numericRowValue(rows, 'Indoor');
+  const heatExchanger = numericRowValue(rows, 'Heat Exchanger');
+  const piping = numericRowValue(rows, 'Piping');
+  const heatAndPiping =
+    heatExchanger !== null && piping !== null ? round(heatExchanger + piping, 8) : null;
   const vacIn = numericRowValue(rows, 'Vacum box indoor');
   const outdoor = numericRowValue(rows, 'Outdoor');
   const vacOut = numericRowValue(rows, 'Vacum box outdoor');
@@ -95,7 +99,7 @@ export function buildWorksheet(plantKey, reportDate, rows) {
     outdoorArea,
     indoor,
     outdoor,
-    numericRowValue(rows, 'Heat Exchanger'),
+    heatAndPiping,
     vacIn,
     vacOut,
     lineComp,
