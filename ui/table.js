@@ -1,6 +1,7 @@
 import { PLANT_SCHEMAS, UTILITIES } from '../schema.js';
 import { formatNumber, normalizeName } from '../numbers.js';
 import { formatRowValue } from '../engine.js';
+import { gasCalibration } from '../gas.js';
 import { planTablePaste } from '../importer.js';
 import { t } from '../i18n/index.js';
 import { $, node } from './dom.js';
@@ -157,11 +158,14 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
     $('utility-fields').replaceChildren();
     UTILITIES[getPlant()].forEach(([name, unit], i) => {
       if (jre && i === 4) return;
+      const gasIndex = gasCalibration(getPlant()).gases.findIndex((gas) => gas.utilityIndex === i);
+      const calculated = gasIndex >= 0 && current().gas?.entries[gasIndex]?.enabled;
       const wrapper = node('div', undefined, 'utility-entry');
+      if (calculated) unit = 'Kg';
       const label = node('label', `${name}${unit ? ` (${unit})` : ''}`);
       const input = node('input');
       input.dataset.utility = i;
-      input.disabled = getPlant() === 'JRE' && i < 4 && current().gas?.entries[i]?.enabled;
+      input.disabled = Boolean(calculated);
       if (input.disabled) label.append(node('span', t('gasCalculated')));
       input.type = 'text';
       input.inputMode = 'decimal';
@@ -184,7 +188,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         changed();
       });
       wrapper.append(label, note);
-      if (jre) $('gas-utility-' + i)?.replaceChildren(wrapper);
+      if (gasIndex >= 0) $('gas-utility-' + i)?.replaceChildren(wrapper);
       else $('utility-fields').append(wrapper);
     });
   }
@@ -209,7 +213,9 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
     for (const side of ['start', 'end'])
       $(side + '-reading-date').textContent = current()[side + 'Date'] || '-';
     report.gasResults?.forEach((result) => {
-      const index = ['LPG', 'O2', 'N2', 'R32'].indexOf(result.gas);
+      const index = gasCalibration(getPlant()).gases.find(
+        (gas) => gas.id === result.gas,
+      ).utilityIndex;
       const input = document.querySelector(`[data-utility="${index}"]`);
       if (input) input.value = formatNumber(result.kg, 6);
     });

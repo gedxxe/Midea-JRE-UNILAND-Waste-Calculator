@@ -24,6 +24,7 @@ export const PUBLIC_FILES = [
   'ui/graph-renderer.js',
   'i18n/graphs.js',
   'gas-tables.js',
+  'uniland-gas-tables.js',
   'ui/gas.js',
   'i18n/gas.js',
   'numbers.js',

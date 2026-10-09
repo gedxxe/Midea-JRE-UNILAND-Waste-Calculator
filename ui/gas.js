@@ -1,4 +1,11 @@
-import { GASES, MAX_REFILLS, gasPoint, createGasDraft, calculateGas, gasMassText } from '../gas.js';
+import {
+  gasCalibration,
+  MAX_REFILLS,
+  gasPoint,
+  createGasDraft,
+  calculateGas,
+  gasMassText,
+} from '../gas.js';
 import { t } from '../i18n/index.js';
 import { $, node } from './dom.js';
 
@@ -7,11 +14,12 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
   const labelKeys = { start: 'gasStart', end: 'gasEnd' };
   function rebuild() {
     views.length = 0;
-    $('gas-section').hidden = current().plantKey !== 'JRE';
+    const plant = current().plantKey;
+    $('gas-title').textContent = t('gasTitle', { plant });
+    $('gas-source').textContent = t(plant === 'JRE' ? 'gasSource' : 'gasSourceUniland');
     $('gas-fields').replaceChildren();
-    if (current().plantKey !== 'JRE') return;
-    current().gas ??= createGasDraft();
-    GASES.forEach((gas, index) => {
+    current().gas ??= createGasDraft(plant);
+    gasCalibration(plant).gases.forEach((gas, index) => {
       const entry = current().gas.entries[index];
       const card = node('fieldset', undefined, 'gas-entry');
       card.dataset.gas = gas.id;
@@ -31,7 +39,7 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       toggleLabel.append(toggle, node('span', t('gasEnable')));
       card.append(toggleLabel);
       const utility = node('div', undefined, 'utility-entry');
-      utility.id = 'gas-utility-' + index;
+      utility.id = 'gas-utility-' + gas.utilityIndex;
       if (!entry.enabled) {
         card.append(node('p', t('gasDisabled'), 'gas-help'));
         card.append(utility);
@@ -149,11 +157,10 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
     update();
   }
   function update() {
-    if (current().plantKey !== 'JRE') return;
     $('gas-period').textContent =
       (current().startDate || '?') + ' 08:00 → ' + (current().endDate || '?') + ' 08:00 WIB';
     for (const view of views) {
-      const result = calculateGas(view.gas.id, view.entry);
+      const result = calculateGas(view.gas.id, view.entry, current().plantKey);
       for (const [key, elements] of Object.entries(view.points)) {
         const point = result.points[key];
         elements.mass.textContent = gasMassText(point.kg) + ' kg';

@@ -76,6 +76,15 @@ export const GRAPH_METRICS = Object.fromEntries(
           unit: unit === 'Kg' ? 'kg' : unit,
         });
     });
+    if (plant === 'UNILAND')
+      for (const i of [0, 2, 3, 5])
+        metrics.push({
+          key: 'kg' + i,
+          label: UTILITIES[plant][i][0],
+          department: 'utilities',
+          unit: 'kg',
+          utilityIndex: i,
+        });
     return [plant, metrics];
   }),
 );

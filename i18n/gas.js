@@ -1,5 +1,10 @@
 export const gasMessages = {
-  gasTitle: ['JRE gas consumption', 'JRE 气体用量', 'Konsumsi gas JRE'],
+  gasTitle: ['{plant} gas consumption', '{plant} 气体用量', 'Konsumsi gas {plant}'],
+  gasSourceUniland: [
+    'Uses the UNILAND workbook mass tables. R32 requires temperature for each reading. LPG follows the printed kg values, which differ from the stated density and capacity. Table limits are not filling limits.',
+    '使用 UNILAND 工作簿质量表。每次 R32 读数需填写温度。LPG 使用原表 kg 数值，其与标注密度和容量不一致。表格范围不代表充装限值。',
+    'Menggunakan tabel massa workbook UNILAND. Setiap reading R32 perlu suhu. LPG mengikuti angka kg tabel yang berbeda dari keterangan densitas dan kapasitas. Batas tabel bukan batas pengisian tangki.',
+  ],
   gasHint: [
     "Enter tank readings. Each observation is converted to kg before calculating consumption. After Work normally uses the following morning's reading.",
     '填写储罐原始读数。每次读数先换算为 kg，再计算用量。工作后通常使用次日早上的读数。',

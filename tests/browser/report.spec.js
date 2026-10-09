@@ -685,6 +685,89 @@ test('raw export offers manual copy when clipboard access is denied', async ({ p
   await expect(page.locator('#toast')).toContainText('Clipboard unavailable');
 });
 
+test('UNILAND tank gas uses separate calibration, preserves manual units and survives draft/date changes', async ({
+  page,
+}, info) => {
+  await page.locator('[data-plant="UNILAND"]').click();
+  await page.locator('#load-example').click();
+  await expect(page.locator('#gas-title')).toHaveText('UNILAND gas consumption');
+  const lpg = page.locator('[data-gas="LPG"]');
+  const oxygen = page.locator('[data-gas="O2"]');
+  const nitrogen = page.locator('[data-gas="N2"]');
+  const r32 = page.locator('[data-gas="R32"]');
+  await lpg.locator('[data-utility="0"]').fill('12.5');
+  await expect(
+    lpg.locator('label').filter({ has: page.locator('[data-utility="0"]') }),
+  ).toContainText('Nm3');
+  await lpg.locator('[data-gas-enable]').check();
+  await lpg.locator('[data-gas-point="start"]').fill('60');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await page.reload();
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(lpg.locator('[data-gas-point="start"]')).toHaveValue('60');
+  await expect(lpg.locator('[data-gas-point="end"]')).toHaveValue('');
+  await lpg.locator('[data-gas-point="end"]').fill('40');
+  await lpg.locator('[data-add-refill]').click();
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await lpg.locator('[data-gas-point="before0"]').fill('50');
+  await lpg.locator('[data-gas-point="after0"]').fill('80');
+  await expect(lpg.locator('.gas-total')).toHaveText('Consumption: 4735.29 kg');
+  for (const gas of [oxygen, nitrogen]) {
+    await gas.locator('[data-gas-enable]').check();
+    await gas.locator('[data-gas-point="start"]').fill('1010');
+    await gas.locator('[data-gas-point="end"]').fill('1000');
+  }
+  await expect(oxygen.locator('.gas-total')).toHaveText('Consumption: 34.5 kg');
+  await expect(nitrogen.locator('.gas-total')).toHaveText('Consumption: 34.44 kg');
+  await r32.locator('[data-gas-enable]').check();
+  await r32.locator('[data-gas-point="start"]').fill('587');
+  await r32.locator('[data-gas-point="end"]').fill('550');
+  await r32.locator('[data-gas-temperature="start"]').fill('33,5');
+  await r32.locator('[data-gas-temperature="end"]').fill('33.5');
+  await expect(r32.locator('.gas-total')).toHaveText('Consumption: 154.2086 kg');
+  await expect(page.locator('#copy-report')).toBeEnabled();
+  await expect(page.locator('#utility-fields [data-utility]')).toHaveCount(3);
+  await expect(page.locator('#utility-fields [data-utility="1"]')).toHaveValue('');
+  await expect(oxygen.locator('[data-utility="2"]')).toHaveValue('34.5');
+  await expect(lpg.locator('[data-utility="0"]')).toBeDisabled();
+  const report = await page.locator('#report-preview').inputValue();
+  expect(report).toContain('LPG: 4735.29 Kg');
+  expect(report).toContain('R32: 154.2086 Kg');
+  for (const lang of ['id', 'zh-CN', 'en']) {
+    await page.locator('#language-select').selectOption(lang);
+    await expect(page.locator('#gas-title')).toContainText('UNILAND');
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+  }
+  await oxygen.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('uniland-gas.png') });
+  await oxygen.locator('[data-gas-point="start"]').fill('4320');
+  await expect(oxygen.locator('[data-gas-point="start"]')).toHaveAttribute('aria-invalid', 'false');
+  await oxygen.locator('[data-gas-point="start"]').fill('4320.1');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await oxygen.locator('[data-gas-point="start"]').fill('1010');
+  await page.locator('[data-plant="JRE"]').click();
+  await expect(lpg.locator('[data-gas-enable]')).not.toBeChecked();
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  await lpg.locator('[data-gas-enable]').uncheck();
+  await expect(lpg.locator('[data-utility="0"]')).toHaveValue('12.5');
+  await expect(page.locator('#report-preview')).toHaveValue(/LPG: 12.5 Nm3/);
+  await lpg.locator('[data-gas-enable]').check();
+  const end = await page.locator('#end-date').inputValue();
+  await page.locator('#start-date').fill(end);
+  await page.locator('#end-date').fill('2026-09-18');
+  await expect(r32.locator('[data-gas-point="start"]')).toHaveValue('550');
+  await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
+  await expect(r32.locator('[data-gas-point="end"]')).toHaveValue('');
+  await expect(lpg.locator('[data-gas-point="before0"]')).toHaveCount(0);
+  await page.locator('#undo-change').click();
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  await page.locator('#next-day').click();
+  await expect(lpg.locator('[data-gas-point="start"]')).toHaveValue('40');
+  await expect(lpg.locator('[data-gas-point="end"]')).toHaveValue('');
+});
+
 test('JRE gas raw readings, decimal temperatures, refills, language and next day preserve data', async ({
   page,
 }, testInfo) => {
@@ -723,7 +806,8 @@ test('JRE gas raw readings, decimal temperatures, refills, language and next day
   await expect(page.locator('#copy-report')).toBeDisabled();
   await r32.locator('[data-gas-temperature="end"]').fill('33.5');
   await page.locator('[data-plant="UNILAND"]').click();
-  await expect(page.locator('#gas-section')).toBeHidden();
+  await expect(page.locator('#gas-title')).toHaveText('UNILAND gas consumption');
+  await expect(r32.locator('[data-gas-enable]')).not.toBeChecked();
   await page.locator('[data-plant="JRE"]').click();
   await expect(r32.locator('[data-gas-point="start"]')).toHaveValue('587');
   await page.locator('#next-day').click();

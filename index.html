@@ -494,14 +494,14 @@
               </button>
             </div>
             <section id="gas-section" class="card gas-card" aria-labelledby="gas-title">
-              <h2 id="gas-title" data-i18n="gasTitle">JRE gas consumption</h2>
+              <h2 id="gas-title">Gas consumption</h2>
               <p data-i18n="gasHint">
                 Enter tank readings, then convert each observation to kg before calculating
                 consumption. After Work normally uses the following morning's reading.
               </p>
               <p id="gas-period"></p>
               <div id="gas-fields"></div>
-              <p class="gas-source" data-i18n="gasSource">
+              <p id="gas-source" class="gas-source">
                 Uses the supplied tank reference tables. R32 requires temperature at each
                 observation. LPG uses the workbook's corrected reference values.
               </p>
@@ -582,7 +582,9 @@
                   ><span class="muted"
                     ><span data-i18n="utilityHint">Optional, enter consumption directly</span></span
                   ></span
-                ><span class="muted">LPG, gas, air <span aria-hidden="true">+</span></span>
+                ><span class="muted"
+                  >Air Compressor, Water, R454B <span aria-hidden="true">+</span></span
+                >
               </summary>
               <div id="utility-fields" class="utility-fields"></div>
             </details>

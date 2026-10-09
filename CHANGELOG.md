@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.16-alpha - 2026-10-09
+
+- Add UNILAND raw gas readings, per-observation R32 temperature and refill correction using its workbook calibration tables and the JRE entry workflow.
+- Preserve manual gas values and original units, save incomplete raw drafts, and separate new kilogram graph series from older utility history.
+
 ## v0.9.15-alpha - 2026-10-08
 
 - Loop the login logo through reconstruction, a five-second hold and an exit, with pause/resume, hidden-tab suspension and reduced-motion support.

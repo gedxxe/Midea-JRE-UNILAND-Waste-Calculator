@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.15-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.16-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -22,7 +22,7 @@ Current milestone: v0.9.15-alpha in package.json. Preserved baseline: v0.1.0-alp
 - Show a login screen first. Keep the reporting workspace hidden until a session is established and any required initial password change is complete. Logout returns to login. Preserve old guest drafts separately without exposing a guest entry mode.
 - Use larger entry text and black equipment labels/readings for readability, including on mobile.
 - Export raw cumulative electricity readings as a copy-ready factory/date/numbered list, with ratio annotations only and no consumption calculations or daily utilities. Choose start/end column; default to end and use that column’s date. The user confirmed UNILAND export follows the current 28-row website table, not the different 26-row example. Do not fabricate component meters or omit Trafo readings.
-- JRE gas rework uses raw LPG %, Oxygen mmWC, Nitrogen mmH2O and R32 mm plus temperature at every observation. R32 supports -20 to 50 °C, including decimals, using the supplied workbook tables. Convert each Before Work, Before/After Refill and After Work observation to kg first, then calculate stock usage with refill correction. After Work normally uses next morning's reading. Preserve manual legacy utilities and store raw gas history. UNILAND is out of scope for this rework.
+- JRE gas rework uses raw LPG %, Oxygen mmWC, Nitrogen mmH2O and R32 mm plus temperature at every observation. R32 supports -20 to 50 °C, including decimals, using the supplied workbook tables. Convert each Before Work, Before/After Refill and After Work observation to kg first, then calculate stock usage with refill correction. After Work normally uses next morning's reading. Preserve manual legacy utilities and store raw gas history. The original rework was JRE only; the UNILAND extension is recorded below.
 - Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
 - Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
 - User chose power-engineer for the first admin username. Generate temporary credentials locally; require a password change at first login.
@@ -63,6 +63,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Beta assessment requested 2026-10-08: expand non-destructive injection/security testing. User is not yet sure that credential rotation, administrator MFA and backup restoration are verified. Keep alpha while assessing these operational prerequisites; local security findings must not contain credentials or operating data.
 
+- UNILAND gas confirmed 2026-10-09: use the same tank-entry workflow as JRE with the supplied UNILAND workbook engine. Separate LPG/O2/N2 calibration; R32 tables match JRE. UNILAND calibration ID uniland-2026-10-v1. Map LPG, O2, N2, R32 to legacy utility indices 0, 2, 3, 5; enabled tank values report Kg, disabled manual values retain original units. Preserve raw observations/refills in drafts and snapshots, date movement, next-day and undo. Leave Air Compressor, Water and R454B unchanged. Keep historical raw-unit and new kg graph series separate; never recalculate stored outputs.
+
 ## Architecture
 
 - logo.css owns login-only reconstruction and layout; ui/logo.js controls replay, manual pause and document-visibility pause without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
@@ -70,7 +72,7 @@ New user instructions override older choices here. Update this decision record, 
 - water.js owns pure cumulative water validation and subtraction; ui/water.js owns JRE entry and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
 - engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.
-- gas.js owns pure JRE interpolation, event validation and consumption; gas-tables.js contains mass calibration data only. ui/gas.js renders entry; i18n/gas.js owns translations. Read docs/gas.md before changes. Never commit source operational workbooks or readings.
+- gas.js owns plant-specific calibration selection, interpolation, event validation and consumption; gas-tables.js and uniland-gas-tables.js contain mass calibration data only. ui/gas.js renders entry; i18n/gas.js owns translations. Read docs/gas.md before changes. Never commit source operational workbooks or readings.
 - server/history-import.js validates owner-scoped maintenance imports and requires a reviewed plan hash before atomic writes. Migration 002 stores immutable import provenance and consumption separately from meter reports. Runtime reads imports only; saved reports supersede imported overlapping periods. Source data stays outside Git and public assets.
 - graph-axis.js owns consumption-period labels and validated Y-axis domains; ui/period.js translates inclusive consumption dates into existing reading endpoints. graph-schema.js owns workbook chart groups and aliases. graph-data.js extracts immutable saved output, preserves null gaps and detects overlapping periods. server/graphs.js reads only the session owner’s latest report revisions. ui/graphs.js owns per-account browser layout settings and clears fetched data on identity changes; ui/graph-renderer.js owns SVG/PNG rendering. Read docs/graphs.md before graph changes. Never recalculate old historian values with the current engine or invent readings for missing dates.
 - raw-export.js validates and formats one raw reading column independently of calculated reports, and generates blank schema-only templates. ui/raw-export.js owns the filled preview/copy dialog and clears it on account changes. ui/raw-template.js owns public blank template copy/download without reading drafts or requiring accounts.

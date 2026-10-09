@@ -42,6 +42,13 @@ export function graphValues(snapshot, plant) {
   UTILITIES[plant].forEach(([name, unit], i) => {
     values['u' + i] = extract(report, schema.utilityPrefix + ' ' + name + ': ', unit);
   });
+  for (const metric of GRAPH_METRICS[plant])
+    if (metric.utilityIndex !== undefined)
+      values[metric.key] = extract(
+        report,
+        schema.utilityPrefix + ' ' + UTILITIES[plant][metric.utilityIndex][0] + ': ',
+        'Kg',
+      );
   return Object.fromEntries(GRAPH_METRICS[plant].map((m) => [m.key, values[m.key] ?? null]));
 }
 export function graphRecords(rows, plant, history = []) {

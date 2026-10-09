@@ -1,6 +1,6 @@
 # Midea Daily Energy Report
 
-**v0.9.15-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.16-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
@@ -16,7 +16,7 @@ The login page repeats a 10-second logo cycle: reconstruct, hold the complete lo
 
 JRE Warehouse meter 3 now belongs to Window as direct meter 6; Warehouse meter 2 belongs to Piping 1 as its second, direct meter. Warehouse keeps only its first ×40 meter. Structural still subtracts only Piping 1 meter 1 ×40. Legacy drafts and complete legacy text imports move the original readings once into the new layout; saved report and graph output stays unchanged. Start and End inputs stay level. Individual meter usage is visible below each end reading, with equipment totals separate.
 
-JRE Water below the gas section uses cumulative flow-meter m³: end minus start, reported for the start date or full combined period. Partial readings can be saved as drafts; missing, invalid and decreasing values are never assumed to be zero. Raw water readings follow Next day and date changes. Older consumption-only entries remain available without invented readings. Manual gas values and notes are in their gas cards. UNILAND utilities retain their existing entry method.
+JRE Water below the gas section uses cumulative flow-meter m³: end minus start, reported for the start date or full combined period. Partial readings can be saved as drafts; missing, invalid and decreasing values are never assumed to be zero. Raw water readings follow Next day and date changes. Older consumption-only entries remain available without invented readings. Manual gas values and notes are in their gas cards. UNILAND Water, Air Compressor and R454B retain their existing entry method.
 
 Releases remain alpha. Patch numbers continue through 0.9.9, 0.9.10, 0.9.11 and onward; beta or 1.0.0 requires an explicit release decision.
 
@@ -38,7 +38,7 @@ Graphs can also include imported Excel consumption history, labelled with its wo
 
 **Graphs** builds charts from your saved energy reports. Select JRE (Branch 1) or UNILAND (Branch 2), choose report dates, then configure variables and English/Chinese titles for each chart. The Excel presets contain 9 JRE and 7 UNILAND charts. JRE legends use Window A for Window and Window B for Dehumidifier. Add, duplicate or remove charts to arrange your own groups. Use **Copy graph** to paste a high-resolution PNG into a document or chat (400 DPI metadata; the destination may resize it). The date range adapts the axes, and data tables expand or collapse. Export white-background SVG or high-resolution PNG with thin lines and Arial/Helvetica titles. Refresh reads the latest saved revisions; unsaved table edits are not included. Settings stay in this browser per account. Missing values remain gaps, overlapping periods are excluded from plots, and multi-day values remain period totals. See [graph rules and workbook mapping](docs/graphs.md).
 
-JRE gas consumption now accepts raw LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), and R32 (mm) readings. Enable each gas, enter Before Work and After Work, and add paired Before/After Refill observations when needed. R32 accepts a temperature for every reading from -20 to 50 °C, including decimals such as 33.5. Conversion follows the supplied reference tables before calculating initial kg + refill kg - final kg. Next day carries final readings and temperatures forward. Saved manual utilities remain available; enabled tank calculations replace their report values. Raw readings, temperatures, refills and calibration version are saved in your historian. See [gas rules and source ranges](docs/gas.md).
+JRE and UNILAND gas consumption accept raw LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), and R32 (mm) readings. Enable each gas, enter Before Work and After Work, and add paired Before/After Refill observations when needed. R32 accepts a temperature for every reading from -20 to 50 °C, including decimals such as 33.5. Conversion follows the supplied reference tables before calculating initial kg + refill kg - final kg. Next day carries final readings and temperatures forward. Saved manual utilities remain available; enabled tank calculations replace their report values. Raw readings, temperatures, refills and calibration version are saved in your historian. UNILAND uses its own LPG, O2 and N2 mass tables; R32 matches the supplied JRE table. Calculated gas is reported in kg. Disabling tank calculation restores manual values with their original units. Historical raw-unit gas and new kg values use separate graph series. See [gas rules and source ranges](docs/gas.md).
 
 Enter cumulative readings in a table, check consumption, and copy the official factory report or Excel row. Sign in with a username and password to save reports to your own historian and reopen them on another device. The opening screen shows only sign-in controls. The reading workspace opens after login and any required password change. Entry text is larger, with black table labels and readings.
 
@@ -121,7 +121,7 @@ JRE 可选填 T1–T4 起止累计 kWh 读数，结束减开始作为不编号�
 
 JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。起止读数输入框保持对齐。每个结束读数下方直接显示该电表用量，设备合计单独显示。
 
-JRE 气体区下方的 Water 使用累计流量计读数（m³）：结束减开始，归属开始日期或完整合并周期。未完成读数可保存为草稿，缺失、无效或下降读数不会当作零。原始水表读数随下一天和日期调整移动。旧用量数据继续保留，不虚构水表读数。手动气体用量及备注移至相应气体卡片。UNILAND 保持原录入方式。
+JRE 气体区下方的 Water 使用累计流量计读数（m³）：结束减开始，归属开始日期或完整合并周期。未完成读数可保存为草稿，缺失、无效或下降读数不会当作零。原始水表读数随下一天和日期调整移动。旧用量数据继续保留，不虚构水表读数。手动气体用量及备注移至相应气体卡片。UNILAND 的 Water、Air Compressor 和 R454B 保持原录入方式。
 
 版本保持 alpha，补丁号可继续为 0.9.9、0.9.10、0.9.11 等。只有明确确认后才能发布 beta 或 1.0.0。
 
@@ -143,7 +143,7 @@ JRE Structural Laboratory 用量现在扣除 Piping Building 1#：Structural 电
 
 **图表**使用个人已保存的能耗报告。选择 JRE（一厂）或 UNILAND（二厂）及报告日期，为每张图配置变量和中英文标题。Excel 预设包含 9 张 JRE 和 7 张 UNILAND 图表。JRE 图例 Window A 对应 Window，Window B 对应 Dehumidifier。可添加、复制或删除图表，自行分组。**复制图表**可将高分辨率、含 400 DPI 元数据的 PNG 粘贴到文档或聊天中，目标应用可能调整尺寸。日期范围自动调整坐标轴，数据表可展开或折叠。支持白底 SVG 和高分辨率的 PNG，使用细线与 Arial/Helvetica 标题。刷新读取最新已保存修订，未保存的表格修改不计入。设置按账户保存在本浏览器。缺失数据留空，重叠时段不绘制，多日数值保留为时段合计。详见[图表规则与工作簿映射](docs/graphs.md)。
 
-JRE 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) 和 R32 (mm) 原始读数。启用相应气体，填写工作前、工作后读数，并按需添加补充前后读数。每次 R32 读数需填写 -20 至 50 °C 的温度，支持 33.5 等小数。先按参考表换算，再计算初始 kg + 补充 kg - 最终 kg。下一天会带入最终读数与温度。原有手动用量保留，启用储罐计算后报告使用计算结果。历史记录保存原始读数、温度、补充记录及校准版本。详见[气体规则与范围](docs/gas.md)。
+JRE 和 UNILAND 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) 和 R32 (mm) 原始读数。启用相应气体，填写工作前、工作后读数，并按需添加补充前后读数。每次 R32 读数需填写 -20 至 50 °C 的温度，支持 33.5 等小数。先按参考表换算，再计算初始 kg + 补充 kg - 最终 kg。下一天会带入最终读数与温度。原有手动用量保留，启用储罐计算后报告使用计算结果。历史记录保存原始读数、温度、补充记录及校准版本。UNILAND 使用自己的 LPG、O2 和 N2 质量表，R32 与所提供的 JRE 表一致。计算用量以 kg 输出；关闭储罐计算后恢复原手动值及单位。图表将旧单位历史与新 kg 数据分开。详见[气体规则与范围](docs/gas.md)。
 
 在表格中填写累计读数，检查用量，然后复制工厂正式报告或 Excel 行。使用用户名和密码登录后，可将报告保存到个人历史记录并跨设备打开。首页仅显示登录界面。登录并完成必要的密码修改后，才显示读数工作区。输入文字已放大，表格标签和读数使用黑色。
 
@@ -195,7 +195,7 @@ Animasi logo login berulang dalam siklus 10 detik: rekonstruksi, jeda lima detik
 
 Meter 3 Warehouse JRE pindah ke Window sebagai meter ke-6 direct. Meter 2 Warehouse pindah ke Piping 1 sebagai meter kedua direct. Warehouse tinggal meter pertama ×40. Structural hanya dikurangi meter pertama Piping 1 ×40. Draft lama dan impor teks lengkap format lama memindahkan reading asli sekali ke susunan baru; hasil laporan dan grafik tersimpan tetap utuh. Input Start dan End tetap sejajar. Konsumsi tiap meter terlihat di bawah reading akhir, terpisah dari total equipment.
 
-Water JRE di bawah gas memakai reading kumulatif flow meter m³: akhir dikurangi awal, untuk tanggal awal atau seluruh periode gabungan. Isian parsial bisa disimpan sebagai draft; reading kosong, tidak valid, atau menurun tidak dianggap nol. Reading air mengikuti Next day dan perubahan tanggal. Konsumsi lama tetap tersedia tanpa mengarang reading. Nilai gas manual dan catatannya berada dalam kartu gas masing-masing. Cara pengisian utilitas UNILAND tetap.
+Water JRE di bawah gas memakai reading kumulatif flow meter m³: akhir dikurangi awal, untuk tanggal awal atau seluruh periode gabungan. Isian parsial bisa disimpan sebagai draft; reading kosong, tidak valid, atau menurun tidak dianggap nol. Reading air mengikuti Next day dan perubahan tanggal. Konsumsi lama tetap tersedia tanpa mengarang reading. Nilai gas manual dan catatannya berada dalam kartu gas masing-masing. Water, Air Compressor, dan R454B UNILAND tetap memakai cara pengisian sebelumnya.
 
 Versi tetap alpha. Nomor patch dapat lanjut 0.9.9, 0.9.10, 0.9.11, dan seterusnya; beta atau 1.0.0 harus melalui keputusan rilis tersendiri.
 
@@ -217,7 +217,7 @@ Grafik juga bisa memakai histori konsumsi Excel dengan penanda sumber workbook. 
 
 **Grafik** memakai energy report yang tersimpan di akunmu. Pilih JRE (Branch 1) atau UNILAND (Branch 2), rentang tanggal laporan, lalu atur variabel dan judul English/Chinese per grafik. Preset Excel berisi 9 grafik JRE dan 7 UNILAND. Legend JRE memakai Window A untuk Window dan Window B untuk Dehumidifier. Tambah, duplikat, atau hapus grafik untuk membuat kelompok sendiri. **Copy grafik** menyalin PNG resolusi tinggi dengan metadata 400 DPI untuk ditempel ke dokumen atau chat; aplikasi tujuan bisa mengubah ukurannya. Rentang tanggal menyesuaikan sumbu otomatis dan tabel data bisa dibuka/tutup. Ekspor SVG atau PNG resolusi tinggi, berlatar putih, garis tipis, dan judul Arial/Helvetica. Refresh mengambil revisi tersimpan terbaru; perubahan tabel yang belum disimpan belum masuk grafik. Pengaturan disimpan di browser per akun. Data kosong menjadi celah, periode tumpang tindih tidak diplot, dan nilai beberapa hari tetap berupa total periode. Lihat [aturan grafik dan pemetaan workbook](docs/graphs.md).
 
-Konsumsi gas JRE menerima reading mentah LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), dan R32 (mm). Aktifkan gas yang dicatat, isi Before Work dan After Work, lalu tambahkan pasangan Before/After Refill jika ada pengisian. Setiap reading R32 memerlukan suhu -20 hingga 50 °C, termasuk desimal seperti 33,5. Konversi mengikuti tabel referensi sebelum menghitung kg awal + kg refill - kg akhir. Next day membawa reading akhir dan suhunya ke awal periode berikutnya. Nilai utility manual lama tetap tersimpan; gas yang diaktifkan memakai hasil kalkulasi pada laporan. Reading mentah, suhu, refill, dan versi kalibrasi ikut tersimpan di historian. Lihat [aturan dan rentang gas](docs/gas.md).
+Konsumsi gas JRE dan UNILAND menerima reading mentah LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), dan R32 (mm). Aktifkan gas yang dicatat, isi Before Work dan After Work, lalu tambahkan pasangan Before/After Refill jika ada pengisian. Setiap reading R32 memerlukan suhu -20 hingga 50 °C, termasuk desimal seperti 33,5. Konversi mengikuti tabel referensi sebelum menghitung kg awal + kg refill - kg akhir. Next day membawa reading akhir dan suhunya ke awal periode berikutnya. Nilai utility manual lama tetap tersimpan; gas yang diaktifkan memakai hasil kalkulasi pada laporan. Reading mentah, suhu, refill, dan versi kalibrasi ikut tersimpan di historian. UNILAND memakai tabel massa LPG, O2, dan N2 tersendiri; tabel R32 cocok dengan sumber JRE. Hasil gas dilaporkan dalam kg. Menonaktifkan kalkulasi tangki mengembalikan nilai manual beserta satuan aslinya. Grafik memisahkan histori bersatuan lama dari data kg baru. Lihat [aturan dan rentang gas](docs/gas.md).
 
 Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi pabrik atau baris Excel. Login dengan username dan password untuk menyimpan laporan ke historian pribadi dan membukanya dari perangkat lain. Halaman awal hanya menampilkan login. Tabel muncul setelah login dan penggantian password awal bila diwajibkan. Teks pengisian diperbesar, dengan label tabel dan angka berwarna hitam.
 
