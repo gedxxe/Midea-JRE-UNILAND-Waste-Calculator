@@ -11,3 +11,6 @@ playwright-report/
 test-results/
 
 *.local.txt
+
+# Private operator draft exports
+midea-draft-*.json

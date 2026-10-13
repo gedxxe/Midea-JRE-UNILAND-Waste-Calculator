@@ -330,7 +330,7 @@
             <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
               JRE <span id="count-jre">0/29</span></button
             ><button class="plant-tab" data-plant="UNILAND" aria-pressed="false">
-              UNILAND <span id="count-uniland">0/28</span>
+              UNILAND <span id="count-uniland">0/30</span>
             </button>
           </div>
           <span class="plant-bar-note"
@@ -384,6 +384,20 @@
             </button>
           </div>
           <p id="combined-preview" aria-live="polite"></p>
+        </details>
+        <p id="draft-storage-status" class="small" role="status"></p>
+        <details class="draft-backup-tools">
+          <summary data-i18n="backupTitle">Draft backup and restore</summary>
+          <p class="small" data-i18n="backupHint"></p>
+          <div class="account-buttons">
+            <button id="download-draft-backup" class="button secondary" data-i18n="backupDownload">
+              Download draft backup
+            </button>
+            <button id="restore-draft-backup" class="button secondary" data-i18n="backupRestore">
+              Restore draft backup
+            </button>
+            <input id="draft-backup-file" type="file" accept=".json,application/json" hidden />
+          </div>
         </details>
         <div id="draft-sync-actions" class="notice" hidden>
           <button id="draft-retry" class="button secondary" data-i18n="draftRetry">
@@ -680,7 +694,8 @@
         <footer class="site-footer">
           <span
             ><span data-i18n="privacy"
-              >Readings are uploaded only when you save a report to your account.</span
+              >Draft readings sync automatically to your account. Reports are saved when you choose
+              Save report.</span
             ></span
           ><button id="forget-draft" class="text-button" data-i18n="forget">
             Delete saved draft

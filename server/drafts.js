@@ -45,18 +45,19 @@ export function draftsHandler(database = getPool, env = process.env) {
       await lockUser(client, user);
       const old = (
         await client.query(
-          'SELECT version,workspace,workspace IS NOT DISTINCT FROM $2::jsonb AS unchanged FROM meter_app.working_drafts WHERE owner_id=$1',
+          'SELECT version,updated_at,workspace,workspace IS NOT DISTINCT FROM $2::jsonb AS unchanged FROM meter_app.working_drafts WHERE owner_id=$1',
           [user.id, workspace === null ? null : JSON.stringify(workspace)],
         )
       ).rows[0];
-      if (old?.unchanged) return { version: old.version, unchanged: true };
+      if (old?.unchanged)
+        return { version: old.version, unchanged: true, updated_at: old.updated_at };
       if ((old?.version || 0) !== body.baseVersion) fail(409, 'DRAFT_CONFLICT');
       const version = (old?.version || 0) + 1;
-      await client.query(
-        'INSERT INTO meter_app.working_drafts(owner_id,workspace,version) VALUES($1,$2::jsonb,$3) ON CONFLICT(owner_id) DO UPDATE SET workspace=excluded.workspace,version=excluded.version,updated_at=now()',
+      const saved = await client.query(
+        'INSERT INTO meter_app.working_drafts(owner_id,workspace,version) VALUES($1,$2::jsonb,$3) ON CONFLICT(owner_id) DO UPDATE SET workspace=excluded.workspace,version=excluded.version,updated_at=now() RETURNING updated_at',
         [user.id, workspace === null ? null : JSON.stringify(workspace), version],
       );
-      return { version };
+      return { version, updated_at: saved.rows[0].updated_at };
     });
     send(res, 200, result);
   });

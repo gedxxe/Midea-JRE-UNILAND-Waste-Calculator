@@ -256,6 +256,7 @@ test('working drafts replace partial entries without report revisions and reject
   });
   assert.equal(saved.status, 200);
   assert.equal(saved.value.version, 1);
+  assert.ok(Number.isFinite(Date.parse(saved.value.updated_at)));
   assert.equal((await call('/api/drafts', { actor: admin })).value.workspace, null);
   const repeat = await call('/api/drafts', {
     actor: operator,
@@ -263,6 +264,11 @@ test('working drafts replace partial entries without report revisions and reject
   });
   assert.equal(repeat.value.version, 1);
   assert.equal(repeat.value.unchanged, true);
+  assert.equal(repeat.value.updated_at, saved.value.updated_at);
+  assert.equal(
+    (await call('/api/drafts', { actor: operator })).value.updated_at,
+    saved.value.updated_at,
+  );
   assert.equal((await call('/api/reports', { actor: operator })).value.reports.length, 0);
   const replacements = ['124', '125'].map((value) => {
     const copy = structuredClone(workspace);

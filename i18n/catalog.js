@@ -283,9 +283,9 @@ export const catalog = {
     'Laporan gabungan tersedia jika periode kedua pabrik sama.',
   ],
   privacy: [
-    'Readings are uploaded only when you save a report to your account.',
-    '仅在将报告保存到您的账户时上传读数。',
-    'Reading diunggah hanya saat kamu menyimpan laporan ke akun.',
+    'Draft readings sync automatically to your account. Reports are saved when you choose Save report.',
+    '草稿读数自动同步至账户，选择保存报告后才会生成报告。',
+    'Reading draft otomatis disinkronkan ke akun. Laporan disimpan saat kamu memilih Save report.',
   ],
   forget: ['Delete saved draft', '删除已保存的草稿', 'Hapus draft tersimpan'],
   importTitle: ['Import readings from text', '从文本导入读数', 'Impor reading dari teks'],

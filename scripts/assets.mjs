@@ -20,6 +20,8 @@ export const PUBLIC_FILES = [
   'ui/graphs.js',
   'ui/period.js',
   'ui/drafts.js',
+  'draft-backup.js',
+  'ui/draft-backup.js',
   'i18n/drafts.js',
   'ui/graph-renderer.js',
   'i18n/graphs.js',

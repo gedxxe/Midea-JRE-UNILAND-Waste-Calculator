@@ -1,5 +1,5 @@
 import { $ } from './dom.js';
-import { t } from '../i18n/index.js';
+import { t, getLanguage } from '../i18n/index.js';
 import { STORAGE_KEY, restoreWorkspace } from '../storage.js';
 
 // One replaceable workspace per account. Local recovery is immediate; remote writes are coalesced.
@@ -17,12 +17,33 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
     firstDirty = 0,
     lastAttempt = 0,
     retry = 30000,
-    state = 'draftIdle';
+    state = 'draftIdle',
+    localAt = null,
+    accountAt = null;
+  const timestamp = (value) =>
+    typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null;
+  const time = (value) =>
+    new Intl.DateTimeFormat(getLanguage() === 'en' ? 'en-GB' : getLanguage(), {
+      timeZone: 'Asia/Jakarta',
+      dateStyle: 'medium',
+      hourCycle: 'h23',
+      timeStyle: 'medium',
+    }).format(new Date(value)) + ' WIB';
   const key = () => STORAGE_KEY + '_' + user.id;
   const raw = () => JSON.stringify(read());
   function render() {
     if (!user) return;
     $('save-status').textContent = t(state);
+    const storageStatus = [
+      t(localOk ? (localAt ? 'draftTabAt' : 'draftTabNone') : 'draftTabFailed', {
+        time: localAt ? time(localAt) : '',
+      }),
+      t(accountAt ? 'draftAccountAt' : 'draftAccountNone', {
+        time: accountAt ? time(accountAt) : '',
+      }),
+    ].join(' · ');
+    if ($('draft-storage-status').textContent !== storageStatus)
+      $('draft-storage-status').textContent = storageStatus;
     $('draft-sync-actions').hidden =
       !conflict && !['draftOffline', 'draftLocalError'].includes(state);
     $('draft-load-cloud').hidden = !conflict;
@@ -36,10 +57,16 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
   function backup() {
     if (!user) return;
     try {
+      const now = new Date().toISOString();
       sessionStorage.setItem(key(), raw());
-      sessionStorage.setItem(key() + '_sync', JSON.stringify({ version, pending: dirty }));
+      sessionStorage.setItem(
+        key() + '_sync',
+        JSON.stringify({ version, pending: dirty, localAt: now, accountAt }),
+      );
+      localAt = now;
       localOk = true;
       localSaved();
+      render();
     } catch {
       localOk = false;
       status('draftLocalError');
@@ -67,6 +94,7 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
     try {
       const saved = await remote();
       if (identity !== epoch) return false;
+      accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
       const same = saved.workspace && JSON.stringify(saved.workspace) === raw();
       if (dirty && !same && saved.version !== version) {
         conflict = true;
@@ -117,6 +145,7 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
         });
         if (identity !== epoch) return false;
         version = result.version;
+        accountAt = timestamp(result.updated_at);
         lastSynced = sent;
         dirty = raw() !== sent;
         firstDirty = dirty ? performance.now() : 0;
@@ -172,6 +201,8 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
     version = 0;
     firstDirty = lastAttempt = 0;
     retry = 30000;
+    localAt = accountAt = null;
+    $('draft-storage-status').textContent = '';
     $('draft-sync-actions').hidden = true;
     if (!user) return;
     try {
@@ -179,6 +210,8 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
       const meta = JSON.parse(sessionStorage.getItem(key() + '_sync'));
       if (local) {
         apply(restoreWorkspace(local));
+        localAt = timestamp(meta?.localAt);
+        accountAt = timestamp(meta?.accountAt);
         version = Number.isSafeInteger(meta?.version) ? meta.version : 0;
         dirty = meta?.pending !== false;
         firstDirty = performance.now();
@@ -209,6 +242,7 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
       if (useRemote)
         apply(saved.workspace ? restoreWorkspace(JSON.stringify(saved.workspace)) : null);
       version = saved.version;
+      accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
       ready = true;
       conflict = false;
       dirty = !useRemote;
@@ -237,6 +271,7 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
       const result = await pending;
       if (identity !== epoch) return false;
       version = result.version;
+      localAt = accountAt = null;
       lastSynced = '';
       dirty = raw() !== before;
       clearTimeout(timer);

@@ -1,3 +1,4 @@
+import { scaledReading } from '../numbers.js';
 import { calculateWater } from '../water.js';
 import { t } from '../i18n/index.js';
 import { $ } from './dom.js';
@@ -50,5 +51,19 @@ export function createWaterPanel({ current, changed, rememberUndo }) {
     $('water-note').value = current().utilities[4].note;
     update();
   }
-  return { rebuild, update };
+  function focusIssue() {
+    let input;
+    if (!current().water && current().utilities[4].value.trim()) input = $('water-use-readings');
+    else {
+      const side =
+        ['start', 'end'].find((key) => {
+          const value = current().water?.[key]?.trim() || '';
+          return !value || value === '-' || scaledReading(value) === null;
+        }) || 'end';
+      input = $('water-' + side);
+    }
+    input.scrollIntoView({ block: 'center' });
+    input.focus();
+  }
+  return { rebuild, update, focusIssue };
 }

@@ -37,8 +37,16 @@ export function formatRowValue(plantKey, row) {
   return formatNumber(row.totalEnergy, 8);
 }
 
-function issue(issues, code, message, rowIndex = null, meterIndex = null, level = 'WARNING') {
-  issues.push({ code, message, rowIndex, meterIndex, level });
+function issue(
+  issues,
+  code,
+  message,
+  rowIndex = null,
+  meterIndex = null,
+  level = 'WARNING',
+  target = null,
+) {
+  issues.push({ code, message, rowIndex, meterIndex, level, ...(target ? { target } : {}) });
 }
 
 export function calculateDraft(draft) {
@@ -222,9 +230,18 @@ export function calculateDraft(draft) {
           null,
           null,
           waterResult.error === 'waterDecreased' ? 'WARNING' : 'ERROR',
+          { kind: 'water' },
         );
       } else if (value === '-')
-        issue(issues, 'WATER_UNAVAILABLE', 'Water: a flow-meter reading is unavailable.');
+        issue(
+          issues,
+          'WATER_UNAVAILABLE',
+          'Water: a flow-meter reading is unavailable.',
+          null,
+          null,
+          'WARNING',
+          { kind: 'water' },
+        );
     }
     const gasIndex = calibration.gases.findIndex((gas) => gas.utilityIndex === i);
     if (gasIndex >= 0 && draft.gas?.entries[gasIndex]?.enabled) {
@@ -251,9 +268,28 @@ export function calculateDraft(draft) {
           null,
           null,
           'ERROR',
+          {
+            kind: 'gas',
+            gas: gas.id,
+            point: error.point,
+            field: error.code === 'gasTemperature' ? 'temperature' : 'reading',
+          },
         );
       if (result.unavailable)
-        issue(issues, 'GAS_UNAVAILABLE', name + ': a tank reading is unavailable.');
+        issue(
+          issues,
+          'GAS_UNAVAILABLE',
+          name + ': a tank reading is unavailable.',
+          null,
+          null,
+          'WARNING',
+          {
+            kind: 'gas',
+            gas: gas.id,
+            point: Object.keys(result.points).find((key) => result.points[key].unavailable),
+            field: 'reading',
+          },
+        );
       value = gasMassText(result.kg);
     }
     if (!String(value).trim()) {
@@ -265,12 +301,16 @@ export function calculateDraft(draft) {
           null,
           null,
           'ERROR',
+          { kind: i === 4 ? 'water' : 'utility', index: i },
         );
       return;
     }
     const normalized = decimalText(value);
     if (value !== '-' && normalized === null) {
-      issue(issues, 'UTILITY_INVALID', `${name}: invalid utility value.`, null, null, 'ERROR');
+      issue(issues, 'UTILITY_INVALID', `${name}: invalid utility value.`, null, null, 'ERROR', {
+        kind: i === 4 ? 'water' : 'utility',
+        index: i,
+      });
       return;
     }
     const cleanNote = String(note)
