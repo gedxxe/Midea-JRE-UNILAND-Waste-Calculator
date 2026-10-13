@@ -53,3 +53,5 @@ New v0.9.7 JRE reports use the revised Window/Piping/Warehouse grouping; stored 
 UNILAND tank gas introduced in v0.9.16 uses separate kg0, kg2, kg3 and kg5 metrics, matched only to saved Kg report lines. Legacy u0 (Nm3), u2 (mmWc), and u3 (mmH2O) retain their units and remain null for new kg lines. Old raw-unit values remain null in the kg series. R32 gains a kg series; no raw-level conversion or historical recalculation is performed by graphs.
 
 UNILAND layout 2 keeps the original r0–r27 metric identities despite reordered report rows. Piping is r28 and New Office Building A is r29; both are absent from older history. New HE & Piping worksheet values sum the two equipment rows; old w4 values remain as saved. HE is also independently available as r11.
+
+UNILAND layout 3 adds the second lab observation as r30 and keeps original r0–r29 identities. Report extraction recognizes both original and layout-2 numbering after the lab insertion. Three-meter equipment totals appear only in new saved output; old snapshots and worksheet history stay immutable.

@@ -38,7 +38,13 @@ export function createImportEditor({ current, apply, toast }) {
     if (!parsed.success) return;
     apply(parsed, $('import-side').value);
     $('import-dialog').close();
-    toast(parsed.issues.length ? t('importedWarnings') : t('imported'));
+    toast(
+      parsed.omittedRows?.length
+        ? t('importedOmitted')
+        : parsed.issues.length
+          ? t('importedWarnings')
+          : t('imported'),
+    );
   });
   return { reset };
 }

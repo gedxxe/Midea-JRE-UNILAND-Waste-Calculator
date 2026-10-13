@@ -48,47 +48,47 @@ export const PLANT_SCHEMAS = {
     utilityPrefix: '*',
     rows: [
       { name: 'Total', unit: 'MWh', factors: [3.2], ratioLabel: '3200/1000', isTotal: true },
-      { name: 'Trafo 1', displayName: 'Trafo 1 ', unit: 'MWh' },
-      { name: 'Trafo 2', displayName: 'Trafo 2 ', unit: 'MWh' },
-      { name: 'Trafo 3', displayName: 'Trafo 3 ', unit: 'Mwh' },
+      { name: 'Trafo 1', displayName: 'Trafo 1 ', unit: 'MWh', optionalImport: true },
+      { name: 'Trafo 2', displayName: 'Trafo 2 ', unit: 'MWh', optionalImport: true },
+      { name: 'Trafo 3', displayName: 'Trafo 3 ', unit: 'Mwh', optionalImport: true },
       {
         name: 'Building A',
         displayName: 'Building A ',
         unit: 'MWh',
-        factors: [0.16],
+        factors: [0.16, 0.16, 0.16],
         ratioLabel: '160/1000',
       },
       {
         name: 'Building B',
         displayName: 'Building B ',
         unit: 'MWh',
-        factors: [0.08],
+        factors: [0.08, 0.08, 0.08],
         ratioLabel: '80/1000',
       },
       {
         name: 'PP hydrant',
         displayName: 'PP hydrant ',
         unit: 'MWh',
-        factors: [0.16],
+        factors: [0.16, 0.16, 0.16],
         ratioLabel: '160/1000',
       },
       {
         name: 'SDP pompa',
         displayName: 'SDP pompa ',
         unit: 'MWh',
-        factors: [0.02],
+        factors: [0.02, 0.02, 0.02],
         ratioLabel: '20/1000',
       },
       {
         name: 'Dp power house',
         displayName: 'Dp power house ',
         unit: 'MWh',
-        factors: [0.02],
+        factors: [0.02, 0.02, 0.02],
         ratioLabel: '20/1000',
       },
       { name: 'Indoor', unit: 'kWh' },
       { name: 'Outdoor', unit: 'kWh' },
-      { name: 'Heat Exchanger', unit: 'kWh' },
+      { name: 'Heat Exchanger', unit: 'kWh', factors: [1, 1, 1] },
       { name: 'Energy Area', unit: 'kWh' },
       { name: 'Line PCB Trial Product', unit: 'kWh' },
       { name: 'Vacum box indoor', unit: 'kWh', aliases: ['Vacuum box indoor'] },
@@ -132,6 +132,14 @@ PLANT_SCHEMAS.UNILAND.rows.splice(15, 0, {
   legacyIndex: 29,
 });
 
+PLANT_SCHEMAS.UNILAND.rows.forEach((row, i) => {
+  row.previousNo = String(i + 1);
+});
+PLANT_SCHEMAS.UNILAND.rows.splice(24, 0, {
+  name: '10HP Enthalpy Difference Lab (2)',
+  unit: 'kWh',
+  legacyIndex: 30,
+});
 for (const schema of Object.values(PLANT_SCHEMAS)) {
   schema.rows.forEach((row, i) => {
     row.no = String(i + 1);

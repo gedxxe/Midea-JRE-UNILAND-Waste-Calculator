@@ -17,18 +17,22 @@ test('UNILAND legacy drafts preserve every original observation and leave new eq
     .map((row, i) => ({ row, values: current.rows[i] }))
     .filter(({ row }) => row.legacyIndex < 28)
     .sort((a, b) => a.row.legacyIndex - b.row.legacyIndex)
-    .map(({ values }) => values);
+    .map(({ values }) => ({ ...values, start: [values.start[0]], end: [values.end[0]] }));
   old.importIssues = [
     { rowIndex: 27, meterIndex: 0, code: 'RATIO_MISMATCH', message: 'Review ratio' },
   ];
   const original = JSON.stringify(old);
   const migrated = migrateMeterLayout(old);
   for (const [i, row] of PLANT_SCHEMAS.UNILAND.rows.entries()) {
-    if (row.legacyIndex < 28) assert.deepEqual(migrated.rows[i], old.rows[row.legacyIndex]);
-    else
+    if (row.legacyIndex < 28) {
+      for (const side of ['start', 'end']) {
+        assert.equal(migrated.rows[i][side][0], old.rows[row.legacyIndex][side][0]);
+        assert.ok(migrated.rows[i][side].slice(1).every((v) => v === ''));
+      }
+    } else
       for (const side of ['start', 'end']) assert.ok(migrated.rows[i][side].every((v) => v === ''));
   }
-  assert.equal(migrated.importIssues[0].rowIndex, 29);
+  assert.equal(migrated.importIssues[0].rowIndex, 30);
   assert.equal(JSON.stringify(old), original);
   assert.deepEqual(migrateMeterLayout(migrated), migrated);
   const restored = restoreDrafts(
@@ -48,12 +52,12 @@ test('UNILAND Piping and Office calculate separately and worksheet combines HE a
   assert.equal(result.success, true);
   assert.match(result.mainText, /13\. Piping: 20 kWh/);
   assert.match(result.mainText, /16\. New Office Building A: 15 kWh/);
-  assert.equal(result.worksheet.values[4], 30);
+  assert.equal(result.worksheet.values[4], 50);
   const graph = graphValues(reportSnapshot(d), 'UNILAND');
   assert.equal(graph.r28, 20);
   assert.equal(graph.r29, 15);
   assert.equal(graph.r12, 10); // Energy Area retains its old graph identity.
-  assert.equal(graph.w4, 30);
+  assert.equal(graph.w4, 50);
   assert.match(exportRawReading(d).text, /13\. Piping: 10.25 \(Ratio 40\) \+ 103 \+ 207/);
 });
 

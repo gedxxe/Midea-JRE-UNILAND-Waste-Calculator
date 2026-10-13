@@ -385,6 +385,11 @@ export const catalog = {
     '读数已导入表格。',
     'Reading berhasil diimpor ke tabel.',
   ],
+  importedOmitted: [
+    'Imported. Complete missing Trafo readings before saving a report.',
+    '导入完成。保存报告前请补齐缺失的变压器读数。',
+    'Impor selesai. Lengkapi reading Trafo yang masih kosong sebelum menyimpan laporan.',
+  ],
   importedWarnings: [
     'Readings imported. Review the ratio notes.',
     '读数已导入，请检查倍率提示。',

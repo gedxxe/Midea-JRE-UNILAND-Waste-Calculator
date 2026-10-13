@@ -37,7 +37,7 @@ Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an I
 
 ## UNILAND
 
-30 equipment rows, 32 meters. Piping has three meters (x40, direct, direct); New Office Building A is direct. Trafo 1–3 remain. Building A/B, hydrant, pump, power house and HE retain their existing single readings pending clarification. The unexplained duplicate 10HP lab is not added.
+31 equipment rows, 45 reading slots. Piping has three meters (x40, direct, direct); New Office Building A is direct. Trafo 1–3 remain. Building A/B, hydrant, pump and power house each have three meters, summed after applying the existing ratio to each delta, as explicitly confirmed by the user. HE has three direct meters. Keep two distinct 10HP lab inputs; (2) is a temporary label.
 
 | Equipment                 | Factor                                  | Result unit |
 | ------------------------- | --------------------------------------- | ----------- |
@@ -49,7 +49,7 @@ Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an I
 | Refrigant and LPG area    | 40                                      | kWh         |
 | Remaining equipment       | Direct                                  | kWh         |
 
-Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant/LPG row. Utilities follow all 30 equipment rows.
+Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant/LPG row. Utilities follow all 31 equipment rows.
 
 Keep relevant decimals up to eight places without thousands separators or exponent notation. Example: Building A `3691.4` to `3695.72` = `0.6912 MWh`.
 
@@ -83,4 +83,6 @@ Water uses cumulative m³ end minus start at scaled precision, with up to six de
 
 JRE meter layout 2 has 6 Window, 2 Piping 1 and 1 Warehouse meters, retaining 57 meters total. A complete legacy layout is recognized by all meter counts; old Warehouse meter 2 moves to Piping 1 meter 2 and meter 3 moves to Window meter 6. Raw precision and warning coordinates are preserved. Draft restore, historian loading for editing and full legacy text import use this mapping; mixed or unknown layouts fail validation. Stored snapshots and imported history are never rewritten. Current raw export uses only the new layout. A stale client must reload before saving a completed JRE report.
 
-UNILAND layout 2 preserves all 28 legacy rows by stable identity and adds blank Piping and Office readings. Stale clients cannot finalize reports. New raw templates contain all 30 rows; older text missing new equipment fails atomically until completed. Stored report numbers and graph keys remain readable without recalculating historical output.
+The earlier UNILAND layout 2 preserved all 28 legacy rows by stable identity and adds blank Piping and Office readings. Stale clients cannot finalize reports. At that milestone raw templates contained 30 rows; older text missing new equipment fails atomically until completed. Stored report numbers and graph keys remain readable without recalculating historical output.
+
+UNILAND layout 3 upgrades layouts 1 and 2 without fabricating component readings. Text import may omit only Trafo rows, preserving matching-date table values through suppliedRows. Repeated plain 10HP names map to the first and second lab inputs; a third duplicate fails. Final reports still require Trafo and all current reading slots. Historical snapshots and graph series are not recalculated.

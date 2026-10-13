@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.9.18-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.9.19-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -21,7 +21,7 @@ Current milestone: v0.9.18-alpha in package.json. Preserved baseline: v0.1.0-alp
 
 - Show a login screen first. Keep the reporting workspace hidden until a session is established and any required initial password change is complete. Logout returns to login. Preserve old guest drafts separately without exposing a guest entry mode.
 - Use larger entry text and black equipment labels/readings for readability, including on mobile.
-- Export raw cumulative electricity readings as a copy-ready factory/date/numbered list, with ratio annotations only and no consumption calculations or daily utilities. Choose start/end column; default to end and use that column’s date. The user confirmed UNILAND export follows the website table rather than the different 26-row example; the current layout has 30 rows. Do not fabricate component meters or omit Trafo readings.
+- Export raw cumulative electricity readings as a copy-ready factory/date/numbered list, with ratio annotations only and no consumption calculations or daily utilities. Choose start/end column; default to end and use that column’s date. The user confirmed UNILAND export follows the website table rather than the different 26-row example; the current layout has 31 rows. Do not fabricate component meters or omit Trafo readings.
 - JRE gas rework uses raw LPG %, Oxygen mmWC, Nitrogen mmH2O and R32 mm plus temperature at every observation. R32 supports -20 to 50 °C, including decimals, using the supplied workbook tables. Convert each Before Work, Before/After Refill and After Work observation to kg first, then calculate stock usage with refill correction. After Work normally uses next morning's reading. Preserve manual legacy utilities and store raw gas history. The original rework was JRE only; the UNILAND extension is recorded below.
 - Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
 - Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
@@ -69,6 +69,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Confirmed 2026-10-13: improve save status, full draft backup/restore and gas/Water validation navigation. Show tab-copy and server-confirmed account timestamps separately. JSON backups include both factories and incomplete observations, are owner-bound, omit sessions and report revision links, validate fully before replacement, support workspace Undo and use normal autosave conflict handling. Saved reports remain immutable.
 
+- Confirmed 2026-10-13 UNILAND import correction: Building A/B, hydrant, pump and power house each have three meters, all summed with their existing factor applied to every meter. User explicitly chose summing all three, superseding the earlier single-reading assumption. HE has three direct meters. Retain both repeated 10HP observations with a temporary distinct (2) label until the equipment mapping is known. Trafo 1–3 remain separate MWh inputs but may be omitted from text import: preserve only matching-date readings, otherwise leave blank and block finalization until completed. Layout 3 expands legacy pairs without inventing component values, and graph keys/old report numbers stay readable. Never commit source operational samples.
+
 ## Architecture
 
 - logo.css owns login-only reconstruction and layout; ui/logo.js controls replay, manual pause and document-visibility pause without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
@@ -112,7 +114,7 @@ Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
 
 - JRE: 29 equipment rows, 57 meters. Main Total is a direct delta; never multiply it by 1000 or replace it with the sub-meter sum. Office is x1000; Utility Area is x1000 and x40. Piping All is Piping Building 1# plus Piping Building 3# for the worksheet only.
 - JRE inactive-to-zero exceptions apply only to Air Compressor 1# and New Air Compressor 2# after operator confirmation. Next day resets this confirmation.
-- UNILAND: 30 rows, 32 meters. Main factor 3.2 MWh; Trafo rows direct MWh; Building A/hydrant .16 MWh; Building B .08 MWh; pump/power house .02 MWh; refrigerant area x40 kWh; other rows direct kWh. Keep exact template spelling, numbering, spaces, and Mwh/KWh capitalization.
+- UNILAND: 31 rows, 45 reading slots. Main factor 3.2 MWh; Trafo rows direct MWh; Building A/hydrant .16 MWh; Building B .08 MWh; pump/power house .02 MWh per meter; sum all three meters for these grouped rows. HE has three direct meters. Piping factors are x40, direct, direct; refrigerant area x40 kWh; remaining rows direct kWh. Keep exact template spelling, numbering, spaces, and Mwh/KWh capitalization.
 - Missing data is never silently zero. Empty/invalid values block copying; explicit unavailable or decreasing readings become `-` with check notes. One missing meter invalidates the whole equipment result. Never show a partial JRE sub-meter sum as complete.
 - Decimal comma or dot, no thousands separators/exponents/suffixes. Maximum six decimals and cumulative 1000000000000. Preserve BigInt scaled subtraction.
 - JRE nonzero output has two decimals; zero is 0. UNILAND trims up to eight decimals without exponential notation.
