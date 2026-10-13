@@ -35,7 +35,7 @@ export function graphValues(snapshot, plant) {
     });
   const schema = PLANT_SCHEMAS[plant];
   schema.rows.forEach((row, i) => {
-    const numbers = new Set([row.no]);
+    const numbers = new Set([row.no, ...(row.previousNo ? [row.previousNo] : [])]);
     if (plant === 'UNILAND' && row.legacyIndex < 28) numbers.add(String(row.legacyIndex + 1));
     const prefixes = [...numbers].map((no) => no + '. ' + (row.displayName || row.name) + ': ');
     const matching = report.filter((line) => prefixes.some((prefix) => line.startsWith(prefix)));

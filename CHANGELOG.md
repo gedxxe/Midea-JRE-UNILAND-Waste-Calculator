@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.19-alpha - 2026-10-13
+
+- Accept UNILAND three-meter Building, hydrant, pump, power house and Heat Exchanger readings; apply each configured factor before summing.
+- Keep the repeated 10HP lab observations as distinct inputs, and allow import without Trafo rows while preserving matching-date readings and incomplete drafts.
+- Upgrade existing drafts without invented component values and preserve historical graph identities.
+
 ## v0.9.18-alpha - 2026-10-13
 
 - Distinguish tab recovery from account saves and show database-confirmed save times; correct autosave privacy wording.

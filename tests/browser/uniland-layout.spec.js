@@ -13,7 +13,7 @@ test('UNILAND legacy draft keeps equipment identities, manual utilities and wate
     .map((row, i) => ({ row, values: old.rows[i] }))
     .filter(({ row }) => row.legacyIndex < 28)
     .sort((a, b) => a.row.legacyIndex - b.row.legacyIndex)
-    .map(({ values }) => values);
+    .map(({ values }) => ({ ...values, start: [values.start[0]], end: [values.end[0]] }));
   old.utilities[1].value = '12.5';
   old.utilities[4].value = '25.5';
   old.utilities[6].value = '3.5';
@@ -44,7 +44,7 @@ test('UNILAND legacy draft keeps equipment identities, manual utilities and wate
   });
   await page.goto('/');
   await page.locator('[data-plant="UNILAND"]').click();
-  await expect(page.locator('.meter-input')).toHaveCount(64);
+  await expect(page.locator('.meter-input')).toHaveCount(90);
   await expect(page.locator('.meter-input[data-row="13"][data-side="end"]')).toHaveValue(
     old.rows[12].end[0],
   );
@@ -71,6 +71,6 @@ test('UNILAND legacy draft keeps equipment identities, manual utilities and wate
   await page.locator('#search-meter').fill('Piping');
   await page.locator('.meter-input[data-row="12"]').first().scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('uniland-piping.png') });
-  expect(workspace.drafts.UNILAND.meterLayout).toBe(2);
+  expect(workspace.drafts.UNILAND.meterLayout).toBe(3);
   expect(errors).toEqual([]);
 });

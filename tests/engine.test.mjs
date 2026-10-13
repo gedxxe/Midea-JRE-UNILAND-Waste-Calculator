@@ -39,7 +39,7 @@ function raw(draft, side = 'start') {
 
 test('fixed schemas match every meter in the supplied templates', () => {
   assert.equal(PLANT_SCHEMAS.JRE.rows.length, 29);
-  assert.equal(PLANT_SCHEMAS.UNILAND.rows.length, 30);
+  assert.equal(PLANT_SCHEMAS.UNILAND.rows.length, 31);
   const jre = PLANT_SCHEMAS.JRE.rows;
   assert.deepEqual(
     jre.map((r) => r.factors.length),
@@ -50,7 +50,7 @@ test('fixed schemas match every meter in the supplied templates', () => {
   assert.deepEqual(jre[0].factors, [1]);
   assert.deepEqual(
     PLANT_SCHEMAS.UNILAND.rows.map((r) => r.no),
-    Array.from({ length: 30 }, (_, i) => String(i + 1)),
+    Array.from({ length: 31 }, (_, i) => String(i + 1)),
   );
 });
 test('JRE main, Office, Utility and Piping use the documented examples', () => {
@@ -159,7 +159,7 @@ test('multi-meter factors apply to paired differences before adding', () => {
 test('UNILAND ratios, units, precision and worksheet sums match the examples', () => {
   const d = complete('UNILAND');
   set(d, 'Total', '712.33', '716.11');
-  set(d, 'Building A', '3691.4', '3695.72');
+  set(d, 'Building A', ['3691.4', '100', '200'], ['3695.72', '100', '200']);
   set(d, 'Indoor', '24095.65', '24228.1');
   set(d, 'Vacum box indoor', '100', '107.7');
   set(d, 'Outdoor', '1000', '1149.1');
@@ -175,7 +175,7 @@ test('UNILAND ratios, units, precision and worksheet sums match the examples', (
   assert.equal(r.worksheet.derived.indoorArea, 140.15);
   assert.equal(r.worksheet.derived.outdoorArea, 585.25);
   assert.match(r.mainText, /2\. Trafo 1 : 0.125 MWh/);
-  assert.match(r.mainText, /30\. Refrigant and LPG area  : 89.2 KWh/);
+  assert.match(r.mainText, /31\. Refrigant and LPG area  : 89.2 KWh/);
   assert.equal(r.worksheet.values.length, 16);
   assert.equal(r.worksheet.headers[0], 'Indoor Area');
 });
@@ -340,7 +340,7 @@ test('decimal subtraction preserves small changes in large counters', () => {
   set(d, 'All Office Building', '999999999.123456', '999999999.123457');
   assert.equal(value(calculateDraft(d), 'All Office Building'), 0.001);
   const u = complete('UNILAND');
-  set(u, 'Building A', '100.000001', '100.000002');
+  set(u, 'Building A', ['100.000001', '0', '0'], ['100.000002', '0', '0']);
   assert.match(calculateDraft(u).mainText, /Building A : 0.00000016 MWh/);
 });
 test('invalid or reversed dates cannot be copied', () => {

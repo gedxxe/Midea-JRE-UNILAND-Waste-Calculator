@@ -1,3 +1,4 @@
+import { unilandInput } from '../fixtures/uniland-input.mjs';
 import { exportRawReading } from '../../raw-export.js';
 import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
@@ -829,4 +830,36 @@ test('JRE gas raw readings, decimal temperatures, refills, language and next day
   await expect(lpg.locator('[data-gas-point="before0"]')).toHaveCount(0);
   await page.locator('#undo-change').click();
   await expect(lpg.locator('[data-gas-point="after0"]')).toHaveValue('80');
+});
+
+test('UNILAND raw import accepts triples and two labs, preserves dated Trafo and leaves new dates blank', async ({
+  page,
+}, info) => {
+  await page.locator('[data-plant="UNILAND"]').click();
+  await page.locator('#load-example').click();
+  const draft = exampleDraft('UNILAND');
+  const text = unilandInput(draft, 'end');
+  await page.locator('#open-import').click();
+  await page.locator('#import-side').selectOption('end');
+  await page.locator('#import-text').fill(text);
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).not.toBeVisible();
+  await expect(page.locator('#toast')).toContainText('Trafo');
+  await expect(cell(page, 4, 'end', 2)).toHaveValue(draft.rows[4].end[2]);
+  await expect(cell(page, 24, 'end')).toHaveValue(draft.rows[24].end[0]);
+  for (const row of [1, 2, 3])
+    await expect(cell(page, row, 'end')).toHaveValue(draft.rows[row].end[0]);
+  await expect(page.locator('#copy-report')).toBeEnabled();
+  await page.locator('#open-import').click();
+  await page.locator('#import-text').fill(text.replace('Building A:', 'Building A: bad +'));
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).toBeVisible();
+  await expect(cell(page, 4, 'end', 2)).toHaveValue(draft.rows[4].end[2]);
+  await page.locator('#import-text').fill(text.replace(draft.endDate, '2026-09-18'));
+  await page.locator('#apply-import').click();
+  for (const row of [1, 2, 3]) await expect(cell(page, row, 'end')).toHaveValue('');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#search-meter').fill('Building A');
+  await cell(page, 4, 'end', 0).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('uniland-three-meter-import.png') });
 });

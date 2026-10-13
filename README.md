@@ -1,14 +1,16 @@
 # Midea Daily Energy Report
 
-**v0.9.18-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.19-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
 
+UNILAND Building A/B, hydrant, pump and power house now accept three meters and sum each converted delta. HE accepts three direct meters. Two repeated 10HP lab observations are retained under distinct labels; the second uses (2) pending equipment clarification. Trafo rows may be omitted from text import: matching-date readings are retained, otherwise they remain blank and need completion before a report can be finalized. Legacy drafts keep original readings and gain empty new slots; historical outputs stay unchanged.
+
 **Draft backup and restore** below the period controls downloads a private JSON copy of both factories, including incomplete electricity, gas, temperatures, refills, Water, notes and T1–T4. Restore requires the same account and validates the whole file (maximum 256 KB) before replacing both drafts. Confirmation and Undo protect the current workspace. Report revision links are excluded; restore creates no reports or revisions. Review inputs before finalizing. Keep backup files private. Save status distinguishes tab recovery from the last database-confirmed account save, displayed in WIB. A tab copy is lost when its tab is closed. Check notes now focus the relevant gas reading, R32 temperature, refill, Water or manual utility field.
 
-UNILAND adds separate Piping (×40, direct, direct) and New Office Building A (direct) rows, retaining Trafo 1–3. Existing drafts keep their readings; new rows start blank. Building and HE component counts remain unchanged pending clarification. There is one known 10HP lab row. Saved reports stay immutable. New worksheets sum HE and Piping under the existing HE & Piping column.
+UNILAND adds separate Piping (×40, direct, direct) and New Office Building A (direct) rows, retaining Trafo 1–3. Existing drafts keep their readings; new rows start blank. Building and HE now have three readings; both 10HP observations are retained separately. Saved reports stay immutable. New worksheets sum HE and Piping under the existing HE & Piping column.
 
 Security checks now run before release: a local secret guard supplements GitHub scanning, CI rejects high/critical dependency advisories, and weekly dependency PRs still require review and tests. Graph requests load only saved report/worksheet text, avoiding unused raw snapshots. See [security scope and remaining operational checks](docs/security.md). This remains an alpha tool, not a security certification.
 
@@ -54,11 +56,11 @@ Enter cumulative readings in a table, check consumption, and copy the official f
 4. **Save draft** syncs both factories to the account draft. The local sessionStorage backup is cleared on logout or account change; the saved account draft remains. Existing guest drafts are preserved separately and never uploaded automatically.
 5. **Save** stores incomplete entries as a draft or sends the complete current factory report to your account. The server validates and recalculates it. Historian lets you view the original saved output, choose a revision, and load readings into the editor. Saving an edited report adds a revision. A conflicting edit from another device is rejected so you can reopen the latest version.
 
-**Export Raw Table Data** below the meter table opens a copy-ready list for the current factory. Choose start or end readings (end is the default). The export uses that column’s date in DD/MM/YYYY, preserves entered decimal precision, and lists ratios without multiplying or subtracting readings. Only electricity meter rows are included, including direct MWh Trafo readings and electric meters whose equipment name mentions LPG. Daily gas, water, and other utility fields are excluded. Every selected meter must be filled or explicitly marked `-`; the other reading column is not required. UNILAND follows the current 30-row table, without inventing additional meters or equipment.
+**Export Raw Table Data** below the meter table opens a copy-ready list for the current factory. Choose start or end readings (end is the default). The export uses that column’s date in DD/MM/YYYY, preserves entered decimal precision, and lists ratios without multiplying or subtracting readings. Only electricity meter rows are included, including direct MWh Trafo readings and electric meters whose equipment name mentions LPG. Daily gas, water, and other utility fields are excluded. Every selected meter must be filled or explicitly marked `-`; the other reading column is not required. UNILAND follows the current 31-row table, without inventing additional meters or equipment.
 
 Accounts are created by an admin; there is no public sign-up or Google login. Temporary passwords must be changed at first login. Admins can create, reset, disable, and enable operator accounts. Admin status does not grant access to another account's reports. Without email, account recovery requires an admin; admin recovery uses a local maintenance command.
 
-The interface supports English (default), Simplified Chinese, and Indonesian. Equipment names, units, and copied reports retain the English factory templates. JRE has 29 equipment rows and 57 meters. UNILAND has 30 rows, and Trafo 1, 2, and 3 cumulative readings are already **MWh**. See [meter rules](docs/meter-rules.md).
+The interface supports English (default), Simplified Chinese, and Indonesian. Equipment names, units, and copied reports retain the English factory templates. JRE has 29 equipment rows and 57 meters. UNILAND has 31 rows, and Trafo 1, 2, and 3 cumulative readings are already **MWh**. See [meter rules](docs/meter-rules.md).
 
 ### Develop and deploy
 
@@ -115,9 +117,11 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+UNILAND Building A/B、消防泵、水泵和动力房接收三表读数，按各表倍率换算后求和；HE为三表直读。重复的10HP实验室读数分别保留，第二项暂以(2)区分。文本导入可省略变压器，保留同日期已有读数，否则留空并要求报告完成前补齐。旧草稿保留原读数，新槽位为空；历史输出不变。
+
 周期区下方的**草稿备份与恢复**下载两厂私密 JSON 副本，包含未完成电表读数、气体、温度、补充记录、用水、备注和 T1–T4。仅可恢复至原账户；完整验证文件（最大256 KB）后确认替换两厂草稿，支持撤销。备份不含报告修订链接，恢复不会生成报告或修订。请核对输入并私密保存文件。状态分别显示标签页副本与数据库确认的账户保存时间（WIB）；关闭标签页会丢失其副本。检查提示可跳转到对应气体、R32温度、补充、用水或手动用量输入。
 
-UNILAND 增加独立 Piping（×40、直读、直读）和 New Office Building A（直读）行，保留 Trafo 1–3。旧草稿保留读数，新行留空。Building 和 HE 的电表数量等待确认，10HP 实验室仍为一行。历史报告不变，新工作表的 HE & Piping 列汇总两项用量。
+UNILAND 增加独立 Piping（×40、直读、直读）和 New Office Building A（直读）行，保留 Trafo 1–3。旧草稿保留读数，新行留空。Building 和 HE 使用三表读数，两条10HP记录分别保留。历史报告不变，新工作表的 HE & Piping 列汇总两项用量。
 
 发布前增加安全检查：本地敏感信息检查补充 GitHub 扫描，CI 阻止存在高危或严重依赖漏洞的版本，每周依赖更新仍需审核和测试。图表只读取已保存的报告及工作表文本，不加载无用的原始快照。详见[安全检查范围与后续运维事项](docs/security.md)。本工具仍处于 alpha 阶段，不代表安全认证。
 
@@ -163,11 +167,11 @@ JRE 和 UNILAND 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) �
 4. **保存草稿**将两家工厂的数据同步到账户草稿。退出或切换账户时清除本地 sessionStorage 备份，已保存的账户草稿仍保留。旧访客草稿单独保留，不会自动上传。
 5. **保存**会将未完成的数据存为草稿，或将当前工厂的完整报告提交到账户。服务器重新验证和计算。历史报告可查看原始输出、选择修订版、载入读数。修改后保存会新增修订版；其他设备已修改时，系统拒绝覆盖并要求重新打开最新版本。
 
-表格下方的**导出原始表格数据**可复制当前工厂的读数清单。选择开始或结束读数，默认为结束列；日期使用所选列的 DD/MM/YYYY。保留输入的小数精度，比例仅作标注，不相乘或计算差值。包含电表数据及直接以 MWh 读取的变压器数据，也保留名称含 LPG 的电表；不导出日常燃气、用水等辅助数据。所选列必须全部填写，无数据时明确填 `-`，另一列无需填写。UNILAND 按当前 30 行表格导出，不虚构其他电表或设备。
+表格下方的**导出原始表格数据**可复制当前工厂的读数清单。选择开始或结束读数，默认为结束列；日期使用所选列的 DD/MM/YYYY。保留输入的小数精度，比例仅作标注，不相乘或计算差值。包含电表数据及直接以 MWh 读取的变压器数据，也保留名称含 LPG 的电表；不导出日常燃气、用水等辅助数据。所选列必须全部填写，无数据时明确填 `-`，另一列无需填写。UNILAND 按当前 31 行表格导出，不虚构其他电表或设备。
 
 管理员创建账户，没有公开注册或 Google 登录。首次登录必须修改临时密码。管理员可创建、重置、停用及启用操作员账户，但不能查看其他用户的私人报告。没有邮件恢复流程；操作员联系管理员，管理员通过本地维护命令恢复账户。
 
-界面支持 English（默认）、简体中文和 Indonesia。设备名称、单位和复制的报告保留英文模板。JRE 有 29 个设备项目、57 个电表。UNILAND 有 30 项；Trafo 1、2、3 的累计读数已经是 **MWh**。详见[计量规则](docs/meter-rules.md)。
+界面支持 English（默认）、简体中文和 Indonesia。设备名称、单位和复制的报告保留英文模板。JRE 有 29 个设备项目、57 个电表。UNILAND 有 31 项；Trafo 1、2、3 的累计读数已经是 **MWh**。详见[计量规则](docs/meter-rules.md)。
 
 ### 开发与部署
 
@@ -193,9 +197,11 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 
 ## Indonesia
 
+Building A/B, hydrant, pompa, dan power house UNILAND menerima tiga meter; setiap selisih dikalikan ratio yang sama lalu dijumlahkan. HE memakai tiga meter direct. Dua reading 10HP dipertahankan terpisah; label kedua sementara (2). Impor boleh tanpa Trafo: reading bertanggal cocok dipertahankan, lainnya kosong dan perlu dilengkapi sebelum laporan final. Draft lama mempertahankan reading asli dengan slot baru kosong; histori tetap utuh.
+
 **Backup dan restore draft** di bawah periode mengunduh JSON privat untuk kedua pabrik, termasuk listrik belum lengkap, gas, suhu, refill, Water, catatan dan T1–T4. Restore wajib memakai akun yang sama; seluruh file divalidasi (maksimal 256 KB) sebelum konfirmasi mengganti kedua draft. Undo memulihkan workspace sebelumnya. Referensi revisi laporan tidak disertakan; restore tidak membuat laporan/revisi. Periksa isian sebelum finalisasi dan simpan file secara privat. Status membedakan salinan tab dari waktu simpan akun yang dikonfirmasi database, dalam WIB. Salinan tab hilang setelah tab ditutup. Catatan pemeriksaan bisa fokus ke reading gas, suhu R32, refill, Water atau utility manual terkait.
 
-UNILAND menambah Piping terpisah (×40, direct, direct) dan New Office Building A (direct), dengan Trafo 1–3 tetap ada. Draft lama mempertahankan reading, kolom baru kosong. Jumlah meter Building dan HE belum diubah karena belum pasti. Lab 10HP tetap satu baris. Histori tetap utuh; worksheet baru menjumlahkan HE dan Piping pada kolom HE & Piping.
+UNILAND menambah Piping terpisah (×40, direct, direct) dan New Office Building A (direct), dengan Trafo 1–3 tetap ada. Draft lama mempertahankan reading, kolom baru kosong. Building dan HE memakai tiga reading, kedua catatan 10HP disimpan terpisah. Histori tetap utuh; worksheet baru menjumlahkan HE dan Piping pada kolom HE & Piping.
 
 Pemeriksaan sebelum rilis ditambah: penjagaan secret lokal melengkapi pemindaian GitHub, CI menolak dependency dengan kerentanan high/critical, dan PR dependency mingguan tetap perlu review serta tes. Grafik hanya mengambil teks laporan/worksheet tersimpan tanpa raw snapshot yang tidak digunakan. Lihat [cakupan keamanan dan pemeriksaan operasional](docs/security.md). Aplikasi tetap alpha, bukan sertifikasi keamanan.
 
@@ -241,11 +247,11 @@ Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi 
 4. **Simpan draft** menyinkronkan kedua pabrik ke draft akun. Cadangan sessionStorage dibersihkan saat logout atau berganti akun; draft yang tersimpan di akun tetap ada. Draft tamu lama disimpan terpisah dan tidak diunggah otomatis.
 5. **Simpan** menyimpan isian belum lengkap sebagai draft atau mengirim laporan lengkap pabrik yang sedang dibuka ke akun. Server memvalidasi dan menghitung ulang reading. Historian menampilkan laporan asli, pilihan revisi, dan tombol untuk memuat reading. Koreksi menghasilkan revisi baru. Perubahan bersamaan dari perangkat lain ditolak agar pengguna membuka revisi terbaru.
 
-**Ekspor Data Mentah Tabel** di bawah tabel membuka daftar siap salin untuk pabrik yang sedang dipilih. Pilih reading awal atau akhir (default akhir). Tanggal mengikuti kolom terpilih dengan format DD/MM/YYYY. Presisi desimal dipertahankan; ratio hanya ditulis, tanpa perkalian atau pengurangan. Hanya baris meter listrik yang diekspor, termasuk Trafo dalam MWh dan meter listrik bernama LPG. Isian utility harian seperti gas dan air tidak ikut. Semua meter pada kolom terpilih harus diisi atau diberi `-`; kolom satunya tidak wajib lengkap. UNILAND mengikuti 30 baris tabel saat ini, tanpa membuat rincian meter atau equipment tambahan.
+**Ekspor Data Mentah Tabel** di bawah tabel membuka daftar siap salin untuk pabrik yang sedang dipilih. Pilih reading awal atau akhir (default akhir). Tanggal mengikuti kolom terpilih dengan format DD/MM/YYYY. Presisi desimal dipertahankan; ratio hanya ditulis, tanpa perkalian atau pengurangan. Hanya baris meter listrik yang diekspor, termasuk Trafo dalam MWh dan meter listrik bernama LPG. Isian utility harian seperti gas dan air tidak ikut. Semua meter pada kolom terpilih harus diisi atau diberi `-`; kolom satunya tidak wajib lengkap. UNILAND mengikuti 31 baris tabel saat ini, tanpa membuat rincian meter atau equipment tambahan.
 
 Admin membuat akun, tanpa registrasi publik atau login Google. Password sementara wajib diganti saat login pertama. Admin bisa membuat, mereset, menonaktifkan, dan mengaktifkan akun operator. Admin tidak mendapat akses ke laporan pribadi akun lain. Pemulihan operator melalui admin; pemulihan admin menggunakan perintah pemeliharaan lokal.
 
-Antarmuka mendukung English (default), 简体中文, dan Indonesia. Nama equipment, satuan, dan laporan yang disalin tetap mengikuti template English. JRE memiliki 29 equipment dan 57 meter. UNILAND memiliki 30 equipment; reading Trafo 1, 2, dan 3 sudah **MWh**. Lihat [aturan meter](docs/meter-rules.md).
+Antarmuka mendukung English (default), 简体中文, dan Indonesia. Nama equipment, satuan, dan laporan yang disalin tetap mengikuti template English. JRE memiliki 29 equipment dan 57 meter. UNILAND memiliki 31 equipment; reading Trafo 1, 2, dan 3 sudah **MWh**. Lihat [aturan meter](docs/meter-rules.md).
 
 ### Pengembangan dan deployment
 

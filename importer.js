@@ -14,6 +14,7 @@ export function parseReading(text, plantKey) {
   const dates = [];
   let active = null;
   const entries = [];
+  let labOccurrence = 0;
   for (const raw of String(text).split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) continue;
@@ -29,7 +30,15 @@ export function parseReading(text, plantKey) {
       continue;
     }
     const match = line.match(/^(?:\d+[.)]\s*)?([^:]+):\s*(.*)$/);
-    const ri = match ? lookup.get(normalizeName(match[1])) : undefined;
+    let ri = match ? lookup.get(normalizeName(match[1])) : undefined;
+    if (
+      plantKey === 'UNILAND' &&
+      match &&
+      normalizeName(match[1]) === normalizeName('10HP Enthalpy Difference Lab')
+    ) {
+      labOccurrence++;
+      if (labOccurrence === 2) ri = lookup.get(normalizeName('10HP Enthalpy Difference Lab (2)'));
+    }
     if (ri !== undefined) {
       active = { ri, expr: match[2] };
       entries.push(active);
@@ -109,7 +118,7 @@ export function parseReading(text, plantKey) {
     });
   }
   schema.rows.forEach((row, ri) => {
-    if (!seen.has(ri))
+    if (!seen.has(ri) && !row.optionalImport)
       issues.push({
         level: 'ERROR',
         code: 'IMPORT_MISSING',
@@ -119,6 +128,8 @@ export function parseReading(text, plantKey) {
   const success = !issues.some((i) => i.level === 'ERROR');
   return {
     values: legacy && success ? moveLegacyValues(values) : values,
+    suppliedRows: [...seen],
+    omittedRows: schema.rows.map((_, i) => i).filter((i) => !seen.has(i)),
     date: dates[0],
     issues: legacy && success ? moveLegacyIssues(issues) : issues,
     success,

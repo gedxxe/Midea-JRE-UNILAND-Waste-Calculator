@@ -77,7 +77,8 @@ const importEditor = createImportEditor({
       periodOrigin || current(),
     );
     parsed.values.forEach((values, ri) => {
-      current().rows[ri][side] = values;
+      if (!parsed.suppliedRows || parsed.suppliedRows.includes(ri))
+        current().rows[ri][side] = values;
     });
     current().importIssues = [...(current().importIssues || []), ...parsed.issues];
     current().isExample = false;

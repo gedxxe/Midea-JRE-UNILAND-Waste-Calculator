@@ -1,7 +1,7 @@
 import { PLANT_SCHEMAS } from './schema.js';
 
 export const JRE_METER_LAYOUT = 2;
-export const UNILAND_METER_LAYOUT = 2;
+export const UNILAND_METER_LAYOUT = 3;
 export const LEGACY_JRE_FACTORS = { 3: [1, 90, 90, 40, 40], 15: [40], 25: [40, 1, 1] };
 
 export function moveLegacyValues(values) {
@@ -32,24 +32,54 @@ export function moveLegacyIssues(issues) {
 export function migrateMeterLayout(input) {
   if (input?.plantKey === 'UNILAND') {
     if (input.meterLayout === UNILAND_METER_LAYOUT) return input;
-    if (input.meterLayout !== undefined && input.meterLayout !== 1)
+    if (input.meterLayout !== undefined && ![1, 2].includes(input.meterLayout))
       throw new Error('Unknown meter layout.');
+    const version = input.meterLayout === 2 ? 2 : 1;
+    const oldCount = version === 2 ? 30 : 28;
+    const oldIndex = (row) =>
+      version === 2
+        ? row.previousNo
+          ? Number(row.previousNo) - 1
+          : -1
+        : row.legacyIndex < 28
+          ? row.legacyIndex
+          : -1;
+    const oldFactors = (row) =>
+      version === 1 || [4, 5, 6, 7, 8, 11].includes(row.legacyIndex)
+        ? [row.factors[0]]
+        : row.factors;
     if (
-      input.rows?.length !== 28 ||
-      input.rows.some((row) =>
-        ['start', 'end'].some((side) => !Array.isArray(row?.[side]) || row[side].length !== 1),
-      )
+      input.rows?.length !== oldCount ||
+      PLANT_SCHEMAS.UNILAND.rows.some((row) => {
+        const index = oldIndex(row);
+        return (
+          index >= 0 &&
+          ['start', 'end'].some(
+            (side) =>
+              !Array.isArray(input.rows[index]?.[side]) ||
+              input.rows[index][side].length !== oldFactors(row).length,
+          )
+        );
+      })
     )
       throw new Error('Invalid legacy meter layout.');
     const next = structuredClone(input);
-    next.rows = PLANT_SCHEMAS.UNILAND.rows.map((row) =>
-      row.legacyIndex < 28
-        ? structuredClone(input.rows[row.legacyIndex])
-        : { start: row.factors.map(() => ''), end: row.factors.map(() => ''), inactive: false },
-    );
+    next.rows = PLANT_SCHEMAS.UNILAND.rows.map((row) => {
+      const index = oldIndex(row);
+      if (index < 0)
+        return {
+          start: row.factors.map(() => ''),
+          end: row.factors.map(() => ''),
+          inactive: false,
+        };
+      const values = structuredClone(input.rows[index]);
+      for (const side of ['start', 'end'])
+        while (values[side].length < row.factors.length) values[side].push('');
+      return values;
+    });
     next.importIssues = (input.importIssues || []).map((issue) => ({
       ...issue,
-      rowIndex: PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.legacyIndex === issue.rowIndex),
+      rowIndex: PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => oldIndex(row) === issue.rowIndex),
     }));
     next.meterLayout = UNILAND_METER_LAYOUT;
     return next;

@@ -53,7 +53,7 @@ const worksheetGroups = {
 // Report row indices for worksheet columns; null means a derived worksheet value.
 export const WORKSHEET_ROWS = {
   JRE: [1, 2, 3, 4, 5, null, 15, 16, 6, 7, 8, 19, 20, 21, 22, 25, 24, 17],
-  UNILAND: [null, null, 9, 10, null, 16, 17, 20, 25, 21, 14, 23, 24, 26, 27, 28],
+  UNILAND: [null, null, 9, 10, null, 16, 17, 20, 26, 21, 14, 23, 25, 27, 28, 29],
 };
 export const GRAPH_METRICS = Object.fromEntries(
   ['JRE', 'UNILAND'].map((plant) => {
