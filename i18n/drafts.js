@@ -1,4 +1,55 @@
 export const draftMessages = {
+  draftTabAt: ['Tab copy: {time}', '标签页副本：{time}', 'Salinan tab: {time}'],
+  draftTabNone: ['No tab copy yet', '尚无标签页副本', 'Belum ada salinan tab'],
+  draftTabFailed: [
+    'Tab copy could not be updated',
+    '标签页副本更新失败',
+    'Salinan tab gagal diperbarui',
+  ],
+  draftAccountAt: [
+    'Last account save: {time}',
+    '上次账户保存：{time}',
+    'Terakhir tersimpan di akun: {time}',
+  ],
+  draftAccountNone: [
+    'No confirmed account save time',
+    '尚无已确认的账户保存时间',
+    'Belum ada waktu simpan akun yang terkonfirmasi',
+  ],
+  backupTitle: ['Draft backup and restore', '草稿备份与恢复', 'Backup dan restore draft'],
+  backupHint: [
+    'Includes both factories, incomplete readings, gas, refills and Water. Keep the file private. Restore uses the same account and replaces both drafts; saved reports stay unchanged.',
+    '包含两厂未完成读数、气体、补充记录及用水。请私密保存文件。仅可恢复至原账户，替换两厂草稿，不改变已保存报告。',
+    'Memuat kedua pabrik, reading belum lengkap, gas, refill, dan Water. Simpan file secara privat. Restore ke akun yang sama mengganti kedua draft; laporan tersimpan tetap utuh.',
+  ],
+  backupDownload: ['Download draft backup', '下载草稿备份', 'Unduh backup draft'],
+  backupRestore: ['Restore draft backup', '恢复草稿备份', 'Restore backup draft'],
+  backupDownloaded: ['Draft backup downloaded.', '草稿备份已下载。', 'Backup draft diunduh.'],
+  backupInvalid: [
+    'Invalid or unsupported draft backup (maximum 256 KB). Entries were not changed.',
+    '备份无效或不支持（最大256 KB），输入未改变。',
+    'Backup draft tidak valid atau tidak didukung (maksimal 256 KB). Isian tetap utuh.',
+  ],
+  backupAccount: [
+    'This backup belongs to a different account.',
+    '此备份属于其他账户。',
+    'Backup ini milik akun lain.',
+  ],
+  backupChanged: [
+    'Entries changed while reading the file. Select the backup again.',
+    '读取文件时输入已改变，请重新选择备份。',
+    'Isian berubah saat file dibaca. Pilih backup kembali.',
+  ],
+  backupConfirm: [
+    'Replace both JRE and UNILAND drafts with this backup? Download your current backup first if needed. Undo can restore the previous entries. Saved reports will not change.',
+    '用此备份替换JRE和UNILAND草稿？如有需要请先下载当前备份。可撤销以恢复原输入，已保存报告不会改变。',
+    'Ganti draft JRE dan UNILAND dengan backup ini? Unduh backup saat ini dahulu bila diperlukan. Undo bisa mengembalikan isian sebelumnya. Laporan tersimpan tidak berubah.',
+  ],
+  backupRestored: [
+    'Backup restored as a draft. Review entries before saving a report.',
+    '备份已恢复为草稿，保存报告前请核对。',
+    'Backup dimuat sebagai draft. Periksa isian sebelum menyimpan laporan.',
+  ],
   draftIdle: ['Draft autosave is ready.', '草稿自动保存已就绪。', 'Autosave draft siap.'],
   draftLoading: ['Checking saved draft…', '正在检查已保存草稿…', 'Memeriksa draft tersimpan…'],
   draftPending: [

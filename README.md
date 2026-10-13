@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.9.17-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.9.18-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+**Draft backup and restore** below the period controls downloads a private JSON copy of both factories, including incomplete electricity, gas, temperatures, refills, Water, notes and T1–T4. Restore requires the same account and validates the whole file (maximum 256 KB) before replacing both drafts. Confirmation and Undo protect the current workspace. Report revision links are excluded; restore creates no reports or revisions. Review inputs before finalizing. Keep backup files private. Save status distinguishes tab recovery from the last database-confirmed account save, displayed in WIB. A tab copy is lost when its tab is closed. Check notes now focus the relevant gas reading, R32 temperature, refill, Water or manual utility field.
 
 UNILAND adds separate Piping (×40, direct, direct) and New Office Building A (direct) rows, retaining Trafo 1–3. Existing drafts keep their readings; new rows start blank. Building and HE component counts remain unchanged pending clarification. There is one known 10HP lab row. Saved reports stay immutable. New worksheets sum HE and Piping under the existing HE & Piping column.
 
@@ -113,6 +115,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+周期区下方的**草稿备份与恢复**下载两厂私密 JSON 副本，包含未完成电表读数、气体、温度、补充记录、用水、备注和 T1–T4。仅可恢复至原账户；完整验证文件（最大256 KB）后确认替换两厂草稿，支持撤销。备份不含报告修订链接，恢复不会生成报告或修订。请核对输入并私密保存文件。状态分别显示标签页副本与数据库确认的账户保存时间（WIB）；关闭标签页会丢失其副本。检查提示可跳转到对应气体、R32温度、补充、用水或手动用量输入。
+
 UNILAND 增加独立 Piping（×40、直读、直读）和 New Office Building A（直读）行，保留 Trafo 1–3。旧草稿保留读数，新行留空。Building 和 HE 的电表数量等待确认，10HP 实验室仍为一行。历史报告不变，新工作表的 HE & Piping 列汇总两项用量。
 
 发布前增加安全检查：本地敏感信息检查补充 GitHub 扫描，CI 阻止存在高危或严重依赖漏洞的版本，每周依赖更新仍需审核和测试。图表只读取已保存的报告及工作表文本，不加载无用的原始快照。详见[安全检查范围与后续运维事项](docs/security.md)。本工具仍处于 alpha 阶段，不代表安全认证。
@@ -188,6 +192,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+**Backup dan restore draft** di bawah periode mengunduh JSON privat untuk kedua pabrik, termasuk listrik belum lengkap, gas, suhu, refill, Water, catatan dan T1–T4. Restore wajib memakai akun yang sama; seluruh file divalidasi (maksimal 256 KB) sebelum konfirmasi mengganti kedua draft. Undo memulihkan workspace sebelumnya. Referensi revisi laporan tidak disertakan; restore tidak membuat laporan/revisi. Periksa isian sebelum finalisasi dan simpan file secara privat. Status membedakan salinan tab dari waktu simpan akun yang dikonfirmasi database, dalam WIB. Salinan tab hilang setelah tab ditutup. Catatan pemeriksaan bisa fokus ke reading gas, suhu R32, refill, Water atau utility manual terkait.
 
 UNILAND menambah Piping terpisah (×40, direct, direct) dan New Office Building A (direct), dengan Trafo 1–3 tetap ada. Draft lama mempertahankan reading, kolom baru kosong. Jumlah meter Building dan HE belum diubah karena belum pasti. Lab 10HP tetap satu baris. Histori tetap utuh; worksheet baru menjumlahkan HE dan Piping pada kolom HE & Piping.
 

@@ -1796,3 +1796,15 @@ dialog textarea {
   font-size: 16px;
   box-shadow: 0 4px 18px #0002;
 }
+
+.draft-backup-tools {
+  margin: 12px 0;
+}
+.draft-backup-tools summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#draft-storage-status {
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+}

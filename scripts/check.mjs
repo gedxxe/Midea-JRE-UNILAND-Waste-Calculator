@@ -65,6 +65,7 @@ for (const file of PUBLIC_FILES) {
   }
 }
 // Includes separate UNILAND mass tables (~17 kB); identical R32 data is shared. No browser dependencies.
-assert.ok(size < 380000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.9.18 adds owner-validated recovery files and translated draft status (~12 kB). No browser dependencies.
+assert.ok(size < 385000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

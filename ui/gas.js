@@ -179,5 +179,11 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
             : '';
     }
   }
-  return { rebuild, update };
+  function focusIssue(target) {
+    const point = views.find((view) => view.gas.id === target.gas)?.points[target.point];
+    const input = point?.inputs[target.field === 'temperature' ? 1 : 0];
+    input?.scrollIntoView({ block: 'center' });
+    input?.focus();
+  }
+  return { rebuild, update, focusIssue };
 }

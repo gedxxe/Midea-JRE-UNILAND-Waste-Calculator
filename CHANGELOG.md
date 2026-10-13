@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.9.18-alpha - 2026-10-13
+
+- Distinguish tab recovery from account saves and show database-confirmed save times; correct autosave privacy wording.
+- Add private account-bound draft backup and validated restore for both plants, including incomplete entries, with workspace Undo and no report revision links.
+- Let gas, R32 temperature, refill, Water and manual-utility check notes focus the related input.
+
 ## v0.9.17-alpha - 2026-10-09
 
 - Add cumulative Water readings to UNILAND and move remaining manual utilities into gas, removing Daily utilities. Preserve older consumption-only values.

@@ -1,3 +1,4 @@
+import { createBackupControls } from './ui/draft-backup.js';
 import { createDraftAutosave } from './ui/drafts.js';
 import { createGraphs } from './ui/graphs.js';
 import { createPeriodPicker } from './ui/period.js';
@@ -92,6 +93,21 @@ const gasPanel = createGasPanel({
 });
 const waterPanel = createWaterPanel({ current, changed, rememberUndo });
 const additionalPanel = createAdditionalReadingsPanel({ current, changed });
+const backupControls = createBackupControls({
+  read: () => ({ version: 4, drafts }),
+  apply(workspace) {
+    undo = { plant, workspace: structuredClone({ drafts, reportLinks: accounts.getLinks() }) };
+    drafts = workspace.drafts;
+    accounts.setLinks({});
+    rawExport.reset();
+    importEditor.reset();
+    $('import-dialog').close();
+    $('undo-change').hidden = false;
+    mountPlant();
+    changed();
+  },
+  toast,
+});
 let graphs, autosave;
 let accountUser = null;
 let firstIdentity = true;
@@ -99,6 +115,7 @@ const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORA
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
   graphs?.reset(user);
+  backupControls.reset(user);
   rawExport.reset();
   try {
     if (accountUser) {
@@ -302,13 +319,19 @@ function renderResults() {
     $('validation-list').replaceChildren(
       ...report.issues.map((i) => {
         const li = node('li');
-        if (i.rowIndex !== null && i.rowIndex !== undefined) {
+        if ((i.rowIndex !== null && i.rowIndex !== undefined) || i.target) {
           const button = node('button', i.message);
           button.addEventListener('click', () => {
             $('search-meter').value = '';
             $('only-incomplete').checked = false;
             filterTable();
-            table.focusIssue(i);
+            if (i.target?.kind === 'gas') gasPanel.focusIssue(i.target);
+            else if (i.target?.kind === 'water') waterPanel.focusIssue();
+            else if (i.target?.kind === 'utility') {
+              const input = document.querySelector('[data-utility="' + i.target.index + '"]');
+              input?.scrollIntoView({ block: 'center' });
+              input?.focus();
+            } else table.focusIssue(i);
           });
           li.append(button);
         } else li.textContent = i.message;
@@ -540,7 +563,13 @@ $('clear-plant').addEventListener('click', () => {
 $('undo-change').addEventListener('click', () => {
   if (!undo) return;
   plant = undo.plant;
-  drafts[plant] = undo.draft;
+  if (undo.workspace) {
+    drafts = undo.workspace.drafts;
+    accounts.setLinks(undo.workspace.reportLinks);
+    rawExport.reset();
+    importEditor.reset();
+    $('import-dialog').close();
+  } else drafts[plant] = undo.draft;
   undo = null;
   $('undo-change').hidden = true;
   mountPlant();
