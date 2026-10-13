@@ -386,9 +386,9 @@ export const catalog = {
     'Reading berhasil diimpor ke tabel.',
   ],
   importedOmitted: [
-    'Readings imported. Trafo rows not provided keep matching-date readings or remain blank; complete them before saving a report.',
-    '读数已导入。未提供的变压器保留同日期读数或留空，保存报告前请补齐。',
-    'Reading diimpor. Trafo yang tidak dicantumkan mempertahankan reading pada tanggal yang cocok atau tetap kosong; lengkapi sebelum menyimpan laporan.',
+    'Imported. Complete missing Trafo readings before saving a report.',
+    '导入完成。保存报告前请补齐缺失的变压器读数。',
+    'Impor selesai. Lengkapi reading Trafo yang masih kosong sebelum menyimpan laporan.',
   ],
   importedWarnings: [
     'Readings imported. Review the ratio notes.',
