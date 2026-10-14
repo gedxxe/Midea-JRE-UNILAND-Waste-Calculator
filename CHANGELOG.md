@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.10.1-alpha - 2026-10-15
+
+- Add production-only Vercel Web Analytics for aggregate visits without a browser package or database changes.
+- Filter page views to the root URL, omit query strings and fragments, reject custom events and keep preview/local runs out of statistics.
+- Keep reporting usable when the tracker is blocked and provide build and HTML switches to disable it.
+
 ## v0.10.0-alpha - 2026-10-14
 
 - Add a separate morning-to-after-work electricity workflow for both factories, defaulting to 08:00–17:00 with editable reading times.

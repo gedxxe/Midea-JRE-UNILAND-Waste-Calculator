@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.10.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.10.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -73,8 +73,11 @@ New user instructions override older choices here. Update this decision record, 
 
 - Confirmed 2026-10-14: one-week JRE and UNILAND after-work electricity trial. Calculate morning-to-evening usage only, default 08:00–17:00 WIB with editable times on one date. Retain the original daily workflow. Keep both plants' working-hours drafts in a separate workingHours collection within the same account workspace; daily gas and Water remain daily. Never carry an evening reading into the following morning. Reading identity includes date and time. Explicitly copy a matching daily 08:00 column only on operator action. Saved reports, historian filters and graphs distinguish daily versus workingHours; no overnight totals or inferred readings. Release milestone v0.10.0-alpha remains alpha, not beta. Do not auto-expire or delete trial data after a week.
 
+- Requested 2026-10-14: add Vercel Web Analytics and explain its workload. Implementation collects aggregate production page visits only, without sending account or operational data. No custom events, identity attribution, database writes or framework/package migration. Local/preview builds omit the tracker; keep CSP, failure isolation and reversible disable switches. Read docs/analytics.md before changing collection. Dashboard ingestion requires verification after production deployment.
+
 ## Architecture
 
+- analytics.js validates intake paths and filters root pageviews; ui/analytics.js is an isolated asynchronous loader with no access to application state or storage. scripts/analytics-config.mjs handles production-only build configuration. Do not export arbitrary observability configuration or enable preview tracking.
 - logo.css owns login-only reconstruction and layout; ui/logo.js controls replay, manual pause and document-visibility pause without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
 - meter-layout.js maps legacy JRE and UNILAND editable drafts into current layouts exactly once; importer.js also supports complete legacy JRE text imports. New reports require the current meterLayout marker so stale clients must reload before finalizing reports. Stored outputs stay immutable.
 - water.js owns pure cumulative water validation and subtraction; ui/water.js owns entry for both plants and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.

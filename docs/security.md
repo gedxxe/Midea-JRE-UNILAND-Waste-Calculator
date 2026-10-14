@@ -10,6 +10,10 @@ This is an internet-accessible reporting application used internally. Public sou
 - API tests use synthetic accounts and development/test PostgreSQL. They exercise ownership, session revocation, forged account headers, cross-origin writes, invalid request bodies, SQL-shaped inputs, limits and redacted errors. Additional cases persist hostile note text, discard prototype/owner fields, reject duplicate cookies, and enforce login limits across separate handler instances and canonical username variants. Browser tests verify that stored notes, historian text and graph titles remain inert, including exported SVG, and reject encoded static-path traversal. Never run these tests against production.
 - Keep the public-file allowlist and asset-size budget. Environment files, database code and tests must not enter the static build.
 
+## Web Analytics
+
+Production page views use a separate same-origin Vercel tracker. The filter removes URL query strings and fragments, rejects other paths/custom events and never reads account or operational state. Vercel still processes visit metadata. Keep the existing CSP; do not add remote script origins or identity attribution. Analytics failures must not block reporting. See [collection and disable controls](analytics.md).
+
 ## Current boundaries
 
 Passwords use salted Argon2id. Session cookies are HttpOnly, SameSite=Strict and Secure/host-only over HTTPS. Origin checks protect JSON mutations; SQL values are parameterized; report ownership comes from the server session. Login throttling is shared through PostgreSQL, and authenticated mutations have per-user limits. Responses containing account data use private, no-store. API logs contain fixed metadata rather than raw requests or database errors.

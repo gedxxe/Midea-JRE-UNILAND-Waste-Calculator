@@ -3,6 +3,8 @@ export const PUBLIC_FILES = [
   'style.css',
   'logo.css',
   'ui/logo.js',
+  'analytics.js',
+  'ui/analytics.js',
   'app.js',
   'schema.js',
   'meter-layout.js',

@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.10.0-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.10.1-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+**Web Analytics:** production counts aggregate visits through an asynchronous Vercel script. Local and preview builds do not collect visits. Only the root page URL passes the filter; query strings, fragments and custom events are excluded. Account and reading data are not passed to analytics. The vendor still processes normal visit metadata. This adds browser/network work, with no new Neon queries or application API calls. See [setup, privacy, limits and disable switches](docs/analytics.md).
 
 **Working-hours electricity trial:** choose Reading mode → Working hours for JRE or UNILAND. Enter one work date and actual morning/after-work times (defaults 08:00 and 17:00 WIB). Consumption is evening minus morning with the existing ratios; no overnight estimate. Gas and Water remain in Daily mode. Daily and work drafts, reports, historian filters and graphs are separate. Use matching 08:00 daily readings copies only the same-date morning column after confirmation if filled. Next day starts both work columns empty. Time changes retain only matching observations; use Undo for corrections. Raw exports/imports include Reading time: HH:MM WIB; fill the time placeholder in blank work templates.
 
@@ -121,6 +123,8 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+**访问统计：**正式环境通过异步 Vercel 脚本统计访问，本地和预览环境不采集。仅允许根页面 URL，移除查询参数、片段及自定义事件，不向统计服务传递账户或读数。服务商仍处理常规访问元数据。增加少量浏览器与网络开销，不增加 Neon 查询或应用 API 调用。详见[设置、隐私、限额及关闭方法](docs/analytics.md)。
+
 **工作时段用电试用：** JRE 与 UNILAND 均可选择记录模式 → 工作时段。填写一个工作日期及实际早晨、下班抄表时间，默认 08:00 与 17:00 WIB。按现有倍率计算晚间减早晨，不推算夜间。燃气和水仍使用每日模式。两种模式的草稿、报告、历史与图表分开。使用匹配的每日 08:00 读数需操作员主动复制；已有早晨读数时先确认。下一工作日两列均清空。原始导出及导入带 Reading time: HH:MM WIB。
 
 JSON 备份包含两种模式及两个工厂；旧备份保留当前试用草稿。合并前需对开发和生产数据库显式执行迁移 004，构建不执行迁移。一周后数据不自动删除。代码回退保留报告并阻止旧代码丢弃试用草稿；旧界面无法管理此试用。回退前保存完整备份。详见[试用及发布步骤](docs/working-hours.md)。
@@ -204,6 +208,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+**Web Analytics:** kunjungan production dicatat oleh script Vercel yang dimuat secara asynchronous. Local dan preview tidak mencatat kunjungan. Filter hanya mengizinkan URL halaman utama tanpa query, hash atau custom event. Data akun dan reading tidak dikirim ke analytics; Vercel tetap memproses metadata kunjungan biasa. Ada tambahan kerja browser dan request jaringan, tanpa query Neon atau pemanggilan API aplikasi tambahan. Lihat [pengaturan, privasi, batas penggunaan dan cara mematikan](docs/analytics.md).
 
 **Uji coba listrik jam kerja:** pilih Reading mode → Working hours untuk JRE atau UNILAND. Isi satu tanggal kerja dan waktu reading pagi/sore yang sebenarnya, default 08.00 dan 17.00 WIB. Konsumsi dihitung dari sore dikurangi pagi dengan ratio yang sama; tidak menebak pemakaian malam. Gas dan Water tetap di mode Daily. Draft, laporan, historian, dan grafik kedua mode dipisahkan. Tombol reading harian 08.00 hanya menyalin kolom pada tanggal yang cocok, dengan konfirmasi jika pagi sudah terisi. Next day mengosongkan kedua kolom jam kerja. Ekspor/impor raw menyertakan Reading time: HH:MM WIB.
 
