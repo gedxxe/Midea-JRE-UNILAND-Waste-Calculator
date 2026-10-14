@@ -24,7 +24,7 @@ export function draftsHandler(database = getPool, env = process.env) {
       return send(res, 200, row || { workspace: null, version: 0 });
     }
     await limit(db, 'drafts:' + user.id, 180, env);
-    const body = await readBody(req);
+    const body = await readBody(req, 256 * 1024);
     if (
       !Number.isSafeInteger(body.baseVersion) ||
       body.baseVersion < 0 ||
@@ -49,6 +49,8 @@ export function draftsHandler(database = getPool, env = process.env) {
           [user.id, workspace === null ? null : JSON.stringify(workspace)],
         )
       ).rows[0];
+      if (workspace && old?.workspace?.workingHours && !workspace.workingHours)
+        fail(409, 'DRAFT_FORMAT_CHANGED');
       if (old?.unchanged)
         return { version: old.version, unchanged: true, updated_at: old.updated_at };
       if ((old?.version || 0) !== body.baseVersion) fail(409, 'DRAFT_CONFLICT');

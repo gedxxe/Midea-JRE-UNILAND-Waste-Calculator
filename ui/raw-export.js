@@ -1,3 +1,4 @@
+import { observationLabel } from '../reading-period.js';
 import { exportRawReading } from '../raw-export.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { t } from '../i18n/index.js';
@@ -8,6 +9,12 @@ export function createRawExport({ current, toast }) {
   function render() {
     if (!$('raw-export-dialog').open) return;
     const draft = current();
+    for (const option of $('raw-export-side').options)
+      option.textContent =
+        t(option.value === 'start' ? 'startReading' : 'endReading') +
+        ' (' +
+        observationLabel(draft, option.value) +
+        ')';
     const result = exportRawReading(draft, $('raw-export-side').value);
     $('raw-export-preview').value = result.text;
     $('copy-raw-export').disabled = !result.text;
@@ -16,14 +23,16 @@ export function createRawExport({ current, toast }) {
     const issue = result.issues[0];
     $('raw-export-status').textContent = !issue
       ? ''
-      : issue.code === 'DATE'
-        ? t('rawDateRequired')
-        : issue.code === 'SHAPE'
-          ? t('rawLayoutInvalid')
-          : t(issue.code === 'EMPTY' ? 'rawEmpty' : 'rawInvalid', {
-              equipment: PLANT_SCHEMAS[draft.plantKey].rows[issue.rowIndex].name,
-              meter: issue.meterIndex + 1,
-            });
+      : issue.code === 'TIME'
+        ? t('workTimeRequired')
+        : issue.code === 'DATE'
+          ? t('rawDateRequired')
+          : issue.code === 'SHAPE'
+            ? t('rawLayoutInvalid')
+            : t(issue.code === 'EMPTY' ? 'rawEmpty' : 'rawInvalid', {
+                equipment: PLANT_SCHEMAS[draft.plantKey].rows[issue.rowIndex].name,
+                meter: issue.meterIndex + 1,
+              });
   }
   function reset() {
     generation++;

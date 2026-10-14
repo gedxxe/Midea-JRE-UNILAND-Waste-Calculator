@@ -156,8 +156,14 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
         return !dirty;
       } catch (error) {
         if (identity !== epoch) return false;
-        conflict = error.message === 'DRAFT_CONFLICT';
-        status(conflict ? 'draftConflict' : 'draftOffline');
+        conflict = ['DRAFT_CONFLICT', 'DRAFT_FORMAT_CHANGED'].includes(error.message);
+        status(
+          error.message === 'DRAFT_FORMAT_CHANGED'
+            ? 'draftFormatChanged'
+            : conflict
+              ? 'draftConflict'
+              : 'draftOffline',
+        );
         return false;
       }
     };

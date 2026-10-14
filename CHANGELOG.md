@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.10.0-alpha - 2026-10-14
+
+- Add a separate morning-to-after-work electricity workflow for both factories, defaulting to 08:00–17:00 with editable reading times.
+- Preserve independent daily and working-hours drafts, report revisions and graphs; time-aware raw import/export, backup and Undo retain observations without relabelling them.
+- Keep daily gas, Water and historical outputs unchanged; working-hours Next day starts empty instead of carrying evening readings into the next morning.
+- Add an explicit, backward-compatible database migration for report kinds. Remain alpha during the one-week trial.
+
 ## v0.9.19-alpha - 2026-10-13
 
 - Accept UNILAND three-meter Building, hydrant, pump, power house and Heat Exchanger readings; apply each configured factor before summing.

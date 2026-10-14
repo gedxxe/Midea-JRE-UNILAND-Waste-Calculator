@@ -48,7 +48,7 @@ export function createBackupControls({ read, apply, toast }) {
         toast(t('backupChanged'));
         return;
       }
-      if (!confirm(t('backupConfirm'))) return;
+      if (!confirm(t(workspace.workingHours ? 'backupConfirm' : 'backupLegacyConfirm'))) return;
       apply(workspace);
       toast(t('backupRestored'));
     } catch (error) {

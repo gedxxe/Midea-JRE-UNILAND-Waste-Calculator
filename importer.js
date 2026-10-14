@@ -1,3 +1,4 @@
+import { validTime } from './reading-period.js';
 import { PLANT_SCHEMAS } from './schema.js';
 import { normalizeName, decimalText, validDate } from './numbers.js';
 import { LEGACY_JRE_FACTORS, moveLegacyValues, moveLegacyIssues } from './meter-layout.js';
@@ -12,12 +13,25 @@ export function parseReading(text, plantKey) {
   const issues = [];
   const seen = new Set();
   const dates = [];
+  const times = [];
   let active = null;
   const entries = [];
   let labOccurrence = 0;
   for (const raw of String(text).split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) continue;
+    if (/^Reading time:/i.test(line)) {
+      const time = /^Reading time:\s*(\d{2}:\d{2})\s+WIB$/i.exec(line)?.[1];
+      times.push(time);
+      if (!validTime(time))
+        issues.push({
+          level: 'ERROR',
+          code: 'IMPORT_TIME',
+          message: 'Use Reading time: HH:MM WIB with a valid time.',
+        });
+      active = null;
+      continue;
+    }
     const dateMatch = line.match(
       /^(?:(\d{1,2})\/(\d{1,2})\/(20\d{2})|(20\d{2})-(\d{2})-(\d{2}))\s*:?$/,
     );
@@ -56,6 +70,8 @@ export function parseReading(text, plantKey) {
       code: 'IMPORT_DATE',
       message: 'Paste one reading with one valid date line, for example 16/09/2026.',
     });
+  if (times.length > 1)
+    issues.push({ level: 'ERROR', code: 'IMPORT_TIME', message: 'Paste only one reading time.' });
   const legacy =
     plantKey === 'JRE' &&
     Object.entries(LEGACY_JRE_FACTORS).every(([ri, factors]) => {
@@ -131,6 +147,7 @@ export function parseReading(text, plantKey) {
     suppliedRows: [...seen],
     omittedRows: schema.rows.map((_, i) => i).filter((i) => !seen.has(i)),
     date: dates[0],
+    time: times[0],
     issues: legacy && success ? moveLegacyIssues(issues) : issues,
     success,
   };

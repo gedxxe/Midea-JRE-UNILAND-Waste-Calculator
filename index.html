@@ -205,7 +205,7 @@
       <div class="page-heading">
         <div>
           <p class="eyebrow">JRE / UNILAND</p>
-          <h1>Daily energy report</h1>
+          <h1 id="page-title">Daily energy report</h1>
           <p id="entry-intro" class="intro" hidden>
             <span data-i18n="intro"
               >Enter meter readings. Check the results. Copy the daily report.</span
@@ -337,7 +337,23 @@
             ><span data-i18n="automatic">Cumulative readings · Calculated automatically</span></span
           >
         </div>
-        <section class="period-card" aria-label="Reading period" data-i18n-aria-label="period">
+        <div class="reading-mode-bar">
+          <label
+            ><span data-i18n="readingMode">Reading mode</span
+            ><select id="reading-mode">
+              <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+              <option value="workingHours" data-i18n="workingMode">
+                Working hours · morning to after work
+              </option>
+            </select></label
+          >
+        </div>
+        <section
+          class="period-card"
+          id="daily-period"
+          aria-label="Reading period"
+          data-i18n-aria-label="period"
+        >
           <div class="period-label">
             <span class="step-number">01</span>
             <div>
@@ -363,8 +379,34 @@
             </button>
           </div>
         </section>
+        <section
+          id="work-period"
+          class="card work-period"
+          aria-labelledby="work-period-title"
+          hidden
+        >
+          <h2 id="work-period-title" data-i18n="workTitle">Working-hours electricity</h2>
+          <p data-i18n="workHint"></p>
+          <div class="graph-toolbar">
+            <label
+              ><span data-i18n="workDate">Work date</span
+              ><input id="work-date" type="date" min="2000-01-01" max="2099-12-31"
+            /></label>
+            <label
+              ><span data-i18n="workStart">Morning reading time</span
+              ><input id="work-start-time" type="time" step="60"
+            /></label>
+            <label
+              ><span data-i18n="workEnd">After-work reading time</span
+              ><input id="work-end-time" type="time" step="60"
+            /></label>
+            <button id="work-copy-morning" class="button secondary" data-i18n="workMorning">
+              Use matching 08:00 daily reading
+            </button>
+          </div>
+        </section>
         <p class="notice" id="period-note">The report uses the start date.</p>
-        <details class="combined-period">
+        <details class="combined-period" id="combined-period">
           <summary data-i18n="combinedPeriod">Weekend / combined period</summary>
           <p data-i18n="combinedHint">
             Choose the consumption dates covered by one reading. The final meter reading is at 08:00
@@ -467,11 +509,11 @@
                       <th scope="col">Equipment</th>
                       <th scope="col"><span data-i18n="ratio">Meter / ratio</span></th>
                       <th scope="col">
-                        <span data-i18n="startReading">Start reading</span
+                        <span id="start-reading-label" data-i18n="startReading">Start reading</span
                         ><small id="start-reading-date"></small>
                       </th>
                       <th scope="col">
-                        <span data-i18n="endReading">End reading</span
+                        <span id="end-reading-label" data-i18n="endReading">End reading</span
                         ><small id="end-reading-date"></small>
                       </th>
                       <th scope="col" class="numeric">
@@ -742,6 +784,16 @@
         <label><span data-i18n="graphEnd"></span><input type="date" id="graph-end" /></label>
         <button id="graph-refresh" class="button primary" data-i18n="graphLoad"></button>
       </div>
+      <label
+        ><span data-i18n="readingMode">Reading mode</span
+        ><select id="graph-kind">
+          <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+          <option value="workingHours" data-i18n="workingMode">
+            Working hours · morning to after work
+          </option>
+        </select></label
+      >
+      <p id="graph-mode-note" class="notice" hidden></p>
       <p id="graph-status" role="status"></p>
       <div id="graph-warnings"></div>
       <div class="graph-actions">
@@ -767,6 +819,15 @@
           <option value="UNILAND">UNILAND</option>
         </select>
       </label>
+      <label
+        ><span data-i18n="readingMode">Reading mode</span
+        ><select id="raw-template-kind">
+          <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+          <option value="workingHours" data-i18n="workingMode">
+            Working hours · morning to after work
+          </option>
+        </select></label
+      >
       <p id="raw-template-help" class="hint" data-i18n="rawTemplateHelp"></p>
       <textarea
         id="raw-template-preview"
@@ -877,6 +938,15 @@
           <option value="" data-i18n="allPlants">All factories</option>
           <option>JRE</option>
           <option>UNILAND</option>
+        </select></label
+      >
+      <label
+        ><span data-i18n="readingMode">Reading mode</span
+        ><select id="history-kind">
+          <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+          <option value="workingHours" data-i18n="workingMode">
+            Working hours · morning to after work
+          </option>
         </select></label
       >
       <ul id="history-list" class="history-list"></ul>

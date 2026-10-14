@@ -1,3 +1,4 @@
+import { isWorkingHours, periodKind, workPeriodError, workPeriodTitle } from './reading-period.js';
 import { createGasDraft, calculateGas, gasCalibration, gasMassText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
@@ -31,6 +32,15 @@ export function createDraft(plantKey, startDate = '', endDate = '') {
   };
 }
 
+export function createWorkingHoursDraft(
+  plantKey,
+  date = '',
+  startTime = '08:00',
+  endTime = '17:00',
+) {
+  return { ...createDraft(plantKey, date, date), periodKind: 'workingHours', startTime, endTime };
+}
+
 export function formatRowValue(plantKey, row) {
   if (!row || row.missing || !Number.isFinite(row.totalEnergy)) return '-';
   if (plantKey === 'JRE') return row.totalEnergy === 0 ? '0' : row.totalEnergy.toFixed(2);
@@ -54,7 +64,27 @@ export function calculateDraft(draft) {
   if (!schema) throw new Error('Unknown factory.');
   const issues = currentRatioIssues(draft.plantKey, draft.importIssues);
   const days = dayDiff(draft.startDate, draft.endDate);
-  if (days === null)
+  const working = isWorkingHours(draft);
+  if (!['daily', 'workingHours'].includes(periodKind(draft)))
+    issue(issues, 'DATE_KIND', 'Unknown reading mode.', null, null, 'ERROR');
+  if (working) {
+    const error = workPeriodError(draft);
+    if (error) issue(issues, 'DATE_WORK', error, null, null, 'ERROR');
+    if (
+      draft.utilities?.some((v) => v.value?.trim() || v.note?.trim()) ||
+      draft.gas?.entries.some((v) => v.enabled) ||
+      draft.water?.start?.trim() ||
+      draft.water?.end?.trim()
+    )
+      issue(
+        issues,
+        'WORK_UTILITIES',
+        'Working-hours reports contain electricity only. Use the daily workspace for gas and Water.',
+        null,
+        null,
+        'ERROR',
+      );
+  } else if (days === null)
     issue(issues, 'DATE_INVALID', 'Enter valid start and end dates.', null, null, 'ERROR');
   else if (days <= 0)
     issue(issues, 'DATE_ORDER', 'End date must be after start date.', null, null, 'ERROR');
@@ -212,7 +242,7 @@ export function calculateDraft(draft) {
   const calibration = gasCalibration(draft.plantKey);
   if (draft.gas && draft.gas.version !== calibration.version)
     issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
-  UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
+  (working ? [] : UTILITIES[draft.plantKey]).forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
     if (i === 4 && waterResult.active) {
       value = waterResult.value;
@@ -341,7 +371,7 @@ export function calculateDraft(draft) {
   const reportDate = draft.startDate;
   const duration = days === 1 ? '24 HOURS' : days > 0 ? `${days} DAYS` : 'PERIOD UNKNOWN';
   const lines = [
-    `${schema.reportPrefix}) ${schema.name} (${formatReportPeriod(draft.startDate, draft.endDate)} - ${duration})`,
+    `${schema.reportPrefix}) ${schema.name} (${working ? workPeriodTitle(draft) : formatReportPeriod(draft.startDate, draft.endDate) + ' - ' + duration})`,
   ];
   for (const row of calculatedRows) {
     lines.push(
@@ -392,6 +422,9 @@ export function calculateDraft(draft) {
   return {
     plantKey: draft.plantKey,
     reportDate,
+    ...(working
+      ? { periodKind: 'workingHours', startTime: draft.startTime, endTime: draft.endTime }
+      : {}),
     startDate: draft.startDate,
     endDate: draft.endDate,
     success: !issues.some((item) => item.level === 'ERROR'),
@@ -418,7 +451,13 @@ export function calculateDraft(draft) {
 export function generateFullIndonesiaReport(jre, uniland) {
   if (!jre?.success || !uniland?.success)
     throw new Error('Complete the readings and dates for both factories first.');
-  if (jre.startDate !== uniland.startDate || jre.endDate !== uniland.endDate) {
+  if (
+    periodKind(jre) !== periodKind(uniland) ||
+    (isWorkingHours(jre) &&
+      (jre.startTime !== uniland.startTime || jre.endTime !== uniland.endTime)) ||
+    jre.startDate !== uniland.startDate ||
+    jre.endDate !== uniland.endDate
+  ) {
     throw new Error('JRE and UNILAND reading periods must match.');
   }
   const checkLines = [jre, uniland].flatMap((report) =>

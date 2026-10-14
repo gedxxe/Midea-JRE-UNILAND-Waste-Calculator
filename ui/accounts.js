@@ -1,3 +1,4 @@
+import { reportLinkKey, periodKind } from '../reading-period.js';
 import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
 import { createDraft } from '../engine.js';
@@ -140,7 +141,7 @@ export function createAccounts({
       $(id).hidden = !canEnter;
     document.body.classList.toggle('login-page', !canEnter);
     for (const element of document.querySelectorAll(
-      '#login-form input, #password-form input, #create-user-form input, #create-user-form button, #users-list button, #history-list button, #open-history, #open-users, #load-revision, #use-history, #history-plant, #change-password',
+      '#login-form input, #password-form input, #create-user-form input, #create-user-form button, #users-list button, #history-list button, #open-history, #open-users, #load-revision, #use-history, #history-plant, #history-kind, #reading-mode, #change-password',
     ))
       element.disabled = busy;
     $('history-previous').disabled = busy || page === 0;
@@ -240,7 +241,7 @@ export function createAccounts({
           return;
         }
         const draft = structuredClone(current());
-        const previous = links[draft.plantKey];
+        const previous = links[reportLinkKey(draft)];
         const samePeriod =
           previous?.startDate === draft.startDate && previous?.endDate === draft.endDate;
         const body = {
@@ -248,7 +249,7 @@ export function createAccounts({
           ...(samePeriod ? { id: previous.id, baseRevision: previous.revision } : {}),
         };
         const result = await request('/api/reports', { body });
-        links[draft.plantKey] = {
+        links[reportLinkKey(draft)] = {
           id: result.id,
           revision: result.revision,
           startDate: draft.startDate,
@@ -261,7 +262,12 @@ export function createAccounts({
   async function history() {
     const filter = $('history-plant').value;
     const data = await request(
-      '/api/reports?page=' + page + '&plant=' + encodeURIComponent(filter),
+      '/api/reports?page=' +
+        page +
+        '&plant=' +
+        encodeURIComponent(filter) +
+        '&kind=' +
+        $('history-kind').value,
     );
     $('history-list').replaceChildren();
     for (const item of data.reports) {
@@ -283,7 +289,11 @@ export function createAccounts({
   }
   async function openReport(id, revision) {
     const data = await request(
-      '/api/reports?id=' + encodeURIComponent(id) + (revision ? '&revision=' + revision : ''),
+      '/api/reports?id=' +
+        encodeURIComponent(id) +
+        '&kind=' +
+        $('history-kind').value +
+        (revision ? '&revision=' + revision : ''),
     );
     selected = data;
     $('history-detail').hidden = false;
@@ -302,7 +312,18 @@ export function createAccounts({
         page = 0;
         selected = null;
         $('history-detail').hidden = true;
+        $('history-kind').value = periodKind(current());
         $('history-dialog').showModal();
+        await history();
+      }),
+  );
+  $('history-kind').addEventListener(
+    'change',
+    () =>
+      void action(async () => {
+        page = 0;
+        selected = null;
+        $('history-detail').hidden = true;
         await history();
       }),
   );
@@ -353,7 +374,7 @@ export function createAccounts({
             },
           }),
         )[source.plantKey];
-        links[draft.plantKey] = {
+        links[reportLinkKey(draft)] = {
           id: selected.id,
           revision: selected.latestRevision,
           startDate: draft.startDate,

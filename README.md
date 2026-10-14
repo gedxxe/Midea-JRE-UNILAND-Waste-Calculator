@@ -1,10 +1,14 @@
 # Midea Daily Energy Report
 
-**v0.9.19-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.10.0-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+**Working-hours electricity trial:** choose Reading mode → Working hours for JRE or UNILAND. Enter one work date and actual morning/after-work times (defaults 08:00 and 17:00 WIB). Consumption is evening minus morning with the existing ratios; no overnight estimate. Gas and Water remain in Daily mode. Daily and work drafts, reports, historian filters and graphs are separate. Use matching 08:00 daily readings copies only the same-date morning column after confirmation if filled. Next day starts both work columns empty. Time changes retain only matching observations; use Undo for corrections. Raw exports/imports include Reading time: HH:MM WIB; fill the time placeholder in blank work templates.
+
+Full JSON backups now include both modes and factories. Older backups restore daily data while retaining current work drafts. Apply migration 004 explicitly to development and production before merging this release; builds do not migrate. Trial data does not expire after one week. Code rollback preserves database reports and protects trial drafts from older writers; the old UI cannot manage this trial. Keep a full backup before rollback. See [trial and release steps](docs/working-hours.md).
 
 UNILAND Building A/B, hydrant, pump and power house now accept three meters and sum each converted delta. HE accepts three direct meters. Two repeated 10HP lab observations are retained under distinct labels; the second uses (2) pending equipment clarification. Trafo rows may be omitted from text import: matching-date readings are retained, otherwise they remain blank and need completion before a report can be finalized. Legacy drafts keep original readings and gain empty new slots; historical outputs stay unchanged.
 
@@ -117,6 +121,10 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
+**工作时段用电试用：** JRE 与 UNILAND 均可选择记录模式 → 工作时段。填写一个工作日期及实际早晨、下班抄表时间，默认 08:00 与 17:00 WIB。按现有倍率计算晚间减早晨，不推算夜间。燃气和水仍使用每日模式。两种模式的草稿、报告、历史与图表分开。使用匹配的每日 08:00 读数需操作员主动复制；已有早晨读数时先确认。下一工作日两列均清空。原始导出及导入带 Reading time: HH:MM WIB。
+
+JSON 备份包含两种模式及两个工厂；旧备份保留当前试用草稿。合并前需对开发和生产数据库显式执行迁移 004，构建不执行迁移。一周后数据不自动删除。代码回退保留报告并阻止旧代码丢弃试用草稿；旧界面无法管理此试用。回退前保存完整备份。详见[试用及发布步骤](docs/working-hours.md)。
+
 UNILAND Building A/B、消防泵、水泵和动力房接收三表读数，按各表倍率换算后求和；HE为三表直读。重复的10HP实验室读数分别保留，第二项暂以(2)区分。文本导入可省略变压器，保留同日期已有读数，否则留空并要求报告完成前补齐。旧草稿保留原读数，新槽位为空；历史输出不变。
 
 周期区下方的**草稿备份与恢复**下载两厂私密 JSON 副本，包含未完成电表读数、气体、温度、补充记录、用水、备注和 T1–T4。仅可恢复至原账户；完整验证文件（最大256 KB）后确认替换两厂草稿，支持撤销。备份不含报告修订链接，恢复不会生成报告或修订。请核对输入并私密保存文件。状态分别显示标签页副本与数据库确认的账户保存时间（WIB）；关闭标签页会丢失其副本。检查提示可跳转到对应气体、R32温度、补充、用水或手动用量输入。
@@ -196,6 +204,10 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+**Uji coba listrik jam kerja:** pilih Reading mode → Working hours untuk JRE atau UNILAND. Isi satu tanggal kerja dan waktu reading pagi/sore yang sebenarnya, default 08.00 dan 17.00 WIB. Konsumsi dihitung dari sore dikurangi pagi dengan ratio yang sama; tidak menebak pemakaian malam. Gas dan Water tetap di mode Daily. Draft, laporan, historian, dan grafik kedua mode dipisahkan. Tombol reading harian 08.00 hanya menyalin kolom pada tanggal yang cocok, dengan konfirmasi jika pagi sudah terisi. Next day mengosongkan kedua kolom jam kerja. Ekspor/impor raw menyertakan Reading time: HH:MM WIB.
+
+Backup JSON mencakup kedua mode dan pabrik. Backup lama mempertahankan draft jam kerja yang sedang terbuka. Jalankan migration 004 secara eksplisit pada database development dan production sebelum merge; build tidak melakukan migration. Data trial tidak dihapus otomatis setelah seminggu. Rollback kode mempertahankan laporan dan melindungi draft trial dari kode lama, tetapi UI lama tidak mendukung trial ini. Simpan backup lengkap sebelum rollback. Lihat [alur trial dan rilis](docs/working-hours.md).
 
 Building A/B, hydrant, pompa, dan power house UNILAND menerima tiga meter; setiap selisih dikalikan ratio yang sama lalu dijumlahkan. HE memakai tiga meter direct. Dua reading 10HP dipertahankan terpisah; label kedua sementara (2). Impor boleh tanpa Trafo: reading bertanggal cocok dipertahankan, lainnya kosong dan perlu dilengkapi sebelum laporan final. Draft lama mempertahankan reading asli dengan slot baru kosong; histori tetap utuh.
 

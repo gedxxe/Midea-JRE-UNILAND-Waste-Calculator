@@ -28,8 +28,7 @@ export function checkOrigin(req, origin) {
   if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || ''))
     fail(415, 'JSON_REQUIRED');
 }
-export async function readBody(req) {
-  const max = 65536;
+export async function readBody(req, max = 65536) {
   if (Number(req.headers['content-length']) > max) fail(413, 'BODY_TOO_LARGE');
   let raw;
   if (req.body !== undefined) {

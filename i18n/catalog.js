@@ -1,3 +1,4 @@
+import { workingHoursMessages } from './working-hours.js';
 import { draftMessages } from './drafts.js';
 import { graphMessages } from './graphs.js';
 import { gasMessages } from './gas.js';
@@ -6,6 +7,7 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  ...workingHoursMessages,
   additionalTitle: ['Additional readings T1–T4', '附加读数 T1–T4', 'Reading tambahan T1–T4'],
   additionalMeter: ['Meter', '电表', 'Meter'],
   additionalHint: [

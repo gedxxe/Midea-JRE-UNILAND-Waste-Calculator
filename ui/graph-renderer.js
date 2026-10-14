@@ -1,3 +1,4 @@
+import { graphPeriodText } from '../reading-period.js';
 import { pngResolution } from '../png.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
 import { graphSegments } from '../graph-data.js';
@@ -284,12 +285,8 @@ export function renderGraph(config, { plant, start, end, records }) {
               ' ' +
               config.unit +
               ' | ' +
-              p.startDate +
-              ' 08:00 to ' +
-              p.endDate +
-              ' 08:00 WIB | ' +
-              p.days +
-              (p.days === 1 ? ' day | ' : ' days | ') +
+              graphPeriodText(p) +
+              ' | ' +
               (p.source === 'excel' ? 'Excel history / Excel 历史数据' : 'revision ' + p.revision),
           ),
         );

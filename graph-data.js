@@ -1,7 +1,8 @@
 import { GRAPH_METRICS } from './graph-schema.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { buildWorksheet } from './worksheet.js';
-import { dayDiff, round } from './numbers.js';
+import { workMinutes, WORKING_HOURS } from './reading-period.js';
+import { dayDiff, round, shiftDate } from './numbers.js';
 
 // Read the saved English outputs, not today's engine or raw cumulative readings.
 // Old snapshots remain immutable and retain the result approved at their revision.
@@ -57,14 +58,28 @@ export function graphValues(snapshot, plant) {
   return Object.fromEntries(GRAPH_METRICS[plant].map((m) => [m.key, values[m.key] ?? null]));
 }
 export function graphRecords(rows, plant, history = []) {
-  const records = rows.map((row) => ({
-    id: row.id,
-    revision: row.revision,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    values: graphValues(row.snapshot, plant),
-    source: 'report',
-  }));
+  const records = rows.map((row) => {
+    const period = row.snapshot?.period;
+    const working = period?.kind === WORKING_HOURS;
+    return {
+      id: row.id,
+      revision: row.revision,
+      startDate: row.start_date,
+      // A daily plotting slot; the true reading timestamps remain explicit below.
+      endDate: working ? shiftDate(row.start_date, 1) : row.end_date,
+      ...(working
+        ? {
+            periodKind: WORKING_HOURS,
+            readingEndDate: row.end_date,
+            startTime: period.startTime,
+            endTime: period.endTime,
+            minutes: workMinutes(period),
+          }
+        : {}),
+      values: graphValues(row.snapshot, plant),
+      source: 'report',
+    };
+  });
   for (const row of history) {
     const superseded = records.some(
       (r) => r.source === 'report' && r.startDate < row.end_date && row.start_date < r.endDate,

@@ -1,3 +1,5 @@
+import { createWorkingHoursPicker } from './ui/working-hours.js';
+import { isWorkingHours } from './reading-period.js';
 import { createBackupControls } from './ui/draft-backup.js';
 import { createDraftAutosave } from './ui/drafts.js';
 import { createGraphs } from './ui/graphs.js';
@@ -17,6 +19,7 @@ import { showBuildInfo } from './ui/build-info.js';
 import { PLANT_SCHEMAS } from './schema.js';
 import {
   createDraft,
+  createWorkingHoursDraft,
   calculateDraft,
   formatRowValue,
   generateFullIndonesiaReport,
@@ -29,7 +32,15 @@ import {
   dayDiff,
 } from './numbers.js';
 import { worksheetRowToTSV } from './worksheet.js';
-import { STORAGE_KEY, restoreDrafts, nextDayDraft, changeDraftPeriod } from './storage.js';
+import {
+  STORAGE_KEY,
+  restoreWorkspace,
+  nextDayDraft,
+  changeDraftPeriod,
+  changeWorkPeriod,
+  emptyWorkingHours,
+  useDailyMorning,
+} from './storage.js';
 import { NetworkClock, wibDate } from './clock.js';
 import { exampleDraft } from './examples.js';
 
@@ -37,7 +48,7 @@ initLogoIntro();
 
 const table = createMeterTable({
   getPlant: () => plant,
-  current: () => drafts[plant],
+  current: () => current(),
   getReport: () => reports[plant],
   changed,
   rememberUndo,
@@ -47,6 +58,8 @@ const filterTable = () => table.filter();
 const clock = new NetworkClock();
 let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
+let workingHours = emptyWorkingHours();
+let mode = 'daily';
 let reports = {};
 let undo = null;
 let periodOrigin = null;
@@ -56,7 +69,57 @@ let showValidation = false;
 let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
-const current = () => drafts[plant];
+const activeDrafts = () => (mode === 'workingHours' ? workingHours : drafts);
+const current = () => activeDrafts()[plant];
+const setCurrent = (draft) => {
+  activeDrafts()[plant] = draft;
+};
+const workPicker = createWorkingHoursPicker({
+  current,
+  switchMode(value) {
+    mode = value;
+    periodOrigin = null;
+    showValidation = false;
+    rawExport.reset();
+    importEditor.reset();
+    $('import-dialog').close();
+    if (mode === 'workingHours' && clock.synchronized) {
+      for (const key of ['JRE', 'UNILAND']) {
+        const draft = workingHours[key];
+        if (
+          !draft.startDate &&
+          !draft.endDate &&
+          !draft.rows.some((row) => [...row.start, ...row.end].some(Boolean))
+        )
+          workingHours[key] = {
+            ...draft,
+            startDate: wibDate(clock.now()),
+            endDate: wibDate(clock.now()),
+          };
+      }
+      changed();
+    }
+    mountPlant();
+  },
+  changePeriod: changeWork,
+  copyMorning() {
+    try {
+      const next = useDailyMorning(current(), drafts[plant]);
+      if (
+        current().rows.some((row) => row.start.some((v) => v.trim())) &&
+        !confirm(t('workMorningConfirm'))
+      )
+        return;
+      rememberUndo();
+      setCurrent(next);
+      mountPlant();
+      changed();
+      toast(t('workMorningCopied'));
+    } catch {
+      toast(t('workMorningUnavailable'));
+    }
+  },
+});
 const periodPicker = createPeriodPicker({
   current,
   apply(start, end) {
@@ -70,11 +133,21 @@ const importEditor = createImportEditor({
   toast,
   apply(parsed, side) {
     rememberUndo();
-    drafts[plant] = changeDraftPeriod(
-      current(),
-      side === 'start' ? parsed.date : current().startDate,
-      side === 'end' ? parsed.date : current().endDate,
-      periodOrigin || current(),
+    setCurrent(
+      isWorkingHours(current())
+        ? changeWorkPeriod(
+            current(),
+            parsed.date,
+            side === 'start' ? parsed.time : current().startTime,
+            side === 'end' ? parsed.time : current().endTime,
+            periodOrigin || current(),
+          )
+        : changeDraftPeriod(
+            current(),
+            side === 'start' ? parsed.date : current().startDate,
+            side === 'end' ? parsed.date : current().endDate,
+            periodOrigin || current(),
+          ),
     );
     parsed.values.forEach((values, ri) => {
       if (!parsed.suppliedRows || parsed.suppliedRows.includes(ri))
@@ -95,10 +168,16 @@ const gasPanel = createGasPanel({
 const waterPanel = createWaterPanel({ current, changed, rememberUndo });
 const additionalPanel = createAdditionalReadingsPanel({ current, changed });
 const backupControls = createBackupControls({
-  read: () => ({ version: 4, drafts }),
+  read: () => ({ version: 4, drafts, workingHours }),
   apply(workspace) {
-    undo = { plant, workspace: structuredClone({ drafts, reportLinks: accounts.getLinks() }) };
+    undo = {
+      plant,
+      mode,
+      workspace: structuredClone({ drafts, workingHours, reportLinks: accounts.getLinks() }),
+    };
     drafts = workspace.drafts;
+    // Legacy backups predate this trial. Keep the current trial copy when absent.
+    workingHours = workspace.workingHours || workingHours;
     accounts.setLinks({});
     rawExport.reset();
     importEditor.reset();
@@ -128,6 +207,8 @@ function accountChanged(user) {
   }
   accountUser = user;
   drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
+  workingHours = emptyWorkingHours();
+  mode = 'daily';
   undo = null;
   periodOrigin = null;
   dirty = false;
@@ -141,7 +222,9 @@ function accountChanged(user) {
     try {
       const raw = draftStorage().getItem(draftKey());
       if (raw) {
-        drafts = restoreDrafts(raw);
+        const restored = restoreWorkspace(raw);
+        drafts = restored.drafts;
+        workingHours = restored.workingHours || emptyWorkingHours();
         saveStatus = 'restored';
       }
     } catch {
@@ -168,18 +251,20 @@ const accounts = createAccounts({
   },
   toast,
   loadDraft(draft) {
-    plant = draft.plantKey;
     rememberUndo();
-    drafts[plant] = draft;
+    plant = draft.plantKey;
+    mode = isWorkingHours(draft) ? 'workingHours' : 'daily';
+    setCurrent(draft);
     mountPlant();
     changed();
   },
 });
 autosave = createDraftAutosave({
   request: (...args) => accounts.request(...args),
-  read: () => ({ version: 4, drafts, reportLinks: accounts.getLinks() }),
+  read: () => ({ version: 4, drafts, workingHours, reportLinks: accounts.getLinks() }),
   apply(workspace) {
     drafts = workspace?.drafts || { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
+    workingHours = workspace?.workingHours || emptyWorkingHours();
     accounts.setLinks(workspace?.reportLinks);
     dirty = false;
     undo = null;
@@ -201,7 +286,7 @@ function toast(message) {
   }, 5500);
 }
 function rememberUndo() {
-  undo = { plant, draft: structuredClone(current()) };
+  undo = { plant, mode, draft: structuredClone(current()) };
   $('undo-change').hidden = false;
 }
 function changed(periodOnly = false) {
@@ -218,7 +303,23 @@ function changePeriod(start, end) {
     rememberUndo();
     periodOrigin = structuredClone(current());
   }
-  drafts[plant] = changeDraftPeriod(current(), start, end, periodOrigin);
+  setCurrent(changeDraftPeriod(current(), start, end, periodOrigin));
+  mountPlant();
+  changed(true);
+  toast(t('periodReadingsMoved'));
+}
+function changeWork(date, startTime, endTime) {
+  if (
+    current().startDate === date &&
+    current().startTime === startTime &&
+    current().endTime === endTime
+  )
+    return;
+  if (!periodOrigin) {
+    rememberUndo();
+    periodOrigin = structuredClone(current());
+  }
+  setCurrent(changeWorkPeriod(current(), date, startTime, endTime, periodOrigin));
   mountPlant();
   changed(true);
   toast(t('periodReadingsMoved'));
@@ -233,14 +334,20 @@ function mountPlant() {
     button.classList.toggle('active', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
-  gasPanel.rebuild();
-  waterPanel.rebuild();
+  if (!isWorkingHours(current())) {
+    gasPanel.rebuild();
+    waterPanel.rebuild();
+  }
   additionalPanel.rebuild();
   table.rebuild();
+  workPicker.sync();
   renderResults();
 }
 function renderResults() {
-  reports = { JRE: calculateDraft(drafts.JRE), UNILAND: calculateDraft(drafts.UNILAND) };
+  reports = {
+    JRE: calculateDraft(activeDrafts().JRE),
+    UNILAND: calculateDraft(activeDrafts().UNILAND),
+  };
   const report = reports[plant];
   for (const key of ['JRE', 'UNILAND'])
     $('count-' + key.toLowerCase()).textContent =
@@ -249,15 +356,22 @@ function renderResults() {
     ? formatReportDate(current().startDate)
     : t('selectPeriod');
   const dateIssue = report.issues.find((i) => i.code.startsWith('DATE_') && i.level !== 'NOTICE');
-  $('period-note').textContent = dateIssue
-    ? dateIssue.message
-    : dayDiff(current().startDate, current().endDate) > 1
-      ? t('combinedNotice', {
-          days: dayDiff(current().startDate, current().endDate),
-          start: current().startDate,
-          end: current().endDate,
-        })
-      : t('periodNote', { start: current().startDate, end: current().endDate });
+  $('period-note').textContent = isWorkingHours(current())
+    ? dateIssue?.message ||
+      t('workNotice', {
+        date: current().startDate || '-',
+        start: current().startTime || '-',
+        end: current().endTime || '-',
+      })
+    : dateIssue
+      ? dateIssue.message
+      : dayDiff(current().startDate, current().endDate) > 1
+        ? t('combinedNotice', {
+            days: dayDiff(current().startDate, current().endDate),
+            start: current().startDate,
+            end: current().endDate,
+          })
+        : t('periodNote', { start: current().startDate, end: current().endDate });
   $('period-note').classList.toggle('warning', !!dateIssue && !!current().startDate);
   $('example-note').hidden = !current().isExample;
   $('completion-progress').max = report.calculatedRows.length;
@@ -371,8 +485,10 @@ function renderResults() {
       : t('copyPeriod');
   filterTable();
   rawExport.render();
-  gasPanel.update();
-  waterPanel.update();
+  if (!isWorkingHours(current())) {
+    gasPanel.update();
+    waterPanel.update();
+  }
   additionalPanel.update();
   autosave?.render();
 }
@@ -411,6 +527,13 @@ async function syncTime() {
     $('start-date').value = current().startDate;
     $('end-date').value = current().endDate;
     periodPicker.sync();
+    if (
+      isWorkingHours(current()) &&
+      !current().startDate &&
+      !current().rows.some((row) => [...row.start, ...row.end].some(Boolean))
+    )
+      setCurrent({ ...current(), startDate: end, endDate: end });
+    workPicker.sync();
     renderResults();
   }
   renderClock();
@@ -538,7 +661,7 @@ $('next-day').addEventListener('click', () => {
   try {
     const next = nextDayDraft(current());
     rememberUndo();
-    drafts[plant] = next;
+    setCurrent(next);
     mountPlant();
     changed();
     toast(t('nextReady'));
@@ -548,7 +671,10 @@ $('next-day').addEventListener('click', () => {
 });
 $('load-example').addEventListener('click', () => {
   rememberUndo();
-  drafts[plant] = exampleDraft(plant);
+  const example = exampleDraft(plant);
+  if (mode === 'workingHours') {
+    setCurrent({ ...createWorkingHoursDraft(plant, example.startDate), rows: example.rows });
+  } else setCurrent(example);
   current().isExample = true;
   mountPlant();
   changed();
@@ -556,7 +682,11 @@ $('load-example').addEventListener('click', () => {
 });
 $('clear-plant').addEventListener('click', () => {
   rememberUndo();
-  drafts[plant] = createDraft(plant, current().startDate, current().endDate);
+  setCurrent(
+    isWorkingHours(current())
+      ? createWorkingHoursDraft(plant, current().startDate, current().startTime, current().endTime)
+      : createDraft(plant, current().startDate, current().endDate),
+  );
   mountPlant();
   changed();
   toast(t('cleared', { plant }));
@@ -564,13 +694,15 @@ $('clear-plant').addEventListener('click', () => {
 $('undo-change').addEventListener('click', () => {
   if (!undo) return;
   plant = undo.plant;
+  mode = undo.mode || 'daily';
   if (undo.workspace) {
     drafts = undo.workspace.drafts;
+    workingHours = undo.workspace.workingHours || emptyWorkingHours();
     accounts.setLinks(undo.workspace.reportLinks);
     rawExport.reset();
     importEditor.reset();
     $('import-dialog').close();
-  } else drafts[plant] = undo.draft;
+  } else setCurrent(undo.draft);
   undo = null;
   $('undo-change').hidden = true;
   mountPlant();

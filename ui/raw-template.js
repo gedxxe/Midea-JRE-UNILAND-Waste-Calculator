@@ -7,7 +7,10 @@ export function initRawTemplate({ getPlant, toast }) {
   const factory = $('raw-template-plant');
   const preview = $('raw-template-preview');
   const render = () => {
-    preview.value = formatBlankReadingTemplate(factory.value);
+    preview.value = formatBlankReadingTemplate(
+      factory.value,
+      $('raw-template-kind').value === 'workingHours',
+    );
     preview.scrollTop = 0;
   };
   for (const button of document.querySelectorAll('[data-open-raw-template]')) {
@@ -18,6 +21,7 @@ export function initRawTemplate({ getPlant, toast }) {
     });
   }
   factory.addEventListener('change', render);
+  $('raw-template-kind').addEventListener('change', render);
   $('copy-raw-template').addEventListener('click', async () => {
     const text = preview.value;
     try {
@@ -36,7 +40,7 @@ export function initRawTemplate({ getPlant, toast }) {
     );
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${factory.value.toLowerCase()}-blank-readings.txt`;
+    link.download = `${factory.value.toLowerCase()}${$('raw-template-kind').value === 'workingHours' ? '-working-hours' : ''}-blank-readings.txt`;
     document.body.append(link);
     link.click();
     link.remove();
