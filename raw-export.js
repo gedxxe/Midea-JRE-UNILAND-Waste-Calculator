@@ -1,3 +1,4 @@
+import { isWorkingHours, validTime } from './reading-period.js';
 import { PLANT_SCHEMAS } from './schema.js';
 import { decimalText, validDate } from './numbers.js';
 
@@ -10,14 +11,14 @@ function ratioAnnotation(row, meterIndex) {
 }
 
 // Schema only: never read a draft, session, date or previously entered value.
-export function formatBlankReadingTemplate(plantKey) {
+export function formatBlankReadingTemplate(plantKey, working = false) {
   const schema = PLANT_SCHEMAS[plantKey];
   if (!schema?.rows) throw new RangeError('Unknown factory');
   const lines = schema.rows.map(
     (row) =>
       `${row.no}. ${row.name}: ${row.factors.map((_, mi) => '____' + ratioAnnotation(row, mi)).join(' + ')}`,
   );
-  return `${schema.name}\n\nDD/MM/YYYY\n\n${lines.join('\n')}`;
+  return `${schema.name}\n\nDD/MM/YYYY${working ? '\nReading time: HH:MM WIB' : ''}\n\n${lines.join('\n')}`;
 }
 
 // Export one cumulative reading column. Never apply factors or compare endpoints.
@@ -38,6 +39,8 @@ export function formatReadingColumn(draft, side) {
     return { text: '', issues: [{ code: 'SHAPE' }] };
   const date = draft[side + 'Date'];
   const issues = validDate(date) ? [] : [{ code: 'DATE' }];
+  const time = isWorkingHours(draft) ? draft[side + 'Time'] : null;
+  if (time !== null && !validTime(time)) issues.push({ code: 'TIME' });
   const lines = schema.rows.map((row, rowIndex) => {
     const values = draft.rows[rowIndex]?.[side];
     if (!Array.isArray(values) || values.length !== row.factors.length) {
@@ -56,5 +59,8 @@ export function formatReadingColumn(draft, side) {
   });
   const [year, month, day] = validDate(date) ? date.split('-') : [];
   const dateText = validDate(date) ? `${day}/${month}/${year}` : '';
-  return { text: `${schema.name}\n\n${dateText}\n\n${lines.join('\n')}`, issues };
+  return {
+    text: `${schema.name}\n\n${dateText}${time !== null ? '\nReading time: ' + time + ' WIB' : ''}\n\n${lines.join('\n')}`,
+    issues,
+  };
 }

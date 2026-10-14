@@ -1,5 +1,6 @@
 import { restoreGasDraft, nextGasDay } from './gas.js';
-import { createDraft } from './engine.js';
+import { isWorkingHours, periodKind, validTime, observationTime } from './reading-period.js';
+import { createDraft, createWorkingHoursDraft } from './engine.js';
 import { currentRatioIssues } from './import-ratios.js';
 import { migrateMeterLayout } from './meter-layout.js';
 import { restoreWater, nextWaterDay } from './water.js';
@@ -15,7 +16,9 @@ export function restoreWorkspace(raw) {
   const saved = JSON.parse(raw);
   const drafts = restoreDrafts(raw),
     reportLinks = {};
-  for (const plant of ['JRE', 'UNILAND']) {
+  if (Object.values(drafts).some(isWorkingHours))
+    throw new Error('Daily drafts must use daily periods.');
+  for (const plant of ['JRE', 'UNILAND', 'JREWork', 'UNILANDWork']) {
     const link = saved.reportLinks?.[plant];
     if (
       link &&
@@ -32,7 +35,93 @@ export function restoreWorkspace(raw) {
         endDate: link.endDate,
       };
   }
+  if (saved.workingHours !== undefined) {
+    const workingHours = restoreDrafts(JSON.stringify({ version: 4, drafts: saved.workingHours }));
+    if (Object.values(workingHours).some((d) => !isWorkingHours(d)))
+      throw new Error('Invalid working-hours workspace.');
+    return { version: 4, drafts, workingHours, reportLinks };
+  }
   return { version: 4, drafts, reportLinks };
+}
+
+export function emptyWorkingHours() {
+  return { JRE: createWorkingHoursDraft('JRE'), UNILAND: createWorkingHoursDraft('UNILAND') };
+}
+
+// A time is part of an observation's identity. Never relabel a 17:00 reading as 08:00.
+export function changeWorkPeriod(draft, date, startTime, endTime, origin = draft) {
+  const next = createWorkingHoursDraft(draft.plantKey, date, startTime, endTime);
+  if (draft.additionalReadings || origin.additionalReadings)
+    next.additionalReadings = emptyAdditionalReadings();
+  next.importIssues = [];
+  next.isExample = draft.isExample;
+  for (const side of ['start', 'end']) {
+    let source;
+    for (const candidate of [draft, origin]) {
+      if (!isWorkingHours(candidate) || candidate.plantKey !== draft.plantKey) continue;
+      const match = ['start', 'end'].find(
+        (key) =>
+          date &&
+          candidate[key + 'Date'] === date &&
+          observationTime(candidate, key) === next[side + 'Time'],
+      );
+      if (match) {
+        source = { draft: candidate, side: match };
+        break;
+      }
+    }
+    if (!source && !draft[side + 'Date'] && draft[side + 'Time'] === next[side + 'Time'])
+      source = { draft, side };
+    if (!source) continue;
+    next.rows.forEach((row, i) => {
+      row[side] = [...source.draft.rows[i][source.side]];
+    });
+    next.additionalReadings?.forEach((row, i) => {
+      row[side] = source.draft.additionalReadings?.[i]?.[source.side] || '';
+    });
+    for (const item of source.draft.importIssues || [])
+      if (!next.importIssues.some((old) => JSON.stringify(old) === JSON.stringify(item)))
+        next.importIssues.push(structuredClone(item));
+  }
+  if (draft.startDate === date && draft.startTime === startTime && draft.endTime === endTime)
+    next.rows.forEach((row, i) => {
+      row.inactive = draft.rows[i].inactive;
+    });
+  return next;
+}
+
+export function useDailyMorning(work, daily) {
+  if (
+    !isWorkingHours(work) ||
+    work.startTime !== '08:00' ||
+    !validDate(work.startDate) ||
+    daily.plantKey !== work.plantKey ||
+    isWorkingHours(daily)
+  )
+    throw new Error('workMorningUnavailable');
+  const side = ['start', 'end'].find((key) => daily[key + 'Date'] === work.startDate);
+  if (!side || !daily.rows.some((row) => row[side].some((value) => value.trim())))
+    throw new Error('workMorningUnavailable');
+  const next = structuredClone(work);
+  next.rows.forEach((row, i) => {
+    row.start = [...daily.rows[i][side]];
+    row.inactive = false;
+  });
+  if (daily.additionalReadings || next.additionalReadings) {
+    next.additionalReadings ??= emptyAdditionalReadings();
+    next.additionalReadings.forEach((row, i) => {
+      row.start = daily.additionalReadings?.[i]?.[side] || '';
+    });
+  }
+  next.importIssues = currentRatioIssues(work.plantKey, [
+    ...(work.importIssues || []),
+    ...(daily.importIssues || []),
+  ]).filter(
+    (item, i, all) =>
+      all.findIndex((other) => JSON.stringify(other) === JSON.stringify(item)) === i,
+  );
+  next.isExample = daily.isExample || work.isExample;
+  return next;
 }
 export function restoreDrafts(raw) {
   const saved = JSON.parse(raw);
@@ -56,6 +145,15 @@ export function restoreDrafts(raw) {
     // Retain legacy UNILAND pairs for recovery, without using them in new reports.
     if (input.additionalReadings !== undefined)
       draft.additionalReadings = restoreAdditionalReadings(input.additionalReadings);
+    if (!['daily', 'workingHours'].includes(periodKind(input)))
+      throw new Error('Invalid reading mode.');
+    if (isWorkingHours(input)) {
+      if (!['startTime', 'endTime'].every((key) => input[key] === '' || validTime(input[key])))
+        throw new Error('Invalid reading time.');
+      draft.periodKind = 'workingHours';
+      draft.startTime = input.startTime;
+      draft.endTime = input.endTime;
+    }
     draft.isExample = input.isExample === true;
     draft.startDate = input.startDate;
     draft.endDate = input.endDate;
@@ -87,6 +185,15 @@ export function restoreDrafts(raw) {
 }
 
 export function nextDayDraft(draft) {
+  if (isWorkingHours(draft)) {
+    if (!validDate(draft.startDate)) throw new Error('Enter a valid work date.');
+    return createWorkingHoursDraft(
+      draft.plantKey,
+      shiftDate(draft.startDate, 1),
+      draft.startTime,
+      draft.endTime,
+    );
+  }
   if (!validDate(draft.endDate)) throw new Error('Enter a valid end date.');
   if (draft.rows.some((row) => row.end.some((v) => !v.trim())))
     throw new Error('Complete all end readings before moving to the next day.');

@@ -1,3 +1,4 @@
+import { observationLabel } from '../reading-period.js';
 import {
   ADDITIONAL_METERS,
   emptyAdditionalReadings,
@@ -10,14 +11,14 @@ export function createAdditionalReadingsPanel({ current, changed }) {
   function update() {
     if (current().plantKey !== 'JRE') return;
     for (const side of ['start', 'end'])
-      $('additional-' + side + '-date').textContent = current()[side + 'Date'] || '-';
+      $('additional-' + side + '-date').textContent = observationLabel(current(), side);
     calculateAdditionalReadings(current().additionalReadings).forEach((result, i) => {
       $('additional-value-' + i).textContent = result.value ? result.value + ' kWh' : '-';
       $('additional-status-' + i).textContent = result.error ? t(result.error) : '';
       for (const side of ['start', 'end']) {
         $(`additional-${i}-${side}`).setAttribute('aria-invalid', String(Boolean(result.error)));
         $(`additional-${i}-${side}`).parentElement.dataset.label =
-          `${t(side === 'start' ? 'startReading' : 'endReading')} (kWh)\n${current()[side + 'Date'] || '-'}`;
+          `${t(side === 'start' ? 'startReading' : 'endReading')} (kWh)\n${observationLabel(current(), side)}`;
       }
     });
   }

@@ -55,3 +55,7 @@ UNILAND tank gas introduced in v0.9.16 uses separate kg0, kg2, kg3 and kg5 metri
 UNILAND layout 2 keeps the original r0–r27 metric identities despite reordered report rows. Piping is r28 and New Office Building A is r29; both are absent from older history. New HE & Piping worksheet values sum the two equipment rows; old w4 values remain as saved. HE is also independently available as r11.
 
 UNILAND layout 3 adds the second lab observation as r30 and keeps original r0–r29 identities. Report extraction recognizes both original and layout-2 numbering after the lab insertion. Three-meter equipment totals appear only in new saved output; old snapshots and worksheet history stay immutable.
+
+## Working-hours graphs
+
+The mode selector filters saved reports at the owner-scoped API; daily is the default. Work graphs exclude Excel daily consumption imports and all gas/Water series. Chart titles and exports append Working hours / 工作时段. Each work date is one point, with its true morning/evening times and duration in the tooltip and data table. A synthetic exclusive next-date boundary supplies only the date-axis slot and gap detection; it does not represent a 24-hour reading or average. Source totals remain as saved. Daily and work layouts use separate per-account browser keys; switching modes discards old in-flight responses and exports.

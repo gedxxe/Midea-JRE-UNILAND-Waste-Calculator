@@ -1,3 +1,4 @@
+import { periodKind } from '../reading-period.js';
 import { randomUUID } from 'node:crypto';
 import { endpoint, appOrigin, checkOrigin, readBody, send, fail, uuid } from './http.js';
 import { getPool, transaction } from './db.js';
@@ -17,13 +18,15 @@ export function reportsHandler(database = getPool, env = process.env) {
     const user = await requireUser(db, req, origin);
     const params = new URL(req.url, origin).searchParams;
     if (req.method === 'GET') {
+      const kind = params.get('kind') || 'daily';
+      if (!['daily', 'workingHours'].includes(kind)) fail(400, 'INVALID_INPUT');
       const id = params.get('id');
       if (id) {
         uuid(id);
         const report = (
           await db.query(
-            'SELECT id, plant, revision FROM meter_app.reports WHERE id=$1 AND owner_id=$2',
-            [id, user.id],
+            'SELECT id, plant, revision, report_kind FROM meter_app.reports WHERE id=$1 AND owner_id=$2 AND report_kind=$3',
+            [id, user.id, kind],
           )
         ).rows[0];
         if (!report) fail(404, 'NOT_FOUND');
@@ -48,8 +51,8 @@ export function reportsHandler(database = getPool, env = process.env) {
       )
         fail(400, 'INVALID_INPUT');
       const { rows } = await db.query(
-        'SELECT id,plant,start_date::text,end_date::text,revision,updated_at FROM meter_app.reports WHERE owner_id=$1 AND ($2::text IS NULL OR plant=$2) ORDER BY updated_at DESC,id LIMIT 21 OFFSET $3',
-        [user.id, plant, page * 20],
+        'SELECT id,plant,start_date::text,end_date::text,report_kind,revision,updated_at FROM meter_app.reports WHERE owner_id=$1 AND ($2::text IS NULL OR plant=$2) AND report_kind=$4 ORDER BY updated_at DESC,id LIMIT 21 OFFSET $3',
+        [user.id, plant, page * 20, kind],
       );
       return send(res, 200, { reports: rows.slice(0, 20), hasMore: rows.length > 20 });
     }
@@ -67,13 +70,14 @@ export function reportsHandler(database = getPool, env = process.env) {
       if (editing) {
         const report = (
           await client.query(
-            'SELECT plant,start_date::text,end_date::text,revision FROM meter_app.reports WHERE id=$1 AND owner_id=$2 FOR UPDATE',
+            'SELECT plant,start_date::text,end_date::text,report_kind,revision FROM meter_app.reports WHERE id=$1 AND owner_id=$2 FOR UPDATE',
             [id, user.id],
           )
         ).rows[0];
         if (!report) fail(404, 'NOT_FOUND');
         if (report.revision !== body.baseRevision) fail(409, 'REVISION_CONFLICT');
         if (
+          report.report_kind !== periodKind(draft) ||
           report.plant !== draft.plantKey ||
           report.start_date !== draft.startDate ||
           report.end_date !== draft.endDate
@@ -86,8 +90,8 @@ export function reportsHandler(database = getPool, env = process.env) {
         );
       } else {
         await client.query(
-          'INSERT INTO meter_app.reports(id,owner_id,plant,start_date,end_date,revision) VALUES ($1,$2,$3,$4,$5,1)',
-          [id, user.id, draft.plantKey, draft.startDate, draft.endDate],
+          'INSERT INTO meter_app.reports(id,owner_id,plant,start_date,end_date,revision,report_kind) VALUES ($1,$2,$3,$4,$5,1,$6)',
+          [id, user.id, draft.plantKey, draft.startDate, draft.endDate, periodKind(draft)],
         );
       }
       await client.query(

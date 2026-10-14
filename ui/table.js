@@ -1,3 +1,4 @@
+import { observationLabel } from '../reading-period.js';
 import { PLANT_SCHEMAS, UTILITIES } from '../schema.js';
 import { formatNumber, normalizeName } from '../numbers.js';
 import { formatRowValue } from '../engine.js';
@@ -209,7 +210,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
   }
   function update(report) {
     for (const side of ['start', 'end'])
-      $(side + '-reading-date').textContent = current()[side + 'Date'] || '-';
+      $(side + '-reading-date').textContent = observationLabel(current(), side);
     report.gasResults?.forEach((result) => {
       const index = gasCalibration(getPlant()).gases.find(
         (gas) => gas.id === result.gas,

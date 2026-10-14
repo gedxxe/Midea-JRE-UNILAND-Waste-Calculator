@@ -1,5 +1,7 @@
 import { draftsHandler } from '../../server/drafts.js';
 import { createDraft } from '../../engine.js';
+import { createWorkingHoursDraft } from '../../engine.js';
+import { emptyWorkingHours } from '../../storage.js';
 import { importHistory } from '../../server/history-import.js';
 import { graphsHandler } from '../../server/graphs.js';
 import { test, before, after } from 'node:test';
@@ -28,6 +30,110 @@ const env = {
 const ids = [];
 const names = [];
 const password = 'Test-only initial passphrase 123';
+
+test('work reports persist times and private revisions separately from daily reports and graphs', async () => {
+  const actor = await login(await seed());
+  for (const plant of ['JRE', 'UNILAND']) {
+    const daily = exampleDraft(plant);
+    const d = { ...createWorkingHoursDraft(plant, daily.startDate), rows: daily.rows };
+    const normal = await call('/api/reports', { actor, body: { draft: daily } });
+    const first = await call('/api/reports', { actor, body: { draft: d } });
+    assert.equal(normal.status, 201);
+    assert.equal(first.status, 201);
+    assert.notEqual(first.value.id, normal.value.id);
+    assert.equal((await call('/api/reports?id=' + first.value.id, { actor })).status, 404);
+    assert.equal(
+      (await call('/api/reports?id=' + first.value.id + '&kind=workingHours', { actor: admin }))
+        .status,
+      404,
+    );
+    assert.equal((await call('/api/reports?plant=' + plant, { actor })).value.reports.length, 1);
+    const list = await call('/api/reports?kind=workingHours&plant=' + plant, { actor });
+    assert.equal(list.value.reports.length, 1);
+    assert.equal(list.value.reports[0].end_date, d.startDate);
+    const original = first.value.snapshot.output.reportText;
+    d.endTime = '17:15';
+    d.rows[0].end[0] = String(Number(d.rows[0].end[0]) + 1);
+    const revised = await call('/api/reports', {
+      actor,
+      body: { id: first.value.id, baseRevision: 1, draft: d },
+    });
+    assert.equal(revised.status, 200);
+    assert.equal(revised.value.revision, 2);
+    const old = await call('/api/reports?id=' + first.value.id + '&kind=workingHours&revision=1', {
+      actor,
+    });
+    assert.equal(old.value.snapshot.output.reportText, original);
+    const query = '/api/graphs?plant=' + plant + '&start=2026-09-01&end=2026-09-30';
+    const dailyGraph = await call(query, { actor });
+    const workGraph = await call(query + '&kind=workingHours', { actor });
+    assert.equal(dailyGraph.value.records.length, 1);
+    assert.equal(workGraph.value.records.length, 1);
+    assert.equal(workGraph.value.records[0].periodKind, 'workingHours');
+    assert.equal(workGraph.value.records[0].minutes, 555);
+    assert.equal(workGraph.value.records[0].revision, 2);
+    assert.equal(
+      workGraph.value.records[0].values.r0,
+      calculateDraft(d).totalDirectEnergy * (plant === 'UNILAND' ? 1000 : 1),
+    );
+    assert.ok(
+      Object.keys(workGraph.value.records[0].values)
+        .filter((k) => k.startsWith('u') || k.startsWith('kg'))
+        .every((k) => workGraph.value.records[0].values[k] === null),
+    );
+    d.utilities[0].value = '1';
+    assert.equal(
+      (
+        await call('/api/reports', {
+          actor,
+          body: { id: first.value.id, baseRevision: 2, draft: d },
+        })
+      ).status,
+      422,
+    );
+  }
+  assert.equal((await call('/api/reports?kind=unknown', { actor })).status, 400);
+  assert.equal(
+    (await call('/api/graphs?plant=JRE&start=2026-09-01&end=2026-09-30&kind=unknown', { actor }))
+      .status,
+    400,
+  );
+});
+
+test('expanded draft saves are replaceable and protected from old clients and rollback writers', async () => {
+  const actor = await login(await seed());
+  const workspace = {
+    version: 4,
+    drafts: { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') },
+    workingHours: emptyWorkingHours(),
+  };
+  workspace.workingHours.JRE.rows[0].end[0] = '123.';
+  const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(saved.status, 200);
+  const reread = (await call('/api/drafts', { actor })).value;
+  assert.equal(reread.workspace.workingHours.JRE.rows[0].end[0], '123.');
+  const old = { version: 4, drafts: workspace.drafts };
+  const rejected = await call('/api/drafts', {
+    actor,
+    body: { workspace: old, baseVersion: reread.version },
+  });
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+  await assert.rejects(
+    runtime.query('UPDATE meter_app.working_drafts SET workspace=$2::jsonb WHERE owner_id=$1', [
+      actor.id,
+      JSON.stringify(old),
+    ]),
+    (error) => error.code === '23514',
+  );
+  assert.equal((await call('/api/drafts', { actor })).value.version, reread.version);
+  assert.equal((await call('/api/reports?kind=workingHours', { actor })).value.reports.length, 0);
+  assert.equal(
+    (await call('/api/drafts', { actor, body: { workspace: null, baseVersion: reread.version } }))
+      .status,
+    200,
+  );
+});
 test('API boundaries reject unauthenticated reads, forged identities, cross-site writes and SQL-shaped input', async () => {
   for (const path of [
     '/api/reports',
@@ -173,7 +279,7 @@ test('malformed HTTP bodies, duplicate cookies and browser cross-site metadata c
     ['{', 400],
     ['[]', 400],
     ['null', 400],
-    [JSON.stringify({ padding: 'x'.repeat(65536) }), 413],
+    [JSON.stringify({ padding: 'x'.repeat(256 * 1024) }), 413],
   ]) {
     const r = await fetch(origin + '/api/drafts', { method: 'POST', headers, body });
     assert.equal(r.status, status);

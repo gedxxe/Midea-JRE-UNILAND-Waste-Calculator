@@ -1,3 +1,4 @@
+import { isWorkingHours, graphPeriodText } from '../reading-period.js';
 import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
 import {
@@ -18,7 +19,12 @@ export function createGraphs({ current, request, toast }) {
     loading = false,
     layouts = {},
     status = '';
-  const key = () => 'midea_graph_layout_v1_' + user.id;
+  const kind = () => $('graph-kind').value;
+  const key = (mode = kind()) =>
+    'midea_graph_layout_v1_' + user.id + (mode === 'workingHours' ? '_workingHours' : '');
+  const activeLayouts = () => layouts[kind()];
+  const availableMetrics = (plant) =>
+    GRAPH_METRICS[plant].filter((m) => kind() !== 'workingHours' || /^[rw]\d+$/.test(m.key));
   const factory = () => $('graph-plant').value;
   function defaults() {
     return { JRE: defaultGraphs('JRE'), UNILAND: defaultGraphs('UNILAND') };
@@ -27,7 +33,7 @@ export function createGraphs({ current, request, toast }) {
     if (!user) return;
     try {
       const saved = Object.fromEntries(
-        Object.entries(layouts).map(([plant, configs]) => [
+        Object.entries(activeLayouts()).map(([plant, configs]) => [
           plant,
           configs.map((c) => ({ ...c, yAxis: validYAxis(c.yAxis) ? c.yAxis : { mode: 'auto' } })),
         ]),
@@ -44,7 +50,8 @@ export function createGraphs({ current, request, toast }) {
     data = null;
     loading = false;
     status = '';
-    layouts = defaults();
+    layouts = { daily: defaults(), workingHours: defaults() };
+    $('graph-kind').value = 'daily';
     $('graphs-dialog').close();
     $('graph-cards').replaceChildren();
     $('graph-status').textContent = '';
@@ -53,17 +60,19 @@ export function createGraphs({ current, request, toast }) {
     $('graph-end').value = '';
     if (!user) return;
     try {
-      const saved = JSON.parse(localStorage.getItem(key()));
-      if (saved?.version === 1)
-        for (const plant of ['JRE', 'UNILAND']) {
-          const configs = saved.layouts?.[plant];
-          if (
-            Array.isArray(configs) &&
-            configs.length <= 32 &&
-            configs.every((c) => validGraph(plant, c))
-          )
-            layouts[plant] = configs.map((c) => validGraph(plant, c));
-        }
+      for (const mode of ['daily', 'workingHours']) {
+        const saved = JSON.parse(localStorage.getItem(key(mode)));
+        if (saved?.version === 1)
+          for (const plant of ['JRE', 'UNILAND']) {
+            const configs = saved.layouts?.[plant];
+            if (
+              Array.isArray(configs) &&
+              configs.length <= 32 &&
+              configs.every((c) => validGraph(plant, c))
+            )
+              layouts[mode][plant] = configs.map((c) => validGraph(plant, c));
+          }
+      }
     } catch {
       /* Invalid settings fall back to the workbook grouping. */
     }
@@ -71,6 +80,8 @@ export function createGraphs({ current, request, toast }) {
   function render() {
     if (!$('graphs-dialog').open) return;
     $('graph-refresh').disabled = loading;
+    $('graph-mode-note').hidden = kind() !== 'workingHours';
+    $('graph-mode-note').textContent = t('workGraphHint');
     $('graph-status').textContent = loading
       ? t('graphLoading')
       : status
@@ -110,7 +121,9 @@ export function createGraphs({ current, request, toast }) {
     loading = true;
     render();
     try {
-      const result = await request('/api/graphs?' + new URLSearchParams({ plant, start, end }));
+      const result = await request(
+        '/api/graphs?' + new URLSearchParams({ plant, start, end, kind: kind() }),
+      );
       if (ticket !== sequence || identity !== epoch) return;
       data = result;
     } catch (error) {
@@ -131,7 +144,7 @@ export function createGraphs({ current, request, toast }) {
   function renderCards() {
     const plant = factory();
     $('graph-cards').replaceChildren();
-    (layouts[plant] || []).forEach((config, index) => {
+    (activeLayouts()[plant] || []).forEach((config, index) => {
       const card = node('article', undefined, 'graph-card');
       card.dataset.chartIndex = index;
       const controls = node('details', undefined, 'graph-settings');
@@ -158,7 +171,7 @@ export function createGraphs({ current, request, toast }) {
       const unitLabel = node('label', t('graphUnit')),
         unit = node('select');
       unit.dataset.graphUnit = '';
-      for (const value of new Set(GRAPH_METRICS[plant].map((m) => m.unit))) {
+      for (const value of new Set(availableMetrics(plant).map((m) => m.unit))) {
         const option = node('option', value);
         option.value = value;
         unit.append(option);
@@ -236,7 +249,7 @@ export function createGraphs({ current, request, toast }) {
           node('legend', t('graphVariables') + ' (' + config.series.length + ')'),
         );
         for (const department of Object.keys(DEPARTMENTS)) {
-          const metrics = GRAPH_METRICS[plant].filter(
+          const metrics = availableMetrics(plant).filter(
             (m) => m.department === department && m.unit === config.unit,
           );
           if (!metrics.length) continue;
@@ -269,16 +282,16 @@ export function createGraphs({ current, request, toast }) {
       const duplicate = node('button', t('graphDuplicate'), 'button secondary'),
         remove = node('button', t('graphRemove'), 'text-button');
       duplicate.addEventListener('click', () => {
-        if (layouts[plant].length >= 32) {
+        if (activeLayouts()[plant].length >= 32) {
           toast(t('graphLimit'));
           return;
         }
-        layouts[plant].splice(index + 1, 0, structuredClone(config));
+        activeLayouts()[plant].splice(index + 1, 0, structuredClone(config));
         store();
         renderCards();
       });
       remove.addEventListener('click', () => {
-        layouts[plant].splice(index, 1);
+        activeLayouts()[plant].splice(index, 1);
         store();
         renderCards();
       });
@@ -339,7 +352,7 @@ export function createGraphs({ current, request, toast }) {
       card.append(controls, frame, prompt, actions, tableDetails);
       $('graph-cards').append(card);
       function draw() {
-        const chosen = GRAPH_METRICS[plant].filter((m) => config.series.includes(m.key));
+        const chosen = availableMetrics(plant).filter((m) => config.series.includes(m.key));
         const axisValid = validYAxis(config.yAxis);
         const valid =
           config.series.length && config.titleEn.trim() && config.titleZh.trim() && axisValid;
@@ -352,7 +365,16 @@ export function createGraphs({ current, request, toast }) {
         frame.replaceChildren();
         svg = null;
         if (data && axisValid) {
-          svg = renderGraph(config, data);
+          svg = renderGraph(
+            kind() === 'workingHours'
+              ? {
+                  ...config,
+                  titleEn: config.titleEn + ' · Working hours',
+                  titleZh: config.titleZh + ' · 工作时段',
+                }
+              : config,
+            data,
+          );
           frame.append(svg);
         } else if (!data)
           frame.append(
@@ -376,12 +398,7 @@ export function createGraphs({ current, request, toast }) {
           row.append(
             node(
               'td',
-              record.startDate +
-                ' 08:00 → ' +
-                record.endDate +
-                ' 08:00 (' +
-                record.days +
-                (record.days === 1 ? ' day)' : ' days)') +
+              graphPeriodText(record) +
                 (record.overlap
                   ? ' · ' + t('graphExcluded')
                   : record.superseded
@@ -408,6 +425,7 @@ export function createGraphs({ current, request, toast }) {
   $('open-graphs').addEventListener('click', () => {
     if (!user) return;
     $('graph-plant').value = current().plantKey;
+    $('graph-kind').value = isWorkingHours(current()) ? 'workingHours' : 'daily';
     if (!validDate($('graph-start').value) && validDate(current().startDate)) {
       $('graph-start').value = current().startDate.slice(0, 7) + '-01';
       const [year, month] = current().startDate.split('-').map(Number);
@@ -417,21 +435,21 @@ export function createGraphs({ current, request, toast }) {
     void load();
   });
   $('graph-refresh').addEventListener('click', () => void load());
-  for (const id of ['graph-plant', 'graph-start', 'graph-end'])
+  for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end'])
     $(id).addEventListener('change', () => void load());
   $('graph-presets').addEventListener('click', () => {
     if (!confirm(t('graphResetConfirm'))) return;
-    layouts[factory()] = defaultGraphs(factory());
+    activeLayouts()[factory()] = defaultGraphs(factory());
     store();
     renderCards();
   });
   $('graph-add').addEventListener('click', () => {
     const plant = factory();
-    if (layouts[plant].length >= 32) {
+    if (activeLayouts()[plant].length >= 32) {
       toast(t('graphLimit'));
       return;
     }
-    layouts[plant].push({
+    activeLayouts()[plant].push({
       titleEn: plant + ' electrical consumption',
       titleZh: plant + '工厂用电量',
       unit: 'kWh',

@@ -1808,3 +1808,25 @@ dialog textarea {
   overflow-wrap: anywhere;
   margin: 12px 0;
 }
+
+/* Working-hours entry reuses the table; mobile keeps labelled controls in one column. */
+.reading-mode-bar {
+  margin: 1.25rem 0;
+}
+.reading-mode-bar label {
+  max-width: 34rem;
+}
+.work-period {
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+}
+.work-period .graph-toolbar {
+  align-items: end;
+}
+.work-period .graph-toolbar label {
+  flex: 1 1 10rem;
+}
+.work-period input {
+  color: #111;
+  font-size: 1.1rem;
+}

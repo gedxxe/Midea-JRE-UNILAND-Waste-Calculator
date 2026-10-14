@@ -1,4 +1,4 @@
-import { restoreDrafts } from './storage.js';
+import { restoreWorkspace } from './storage.js';
 
 export const MAX_BACKUP_BYTES = 256 * 1024;
 const FORMAT = 'midea-energy-draft-backup';
@@ -7,9 +7,15 @@ const size = (raw) => new TextEncoder().encode(raw).length;
 
 export function createDraftBackup(workspace, ownerId, createdAt = new Date().toISOString()) {
   if (!validOwner(ownerId)) throw new Error('backupAccount');
-  const drafts = restoreDrafts(JSON.stringify(workspace));
+  const { drafts, workingHours } = restoreWorkspace(JSON.stringify(workspace));
   const raw = JSON.stringify(
-    { format: FORMAT, version: 1, ownerId, createdAt, workspace: { version: 4, drafts } },
+    {
+      format: FORMAT,
+      version: 2,
+      ownerId,
+      createdAt,
+      workspace: { version: 4, drafts, ...(workingHours ? { workingHours } : {}) },
+    },
     null,
     2,
   );
@@ -25,10 +31,10 @@ export function restoreDraftBackup(raw, ownerId) {
   } catch {
     throw new Error('backupInvalid');
   }
-  if (input?.format !== FORMAT || input.version !== 1) throw new Error('backupInvalid');
+  if (input?.format !== FORMAT || ![1, 2].includes(input.version)) throw new Error('backupInvalid');
   if (!validOwner(ownerId) || input.ownerId !== ownerId) throw new Error('backupAccount');
   try {
-    return { version: 4, drafts: restoreDrafts(JSON.stringify(input.workspace)), reportLinks: {} };
+    return { ...restoreWorkspace(JSON.stringify(input.workspace)), reportLinks: {} };
   } catch {
     throw new Error('backupInvalid');
   }
