@@ -3,6 +3,7 @@ import { unilandInput, layout3Draft } from '../fixtures/uniland-input.mjs';
 import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { createWorkingHoursDraft, calculateDraft } from '../../engine.js';
+import { emptyNightShifts } from '../../shifts.js';
 import { emptyWorkingHours } from '../../storage.js';
 import { graphRecords } from '../../graph-data.js';
 import { reportSnapshot } from '../../server/report-data.js';
@@ -20,7 +21,7 @@ const work = (plant) => ({
   ...createWorkingHoursDraft(plant, '2026-09-16'),
   rows: exampleDraft(plant).rows,
 });
-async function setup(page, { undated = false, legacyUniland = false } = {}) {
+async function setup(page, { undated = false, legacyUniland = false, undatedNight = false } = {}) {
   const state = {
     workspace: {
       version: 4,
@@ -70,6 +71,10 @@ async function setup(page, { undated = false, legacyUniland = false } = {}) {
     state.workspace.workingHours.UNILAND = layout3Draft(work('UNILAND'));
   }
   if (undated) state.workspace.workingHours.JRE.rows[0].end[0] = '123.5';
+  if (undatedNight) {
+    state.workspace.nightShifts = emptyNightShifts();
+    state.workspace.nightShifts.JRE.rows[0].end[0] = '123.';
+  }
   await page.goto('/');
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
   return { state, errors };
@@ -232,7 +237,7 @@ test('graphs isolate work mode, preserve actual times, and exclude utility selec
   await expect(page.locator('#graph-kind')).toHaveValue('workingHours');
   await expect(page.locator('#graph-status')).toContainText('1');
   expect(requests.at(-1).kind).toBe('workingHours');
-  expect(await page.locator('#graph-cards svg').first().textContent()).toContain('Working hours');
+  expect(await page.locator('#graph-cards svg').first().textContent()).toContain('Day shift');
   await page.locator('.graph-data').first().locator('summary').click();
   await expect(page.locator('.graph-data').first()).toContainText('08:00 → 17:00 WIB (9 hours)');
   await page.locator('.graph-settings').first().locator('summary').click();
@@ -279,7 +284,7 @@ test('UNILAND expanded drafts retain old readings and flexible imports use the s
     await expect(page.locator('#import-dialog')).not.toBeVisible();
     await expect(input('Painting', side)).toHaveValue(d.rows[rowIndex('Painting')][side][0]);
   }
-  await expect(page.locator('#next-day-hint')).toContainText('both work columns empty');
+  await expect(page.locator('#next-day-hint')).toContainText('recorded next morning');
   await expect(page.locator('#work-start-time')).toHaveValue('07:45');
   await expect(page.locator('#work-end-time')).toHaveValue('17:30');
   await expect(page.locator('#copy-report')).toBeDisabled();
@@ -328,5 +333,137 @@ test('UNILAND expanded drafts retain old readings and flexible imports use the s
   });
   expect(alignment).toBeLessThan(1);
   await page.screenshot({ path: info.outputPath('uniland-expanded-work.png') });
+  expect(errors).toEqual([]);
+});
+
+test('Day and Night share readings, copy separately or together, retain overnight dates and roll into the next Day', async ({
+  page,
+  context,
+}, info) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const { state, errors } = await setup(page);
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await page.locator('#load-example').click();
+  const evening = await cell(page, 'end').inputValue();
+  await expect(page.locator('#copy-shift-day')).toBeEnabled();
+  await expect(page.locator('#copy-shift-night')).toBeDisabled();
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(cell(page)).toHaveValue(evening);
+  await expect(page.locator('#start-reading-label')).toHaveText('After-work reading');
+  await expect(page.locator('#period-note')).toContainText('2026-09-17 08:00');
+  await expect(page.locator('#gas-section')).toBeHidden();
+  await expect(page.locator('#water-section')).toBeHidden();
+  await cell(page).fill('103010');
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await expect(cell(page, 'end')).toHaveValue('103010');
+  await page.locator('#reading-mode').selectOption('nightShift');
+  // Fill only the unknown next-morning column through the actual text import path.
+  await page.locator('#open-import').click();
+  await page.locator('#import-side').selectOption('end');
+  const { exportRawReading } = await import('../../raw-export.js');
+  const next = work('JRE');
+  next.endDate = '2026-09-17';
+  next.endTime = '08:00';
+  next.rows.forEach((r) => {
+    r.end = r.end.map((v) => String(Number(v) + 100));
+  });
+  await page
+    .locator('#import-text')
+    .fill(
+      exportRawReading(next, 'end')
+        .text.replace('17/09/2026', '17/09/2026 (Morning)')
+        .replace('Reading time: 08:00 WIB', ''),
+    );
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(page.locator('#work-date')).toHaveValue('2026-09-16');
+  await expect(cell(page, 'end')).toHaveValue('103100');
+  await expect(page.locator('#copy-shift-both')).toBeEnabled();
+  for (const [id, label] of [
+    ['day', 'Day Shift'],
+    ['night', 'Night Shift'],
+    ['both', 'Night:'],
+  ]) {
+    await page.locator('#copy-shift-' + id).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain(label);
+  }
+  const combined = await page.evaluate(() => navigator.clipboard.readText());
+  expect(combined).toContain('Day:');
+  expect(combined).not.toMatch(/^\* Water:|^\* LPG:/m);
+  await page.locator('#save-report').click();
+  expect(state.saved.at(-1).draft.periodKind).toBe('nightShift');
+  await page.locator('#work-period').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('night-shift.png') });
+  await page.locator('#next-day').click();
+  await expect(page.locator('#work-date')).toHaveValue('2026-09-17');
+  await expect(cell(page)).toHaveValue('');
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await expect(cell(page)).toHaveValue('103100');
+  await expect(cell(page, 'end')).toHaveValue('');
+  await page.locator('#undo-change').click();
+  await expect(page.locator('#reading-mode')).toHaveValue('nightShift');
+  await expect(cell(page, 'end')).toHaveValue('103100');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await page.reload();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(cell(page, 'end')).toHaveValue('103100');
+  const before = await page.locator('#report-preview').inputValue();
+  for (const lang of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(lang);
+    await expect(page.locator('#report-preview')).toHaveValue(before);
+  }
+  expect(errors).toEqual([]);
+});
+
+test('legacy backup cannot overwrite a conflicting shared evening; Night template includes a time placeholder', async ({
+  page,
+}) => {
+  const { errors } = await setup(page);
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await page.locator('#load-example').click();
+  const legacy = {
+    version: 4,
+    drafts: { JRE: exampleDraft('JRE'), UNILAND: exampleDraft('UNILAND') },
+    workingHours: emptyWorkingHours(),
+  };
+  legacy.workingHours.JRE = work('JRE');
+  legacy.workingHours.JRE.rows[0].end[0] = '999';
+  const raw = createDraftBackup(legacy, user.id);
+  page.once('dialog', (d) => d.accept());
+  await page
+    .locator('#draft-backup-file')
+    .setInputFiles({ name: 'old.json', mimeType: 'application/json', buffer: Buffer.from(raw) });
+  await expect(page.locator('#toast')).toContainText('backup');
+  await expect(cell(page, 'end')).toHaveValue('103000');
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(cell(page)).toHaveValue('103000');
+  await page.locator('[data-open-raw-template]').last().click();
+  await page.locator('#raw-template-kind').selectOption('nightShift');
+  await expect(page.locator('#raw-template-preview')).toHaveValue(/Reading time: HH:MM WIB/);
+  expect(errors).toEqual([]);
+});
+
+test('an undated partial Night reading survives NTP defaults, first date assignment and account reload', async ({
+  page,
+}) => {
+  const { state, errors } = await setup(page, { undatedNight: true });
+  await expect(page.locator('#clock-status')).toHaveText('NTP synchronized');
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(page.locator('#work-date')).toHaveValue('');
+  await expect(cell(page, 'end')).toHaveValue('123.');
+  await page.locator('#work-date').fill('2026-09-16');
+  await expect(cell(page, 'end')).toHaveValue('123.');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  expect(state.workspace.nightShifts.JRE.endDate).toBe('2026-09-17');
+  await page.reload();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(cell(page, 'end')).toHaveValue('123.');
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(page.locator('#reading-mode')).toHaveValue('nightShift');
+  await expect(page.locator('.meter-input')).toHaveCount(96);
   expect(errors).toEqual([]);
 });

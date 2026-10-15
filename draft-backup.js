@@ -7,14 +7,19 @@ const size = (raw) => new TextEncoder().encode(raw).length;
 
 export function createDraftBackup(workspace, ownerId, createdAt = new Date().toISOString()) {
   if (!validOwner(ownerId)) throw new Error('backupAccount');
-  const { drafts, workingHours } = restoreWorkspace(JSON.stringify(workspace));
+  const { drafts, workingHours, nightShifts } = restoreWorkspace(JSON.stringify(workspace));
   const raw = JSON.stringify(
     {
       format: FORMAT,
-      version: 2,
+      version: 3,
       ownerId,
       createdAt,
-      workspace: { version: 4, drafts, ...(workingHours ? { workingHours } : {}) },
+      workspace: {
+        version: 4,
+        drafts,
+        ...(workingHours ? { workingHours } : {}),
+        ...(nightShifts ? { nightShifts } : {}),
+      },
     },
     null,
     2,
@@ -31,11 +36,12 @@ export function restoreDraftBackup(raw, ownerId) {
   } catch {
     throw new Error('backupInvalid');
   }
-  if (input?.format !== FORMAT || ![1, 2].includes(input.version)) throw new Error('backupInvalid');
+  if (input?.format !== FORMAT || ![1, 2, 3].includes(input.version))
+    throw new Error('backupInvalid');
   if (!validOwner(ownerId) || input.ownerId !== ownerId) throw new Error('backupAccount');
   try {
     return { ...restoreWorkspace(JSON.stringify(input.workspace)), reportLinks: {} };
-  } catch {
-    throw new Error('backupInvalid');
+  } catch (error) {
+    throw new Error(error.message === 'shiftConflict' ? 'shiftConflict' : 'backupInvalid');
   }
 }

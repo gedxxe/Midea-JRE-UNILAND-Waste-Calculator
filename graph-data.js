@@ -1,7 +1,7 @@
 import { GRAPH_METRICS } from './graph-schema.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { buildWorksheet } from './worksheet.js';
-import { workMinutes, WORKING_HOURS } from './reading-period.js';
+import { workMinutes, isWorkingHours } from './reading-period.js';
 import { dayDiff, round, shiftDate } from './numbers.js';
 
 // Read the saved English outputs, not today's engine or raw cumulative readings.
@@ -64,7 +64,7 @@ export function graphValues(snapshot, plant) {
 export function graphRecords(rows, plant, history = []) {
   const records = rows.map((row) => {
     const period = row.snapshot?.period;
-    const working = period?.kind === WORKING_HOURS;
+    const working = isWorkingHours(period);
     return {
       id: row.id,
       revision: row.revision,
@@ -73,11 +73,11 @@ export function graphRecords(rows, plant, history = []) {
       endDate: working ? shiftDate(row.start_date, 1) : row.end_date,
       ...(working
         ? {
-            periodKind: WORKING_HOURS,
+            periodKind: period.kind,
             readingEndDate: row.end_date,
             startTime: period.startTime,
             endTime: period.endTime,
-            minutes: workMinutes(period),
+            minutes: workMinutes({ ...period, startDate: row.start_date, endDate: row.end_date }),
           }
         : {}),
       values: graphValues(row.snapshot, plant),

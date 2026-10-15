@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.0-alpha - 2026-10-15
+
+- Add Day and Night electricity reports for JRE and UNILAND, with exact date/time sharing of evening readings and next-morning carry into the following Day.
+- Provide Copy Day, Copy Night and Copy Day + Night. Keep gas and Water daily and retain historical report output.
+- Extend private drafts, backup/Undo, historian and graphs to Night; reject conflicting restored shared readings and protect shift drafts during code rollback.
+- Add explicit migration 005 for separate daily/shift report identities. Remain alpha.
+
 ## v0.10.2-alpha - 2026-10-15
 
 - Add UNILAND SV window, Painting and Dryer as individual direct kWh meters in daily and working-hours entry, reports, raw templates/exports and graph choices.

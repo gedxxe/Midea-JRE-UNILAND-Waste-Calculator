@@ -19,7 +19,7 @@ export function reportsHandler(database = getPool, env = process.env) {
     const params = new URL(req.url, origin).searchParams;
     if (req.method === 'GET') {
       const kind = params.get('kind') || 'daily';
-      if (!['daily', 'workingHours'].includes(kind)) fail(400, 'INVALID_INPUT');
+      if (!['daily', 'workingHours', 'nightShift'].includes(kind)) fail(400, 'INVALID_INPUT');
       const id = params.get('id');
       if (id) {
         uuid(id);

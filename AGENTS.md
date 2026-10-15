@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.10.2-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -77,6 +77,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Confirmed 2026-10-15: add UNILAND SV window, Painting and Dryer, each one direct kWh pair, to Daily and Working hours. Layout 4 has 34 rows/48 reading slots, preserving Trafo and both lab inputs. New fields start blank when upgrading layouts 1–3. Keep the worksheet at 16 columns; expose new graph keys r31/r32/r33 without renumbering historical keys. New-server draft saves reject older layout payloads once an expanded draft is stored. Import time is flexible: Pagi/Sore date labels are optional, and untimed work import uses the chosen column's configured time without confirmation; explicit Reading time overrides it. Do not infer time from the label or commit operational samples.
 
+- Confirmed 2026-10-15: supersede morning-to-evening-only trial with Day D = morning D to evening D; Night D = evening D to morning D+1, for both plants. Electricity only; gas and Water remain Daily. Provide Copy Day, Copy Night and Copy Day + Night. Exact date/time observations are shared; next-day morning becomes the following Day start. Never relabel evening as morning. Keep workingHours as the persisted Day kind; nightShift is separate, with nightShifts in the same owner workspace. Backup v3 includes all modes; older backups retain absent collections and reject conflicting shared observations. Migration 005 separates report uniqueness by kind and preserves Night drafts during rollback. Existing report outputs remain immutable. v0.11.0-alpha is a workflow milestone, not beta approval.
+
 ## Architecture
 
 - analytics.js validates intake paths and filters root pageviews; ui/analytics.js is an isolated asynchronous loader with no access to application state or storage. scripts/analytics-config.mjs handles production-only build configuration. Do not export arbitrary observability configuration or enable preview tracking.
@@ -84,6 +86,7 @@ New user instructions override older choices here. Update this decision record, 
 - UNILAND layout3No preserves pre-expansion positions, previousNo preserves layout-2 positions, and legacyIndex preserves graph identity. Resolve worksheet source rows by equipment name when inserting new rows.
 - meter-layout.js maps legacy JRE and UNILAND editable drafts into current layouts exactly once; importer.js also supports complete legacy JRE text imports. New reports require the current meterLayout marker so stale clients must reload before finalizing reports. Stored outputs stay immutable.
 - water.js owns pure cumulative water validation and subtraction; ui/water.js owns entry for both plants and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.
+- shifts.js owns paired Day/Night observation movement, shared reading reconciliation and combined copy output.
 - reading-period.js owns working-hours metadata, time validation and reading labels; ui/working-hours.js owns the mode/time controls. Work reports use the same electricity engine and factors, with no daily utilities. Migration 004 adds report_kind and same-date work periods, and a database trigger prevents older code from discarding trial drafts during rollback. It never rewrites snapshots. A code rollback keeps trial records but older UI cannot edit them; preserve a full backup and restore the new code to resume the trial. Legacy backup files without workingHours leave existing trial drafts intact.
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
 - engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.

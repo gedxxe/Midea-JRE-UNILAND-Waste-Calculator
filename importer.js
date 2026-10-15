@@ -33,7 +33,7 @@ export function parseReading(text, plantKey) {
       continue;
     }
     const dateMatch = line.match(
-      /^(?:(\d{1,2})\/(\d{1,2})\/(20\d{2})|(20\d{2})-(\d{2})-(\d{2}))(?:\s*\(\s*(?:Pagi|Sore)\s*\))?\s*:?$/i,
+      /^(?:(\d{1,2})\/(\d{1,2})\/(20\d{2})|(20\d{2})-(\d{2})-(\d{2}))(?:\s*\(\s*(?:Pagi|Sore|Morning|Afternoon|Evening|day shift|night shift|Sore\s*\/\s*night shift)\s*\)|\s+(?:day shift|night shift))?\s*:?$/i,
     );
     if (dateMatch) {
       const iso = dateMatch[4]

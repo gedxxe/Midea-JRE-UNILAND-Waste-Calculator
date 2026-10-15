@@ -1,18 +1,18 @@
 # Midea Daily Energy Report
 
-**v0.10.2-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.0-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
 
-UNILAND now includes SV window, Painting and Dryer as separate direct kWh readings in both Daily and Working hours. Consumption is end minus start. Existing drafts preserve all previous readings; the new fields start blank. New reports, raw/blank templates and graph choices include the new meters. Saved historical output and the 16-column worksheet format stay unchanged. In work imports, the selected morning/evening column supplies the time when no Reading time line is present. Pagi/Sore labels beside the date are optional; explicit times still take precedence.
+UNILAND now includes SV window, Painting and Dryer as separate direct kWh readings in Daily, Day and Night. Consumption is end minus start. Existing drafts preserve all previous readings; the new fields start blank. New reports, raw/blank templates and graph choices include the new meters. Saved historical output and the 16-column worksheet format stay unchanged. In work imports, the selected morning/evening column supplies the time when no Reading time line is present. Pagi/Sore labels beside the date are optional; explicit times still take precedence.
 
 **Web Analytics:** production counts aggregate visits through an asynchronous Vercel script. Local and preview builds do not collect visits. Only the root page URL passes the filter; query strings, fragments and custom events are excluded. Account and reading data are not passed to analytics. The vendor still processes normal visit metadata. This adds browser/network work, with no new Neon queries or application API calls. See [setup, privacy, limits and disable switches](docs/analytics.md).
 
-**Working-hours electricity trial:** choose Reading mode → Working hours for JRE or UNILAND. Enter one work date and actual morning/after-work times (defaults 08:00 and 17:00 WIB). Consumption is evening minus morning with the existing ratios; no overnight estimate. Gas and Water remain in Daily mode. Daily and work drafts, reports, historian filters and graphs are separate. Use matching 08:00 daily readings copies only the same-date morning column after confirmation if filled. Next day starts both work columns empty. Time changes retain only matching observations; use Undo for corrections. Raw exports/imports include Reading time: HH:MM WIB; fill the time placeholder in blank work templates.
+**Electricity shifts:** select Day (morning D to evening D) or Night (evening D to morning D+1) for either factory. Both reports use D as their title date. Default times are 08:00/17:00 WIB and can be edited. Matching timestamps share one reading, including optional JRE T1–T4. Next day carries the recorded next morning into the next Day start; unknown readings stay empty. Copy Day, Copy Night and Copy Day + Night are available. Gas and Water remain Daily. Daily, Day and Night reports and graph filters are separate; old saved output is unchanged.
 
-Full JSON backups now include both modes and factories. Older backups restore daily data while retaining current work drafts. Apply migration 004 explicitly to development and production before merging this release; builds do not migrate. Trial data does not expire after one week. Code rollback preserves database reports and protects trial drafts from older writers; the old UI cannot manage this trial. Keep a full backup before rollback. See [trial and release steps](docs/working-hours.md).
+Full JSON backups include all three modes for both factories. Older backups keep absent shift collections; conflicting shared readings reject the entire restore. Undo restores the full workspace. Apply migrations 004 and 005 explicitly before merging; builds do not migrate. Rollback preserves reports and protects newer drafts from old writers, although older UI cannot edit Night. See [shift workflow and release steps](docs/working-hours.md).
 
 UNILAND Building A/B, hydrant, pump and power house now accept three meters and sum each converted delta. HE accepts three direct meters. Two repeated 10HP lab observations are retained under distinct labels; the second uses (2) pending equipment clarification. Trafo rows may be omitted from text import: matching-date readings are retained, otherwise they remain blank and need completion before a report can be finalized. Legacy drafts keep original readings and gain empty new slots; historical outputs stay unchanged.
 
@@ -125,13 +125,13 @@ This is an alpha reporting tool. Scheduled backups, restore drills, runtime moni
 
 ## 中文
 
-UNILAND 新增 SV window、Painting、Dryer 三个独立直读 kWh 电表，适用于每日和工作时段。用量为结束减开始。旧草稿保留原读数，新字段留空；新报告、原始及空白模板、图表可选变量包含新增电表。历史输出与16列工作表格式不变。工作时段导入若没有 Reading time 行，则采用所选早晚列的时间；日期旁 Pagi/Sore 标签可有可无，明确填写的时间仍优先。
+UNILAND 新增 SV window、Painting、Dryer 三个独立直读 kWh 电表，适用于每日、白班与夜班。用量为结束减开始。旧草稿保留原读数，新字段留空；新报告、原始及空白模板、图表可选变量包含新增电表。历史输出与16列工作表格式不变。工作时段导入若没有 Reading time 行，则采用所选早晚列的时间；日期旁 Pagi/Sore 标签可有可无，明确填写的时间仍优先。
 
 **访问统计：**正式环境通过异步 Vercel 脚本统计访问，本地和预览环境不采集。仅允许根页面 URL，移除查询参数、片段及自定义事件，不向统计服务传递账户或读数。服务商仍处理常规访问元数据。增加少量浏览器与网络开销，不增加 Neon 查询或应用 API 调用。详见[设置、隐私、限额及关闭方法](docs/analytics.md)。
 
-**工作时段用电试用：** JRE 与 UNILAND 均可选择记录模式 → 工作时段。填写一个工作日期及实际早晨、下班抄表时间，默认 08:00 与 17:00 WIB。按现有倍率计算晚间减早晨，不推算夜间。燃气和水仍使用每日模式。两种模式的草稿、报告、历史与图表分开。使用匹配的每日 08:00 读数需操作员主动复制；已有早晨读数时先确认。下一工作日两列均清空。原始导出及导入带 Reading time: HH:MM WIB。
+**班次用电：** 两厂均可选择白班（D日早晨至晚间）或夜班（D日晚间至D+1日早晨）。报告日期均为D日。默认08:00/17:00 WIB，可调整实际时间。相同时间点共用读数，包括JRE可选T1–T4。下一天将已记录的次日早晨读数用于白班开始，未知读数留空。可分别复制白班、夜班或同日两班。燃气与水仍按日记录。每日、白班、夜班报告及图表分别筛选，历史输出不变。
 
-JSON 备份包含两种模式及两个工厂；旧备份保留当前试用草稿。合并前需对开发和生产数据库显式执行迁移 004，构建不执行迁移。一周后数据不自动删除。代码回退保留报告并阻止旧代码丢弃试用草稿；旧界面无法管理此试用。回退前保存完整备份。详见[试用及发布步骤](docs/working-hours.md)。
+JSON备份包含两厂三种模式。旧备份保留未包含的班次草稿，共用读数冲突时整份恢复被拒绝。撤销可恢复整个工作区。合并前显式执行迁移004及005，构建不执行迁移。代码回退保留报告并保护新版草稿，旧界面无法编辑夜班。详见[班次及发布步骤](docs/working-hours.md)。
 
 UNILAND Building A/B、消防泵、水泵和动力房接收三表读数，按各表倍率换算后求和；HE为三表直读。重复的10HP实验室读数分别保留，第二项暂以(2)区分。文本导入可省略变压器，保留同日期已有读数，否则留空并要求报告完成前补齐。旧草稿保留原读数，新槽位为空；历史输出不变。
 
@@ -213,13 +213,13 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 
 ## Indonesia
 
-UNILAND menambah SV window, Painting dan Dryer sebagai meter direct kWh terpisah di mode Daily maupun Working hours. Konsumsi = akhir dikurangi awal. Draft lama mempertahankan reading yang sudah ada; kolom baru kosong. Meter baru ikut laporan, template raw/kosong, ekspor dan pilihan grafik. Hasil historis serta format worksheet 16 kolom tetap. Impor jam kerja tanpa baris Reading time memakai waktu kolom pagi/sore yang dipilih. Label tanggal Pagi/Sore opsional; jam eksplisit di teks tetap diutamakan.
+UNILAND menambah SV window, Painting dan Dryer sebagai meter direct kWh terpisah di mode Daily, Day dan Night. Konsumsi = akhir dikurangi awal. Draft lama mempertahankan reading yang sudah ada; kolom baru kosong. Meter baru ikut laporan, template raw/kosong, ekspor dan pilihan grafik. Hasil historis serta format worksheet 16 kolom tetap. Impor jam kerja tanpa baris Reading time memakai waktu kolom pagi/sore yang dipilih. Label tanggal Pagi/Sore opsional; jam eksplisit di teks tetap diutamakan.
 
 **Web Analytics:** kunjungan production dicatat oleh script Vercel yang dimuat secara asynchronous. Local dan preview tidak mencatat kunjungan. Filter hanya mengizinkan URL halaman utama tanpa query, hash atau custom event. Data akun dan reading tidak dikirim ke analytics; Vercel tetap memproses metadata kunjungan biasa. Ada tambahan kerja browser dan request jaringan, tanpa query Neon atau pemanggilan API aplikasi tambahan. Lihat [pengaturan, privasi, batas penggunaan dan cara mematikan](docs/analytics.md).
 
-**Uji coba listrik jam kerja:** pilih Reading mode → Working hours untuk JRE atau UNILAND. Isi satu tanggal kerja dan waktu reading pagi/sore yang sebenarnya, default 08.00 dan 17.00 WIB. Konsumsi dihitung dari sore dikurangi pagi dengan ratio yang sama; tidak menebak pemakaian malam. Gas dan Water tetap di mode Daily. Draft, laporan, historian, dan grafik kedua mode dipisahkan. Tombol reading harian 08.00 hanya menyalin kolom pada tanggal yang cocok, dengan konfirmasi jika pagi sudah terisi. Next day mengosongkan kedua kolom jam kerja. Ekspor/impor raw menyertakan Reading time: HH:MM WIB.
+**Shift listrik:** pilih Day (pagi D ke sore D) atau Night (sore D ke pagi D+1) untuk kedua pabrik. Judul laporan memakai tanggal D. Default jam 08.00/17.00 WIB bisa diubah. Timestamp yang sama memakai satu reading bersama, termasuk T1–T4 opsional JRE. Next day memakai reading pagi berikutnya sebagai awal Day berikutnya; reading yang belum ada tetap kosong. Tersedia Copy Day, Copy Night dan Copy Day + Night. Gas dan Water tetap Daily. Laporan dan filter grafik Daily, Day, Night terpisah; hasil historis tetap.
 
-Backup JSON mencakup kedua mode dan pabrik. Backup lama mempertahankan draft jam kerja yang sedang terbuka. Jalankan migration 004 secara eksplisit pada database development dan production sebelum merge; build tidak melakukan migration. Data trial tidak dihapus otomatis setelah seminggu. Rollback kode mempertahankan laporan dan melindungi draft trial dari kode lama, tetapi UI lama tidak mendukung trial ini. Simpan backup lengkap sebelum rollback. Lihat [alur trial dan rilis](docs/working-hours.md).
+Backup JSON mencakup tiga mode kedua pabrik. Backup lama mempertahankan koleksi shift yang tidak disertakan; konflik reading bersama membatalkan seluruh restore. Undo memulihkan seluruh workspace. Jalankan migration 004 dan 005 secara eksplisit sebelum merge; build tidak menjalankan migration. Rollback kode mempertahankan laporan dan melindungi draft baru dari penulisan kode lama, tetapi UI lama tidak bisa mengedit Night. Lihat [alur shift dan rilis](docs/working-hours.md).
 
 Building A/B, hydrant, pompa, dan power house UNILAND menerima tiga meter; setiap selisih dikalikan ratio yang sama lalu dijumlahkan. HE memakai tiga meter direct. Dua reading 10HP dipertahankan terpisah; label kedua sementara (2). Impor boleh tanpa Trafo: reading bertanggal cocok dipertahankan, lainnya kosong dan perlu dilengkapi sebelum laporan final. Draft lama mempertahankan reading asli dengan slot baru kosong; histori tetap utuh.
 

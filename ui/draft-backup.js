@@ -48,12 +48,18 @@ export function createBackupControls({ read, apply, toast }) {
         toast(t('backupChanged'));
         return;
       }
-      if (!confirm(t(workspace.workingHours ? 'backupConfirm' : 'backupLegacyConfirm'))) return;
+      if (!confirm(t(workspace.nightShifts ? 'backupConfirm' : 'backupLegacyConfirm'))) return;
       apply(workspace);
       toast(t('backupRestored'));
     } catch (error) {
       if (identity === epoch && request === ticket)
-        toast(t(error.message === 'backupAccount' ? 'backupAccount' : 'backupInvalid'));
+        toast(
+          t(
+            ['backupAccount', 'shiftConflict'].includes(error.message)
+              ? error.message
+              : 'backupInvalid',
+          ),
+        );
     }
   });
   return { reset };

@@ -1830,3 +1830,12 @@ dialog textarea {
   color: #111;
   font-size: 1.1rem;
 }
+
+#shift-copies {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+#shift-copies .button {
+  flex: 1 1 120px;
+}

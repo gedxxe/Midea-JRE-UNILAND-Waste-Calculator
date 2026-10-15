@@ -1,6 +1,13 @@
+import { reconcileShiftPair } from './shifts.js';
 import { restoreGasDraft, nextGasDay } from './gas.js';
-import { isWorkingHours, periodKind, validTime, observationTime } from './reading-period.js';
-import { createDraft, createWorkingHoursDraft } from './engine.js';
+import {
+  isWorkingHours,
+  isNightShift,
+  periodKind,
+  validTime,
+  observationTime,
+} from './reading-period.js';
+import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from './engine.js';
 import { currentRatioIssues } from './import-ratios.js';
 import { migrateMeterLayout } from './meter-layout.js';
 import { restoreWater, nextWaterDay } from './water.js';
@@ -18,7 +25,7 @@ export function restoreWorkspace(raw) {
     reportLinks = {};
   if (Object.values(drafts).some(isWorkingHours))
     throw new Error('Daily drafts must use daily periods.');
-  for (const plant of ['JRE', 'UNILAND', 'JREWork', 'UNILANDWork']) {
+  for (const plant of ['JRE', 'UNILAND', 'JREWork', 'UNILANDWork', 'JRENight', 'UNILANDNight']) {
     const link = saved.reportLinks?.[plant];
     if (
       link &&
@@ -37,10 +44,28 @@ export function restoreWorkspace(raw) {
   }
   if (saved.workingHours !== undefined) {
     const workingHours = restoreDrafts(JSON.stringify({ version: 4, drafts: saved.workingHours }));
-    if (Object.values(workingHours).some((d) => !isWorkingHours(d)))
+    if (Object.values(workingHours).some((d) => periodKind(d) !== 'workingHours'))
       throw new Error('Invalid working-hours workspace.');
-    return { version: 4, drafts, workingHours, reportLinks };
+    let nightShifts;
+    if (saved.nightShifts !== undefined) {
+      nightShifts = restoreDrafts(JSON.stringify({ version: 4, drafts: saved.nightShifts }));
+      if (Object.values(nightShifts).some((d) => !isNightShift(d)))
+        throw Error('Invalid Night workspace.');
+      for (const plant of ['JRE', 'UNILAND']) {
+        const pair = reconcileShiftPair(workingHours[plant], nightShifts[plant]);
+        workingHours[plant] = pair.day;
+        nightShifts[plant] = pair.night;
+      }
+    }
+    return {
+      version: 4,
+      drafts,
+      workingHours,
+      ...(nightShifts ? { nightShifts } : {}),
+      reportLinks,
+    };
   }
+  if (saved.nightShifts !== undefined) throw Error('Day workspace required with Night drafts.');
   return { version: 4, drafts, reportLinks };
 }
 
@@ -50,7 +75,12 @@ export function emptyWorkingHours() {
 
 // A time is part of an observation's identity. Never relabel a 17:00 reading as 08:00.
 export function changeWorkPeriod(draft, date, startTime, endTime, origin = draft) {
-  const next = createWorkingHoursDraft(draft.plantKey, date, startTime, endTime);
+  const next = (isNightShift(draft) ? createNightShiftDraft : createWorkingHoursDraft)(
+    draft.plantKey,
+    date,
+    startTime,
+    endTime,
+  );
   if (draft.additionalReadings || origin.additionalReadings)
     next.additionalReadings = emptyAdditionalReadings();
   next.importIssues = [];
@@ -61,8 +91,8 @@ export function changeWorkPeriod(draft, date, startTime, endTime, origin = draft
       if (!isWorkingHours(candidate) || candidate.plantKey !== draft.plantKey) continue;
       const match = ['start', 'end'].find(
         (key) =>
-          date &&
-          candidate[key + 'Date'] === date &&
+          next[side + 'Date'] &&
+          candidate[key + 'Date'] === next[side + 'Date'] &&
           observationTime(candidate, key) === next[side + 'Time'],
       );
       if (match) {
@@ -93,6 +123,7 @@ export function changeWorkPeriod(draft, date, startTime, endTime, origin = draft
 export function useDailyMorning(work, daily) {
   if (
     !isWorkingHours(work) ||
+    isNightShift(work) ||
     work.startTime !== '08:00' ||
     !validDate(work.startDate) ||
     daily.plantKey !== work.plantKey ||
@@ -145,12 +176,12 @@ export function restoreDrafts(raw) {
     // Retain legacy UNILAND pairs for recovery, without using them in new reports.
     if (input.additionalReadings !== undefined)
       draft.additionalReadings = restoreAdditionalReadings(input.additionalReadings);
-    if (!['daily', 'workingHours'].includes(periodKind(input)))
+    if (!['daily', 'workingHours', 'nightShift'].includes(periodKind(input)))
       throw new Error('Invalid reading mode.');
     if (isWorkingHours(input)) {
       if (!['startTime', 'endTime'].every((key) => input[key] === '' || validTime(input[key])))
         throw new Error('Invalid reading time.');
-      draft.periodKind = 'workingHours';
+      draft.periodKind = periodKind(input);
       draft.startTime = input.startTime;
       draft.endTime = input.endTime;
     }
