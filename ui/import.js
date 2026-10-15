@@ -1,4 +1,4 @@
-import { isWorkingHours, observationLabel } from '../reading-period.js';
+import { isWorkingHours, observationLabel, validTime } from '../reading-period.js';
 import { formatReadingColumn } from '../raw-export.js';
 import { parseReading } from '../importer.js';
 import { t } from '../i18n/index.js';
@@ -37,14 +37,16 @@ export function createImportEditor({ current, apply, toast }) {
     const parsed = parseReading($('import-text').value, current().plantKey);
     $('import-feedback').textContent = parsed.issues.map((issue) => issue.message).join('\n');
     if (!parsed.success) return;
+    const side = $('import-side').value;
+    if (isWorkingHours(current()) && !parsed.time) parsed.time = current()[side + 'Time'];
     if (
       (!isWorkingHours(current()) && parsed.time && parsed.time !== '08:00') ||
-      (isWorkingHours(current()) && !parsed.time)
+      (isWorkingHours(current()) && !validTime(parsed.time))
     ) {
       $('import-feedback').textContent = t('workImportTime');
       return;
     }
-    apply(parsed, $('import-side').value);
+    apply(parsed, side);
     $('import-dialog').close();
     toast(
       parsed.omittedRows?.length

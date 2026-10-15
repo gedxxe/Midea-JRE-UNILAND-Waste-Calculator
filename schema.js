@@ -140,6 +140,18 @@ PLANT_SCHEMAS.UNILAND.rows.splice(24, 0, {
   unit: 'kWh',
   legacyIndex: 30,
 });
+// Layout-3 numbers remain aliases for immutable reports and editable drafts.
+PLANT_SCHEMAS.UNILAND.rows.forEach((row, i) => {
+  row.layout3No = String(i + 1);
+});
+for (const [name, before, legacyIndex] of [
+  ['SV window', 'Injection Molding', 31],
+  ['Painting', 'Machine Stamping', 32],
+  ['Dryer', 'Machine Stamping', 33],
+]) {
+  const index = PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.name === before);
+  PLANT_SCHEMAS.UNILAND.rows.splice(index, 0, { name, unit: 'kWh', legacyIndex });
+}
 for (const schema of Object.values(PLANT_SCHEMAS)) {
   schema.rows.forEach((row, i) => {
     row.no = String(i + 1);

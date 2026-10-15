@@ -1,7 +1,7 @@
 import { PLANT_SCHEMAS } from './schema.js';
 
 export const JRE_METER_LAYOUT = 2;
-export const UNILAND_METER_LAYOUT = 3;
+export const UNILAND_METER_LAYOUT = 4;
 export const LEGACY_JRE_FACTORS = { 3: [1, 90, 90, 40, 40], 15: [40], 25: [40, 1, 1] };
 
 export function moveLegacyValues(values) {
@@ -32,20 +32,24 @@ export function moveLegacyIssues(issues) {
 export function migrateMeterLayout(input) {
   if (input?.plantKey === 'UNILAND') {
     if (input.meterLayout === UNILAND_METER_LAYOUT) return input;
-    if (input.meterLayout !== undefined && ![1, 2].includes(input.meterLayout))
+    if (input.meterLayout !== undefined && ![1, 2, 3].includes(input.meterLayout))
       throw new Error('Unknown meter layout.');
-    const version = input.meterLayout === 2 ? 2 : 1;
-    const oldCount = version === 2 ? 30 : 28;
+    const version = input.meterLayout || 1;
+    const oldCount = { 1: 28, 2: 30, 3: 31 }[version];
     const oldIndex = (row) =>
-      version === 2
-        ? row.previousNo
-          ? Number(row.previousNo) - 1
+      version === 3
+        ? row.layout3No
+          ? Number(row.layout3No) - 1
           : -1
-        : row.legacyIndex < 28
-          ? row.legacyIndex
-          : -1;
+        : version === 2
+          ? row.previousNo
+            ? Number(row.previousNo) - 1
+            : -1
+          : row.legacyIndex < 28
+            ? row.legacyIndex
+            : -1;
     const oldFactors = (row) =>
-      version === 1 || [4, 5, 6, 7, 8, 11].includes(row.legacyIndex)
+      version < 3 && (version === 1 || [4, 5, 6, 7, 8, 11].includes(row.legacyIndex))
         ? [row.factors[0]]
         : row.factors;
     if (

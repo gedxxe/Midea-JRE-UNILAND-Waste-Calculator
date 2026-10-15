@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.10.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.10.2-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -21,7 +21,7 @@ Current milestone: v0.10.1-alpha in package.json. Preserved baseline: v0.1.0-alp
 
 - Show a login screen first. Keep the reporting workspace hidden until a session is established and any required initial password change is complete. Logout returns to login. Preserve old guest drafts separately without exposing a guest entry mode.
 - Use larger entry text and black equipment labels/readings for readability, including on mobile.
-- Export raw cumulative electricity readings as a copy-ready factory/date/numbered list, with ratio annotations only and no consumption calculations or daily utilities. Choose start/end column; default to end and use that column’s date. The user confirmed UNILAND export follows the website table rather than the different 26-row example; the current layout has 31 rows. Do not fabricate component meters or omit Trafo readings.
+- Export raw cumulative electricity readings as a copy-ready factory/date/numbered list, with ratio annotations only and no consumption calculations or daily utilities. Choose start/end column; default to end and use that column’s date. The user confirmed UNILAND export follows the website table rather than the different 26-row example; the current layout has 34 rows. Do not fabricate component meters or omit Trafo readings.
 - JRE gas rework uses raw LPG %, Oxygen mmWC, Nitrogen mmH2O and R32 mm plus temperature at every observation. R32 supports -20 to 50 °C, including decimals, using the supplied workbook tables. Convert each Before Work, Before/After Refill and After Work observation to kg first, then calculate stock usage with refill correction. After Work normally uses next morning's reading. Preserve manual legacy utilities and store raw gas history. The original rework was JRE only; the UNILAND extension is recorded below.
 - Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
 - Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
@@ -75,10 +75,13 @@ New user instructions override older choices here. Update this decision record, 
 
 - Requested 2026-10-14: add Vercel Web Analytics and explain its workload. Implementation collects aggregate production page visits only, without sending account or operational data. No custom events, identity attribution, database writes or framework/package migration. Local/preview builds omit the tracker; keep CSP, failure isolation and reversible disable switches. Read docs/analytics.md before changing collection. Dashboard ingestion requires verification after production deployment.
 
+- Confirmed 2026-10-15: add UNILAND SV window, Painting and Dryer, each one direct kWh pair, to Daily and Working hours. Layout 4 has 34 rows/48 reading slots, preserving Trafo and both lab inputs. New fields start blank when upgrading layouts 1–3. Keep the worksheet at 16 columns; expose new graph keys r31/r32/r33 without renumbering historical keys. New-server draft saves reject older layout payloads once an expanded draft is stored. Import time is flexible: Pagi/Sore date labels are optional, and untimed work import uses the chosen column's configured time without confirmation; explicit Reading time overrides it. Do not infer time from the label or commit operational samples.
+
 ## Architecture
 
 - analytics.js validates intake paths and filters root pageviews; ui/analytics.js is an isolated asynchronous loader with no access to application state or storage. scripts/analytics-config.mjs handles production-only build configuration. Do not export arbitrary observability configuration or enable preview tracking.
 - logo.css owns login-only reconstruction and layout; ui/logo.js controls replay, manual pause and document-visibility pause without timers or storage. Reuse asset/Midea.webp and never gate login behind the animation.
+- UNILAND layout3No preserves pre-expansion positions, previousNo preserves layout-2 positions, and legacyIndex preserves graph identity. Resolve worksheet source rows by equipment name when inserting new rows.
 - meter-layout.js maps legacy JRE and UNILAND editable drafts into current layouts exactly once; importer.js also supports complete legacy JRE text imports. New reports require the current meterLayout marker so stale clients must reload before finalizing reports. Stored outputs stay immutable.
 - water.js owns pure cumulative water validation and subtraction; ui/water.js owns entry for both plants and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.
 - reading-period.js owns working-hours metadata, time validation and reading labels; ui/working-hours.js owns the mode/time controls. Work reports use the same electricity engine and factors, with no daily utilities. Migration 004 adds report_kind and same-date work periods, and a database trigger prevents older code from discarding trial drafts during rollback. It never rewrites snapshots. A code rollback keeps trial records but older UI cannot edit them; preserve a full backup and restore the new code to resume the trial. Legacy backup files without workingHours leave existing trial drafts intact.
@@ -120,7 +123,7 @@ Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
 
 - JRE: 29 equipment rows, 57 meters. Main Total is a direct delta; never multiply it by 1000 or replace it with the sub-meter sum. Office is x1000; Utility Area is x1000 and x40. Piping All is Piping Building 1# plus Piping Building 3# for the worksheet only.
 - JRE inactive-to-zero exceptions apply only to Air Compressor 1# and New Air Compressor 2# after operator confirmation. Next day resets this confirmation.
-- UNILAND: 31 rows, 45 reading slots. Main factor 3.2 MWh; Trafo rows direct MWh; Building A/hydrant .16 MWh; Building B .08 MWh; pump/power house .02 MWh per meter; sum all three meters for these grouped rows. HE has three direct meters. Piping factors are x40, direct, direct; refrigerant area x40 kWh; remaining rows direct kWh. Keep exact template spelling, numbering, spaces, and Mwh/KWh capitalization.
+- UNILAND: 34 rows, 48 reading slots. Main factor 3.2 MWh; Trafo rows direct MWh; Building A/hydrant .16 MWh; Building B .08 MWh; pump/power house .02 MWh per meter; sum all three meters for these grouped rows. HE has three direct meters. Piping factors are x40, direct, direct; refrigerant area x40 kWh; remaining rows direct kWh. Keep exact template spelling, numbering, spaces, and Mwh/KWh capitalization.
 - Missing data is never silently zero. Empty/invalid values block copying; explicit unavailable or decreasing readings become `-` with check notes. One missing meter invalidates the whole equipment result. Never show a partial JRE sub-meter sum as complete.
 - Decimal comma or dot, no thousands separators/exponents/suffixes. Maximum six decimals and cumulative 1000000000000. Preserve BigInt scaled subtraction.
 - JRE nonzero output has two decimals; zero is 0. UNILAND trims up to eight decimals without exponential notation.

@@ -31,6 +31,8 @@ export function createWorkingHoursPicker({ current, switchMode, changePeriod, co
         $(side + '-reading-label').textContent = t(
           working ? key : side === 'start' ? 'startReading' : 'endReading',
         );
+      $('next-day-hint').dataset.i18n = working ? 'workNextHint' : 'nextHint';
+      $('next-day-hint').textContent = t(working ? 'workNextHint' : 'nextHint');
       $('page-title').textContent = working ? t('workTitle') : 'Daily energy report';
     },
   };

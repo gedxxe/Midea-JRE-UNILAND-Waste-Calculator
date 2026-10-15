@@ -51,6 +51,16 @@ export function draftsHandler(database = getPool, env = process.env) {
       ).rows[0];
       if (workspace && old?.workspace?.workingHours && !workspace.workingHours)
         fail(409, 'DRAFT_FORMAT_CHANGED');
+      // A stale browser must reload rather than erase newly added meter slots.
+      if (
+        workspace &&
+        ['drafts', 'workingHours'].some(
+          (collection) =>
+            (old?.workspace?.[collection]?.UNILAND?.meterLayout || 0) >
+            (body.workspace?.[collection]?.UNILAND?.meterLayout || 0),
+        )
+      )
+        fail(409, 'DRAFT_FORMAT_CHANGED');
       if (old?.unchanged)
         return { version: old.version, unchanged: true, updated_at: old.updated_at };
       if ((old?.version || 0) !== body.baseVersion) fail(409, 'DRAFT_CONFLICT');

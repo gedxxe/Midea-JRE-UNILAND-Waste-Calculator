@@ -1,3 +1,5 @@
+import { layout3Draft } from '../fixtures/uniland-input.mjs';
+import { PLANT_SCHEMAS } from '../../schema.js';
 import { draftsHandler } from '../../server/drafts.js';
 import { createDraft } from '../../engine.js';
 import { createWorkingHoursDraft } from '../../engine.js';
@@ -134,6 +136,34 @@ test('expanded draft saves are replaceable and protected from old clients and ro
     200,
   );
 });
+test('stale UNILAND clients cannot replace expanded daily or work drafts', async () => {
+  const actor = await login(await seed());
+  const workspace = {
+    version: 4,
+    drafts: { JRE: createDraft('JRE'), UNILAND: exampleDraft('UNILAND') },
+    workingHours: emptyWorkingHours(),
+  };
+  const newIndex = PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.name === 'Painting');
+  workspace.drafts.UNILAND.rows[newIndex].end[0] = '123.';
+  workspace.workingHours.UNILAND.rows[newIndex].start[0] = '45,00';
+  const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(saved.status, 200);
+  for (const collection of ['drafts', 'workingHours']) {
+    const stale = structuredClone(workspace);
+    stale[collection].UNILAND = layout3Draft(stale[collection].UNILAND);
+    const rejected = await call('/api/drafts', {
+      actor,
+      body: { workspace: stale, baseVersion: saved.value.version },
+    });
+    assert.equal(rejected.status, 409);
+    assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+  }
+  const kept = (await call('/api/drafts', { actor })).value;
+  assert.equal(kept.version, saved.value.version);
+  assert.equal(kept.workspace.drafts.UNILAND.rows[newIndex].end[0], '123.');
+  assert.equal(kept.workspace.workingHours.UNILAND.rows[newIndex].start[0], '45,00');
+});
+
 test('API boundaries reject unauthenticated reads, forged identities, cross-site writes and SQL-shaped input', async () => {
   for (const path of [
     '/api/reports',
