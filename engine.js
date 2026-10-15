@@ -12,6 +12,7 @@ import {
   formatNumber,
   formatSignedNumber,
   dayDiff,
+  shiftDate,
   formatReportPeriod,
 } from './numbers.js';
 import { buildWorksheet, worksheetPreview } from './worksheet.js';
@@ -41,6 +42,15 @@ export function createWorkingHoursDraft(
   return { ...createDraft(plantKey, date, date), periodKind: 'workingHours', startTime, endTime };
 }
 
+export function createNightShiftDraft(plantKey, date = '', startTime = '17:00', endTime = '08:00') {
+  return {
+    ...createDraft(plantKey, date, date ? shiftDate(date, 1) : ''),
+    periodKind: 'nightShift',
+    startTime,
+    endTime,
+  };
+}
+
 export function formatRowValue(plantKey, row) {
   if (!row || row.missing || !Number.isFinite(row.totalEnergy)) return '-';
   if (plantKey === 'JRE') return row.totalEnergy === 0 ? '0' : row.totalEnergy.toFixed(2);
@@ -65,7 +75,7 @@ export function calculateDraft(draft) {
   const issues = currentRatioIssues(draft.plantKey, draft.importIssues);
   const days = dayDiff(draft.startDate, draft.endDate);
   const working = isWorkingHours(draft);
-  if (!['daily', 'workingHours'].includes(periodKind(draft)))
+  if (!['daily', 'workingHours', 'nightShift'].includes(periodKind(draft)))
     issue(issues, 'DATE_KIND', 'Unknown reading mode.', null, null, 'ERROR');
   if (working) {
     const error = workPeriodError(draft);
@@ -423,7 +433,7 @@ export function calculateDraft(draft) {
     plantKey: draft.plantKey,
     reportDate,
     ...(working
-      ? { periodKind: 'workingHours', startTime: draft.startTime, endTime: draft.endTime }
+      ? { periodKind: periodKind(draft), startTime: draft.startTime, endTime: draft.endTime }
       : {}),
     startDate: draft.startDate,
     endDate: draft.endDate,

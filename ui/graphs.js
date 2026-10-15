@@ -1,4 +1,4 @@
-import { isWorkingHours, graphPeriodText } from '../reading-period.js';
+import { periodKind, graphPeriodText } from '../reading-period.js';
 import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
 import {
@@ -21,10 +21,10 @@ export function createGraphs({ current, request, toast }) {
     status = '';
   const kind = () => $('graph-kind').value;
   const key = (mode = kind()) =>
-    'midea_graph_layout_v1_' + user.id + (mode === 'workingHours' ? '_workingHours' : '');
+    'midea_graph_layout_v1_' + user.id + (mode !== 'daily' ? '_' + mode : '');
   const activeLayouts = () => layouts[kind()];
   const availableMetrics = (plant) =>
-    GRAPH_METRICS[plant].filter((m) => kind() !== 'workingHours' || /^[rw]\d+$/.test(m.key));
+    GRAPH_METRICS[plant].filter((m) => kind() === 'daily' || /^[rw]\d+$/.test(m.key));
   const factory = () => $('graph-plant').value;
   function defaults() {
     return { JRE: defaultGraphs('JRE'), UNILAND: defaultGraphs('UNILAND') };
@@ -50,7 +50,7 @@ export function createGraphs({ current, request, toast }) {
     data = null;
     loading = false;
     status = '';
-    layouts = { daily: defaults(), workingHours: defaults() };
+    layouts = { daily: defaults(), workingHours: defaults(), nightShift: defaults() };
     $('graph-kind').value = 'daily';
     $('graphs-dialog').close();
     $('graph-cards').replaceChildren();
@@ -60,7 +60,7 @@ export function createGraphs({ current, request, toast }) {
     $('graph-end').value = '';
     if (!user) return;
     try {
-      for (const mode of ['daily', 'workingHours']) {
+      for (const mode of ['daily', 'workingHours', 'nightShift']) {
         const saved = JSON.parse(localStorage.getItem(key(mode)));
         if (saved?.version === 1)
           for (const plant of ['JRE', 'UNILAND']) {
@@ -80,7 +80,7 @@ export function createGraphs({ current, request, toast }) {
   function render() {
     if (!$('graphs-dialog').open) return;
     $('graph-refresh').disabled = loading;
-    $('graph-mode-note').hidden = kind() !== 'workingHours';
+    $('graph-mode-note').hidden = kind() === 'daily';
     $('graph-mode-note').textContent = t('workGraphHint');
     $('graph-status').textContent = loading
       ? t('graphLoading')
@@ -366,11 +366,12 @@ export function createGraphs({ current, request, toast }) {
         svg = null;
         if (data && axisValid) {
           svg = renderGraph(
-            kind() === 'workingHours'
+            kind() !== 'daily'
               ? {
                   ...config,
-                  titleEn: config.titleEn + ' · Working hours',
-                  titleZh: config.titleZh + ' · 工作时段',
+                  titleEn:
+                    config.titleEn + (kind() === 'nightShift' ? ' · Night shift' : ' · Day shift'),
+                  titleZh: config.titleZh + (kind() === 'nightShift' ? ' · 夜班' : ' · 白班'),
                 }
               : config,
             data,
@@ -425,7 +426,7 @@ export function createGraphs({ current, request, toast }) {
   $('open-graphs').addEventListener('click', () => {
     if (!user) return;
     $('graph-plant').value = current().plantKey;
-    $('graph-kind').value = isWorkingHours(current()) ? 'workingHours' : 'daily';
+    $('graph-kind').value = periodKind(current());
     if (!validDate($('graph-start').value) && validDate(current().startDate)) {
       $('graph-start').value = current().startDate.slice(0, 7) + '-01';
       const [year, month] = current().startDate.split('-').map(Number);

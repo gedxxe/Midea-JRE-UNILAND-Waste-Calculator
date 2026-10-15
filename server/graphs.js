@@ -18,7 +18,7 @@ export function graphsHandler(database = getPool, env = process.env) {
       start = params.get('start'),
       end = params.get('end');
     const kind = params.get('kind') || 'daily';
-    if (!['daily', 'workingHours'].includes(kind)) fail(400, 'INVALID_INPUT');
+    if (!['daily', 'workingHours', 'nightShift'].includes(kind)) fail(400, 'INVALID_INPUT');
     const days = dayDiff(start, end);
     if (!['JRE', 'UNILAND'].includes(plant) || days === null || days < 0 || days > 365)
       fail(400, 'INVALID_GRAPH_RANGE');
@@ -27,7 +27,7 @@ export function graphsHandler(database = getPool, env = process.env) {
       [user.id, plant, start, end, kind],
     );
     const history =
-      kind === 'workingHours'
+      kind !== 'daily'
         ? []
         : (
             await db.query(

@@ -9,7 +9,7 @@ export function initRawTemplate({ getPlant, toast }) {
   const render = () => {
     preview.value = formatBlankReadingTemplate(
       factory.value,
-      $('raw-template-kind').value === 'workingHours',
+      $('raw-template-kind').value !== 'daily',
     );
     preview.scrollTop = 0;
   };
@@ -40,7 +40,7 @@ export function initRawTemplate({ getPlant, toast }) {
     );
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${factory.value.toLowerCase()}${$('raw-template-kind').value === 'workingHours' ? '-working-hours' : ''}-blank-readings.txt`;
+    link.download = `${factory.value.toLowerCase()}${$('raw-template-kind').value !== 'daily' ? '-' + $('raw-template-kind').value : ''}-blank-readings.txt`;
     document.body.append(link);
     link.click();
     link.remove();

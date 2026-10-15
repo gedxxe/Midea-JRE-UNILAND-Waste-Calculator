@@ -1,5 +1,12 @@
 import { createWorkingHoursPicker } from './ui/working-hours.js';
-import { isWorkingHours } from './reading-period.js';
+import { isWorkingHours, isNightShift, periodKind } from './reading-period.js';
+import {
+  emptyNightShifts,
+  changeShiftPair,
+  nextShiftPair,
+  syncShiftReading,
+  copyShiftReport,
+} from './shifts.js';
 import { createBackupControls } from './ui/draft-backup.js';
 import { createDraftAutosave } from './ui/drafts.js';
 import { createGraphs } from './ui/graphs.js';
@@ -20,6 +27,7 @@ import { PLANT_SCHEMAS } from './schema.js';
 import {
   createDraft,
   createWorkingHoursDraft,
+  createNightShiftDraft,
   calculateDraft,
   formatRowValue,
   generateFullIndonesiaReport,
@@ -37,7 +45,6 @@ import {
   restoreWorkspace,
   nextDayDraft,
   changeDraftPeriod,
-  changeWorkPeriod,
   emptyWorkingHours,
   useDailyMorning,
 } from './storage.js';
@@ -59,6 +66,7 @@ const clock = new NetworkClock();
 let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
 let workingHours = emptyWorkingHours();
+let nightShifts = emptyNightShifts();
 let mode = 'daily';
 let reports = {};
 let undo = null;
@@ -69,11 +77,31 @@ let showValidation = false;
 let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
-const activeDrafts = () => (mode === 'workingHours' ? workingHours : drafts);
+const activeDrafts = () =>
+  mode === 'nightShift' ? nightShifts : mode === 'workingHours' ? workingHours : drafts;
 const current = () => activeDrafts()[plant];
 const setCurrent = (draft) => {
   activeDrafts()[plant] = draft;
 };
+function putPair(pair) {
+  workingHours[plant] = pair.day;
+  nightShifts[plant] = pair.night;
+}
+function ensureNight() {
+  for (const key of ['JRE', 'UNILAND'])
+    if (
+      !nightShifts[key].startDate &&
+      !nightShifts[key].endDate &&
+      workingHours[key].startDate &&
+      !nightShifts[key].rows.some((row) => [...row.start, ...row.end].some(Boolean)) &&
+      !nightShifts[key].additionalReadings?.some((row) => row.start || row.end)
+    ) {
+      nightShifts[key] = syncShiftReading(
+        workingHours[key],
+        createNightShiftDraft(key, workingHours[key].startDate, workingHours[key].endTime),
+      );
+    }
+}
 const workPicker = createWorkingHoursPicker({
   current,
   switchMode(value) {
@@ -83,7 +111,7 @@ const workPicker = createWorkingHoursPicker({
     rawExport.reset();
     importEditor.reset();
     $('import-dialog').close();
-    if (mode === 'workingHours' && clock.synchronized) {
+    if (mode !== 'daily' && clock.synchronized) {
       for (const key of ['JRE', 'UNILAND']) {
         const draft = workingHours[key];
         if (
@@ -97,11 +125,21 @@ const workPicker = createWorkingHoursPicker({
             endDate: wibDate(clock.now()),
           };
       }
+      ensureNight();
       changed();
     }
+    ensureNight();
     mountPlant();
   },
-  changePeriod: changeWork,
+  changePeriod(...args) {
+    try {
+      changeWork(...args);
+    } catch (error) {
+      if (error.message !== 'shiftConflict') throw error;
+      workPicker.sync();
+      toast(t('shiftConflict'));
+    }
+  },
   copyMorning() {
     try {
       const next = useDailyMorning(current(), drafts[plant]);
@@ -133,22 +171,29 @@ const importEditor = createImportEditor({
   toast,
   apply(parsed, side) {
     rememberUndo();
-    setCurrent(
-      isWorkingHours(current())
-        ? changeWorkPeriod(
-            current(),
-            parsed.date,
-            side === 'start' ? parsed.time : current().startTime,
-            side === 'end' ? parsed.time : current().endTime,
-            periodOrigin || current(),
-          )
-        : changeDraftPeriod(
-            current(),
-            side === 'start' ? parsed.date : current().startDate,
-            side === 'end' ? parsed.date : current().endDate,
-            periodOrigin || current(),
-          ),
-    );
+    if (isWorkingHours(current())) {
+      const date =
+        isNightShift(current()) && side === 'end' ? shiftDate(parsed.date, -1) : parsed.date;
+      putPair(
+        changeShiftPair(
+          workingHours[plant],
+          nightShifts[plant],
+          mode,
+          date,
+          side === 'start' ? parsed.time : current().startTime,
+          side === 'end' ? parsed.time : current().endTime,
+          periodOrigin ? (Array.isArray(periodOrigin) ? periodOrigin : [periodOrigin]) : [],
+        ),
+      );
+    } else
+      setCurrent(
+        changeDraftPeriod(
+          current(),
+          side === 'start' ? parsed.date : current().startDate,
+          side === 'end' ? parsed.date : current().endDate,
+          periodOrigin || current(),
+        ),
+      );
     parsed.values.forEach((values, ri) => {
       if (!parsed.suppliedRows || parsed.suppliedRows.includes(ri))
         current().rows[ri][side] = values;
@@ -168,16 +213,31 @@ const gasPanel = createGasPanel({
 const waterPanel = createWaterPanel({ current, changed, rememberUndo });
 const additionalPanel = createAdditionalReadingsPanel({ current, changed });
 const backupControls = createBackupControls({
-  read: () => ({ version: 4, drafts, workingHours }),
+  read: () => ({ version: 4, drafts, workingHours, nightShifts }),
   apply(workspace) {
+    // Validate the entire merged workspace before replacing anything. Legacy backups keep Night.
+    workspace = restoreWorkspace(
+      JSON.stringify({
+        ...workspace,
+        workingHours: workspace.workingHours || workingHours,
+        nightShifts: workspace.nightShifts || nightShifts,
+      }),
+    );
     undo = {
       plant,
       mode,
-      workspace: structuredClone({ drafts, workingHours, reportLinks: accounts.getLinks() }),
+      workspace: structuredClone({
+        drafts,
+        workingHours,
+        nightShifts,
+        reportLinks: accounts.getLinks(),
+      }),
     };
     drafts = workspace.drafts;
     // Legacy backups predate this trial. Keep the current trial copy when absent.
     workingHours = workspace.workingHours || workingHours;
+    nightShifts = workspace.nightShifts || nightShifts;
+    periodOrigin = null;
     accounts.setLinks({});
     rawExport.reset();
     importEditor.reset();
@@ -208,6 +268,7 @@ function accountChanged(user) {
   accountUser = user;
   drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
   workingHours = emptyWorkingHours();
+  nightShifts = emptyNightShifts();
   mode = 'daily';
   undo = null;
   periodOrigin = null;
@@ -225,6 +286,8 @@ function accountChanged(user) {
         const restored = restoreWorkspace(raw);
         drafts = restored.drafts;
         workingHours = restored.workingHours || emptyWorkingHours();
+        nightShifts = restored.nightShifts || emptyNightShifts();
+        ensureNight();
         saveStatus = 'restored';
       }
     } catch {
@@ -253,7 +316,7 @@ const accounts = createAccounts({
   loadDraft(draft) {
     rememberUndo();
     plant = draft.plantKey;
-    mode = isWorkingHours(draft) ? 'workingHours' : 'daily';
+    mode = periodKind(draft);
     setCurrent(draft);
     mountPlant();
     changed();
@@ -261,10 +324,12 @@ const accounts = createAccounts({
 });
 autosave = createDraftAutosave({
   request: (...args) => accounts.request(...args),
-  read: () => ({ version: 4, drafts, workingHours, reportLinks: accounts.getLinks() }),
+  read: () => ({ version: 4, drafts, workingHours, nightShifts, reportLinks: accounts.getLinks() }),
   apply(workspace) {
     drafts = workspace?.drafts || { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
     workingHours = workspace?.workingHours || emptyWorkingHours();
+    nightShifts = workspace?.nightShifts || emptyNightShifts();
+    ensureNight();
     accounts.setLinks(workspace?.reportLinks);
     dirty = false;
     undo = null;
@@ -286,10 +351,24 @@ function toast(message) {
   }, 5500);
 }
 function rememberUndo() {
-  undo = { plant, mode, draft: structuredClone(current()) };
+  undo = {
+    plant,
+    mode,
+    workspace: structuredClone({
+      drafts,
+      workingHours,
+      nightShifts,
+      reportLinks: accounts.getLinks(),
+    }),
+  };
   $('undo-change').hidden = false;
 }
 function changed(periodOnly = false) {
+  if (isWorkingHours(current())) {
+    if (isNightShift(current()))
+      workingHours[plant] = syncShiftReading(current(), workingHours[plant]);
+    else nightShifts[plant] = syncShiftReading(current(), nightShifts[plant]);
+  }
   if (!periodOnly) periodOrigin = null;
   dirty = true;
   saveStatus = 'changed';
@@ -317,9 +396,19 @@ function changeWork(date, startTime, endTime) {
     return;
   if (!periodOrigin) {
     rememberUndo();
-    periodOrigin = structuredClone(current());
+    periodOrigin = structuredClone([workingHours[plant], nightShifts[plant]]);
   }
-  setCurrent(changeWorkPeriod(current(), date, startTime, endTime, periodOrigin));
+  putPair(
+    changeShiftPair(
+      workingHours[plant],
+      nightShifts[plant],
+      mode,
+      date,
+      startTime,
+      endTime,
+      periodOrigin,
+    ),
+  );
   mountPlant();
   changed(true);
   toast(t('periodReadingsMoved'));
@@ -358,10 +447,11 @@ function renderResults() {
   const dateIssue = report.issues.find((i) => i.code.startsWith('DATE_') && i.level !== 'NOTICE');
   $('period-note').textContent = isWorkingHours(current())
     ? dateIssue?.message ||
-      t('workNotice', {
+      t(isNightShift(current()) ? 'nightNotice' : 'workNotice', {
         date: current().startDate || '-',
         start: current().startTime || '-',
         end: current().endTime || '-',
+        endDate: current().endDate || '-',
       })
     : dateIssue
       ? dateIssue.message
@@ -478,6 +568,23 @@ function renderResults() {
   $('copy-combined').disabled = !combined;
   $('copy-combined').title = combinedError;
   $('copy-worksheet').disabled = !report.success;
+  $('shift-copies').hidden = !isWorkingHours(current());
+  const shiftResults = isWorkingHours(current())
+    ? {
+        day: mode === 'workingHours' ? report : calculateDraft(workingHours[plant]),
+        night: mode === 'nightShift' ? report : calculateDraft(nightShifts[plant]),
+      }
+    : null;
+  for (const choice of ['day', 'night', 'both']) {
+    let text = '';
+    try {
+      if (shiftResults)
+        text = copyShiftReport(workingHours[plant], nightShifts[plant], choice, shiftResults);
+    } catch {
+      /* Keep partial shift drafts editable. */
+    }
+    $('copy-shift-' + choice).disabled = !text;
+  }
   $('copy-note').textContent = !report.success
     ? t('copyIncomplete')
     : report.issues.filter((i) => i.level !== 'NOTICE').length
@@ -532,7 +639,17 @@ async function syncTime() {
       !current().startDate &&
       !current().rows.some((row) => [...row.start, ...row.end].some(Boolean))
     )
-      setCurrent({ ...current(), startDate: end, endDate: end });
+      putPair(
+        changeShiftPair(
+          workingHours[plant],
+          nightShifts[plant],
+          mode,
+          end,
+          current().startTime,
+          current().endTime,
+        ),
+      );
+    ensureNight();
     workPicker.sync();
     renderResults();
   }
@@ -652,6 +769,14 @@ $('copy-combined').addEventListener('click', () => {
 $('copy-worksheet').addEventListener('click', () => {
   if (reports[plant].success) void copyText(worksheetRowToTSV(reports[plant].worksheet));
 });
+for (const choice of ['day', 'night', 'both'])
+  $('copy-shift-' + choice).addEventListener('click', () => {
+    try {
+      void copyText(copyShiftReport(workingHours[plant], nightShifts[plant], choice));
+    } catch (error) {
+      toast(error.message);
+    }
+  });
 $('save-draft').addEventListener('click', () => {
   autosave.changed();
   void autosave.flush();
@@ -659,9 +784,12 @@ $('save-draft').addEventListener('click', () => {
 $('forget-draft').addEventListener('click', () => void autosave.forget());
 $('next-day').addEventListener('click', () => {
   try {
-    const next = nextDayDraft(current());
+    const next = isWorkingHours(current())
+      ? nextShiftPair(workingHours[plant], nightShifts[plant])
+      : nextDayDraft(current());
     rememberUndo();
-    setCurrent(next);
+    if (isWorkingHours(current())) putPair(next);
+    else setCurrent(next);
     mountPlant();
     changed();
     toast(t('nextReady'));
@@ -672,8 +800,26 @@ $('next-day').addEventListener('click', () => {
 $('load-example').addEventListener('click', () => {
   rememberUndo();
   const example = exampleDraft(plant);
-  if (mode === 'workingHours') {
-    setCurrent({ ...createWorkingHoursDraft(plant, example.startDate), rows: example.rows });
+  if (mode !== 'daily') {
+    putPair(
+      changeShiftPair(
+        workingHours[plant],
+        nightShifts[plant],
+        mode,
+        example.startDate,
+        current().startTime,
+        current().endTime,
+      ),
+    );
+    setCurrent({
+      ...(isNightShift(current()) ? createNightShiftDraft : createWorkingHoursDraft)(
+        plant,
+        example.startDate,
+        current().startTime,
+        current().endTime,
+      ),
+      rows: example.rows,
+    });
   } else setCurrent(example);
   current().isExample = true;
   mountPlant();
@@ -684,7 +830,12 @@ $('clear-plant').addEventListener('click', () => {
   rememberUndo();
   setCurrent(
     isWorkingHours(current())
-      ? createWorkingHoursDraft(plant, current().startDate, current().startTime, current().endTime)
+      ? (isNightShift(current()) ? createNightShiftDraft : createWorkingHoursDraft)(
+          plant,
+          current().startDate,
+          current().startTime,
+          current().endTime,
+        )
       : createDraft(plant, current().startDate, current().endDate),
   );
   mountPlant();
@@ -698,6 +849,7 @@ $('undo-change').addEventListener('click', () => {
   if (undo.workspace) {
     drafts = undo.workspace.drafts;
     workingHours = undo.workspace.workingHours || emptyWorkingHours();
+    nightShifts = undo.workspace.nightShifts || emptyNightShifts();
     accounts.setLinks(undo.workspace.reportLinks);
     rawExport.reset();
     importEditor.reset();

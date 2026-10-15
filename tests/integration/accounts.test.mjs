@@ -2,7 +2,8 @@ import { layout3Draft } from '../fixtures/uniland-input.mjs';
 import { PLANT_SCHEMAS } from '../../schema.js';
 import { draftsHandler } from '../../server/drafts.js';
 import { createDraft } from '../../engine.js';
-import { createWorkingHoursDraft } from '../../engine.js';
+import { createWorkingHoursDraft, createNightShiftDraft } from '../../engine.js';
+import { emptyNightShifts } from '../../shifts.js';
 import { emptyWorkingHours } from '../../storage.js';
 import { importHistory } from '../../server/history-import.js';
 import { graphsHandler } from '../../server/graphs.js';
@@ -922,4 +923,98 @@ test('expired sessions and logout cannot read reports; repeated wrong passwords 
   assert.equal((await call('/api/reports', { actor: other })).status, 401);
   assert.equal((await call('/api/auth', { actor: admin, body: { action: 'logout' } })).status, 200);
   assert.equal((await call('/api/reports', { actor: admin })).status, 401);
+});
+
+test('Night and daily reports coexist on identical dates with owner-isolated revisions and immutable graphs', async () => {
+  const actor = await login(await seed()),
+    other = await login(await seed());
+  for (const plant of ['JRE', 'UNILAND']) {
+    const daily = exampleDraft(plant),
+      night = {
+        ...createNightShiftDraft(plant, daily.startDate),
+        rows: structuredClone(daily.rows),
+      };
+    const normal = await call('/api/reports', { actor, body: { draft: daily } });
+    const first = await call('/api/reports', { actor, body: { draft: night } });
+    assert.equal(normal.status, 201);
+    assert.equal(first.status, 201);
+    assert.notEqual(normal.value.id, first.value.id);
+    assert.equal((await call('/api/reports?id=' + first.value.id, { actor })).status, 404);
+    assert.equal(
+      (await call('/api/reports?id=' + first.value.id + '&kind=nightShift', { actor: other }))
+        .status,
+      404,
+    );
+    const original = first.value.snapshot.output.reportText;
+    night.endTime = '08:15';
+    night.rows[0].end[0] = String(Number(night.rows[0].end[0]) + 1);
+    const revised = await call('/api/reports', {
+      actor,
+      body: { id: first.value.id, baseRevision: 1, draft: night },
+    });
+    assert.equal(revised.status, 200);
+    assert.equal(revised.value.revision, 2);
+    const old = await call('/api/reports?id=' + first.value.id + '&kind=nightShift&revision=1', {
+      actor,
+    });
+    assert.equal(old.value.snapshot.output.reportText, original);
+    const list = await call('/api/reports?kind=nightShift&plant=' + plant, { actor });
+    assert.equal(list.value.reports.length, 1);
+    const graph = await call(
+      '/api/graphs?plant=' + plant + '&start=2026-09-01&end=2026-09-30&kind=nightShift',
+      { actor },
+    );
+    assert.equal(graph.status, 200);
+    assert.equal(graph.value.records.length, 1);
+    assert.equal(graph.value.records[0].minutes, 915);
+    assert.equal(graph.value.records[0].periodKind, 'nightShift');
+    const invalid = { ...night, endDate: night.startDate };
+    assert.equal((await call('/api/reports', { actor, body: { draft: invalid } })).status, 422);
+  }
+});
+
+test('Night drafts reject old writers, conflicting shared cells and direct rollback overwrites', async () => {
+  const actor = await login(await seed());
+  const workspace = {
+    version: 4,
+    drafts: { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') },
+    workingHours: emptyWorkingHours(),
+    nightShifts: emptyNightShifts(),
+  };
+  workspace.workingHours.JRE = createWorkingHoursDraft('JRE', '2026-09-16');
+  workspace.nightShifts.JRE = createNightShiftDraft('JRE', '2026-09-16');
+  workspace.workingHours.JRE.rows[0].end[0] = '123.';
+  workspace.nightShifts.JRE.rows[0].start[0] = '123.';
+  workspace.nightShifts.JRE.rows[0].end[0] = '124.';
+  const first = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(first.status, 200);
+  const old = structuredClone(workspace);
+  delete old.nightShifts;
+  const rejected = await call('/api/drafts', {
+    actor,
+    body: { workspace: old, baseVersion: first.value.version },
+  });
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+  await assert.rejects(
+    runtime.query('UPDATE meter_app.working_drafts SET workspace=$2::jsonb WHERE owner_id=$1', [
+      actor.id,
+      JSON.stringify(old),
+    ]),
+    (error) => error.code === '23514',
+  );
+  const conflicting = structuredClone(workspace);
+  conflicting.nightShifts.JRE.rows[0].start[0] = '999';
+  assert.equal(
+    (
+      await call('/api/drafts', {
+        actor,
+        body: { workspace: conflicting, baseVersion: first.value.version },
+      })
+    ).status,
+    400,
+  );
+  const kept = (await call('/api/drafts', { actor })).value;
+  assert.equal(kept.version, first.value.version);
+  assert.equal(kept.workspace.nightShifts.JRE.rows[0].start[0], '123.');
 });

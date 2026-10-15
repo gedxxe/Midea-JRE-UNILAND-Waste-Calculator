@@ -1,6 +1,6 @@
 import { $ } from './dom.js';
 import { t } from '../i18n/index.js';
-import { isWorkingHours } from '../reading-period.js';
+import { isWorkingHours, isNightShift, periodKind } from '../reading-period.js';
 
 export function createWorkingHoursPicker({ current, switchMode, changePeriod, copyMorning }) {
   $('reading-mode').addEventListener('change', () => switchMode($('reading-mode').value));
@@ -13,7 +13,13 @@ export function createWorkingHoursPicker({ current, switchMode, changePeriod, co
     sync() {
       const draft = current(),
         working = isWorkingHours(draft);
-      $('reading-mode').value = working ? 'workingHours' : 'daily';
+      $('reading-mode').value = periodKind(draft);
+      const night = isNightShift(draft);
+      $('work-period-title').textContent = t(night ? 'nightTitle' : 'workTitle');
+      $('work-start-time').previousElementSibling.textContent = t(
+        night ? 'nightStart' : 'workStart',
+      );
+      $('work-end-time').previousElementSibling.textContent = t(night ? 'nightEnd' : 'workEnd');
       $('daily-period').hidden = working;
       $('combined-period').hidden = working;
       $('work-period').hidden = !working;
@@ -22,18 +28,29 @@ export function createWorkingHoursPicker({ current, switchMode, changePeriod, co
       $('work-date').value = working ? draft.startDate : '';
       $('work-start-time').value = working ? draft.startTime : '';
       $('work-end-time').value = working ? draft.endTime : '';
-      $('work-copy-morning').disabled = !working || draft.startTime !== '08:00';
+      $('work-copy-morning').hidden = night;
+      $('work-copy-morning').disabled = !working || night || draft.startTime !== '08:00';
       $('entry-intro').firstElementChild.textContent = t(working ? 'workIntro' : 'intro');
       for (const [side, key] of [
         ['start', 'workMorningReading'],
         ['end', 'workEveningReading'],
       ])
         $(side + '-reading-label').textContent = t(
-          working ? key : side === 'start' ? 'startReading' : 'endReading',
+          working
+            ? night
+              ? side === 'start'
+                ? 'workEveningReading'
+                : 'nextMorningReading'
+              : key
+            : side === 'start'
+              ? 'startReading'
+              : 'endReading',
         );
       $('next-day-hint').dataset.i18n = working ? 'workNextHint' : 'nextHint';
       $('next-day-hint').textContent = t(working ? 'workNextHint' : 'nextHint');
-      $('page-title').textContent = working ? t('workTitle') : 'Daily energy report';
+      $('page-title').textContent = working
+        ? t(night ? 'nightTitle' : 'workTitle')
+        : 'Daily energy report';
     },
   };
 }

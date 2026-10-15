@@ -18,9 +18,9 @@ export const draftMessages = {
   ],
   backupTitle: ['Draft backup and restore', '草稿备份与恢复', 'Backup dan restore draft'],
   backupHint: [
-    'Includes Daily and Working hours for both factories, incomplete readings, gas, refills and Water. Keep the file private. Restore uses the same account; saved reports stay unchanged.',
-    '包含两厂每日及工作时段草稿、未完成读数、气体、补充记录及用水。请私密保存文件。仅可恢复至原账户，不改变已保存报告。',
-    'Memuat mode Daily dan Working hours kedua pabrik, reading belum lengkap, gas, refill, dan Water. Simpan file secara privat. Restore ke akun yang sama; laporan tersimpan tetap utuh.',
+    'Includes Daily, Day and Night for both factories, incomplete readings, gas, refills and Water. Keep the file private. Restore uses the same account; saved reports stay unchanged.',
+    '包含两厂每日、白班及夜班草稿、未完成读数、气体、补充记录及用水。请私密保存文件。仅可恢复至原账户，不改变已保存报告。',
+    'Memuat mode Daily, Day dan Night kedua pabrik, reading belum lengkap, gas, refill, dan Water. Simpan file secara privat. Restore ke akun yang sama; laporan tersimpan tetap utuh.',
   ],
   backupDownload: ['Download draft backup', '下载草稿备份', 'Unduh backup draft'],
   backupRestore: ['Restore draft backup', '恢复草稿备份', 'Restore backup draft'],
@@ -41,9 +41,9 @@ export const draftMessages = {
     'Isian berubah saat file dibaca. Pilih backup kembali.',
   ],
   backupConfirm: [
-    'Replace Daily and Working hours drafts for both factories with this backup? Download your current backup first if needed. Undo can restore the previous entries. Saved reports will not change.',
-    '用此备份替换两厂每日及工作时段草稿？如有需要请先下载当前备份。可撤销以恢复原输入，已保存报告不会改变。',
-    'Ganti draft Daily dan Working hours kedua pabrik dengan backup ini? Unduh backup saat ini dahulu bila diperlukan. Undo bisa mengembalikan isian sebelumnya. Laporan tersimpan tidak berubah.',
+    'Replace Daily, Day and Night drafts for both factories with this backup? Download your current backup first if needed. Undo can restore the previous entries. Saved reports will not change.',
+    '用此备份替换两厂每日、白班及夜班草稿？如有需要请先下载当前备份。可撤销以恢复原输入，已保存报告不会改变。',
+    'Ganti draft Daily, Day dan Night kedua pabrik dengan backup ini? Unduh backup saat ini dahulu bila diperlukan. Undo bisa mengembalikan isian sebelumnya. Laporan tersimpan tidak berubah.',
   ],
   backupRestored: [
     'Backup restored as a draft. Review entries before saving a report.',
@@ -89,8 +89,8 @@ export const draftMessages = {
   ],
   draftDeleteConfirm: [
     'Remove the saved account workspace for both reading modes and factories, and this tab’s backup? Current entries stay on screen; editing again starts a new draft.',
-    '删除两厂两种模式的账户工作区及此标签页备份？当前输入仍显示在屏幕上，再次编辑会开始新草稿。',
-    'Hapus workspace akun kedua mode dan pabrik, serta cadangan tab ini? Isian tetap di layar; mengedit lagi akan membuat draft baru.',
+    '删除两厂三种模式的账户工作区及此标签页备份？当前输入仍显示在屏幕上，再次编辑会开始新草稿。',
+    'Hapus workspace akun ketiga mode dan pabrik, serta cadangan tab ini? Isian tetap di layar; mengedit lagi akan membuat draft baru.',
   ],
   draftDeleted: [
     'Saved draft removed. Current entries remain on screen.',

@@ -1,28 +1,28 @@
-# Working-hours electricity trial
+# Day and Night electricity
 
-Requested 2026-10-14 for JRE and UNILAND: record after-work readings for a one-week trial and calculate morning-to-evening usage only. Default times are 08:00 and 17:00 WIB. This is v0.10.0-alpha, not a beta decision.
+v0.11.0-alpha supersedes the original morning-to-evening-only trial. Both factories now have Day and Night reports. Gas and Water stay daily. Existing saved outputs and revisions are never recalculated.
 
 ## Operator flow
 
-1. Keep the existing Daily workspace for morning-to-next-morning electricity, gas and Water.
-2. Select Working hours and the factory. Enter the work date and actual morning/evening reading times on that date.
-3. Enter both cumulative columns. The matching daily 08:00 column may be copied explicitly; no historian readings are invented or fetched automatically. Existing morning entries require confirmation before replacement.
-4. Review consumption and copy the working-hours report. Its title identifies actual times. Save retains owner-private raw readings, times and immutable revision output. Incomplete data remains an autosaved draft.
-5. Historian and Graphs have separate mode filters. Graphs use the saved working-hours totals, not daily or overnight consumption. Choose the trial's date range; every recorded work date remains visible.
-6. Next day creates an empty morning/evening pair. Preserve the previous day's report first. It does not turn a 17:00 observation into an 08:00 one.
+1. Choose Day for morning D to evening D, or Night for evening D to morning D+1. The shift date is D in both cases. Defaults are 08:00 and 17:00 WIB; enter actual times when needed. The column headers show complete dates and times.
+2. Enter cumulative electricity readings. Day end and Night start share a reading only when their date and time match. Editing either updates the other, including optional JRE T1–T4. Inactive confirmations belong to each report and are not shared.
+3. Copy Day or Copy Night independently. Copy Day + Night needs two complete, matching shifts and produces one factory/date with separate Day and Night sections. It never sums or averages them. Existing Copy combined still combines JRE + UNILAND in the selected mode.
+4. Save report saves the selected shift only. Save incomplete input as a draft. Save both completed shifts before Next day: this replaces the active pair with the next date, carries the recorded next morning into the following Day start, and leaves unknown evening/following-morning cells empty. Undo restores the full workspace.
+5. Daily remains available for morning-to-next-morning electricity, gas and Water. Its readings are independent. Use matching 08:00 daily reading is an explicit Day action, with confirmation before replacing a filled column. No historian totals become raw readings.
+6. Historian and Graphs filter Daily, Day or Night. Graphs read immutable saved results, retain actual timestamps and never combine utilities with shift electricity. Each shift date is a single point.
 
-Time/date changes keep exact matching observations and clear unknown endpoints. Undo restores the previous period. Blank work templates include a time placeholder. Filled raw import/export requires one Reading time: HH:MM WIB line. T1–T4 remain JRE-only optional notes; their exclusions remain unchanged. Gas/Water belong to Daily mode.
+Time/date edits move only matching timestamps. Shared cells remain one observation; a 17:00 reading is never relabelled 08:00. Untimed raw import uses the selected column time. Optional Pagi/Sore/Morning/Afternoon/Day shift/Night shift date labels are descriptive only. Explicit Reading time overrides the selected time. For Night end imports, the reading date is the next morning, so the shift date becomes the preceding day.
 
-One account workspace stores all four drafts, using the existing delayed replaceable autosave and conflict checks. Full JSON backups include both modes. Legacy backups preserve current work drafts. Reports do not expire when the trial week ends; no automatic data deletion is scheduled.
+## Drafts and recovery
+
+The owner workspace has Daily drafts, workingHours (Day) and nightShifts (Night) collections for both factories. It uses the existing delayed replaceable autosave, optimistic version token and cross-tab conflict choices. No database write occurs per keystroke. Backup v3 includes all six drafts and incomplete observations without sessions or report revision links. Older backups retain collections they omit. If restored shared values disagree, reject the entire replacement; missing shared cells can be filled from their matching counterpart. No reports or trial data expire automatically.
 
 ## Release and rollback
 
-Run all local checks, development integration and desktop/mobile browser tests before publishing the PR. CI repeats these against synthetic PostgreSQL data. Apply migration 004 explicitly using the maintenance connection in development and production before merging. No new environment variables or runtime grants are needed. Build/deploy never migrates.
+Apply migration 005 explicitly to development and production before merging. Migration 004 is a prerequisite. Builds never migrate. No new environment variables, services or runtime grants are needed.
 
-Migration 004 adds report_kind with daily as default, keeps historical snapshots untouched, and permits same-date work endpoints. Daily reports retain next-date endpoints. Revisions continue per owner/factory/date interval; correcting work times revises that work-date report. Work mode supports one interval per factory/date, not multiple shifts.
+005 permits nightShift periods ending the following date and separates report uniqueness by owner, plant, kind and date interval, so Daily and Night with identical dates coexist. Day retains the existing workingHours database kind and IDs. Editing actual reading times creates a revision of that shift/date report. There is one Day and one Night report per factory/date.
 
-Normal rollback uses a revert PR or a verified Vercel rollback, without rewriting Git or dropping tables. The database retains trial reports and a trigger prevents older code from overwriting a saved workspace while omitting its workingHours collection. The older UI cannot manage work reports and may show a save-service error when this protection applies. Download a full backup before rollback, pause draft editing in old clients, and restore the newer code to resume the trial. Explicit draft deletion remains a confirmed action. Do not remove the trigger or trial data to resolve an old-client error.
+The draft trigger rejects older writers that omit a saved Night collection. Existing daily/Day code works against the expanded schema, but old UI cannot edit Night and may refuse to sync a protected workspace. Download a full private backup before rollback, pause editing in old clients, and restore newer code to resume. Use a revert PR or a verified deployment rollback; never drop shift rows, rewrite snapshots or reverse 005 to hide errors. Explicit confirmed draft deletion remains supported.
 
-Read back actual CI and deployment state, inspect build-info.json and /api/time, and verify real account storage separately from mocked browser tests. Production merge remains the owner's action. Credential rotation, administrator MFA and backup restoration still need operational verification before any beta release.
-
-UNILAND layout 4 includes SV window, Painting and Dryer in both modes. Import accepts optional (Pagi)/(Sore) date labels; absent a Reading time line, it uses the selected column time. An explicit time still overrides that column. Labels alone do not choose or guess a time. Review the destination selector before applying.
+Production migration 005 requires its own reviewed approval; authorization for 004 does not cover it. Publish a draft PR until 005 is applied. Check actual CI, preview build metadata and /api/time. Production merge remains the owner's action. This release remains alpha; operational credential rotation, MFA and backup restoration are still separate prerequisites for beta.

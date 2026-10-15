@@ -345,6 +345,9 @@
               <option value="workingHours" data-i18n="workingMode">
                 Working hours · morning to after work
               </option>
+              <option value="nightShift" data-i18n="nightMode">
+                Night · evening to next morning
+              </option>
             </select></label
           >
         </div>
@@ -718,6 +721,17 @@
                 data-i18n-placeholder="previewPlaceholder"
               ></textarea>
               <button id="copy-report" class="button primary full">Copy report</button>
+              <div id="shift-copies" class="copy-extra" hidden>
+                <button id="copy-shift-day" class="button secondary" data-i18n="copyDay">
+                  Copy Day
+                </button>
+                <button id="copy-shift-night" class="button secondary" data-i18n="copyNight">
+                  Copy Night
+                </button>
+                <button id="copy-shift-both" class="button secondary" data-i18n="copyShifts">
+                  Copy Day + Night
+                </button>
+              </div>
               <div class="copy-extra">
                 <button id="copy-combined" class="text-button" data-i18n="copyCombined">
                   Copy combined</button
@@ -791,6 +805,7 @@
           <option value="workingHours" data-i18n="workingMode">
             Working hours · morning to after work
           </option>
+          <option value="nightShift" data-i18n="nightMode">Night · evening to next morning</option>
         </select></label
       >
       <p id="graph-mode-note" class="notice" hidden></p>
@@ -826,6 +841,7 @@
           <option value="workingHours" data-i18n="workingMode">
             Working hours · morning to after work
           </option>
+          <option value="nightShift" data-i18n="nightMode">Night · evening to next morning</option>
         </select></label
       >
       <p id="raw-template-help" class="hint" data-i18n="rawTemplateHelp"></p>
@@ -948,6 +964,7 @@
           <option value="workingHours" data-i18n="workingMode">
             Working hours · morning to after work
           </option>
+          <option value="nightShift" data-i18n="nightMode">Night · evening to next morning</option>
         </select></label
       >
       <ul id="history-list" class="history-list"></ul>

@@ -46,7 +46,13 @@ export function createImportEditor({ current, apply, toast }) {
       $('import-feedback').textContent = t('workImportTime');
       return;
     }
-    apply(parsed, side);
+    try {
+      apply(parsed, side);
+    } catch (error) {
+      if (error.message !== 'shiftConflict') throw error;
+      $('import-feedback').textContent = t('shiftConflict');
+      return;
+    }
     $('import-dialog').close();
     toast(
       parsed.omittedRows?.length
