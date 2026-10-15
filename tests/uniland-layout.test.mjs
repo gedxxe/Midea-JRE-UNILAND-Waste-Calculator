@@ -32,7 +32,7 @@ test('UNILAND legacy drafts preserve every original observation and leave new eq
     } else
       for (const side of ['start', 'end']) assert.ok(migrated.rows[i][side].every((v) => v === ''));
   }
-  assert.equal(migrated.importIssues[0].rowIndex, 30);
+  assert.equal(migrated.importIssues[0].rowIndex, 33);
   assert.equal(JSON.stringify(old), original);
   assert.deepEqual(migrateMeterLayout(migrated), migrated);
   const restored = restoreDrafts(

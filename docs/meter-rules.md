@@ -37,7 +37,7 @@ Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an I
 
 ## UNILAND
 
-31 equipment rows, 45 reading slots. Piping has three meters (x40, direct, direct); New Office Building A is direct. Trafo 1–3 remain. Building A/B, hydrant, pump and power house each have three meters, summed after applying the existing ratio to each delta, as explicitly confirmed by the user. HE has three direct meters. Keep two distinct 10HP lab inputs; (2) is a temporary label.
+34 equipment rows, 48 reading slots. Piping has three meters (x40, direct, direct); New Office Building A is direct. Trafo 1–3 remain. Building A/B, hydrant, pump and power house each have three meters, summed after applying the existing ratio to each delta, as explicitly confirmed by the user. HE has three direct meters. Keep two distinct 10HP lab inputs; (2) is a temporary label.
 
 | Equipment                 | Factor                                  | Result unit |
 | ------------------------- | --------------------------------------- | ----------- |
@@ -49,7 +49,7 @@ Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an I
 | Refrigant and LPG area    | 40                                      | kWh         |
 | Remaining equipment       | Direct                                  | kWh         |
 
-Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant/LPG row. Utilities follow all 31 equipment rows.
+Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant/LPG row. Utilities follow all 34 equipment rows.
 
 Keep relevant decimals up to eight places without thousands separators or exponent notation. Example: Building A `3691.4` to `3695.72` = `0.6912 MWh`.
 
@@ -87,8 +87,10 @@ The earlier UNILAND layout 2 preserved all 28 legacy rows by stable identity and
 
 UNILAND layout 3 upgrades layouts 1 and 2 without fabricating component readings. Text import may omit only Trafo rows, preserving matching-date table values through suppliedRows. Repeated plain 10HP names map to the first and second lab inputs; a third duplicate fails. Final reports still require Trafo and all current reading slots. Historical snapshots and graph series are not recalculated.
 
+UNILAND layout 4 adds SV window, Painting and Dryer as direct kWh pairs. Migrate layouts 1–3 by preserved identities, including incomplete text and warning coordinates; new rows remain blank. New exports and reports number all 34 rows, while old report numbering remains readable for graphs. The worksheet keeps its existing 16 columns, with new equipment available as separate graph variables. A current server rejects stale layout saves when they would remove newly stored meter slots. No database migration is required. Before a code rollback, keep a full workspace backup; earlier code cannot edit layout-4 drafts. Historical report outputs are never rewritten.
+
 ## Working-hours electricity
 
 Working-hours reports use a single work date and validated HH:MM reading times, default 08:00–17:00 WIB. End must be later on the same date; overnight and multi-date work periods are not supported. The header states WORKING HOURS and actual times instead of 24 HOURS. Existing ratios, BigInt subtraction, Structural correction, optional JRE T1–T4 notes, gap signs, completeness and worksheet grouping apply unchanged. Work reports exclude gas, Water and manual utilities; nonblank daily utilities in a work payload block finalization. Combining factories requires the same mode, date and both times.
 
-Changing date or time moves only exactly matching observations. Next day clears both work columns and inactive confirmation. It never reuses yesterday's evening as today's morning. The explicit daily-copy action uses a matching 08:00 date from the current daily draft, including incomplete readings. It copies neither utilities nor evening data. Raw work exports retain actual times and import requires exactly one Reading time: HH:MM WIB line. A non-08:00 work observation cannot be imported into the daily workflow. Invalid imports remain atomic.
+Changing date or time moves only exactly matching observations. Next day clears both work columns and inactive confirmation. It never reuses yesterday's evening as today's morning. The explicit daily-copy action uses a matching 08:00 date from the current daily draft, including incomplete readings. It copies neither utilities nor evening data. Raw work exports retain actual times. Import uses the selected work column time when there is no Reading time line; an explicit Reading time: HH:MM WIB overrides it. Date suffixes (Pagi) and (Sore), with optional internal spaces, are accepted as labels and never infer a clock time. Duplicate dates/times still fail validation. A non-08:00 work observation cannot be imported into the daily workflow. Invalid imports remain atomic.

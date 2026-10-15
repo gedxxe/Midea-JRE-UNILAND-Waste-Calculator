@@ -56,6 +56,8 @@ UNILAND layout 2 keeps the original r0–r27 metric identities despite reordered
 
 UNILAND layout 3 adds the second lab observation as r30 and keeps original r0–r29 identities. Report extraction recognizes both original and layout-2 numbering after the lab insertion. Three-meter equipment totals appear only in new saved output; old snapshots and worksheet history stay immutable.
 
+UNILAND layout 4 adds SV window (r31), Painting (r32) and Dryer (r33) as separate kWh variables. Existing worksheet identities w0–w15 and report identities r0–r30 remain stable. Pre-expansion report numbers remain aliases; missing new equipment in historical reports is null, never zero. The new meters do not silently join an existing worksheet department sum.
+
 ## Working-hours graphs
 
 The mode selector filters saved reports at the owner-scoped API; daily is the default. Work graphs exclude Excel daily consumption imports and all gas/Water series. Chart titles and exports append Working hours / 工作时段. Each work date is one point, with its true morning/evening times and duration in the tooltip and data table. A synthetic exclusive next-date boundary supplies only the date-axis slot and gap detection; it does not represent a 24-hour reading or average. Source totals remain as saved. Daily and work layouts use separate per-account browser keys; switching modes discards old in-flight responses and exports.

@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.10.2-alpha - 2026-10-15
+
+- Add UNILAND SV window, Painting and Dryer as individual direct kWh meters in daily and working-hours entry, reports, raw templates/exports and graph choices.
+- Upgrade existing drafts without shifting old readings or filling new meters; retain historical graph identities and reject stale draft writers.
+- Align Next day guidance with the active reading mode.
+- Accept optional Pagi/Sore date labels. Untimed work imports use the selected column time; explicit Reading time lines remain supported.
+
 ## v0.10.1-alpha - 2026-10-15
 
 - Add production-only Vercel Web Analytics for aggregate visits without a browser package or database changes.

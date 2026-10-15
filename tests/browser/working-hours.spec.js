@@ -1,3 +1,5 @@
+import { PLANT_SCHEMAS } from '../../schema.js';
+import { unilandInput, layout3Draft } from '../fixtures/uniland-input.mjs';
 import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { createWorkingHoursDraft, calculateDraft } from '../../engine.js';
@@ -18,7 +20,7 @@ const work = (plant) => ({
   ...createWorkingHoursDraft(plant, '2026-09-16'),
   rows: exampleDraft(plant).rows,
 });
-async function setup(page, { undated = false } = {}) {
+async function setup(page, { undated = false, legacyUniland = false } = {}) {
   const state = {
     workspace: {
       version: 4,
@@ -63,6 +65,10 @@ async function setup(page, { undated = false } = {}) {
       },
     });
   });
+  if (legacyUniland) {
+    state.workspace.drafts.UNILAND = layout3Draft(exampleDraft('UNILAND'));
+    state.workspace.workingHours.UNILAND = layout3Draft(work('UNILAND'));
+  }
   if (undated) state.workspace.workingHours.JRE.rows[0].end[0] = '123.5';
   await page.goto('/');
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
@@ -150,8 +156,10 @@ test('work reports, timed raw imports, empty next day and Undo keep date/time id
   const raw = await page.locator('#import-text').inputValue();
   await page.locator('#import-text').fill(raw.replace('Reading time: 17:00 WIB', ''));
   await page.locator('#apply-import').click();
-  await expect(page.locator('#import-dialog')).toBeVisible();
-  await expect(page.locator('#import-feedback')).toContainText('Reading time: HH:MM WIB');
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(page.locator('#work-end-time')).toHaveValue('17:00');
+  await page.locator('#open-import').click();
+  await page.locator('#import-side').selectOption('end');
   await page.locator('#import-text').fill(raw);
   await page.locator('#apply-import').click();
   await expect(page.locator('#import-dialog')).toBeHidden();
@@ -234,5 +242,91 @@ test('graphs isolate work mode, preserve actual times, and exclude utility selec
   await page.locator('#graph-kind').selectOption('daily');
   await expect(page.locator('#graph-status')).toContainText('No');
   expect(requests.at(-1).kind).toBe('daily');
+  expect(errors).toEqual([]);
+});
+
+test('UNILAND expanded drafts retain old readings and flexible imports use the selected column time', async ({
+  page,
+}, info) => {
+  const { state, errors } = await setup(page, { legacyUniland: true });
+  const rowIndex = (name) => PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.name === name);
+  const input = (name, side) =>
+    page.locator('.meter-input[data-row="' + rowIndex(name) + '"][data-side="' + side + '"]');
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(page.locator('.meter-input')).toHaveCount(96);
+  for (const name of ['SV window', 'Painting', 'Dryer'])
+    await expect(input(name, 'start')).toHaveValue('');
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await expect(input('Injection Molding', 'end')).toHaveValue(
+    work('UNILAND').rows[rowIndex('Injection Molding')].end[0],
+  );
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#work-start-time').fill('07:45');
+  await page.locator('#work-end-time').fill('17:30');
+  const d = work('UNILAND');
+  d.rows[rowIndex('SV window')] = { start: ['10'], end: ['11.25'], inactive: false };
+  d.rows[rowIndex('Painting')] = { start: ['100'], end: ['109'], inactive: false };
+  d.rows[rowIndex('Dryer')] = { start: ['30'], end: ['31.5'], inactive: false };
+  // Trafo readings are separate required inputs and absent from operator text.
+  for (const side of ['start', 'end']) {
+    await page.locator('#open-import').click();
+    await page.locator('#import-side').selectOption(side);
+    const text = unilandInput(d, side);
+    await page
+      .locator('#import-text')
+      .fill(side === 'start' ? text.replace(d.startDate, '16/09/2026 ( Pagi )') : text);
+    await page.locator('#apply-import').click();
+    await expect(page.locator('#import-dialog')).not.toBeVisible();
+    await expect(input('Painting', side)).toHaveValue(d.rows[rowIndex('Painting')][side][0]);
+  }
+  await expect(page.locator('#next-day-hint')).toContainText('both work columns empty');
+  await expect(page.locator('#work-start-time')).toHaveValue('07:45');
+  await expect(page.locator('#work-end-time')).toHaveValue('17:30');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  for (const name of ['Trafo 1', 'Trafo 2', 'Trafo 3']) {
+    await input(name, 'start').fill('10');
+    await input(name, 'end').fill('11');
+  }
+  await expect(page.locator('#copy-report')).toBeEnabled();
+  const report = await page.locator('#report-preview').inputValue();
+  expect(report).toMatch(/SV window: 1.25 kWh/);
+  expect(report).toMatch(/Painting: 9 kWh/);
+  expect(report).toMatch(/Dryer: 1.5 kWh/);
+  for (const lang of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(lang);
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+  }
+  await page.locator('#open-import').click();
+  await page.locator('#import-side').selectOption('end');
+  await page
+    .locator('#import-text')
+    .fill(
+      unilandInput(d, 'end').replace(d.startDate, '16/09/2026 (Sore)') +
+        '\nReading time: 18:00 WIB',
+    );
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).not.toBeVisible();
+  await expect(page.locator('#work-end-time')).toHaveValue('18:00');
+  await page.locator('#open-import').click();
+  await page.locator('#import-text').fill(unilandInput(d, 'end').replace(/^.*Dryer:.*\n/m, ''));
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).toBeVisible();
+  await expect(input('Dryer', 'end')).toHaveValue('31.5');
+  await page.locator('#import-dialog [data-i18n="close"]').click();
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  expect(state.workspace.workingHours.UNILAND.meterLayout).toBe(4);
+  await page.reload();
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(input('Dryer', 'end')).toHaveValue('31.5');
+  await page.locator('#search-meter').fill('Painting');
+  await input('Painting', 'start').scrollIntoViewIfNeeded();
+  const alignment = await input('Painting', 'start').evaluate((start) => {
+    const end = start.closest('tr').querySelector('[data-side="end"]');
+    return Math.abs(start.getBoundingClientRect().top - end.getBoundingClientRect().top);
+  });
+  expect(alignment).toBeLessThan(1);
+  await page.screenshot({ path: info.outputPath('uniland-expanded-work.png') });
   expect(errors).toEqual([]);
 });

@@ -53,7 +53,26 @@ const worksheetGroups = {
 // Report row indices for worksheet columns; null means a derived worksheet value.
 export const WORKSHEET_ROWS = {
   JRE: [1, 2, 3, 4, 5, null, 15, 16, 6, 7, 8, 19, 20, 21, 22, 25, 24, 17],
-  UNILAND: [null, null, 9, 10, null, 16, 17, 20, 26, 21, 14, 23, 25, 27, 28, 29],
+  UNILAND: [
+    null,
+    null,
+    'Indoor',
+    'Outdoor',
+    null,
+    'Vacum box indoor',
+    'Vacum box outdoor',
+    'Line compressor outdoor',
+    'Machine Stamping',
+    'Injection Molding',
+    'Line PCB Trial Product',
+    '10HP Enthalpy Difference Lab',
+    '20HP Test chamber Lab',
+    'OQC- Testing Room B',
+    'IQC- Testing Room B',
+    'Charger Forklift Area',
+  ].map((name) =>
+    name === null ? null : PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.name === name),
+  ),
 };
 export const GRAPH_METRICS = Object.fromEntries(
   ['JRE', 'UNILAND'].map((plant) => {

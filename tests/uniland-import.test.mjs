@@ -41,7 +41,7 @@ test('all three UNILAND converted deltas are summed at scaled precision; HE and 
     [11, 6.5],
   ])
     assert.equal(result.calculatedRows[index].totalEnergy, value);
-  assert.notEqual(result.calculatedRows[23].name, result.calculatedRows[24].name);
+  assert.notEqual(result.calculatedRows[24].name, result.calculatedRows[25].name);
   const old = {
     output: {
       reportText: '30. Refrigant and LPG area  : 12 KWh\n25. 20HP Test chamber Lab: 13 kWh',
@@ -52,7 +52,7 @@ test('all three UNILAND converted deltas are summed at scaled precision; HE and 
     { output: { reportText: result.reportSectionText, worksheetText: result.worksheetText } },
     'UNILAND',
   );
-  assert.equal(graphs.r30, result.calculatedRows[24].totalEnergy);
+  assert.equal(graphs.r30, result.calculatedRows[25].totalEnergy);
 });
 
 test('layout-2 draft upgrades preserve original primary values and leave new component/lab slots blank', () => {
@@ -74,7 +74,7 @@ test('layout-2 draft upgrades preserve original primary values and leave new com
     assert.equal(restored.rows[index].start[0], old.rows[index].start[0]);
     assert.deepEqual(restored.rows[index].start.slice(1), ['', '']);
   }
-  assert.deepEqual(restored.rows[24].start, ['']);
+  assert.deepEqual(restored.rows[25].start, ['']);
   assert.equal(JSON.stringify(old), before);
   assert.equal(calculateDraft(restored).success, false);
 });

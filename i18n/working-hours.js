@@ -57,9 +57,19 @@ export const workingHoursMessages = {
     'Reading pagi yang tanggalnya sama disalin. Periksa kolom kosong sebelum menyimpan.',
   ],
   workImportTime: [
-    'Working-hours imports need Reading time: HH:MM WIB. Daily imports accept 08:00 only or no time line.',
-    '工作时段导入需要 Reading time: HH:MM WIB。每日导入仅接受 08:00 或不带时间行。',
-    'Impor jam kerja perlu Reading time: HH:MM WIB. Impor harian hanya menerima 08:00 atau tanpa baris waktu.',
+    'Set a valid reading time in the selected work column. Daily imports accept 08:00 only or no time line.',
+    '请为所选工作时段列设置有效时间。每日导入仅接受 08:00 或不带时间行。',
+    'Atur waktu valid pada kolom jam kerja yang dipilih. Impor harian hanya menerima 08:00 atau tanpa baris waktu.',
+  ],
+  workNextHint: [
+    'Next day starts both work columns empty. Save your draft before leaving.',
+    '下一天的早晚工作读数均留空。离开前请保存草稿。',
+    'Hari berikutnya memulai kedua kolom jam kerja kosong. Simpan draft sebelum keluar.',
+  ],
+  workImportHint: [
+    'Without a Reading time line, import uses the selected column time. Pagi/Sore date labels are optional.',
+    '没有 Reading time 行时，导入使用所选列的时间。日期旁的 Pagi/Sore 标签可有可无。',
+    'Tanpa baris Reading time, impor memakai waktu kolom yang dipilih. Label tanggal Pagi/Sore opsional.',
   ],
   workTimeRequired: [
     'Enter a valid reading time before exporting.',
@@ -72,8 +82,8 @@ export const workingHoursMessages = {
     'Hanya listrik jam kerja yang sudah disimpan. Tiap titik menyertakan waktu reading; pemakaian harian dan malam tidak digabung.',
   ],
   draftFormatChanged: [
-    'A newer workspace contains working-hours readings. Reload this page before saving; your tab copy is retained.',
-    '新版工作区含工作时段读数。保存前请刷新页面；此标签页副本保留。',
-    'Workspace baru berisi reading jam kerja. Muat ulang sebelum menyimpan; salinan tab tetap tersedia.',
+    'A newer workspace uses an updated meter layout or reading mode. Reload before saving; your tab copy is retained.',
+    '新版工作区使用更新的电表布局或抄表模式。保存前请刷新页面；此标签页副本保留。',
+    'Workspace baru memakai susunan meter atau mode reading terbaru. Muat ulang sebelum menyimpan; salinan tab tetap tersedia.',
   ],
 };
