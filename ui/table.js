@@ -88,7 +88,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
           );
           input.addEventListener('input', () => {
             current().rows[ri][side][mi] = input.value;
-            changed();
+            changed(false, [{ ri, mi, side }]);
           });
           input.addEventListener('paste', handlePaste);
           input.addEventListener('blur', () => setTimeout(filterTable, 0));
@@ -134,7 +134,10 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         current().rows[ri][side][mi] = value;
         inputNodes[ri][mi][side].value = value;
       });
-      changed();
+      changed(
+        false,
+        changes.map(({ ri, mi, side }) => ({ ri, mi, side })),
+      );
       toast(t('cellsPasted', { count: changes.length }));
     } catch (error) {
       toast(error.message);

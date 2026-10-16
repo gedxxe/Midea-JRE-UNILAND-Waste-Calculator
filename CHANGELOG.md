@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.1-alpha - 2026-10-16
+
+- Add five final report choices covering 24 HOURS, AFTER PRODUCTION and NIGHT SHIFT for both factories; retain independent raw-reading export.
+- Reuse exact matching morning/evening/next-morning observations across recording modes. Preserve conflicting legacy values and share only cells explicitly corrected by the operator.
+- Keep gas and Water once under the daily section, unchanged worksheet/save scope, stable report identities and immutable historical output.
+
 ## v0.11.0-alpha - 2026-10-15
 
 - Add Day and Night electricity reports for JRE and UNILAND, with exact date/time sharing of evening readings and next-morning carry into the following Day.

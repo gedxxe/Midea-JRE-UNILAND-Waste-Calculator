@@ -1,8 +1,8 @@
 export const workingHoursMessages = {
   shiftConflict: [
-    'Day and Night have conflicting shared readings. Use a matching backup; current entries are preserved.',
-    '白班与夜班共用读数冲突。请使用匹配的备份，当前输入已保留。',
-    'Reading bersama Day dan Night bertentangan. Gunakan backup yang sesuai; isian saat ini tetap tersimpan.',
+    'After production and Night have conflicting shared readings. Use a matching backup; current entries are preserved.',
+    '生产时段与夜班共用读数冲突。请使用匹配的备份，当前输入已保留。',
+    'Reading bersama After production dan Night bertentangan. Gunakan backup yang sesuai; isian saat ini tetap tersimpan.',
   ],
   backupLegacyConfirm: [
     'This older backup replaces its included drafts and keeps shift drafts that are absent. Conflicting shared readings are rejected. Undo can restore the previous workspace.',
@@ -10,32 +10,36 @@ export const workingHoursMessages = {
     'Backup lama mengganti draft yang disertakan dan mempertahankan draft shift yang tidak ada di file. Reading bersama yang bertentangan akan ditolak. Undo dapat mengembalikan workspace.',
   ],
   workIntro: [
-    'Enter shift electricity readings. Review consumption, then copy or save the report.',
-    '填写班次电表读数，检查用量后复制或保存报告。',
-    'Isi reading listrik per shift. Periksa konsumsi, lalu salin atau simpan laporan.',
+    'Record meter readings, then copy raw data or choose a consumption report.',
+    '记录电表读数后，可复制原始数据或选择用量报告。',
+    'Catat reading meter, lalu salin data raw atau pilih laporan konsumsi.',
   ],
   workMorningReading: ['Morning reading', '早晨读数', 'Reading pagi'],
   workEveningReading: ['After-work reading', '下班读数', 'Reading selesai kerja'],
   readingMode: ['Reading mode', '记录模式', 'Mode reading'],
   dailyMode: [
-    'Daily · 08:00 to next morning',
-    '每日 · 08:00 至次日早晨',
-    'Harian · 08.00 ke pagi berikutnya',
+    '24 HOURS · morning to next morning',
+    '24小时 · 早晨至次日早晨',
+    '24 HOURS · pagi ke pagi berikutnya',
   ],
-  workingMode: ['Day · morning to evening', '白班 · 早晨至晚间', 'Day · pagi ke sore'],
-  workTitle: ['Day shift electricity', '白班用电', 'Listrik Day shift'],
+  workingMode: [
+    'AFTER PRODUCTION · morning to evening',
+    '生产时段 · 早晨至下班',
+    'AFTER PRODUCTION · pagi ke sore',
+  ],
+  workTitle: ['After-production electricity', '生产时段用电', 'Listrik After production'],
   workHint: [
-    'Day: morning to evening. Night: evening to the next morning. Shared timestamps use the same reading. Gas and Water remain daily.',
-    '白班：早晨至晚间。夜班：晚间至次日早晨。相同时间点共用读数。燃气与水仍按日记录。',
-    'Day: pagi ke sore. Night: sore ke pagi berikutnya. Waktu pencatatan yang sama memakai reading yang sama. Gas dan Water tetap harian.',
+    '24 HOURS: morning to next morning. AFTER PRODUCTION: morning to evening. NIGHT SHIFT: evening to next morning. Matching readings are reused; gas and Water stay daily.',
+    '24小时：早晨至次日早晨。生产时段：早晨至下班。夜班：晚间至次日早晨。共用相同时间的读数；燃气与水仍按日记录。',
+    '24 HOURS: pagi ke pagi berikutnya. AFTER PRODUCTION: pagi ke sore. NIGHT SHIFT: sore ke pagi berikutnya. Reading pada waktu yang sama dipakai bersama; gas dan Water tetap harian.',
   ],
   workDate: ['Shift date', '班次日期', 'Tanggal shift'],
   workStart: ['Morning reading time', '早晨抄表时间', 'Waktu reading pagi'],
   workEnd: ['After-work reading time', '下班抄表时间', 'Waktu reading selesai kerja'],
   workNotice: [
-    '{date} · {start} to {end} WIB. Day shift electricity.',
-    '{date} · {start} 至 {end} WIB。白班用电。',
-    '{date} · {start} ke {end} WIB. Listrik Day shift.',
+    '{date} · {start} to {end} WIB. After-production report.',
+    '{date} · {start} 至 {end} WIB。生产时段用电报告。',
+    '{date} · {start} ke {end} WIB. Laporan After production.',
   ],
   workMorning: [
     'Use matching 08:00 daily reading',
@@ -63,9 +67,9 @@ export const workingHoursMessages = {
     'Atur waktu valid pada kolom jam kerja yang dipilih. Impor harian hanya menerima 08:00 atau tanpa baris waktu.',
   ],
   workNextHint: [
-    'Next day reuses the recorded next morning as Day start. Unknown readings stay empty. Save completed shifts before moving on.',
-    '下一天将已记录的次日早晨读数用于白班开始。未知读数留空。继续前请保存已完成班次。',
-    'Next day memakai reading pagi berikutnya sebagai awal Day. Reading yang belum ada tetap kosong. Simpan shift lengkap sebelum lanjut.',
+    'Next day reuses the recorded next morning as After production start. Unknown readings stay empty. Save completed shifts before moving on.',
+    '下一天将已记录的次日早晨读数用于生产时段开始。未知读数留空。继续前请保存已完成班次。',
+    'Next day memakai reading pagi berikutnya sebagai awal After production. Reading yang belum ada tetap kosong. Simpan shift lengkap sebelum lanjut.',
   ],
   workImportHint: [
     'Without a Reading time line, import uses the selected column time. Morning/evening date labels are optional and never choose a shift.',
@@ -88,9 +92,9 @@ export const workingHoursMessages = {
     'Workspace baru memakai susunan meter atau mode reading terbaru. Muat ulang sebelum menyimpan; salinan tab tetap tersedia.',
   ],
   nightMode: [
-    'Night · evening to next morning',
+    'NIGHT SHIFT · evening to next morning',
     '夜班 · 晚间至次日早晨',
-    'Night · sore ke pagi berikutnya',
+    'NIGHT SHIFT · sore ke pagi berikutnya',
   ],
   nightTitle: ['Night shift electricity', '夜班用电', 'Listrik Night shift'],
   nightNotice: [
@@ -101,7 +105,36 @@ export const workingHoursMessages = {
   nightStart: ['Evening reading time', '晚间抄表时间', 'Waktu reading sore'],
   nightEnd: ['Next morning reading time', '次日早晨抄表时间', 'Waktu reading pagi berikutnya'],
   nextMorningReading: ['Next morning reading', '次日早晨读数', 'Reading pagi berikutnya'],
-  copyDay: ['Copy Day', '复制白班', 'Salin Day'],
-  copyNight: ['Copy Night', '复制夜班', 'Salin Night'],
-  copyShifts: ['Copy Day + Night', '复制白班 + 夜班', 'Salin Day + Night'],
+  reportPeriods: ['Report contents', '报告内容', 'Isi laporan'],
+  allReportPeriods: ['24 HOURS + both shifts', '24小时 + 两个班次', '24 HOURS + kedua shift'],
+  reportOptionsHint: [
+    'Raw readings can be copied independently. Save and Excel row use the period being edited; gas and Water appear once under 24 HOURS.',
+    '原始读数可单独复制。保存和Excel行采用当前编辑时段；燃气与水仅在24小时部分出现一次。',
+    'Data raw bisa disalin terpisah. Save dan baris Excel memakai periode yang sedang diisi; gas dan Water muncul sekali pada bagian 24 HOURS.',
+  ],
+  selectionIncomplete: [
+    'Complete the readings and dates for the selected report sections. Raw export needs only its selected column.',
+    '请完成所选报告部分的读数及日期。原始导出仅需完成所选列。',
+    'Lengkapi reading dan tanggal bagian laporan yang dipilih. Ekspor raw hanya perlu kolom pilihan.',
+  ],
+  selectionPeriod: [
+    'Match the dates and shared reading times of the selected report sections. Bundled reports need one 24-hour period.',
+    '请使所选报告部分的日期与共用读数时间一致。组合报告需为一个24小时时段。',
+    'Samakan tanggal dan waktu reading bersama pada bagian laporan pilihan. Laporan gabungan ini memerlukan satu periode 24 jam.',
+  ],
+  selectionReadings: [
+    'Shared readings differ between the selected periods. Check the matching cells before copying this report.',
+    '所选时段的共用读数不同。复制报告前请检查相应单元格。',
+    'Reading bersama berbeda antarperiode pilihan. Periksa kolom yang waktunya sama sebelum menyalin laporan.',
+  ],
+  selectionBoth: [
+    'Complete the selected report sections for both factories first.',
+    '请先完成两厂所选报告部分。',
+    'Lengkapi bagian laporan pilihan untuk kedua pabrik dahulu.',
+  ],
+  sharedReadingConflict: [
+    '{count} shared readings differ between periods. Existing values are kept. Correct the intended reading to update its matching cells.',
+    '有{count}个共用读数在各时段中不同。已保留现值。修正正确读数后会更新其相应单元格。',
+    'Ada {count} reading bersama yang berbeda antarperiode. Nilai lama tetap disimpan. Koreksi reading yang benar untuk memperbarui kolom yang waktunya sama.',
+  ],
 };

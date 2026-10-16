@@ -96,7 +96,7 @@ test('NTP defaults and mode switching retain undated partial work readings', asy
   expect(errors).toEqual([]);
 });
 
-test('work and daily drafts remain separate through plant/language switching, autosave and reload', async ({
+test('work drafts reuse matching daily readings through plant/language switching, autosave and reload', async ({
   page,
 }, info) => {
   const { state, errors } = await setup(page);
@@ -117,7 +117,7 @@ test('work and daily drafts remain separate through plant/language switching, au
   expect(state.saved).toHaveLength(0);
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('100125.25');
   await page.locator('[data-plant="UNILAND"]').click();
-  await expect(cell(page)).toHaveValue('');
+  await expect(cell(page)).toHaveValue('1000');
   await page.locator('#work-date').fill('2026-09-16');
   await page.locator('#work-copy-morning').click();
   await expect(cell(page)).toHaveValue('1000');
@@ -141,7 +141,7 @@ test('work and daily drafts remain separate through plant/language switching, au
   expect(errors).toEqual([]);
 });
 
-test('work reports, timed raw imports, empty next day and Undo keep date/time identity', async ({
+test('work reports, timed raw imports, next-morning reuse and Undo keep date/time identity', async ({
   page,
 }) => {
   const { state, errors } = await setup(page);
@@ -180,7 +180,7 @@ test('work reports, timed raw imports, empty next day and Undo keep date/time id
   await expect(cell(page, 'end')).toHaveValue('103000');
   await page.locator('#next-day').click();
   await expect(page.locator('#work-date')).toHaveValue('2026-09-17');
-  await expect(cell(page)).toHaveValue('');
+  await expect(cell(page)).toHaveValue('103000');
   await expect(cell(page, 'end')).toHaveValue('');
   await page.locator('#undo-change').click();
   await expect(cell(page, 'end')).toHaveValue('103000');
@@ -237,7 +237,9 @@ test('graphs isolate work mode, preserve actual times, and exclude utility selec
   await expect(page.locator('#graph-kind')).toHaveValue('workingHours');
   await expect(page.locator('#graph-status')).toContainText('1');
   expect(requests.at(-1).kind).toBe('workingHours');
-  expect(await page.locator('#graph-cards svg').first().textContent()).toContain('Day shift');
+  expect(await page.locator('#graph-cards svg').first().textContent()).toContain(
+    'After production',
+  );
   await page.locator('.graph-data').first().locator('summary').click();
   await expect(page.locator('.graph-data').first()).toContainText('08:00 → 17:00 WIB (9 hours)');
   await page.locator('.graph-settings').first().locator('summary').click();
@@ -345,8 +347,8 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   await page.locator('#reading-mode').selectOption('workingHours');
   await page.locator('#load-example').click();
   const evening = await cell(page, 'end').inputValue();
-  await expect(page.locator('#copy-shift-day')).toBeEnabled();
-  await expect(page.locator('#copy-shift-night')).toBeDisabled();
+  await expect(page.locator('#report-periods')).toHaveValue('after');
+  await expect(page.locator('#copy-report')).toBeEnabled();
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page)).toHaveValue(evening);
   await expect(page.locator('#start-reading-label')).toHaveText('After-work reading');
@@ -378,17 +380,19 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   await expect(page.locator('#import-dialog')).toBeHidden();
   await expect(page.locator('#work-date')).toHaveValue('2026-09-16');
   await expect(cell(page, 'end')).toHaveValue('103100');
-  await expect(page.locator('#copy-shift-both')).toBeEnabled();
-  for (const [id, label] of [
-    ['day', 'Day Shift'],
-    ['night', 'Night Shift'],
-    ['both', 'Night:'],
+  for (const [selection, label] of [
+    ['daily', '24 HOURS'],
+    ['dailyAfter', 'AFTER PRODUCTION:'],
+    ['all', 'NIGHT SHIFT:'],
+    ['after', 'AFTER PRODUCTION'],
+    ['night', 'NIGHT SHIFT'],
   ]) {
-    await page.locator('#copy-shift-' + id).click();
+    await page.locator('#report-periods').selectOption(selection);
+    await expect(page.locator('#copy-report')).toBeEnabled();
+    await page.locator('#copy-report').click();
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain(label);
   }
   const combined = await page.evaluate(() => navigator.clipboard.readText());
-  expect(combined).toContain('Day:');
   expect(combined).not.toMatch(/^\* Water:|^\* LPG:/m);
   await page.locator('#save-report').click();
   expect(state.saved.at(-1).draft.periodKind).toBe('nightShift');

@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.0-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.1-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -79,6 +79,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Confirmed 2026-10-15: supersede morning-to-evening-only trial with Day D = morning D to evening D; Night D = evening D to morning D+1, for both plants. Electricity only; gas and Water remain Daily. Provide Copy Day, Copy Night and Copy Day + Night. Exact date/time observations are shared; next-day morning becomes the following Day start. Never relabel evening as morning. Keep workingHours as the persisted Day kind; nightShift is separate, with nightShifts in the same owner workspace. Backup v3 includes all modes; older backups retain absent collections and reject conflicting shared observations. Migration 005 separates report uniqueness by kind and preserves Night drafts during rollback. Existing report outputs remain immutable. v0.11.0-alpha is a workflow milestone, not beta approval.
 
+- Requested 2026-10-16: offer three electricity recording periods for both plants: 24 HOURS (08:00 to next 08:00), AFTER PRODUCTION (08:00 to 17:00) and NIGHT SHIFT (17:00 to next 08:00). Final report choices are 24 HOURS; 24 HOURS & AFTER PRODUCTION; 24 HOURS, AFTER PRODUCTION, & NIGHT SHIFT; AFTER PRODUCTION only; NIGHT SHIFT only. Raw cumulative readings remain independently copyable without completing consumption reports. Existing Day is now called AFTER PRODUCTION; gas and Water remain daily. Keep report kinds and old saved outputs unchanged.
+
 ## Architecture
 
 - analytics.js validates intake paths and filters root pageviews; ui/analytics.js is an isolated asynchronous loader with no access to application state or storage. scripts/analytics-config.mjs handles production-only build configuration. Do not export arbitrary observability configuration or enable preview tracking.
@@ -86,7 +88,8 @@ New user instructions override older choices here. Update this decision record, 
 - UNILAND layout3No preserves pre-expansion positions, previousNo preserves layout-2 positions, and legacyIndex preserves graph identity. Resolve worksheet source rows by equipment name when inserting new rows.
 - meter-layout.js maps legacy JRE and UNILAND editable drafts into current layouts exactly once; importer.js also supports complete legacy JRE text imports. New reports require the current meterLayout marker so stale clients must reload before finalizing reports. Stored outputs stay immutable.
 - water.js owns pure cumulative water validation and subtraction; ui/water.js owns entry for both plants and legacy consumption display, i18n/water.js owns its translations. Raw water readings are optional on version-4 drafts.
-- shifts.js owns paired Day/Night observation movement, shared reading reconciliation and combined copy output.
+- observations.js reuses only unambiguous empty electricity cells with the same factory/date/time. Explicit cell corrections propagate only edited cells; preserve unrelated readings, flags and daily utilities. Conflicting legacy Daily/shift values remain recoverable and block bundled copy until corrected. report-options.js composes the five selections, validates required periods/shared readings, and keeps utilities once in the daily section. Selecting report contents does not create a new database report kind or revision.
+- shifts.js owns paired After production/Night observation movement and shared reading reconciliation.
 - reading-period.js owns working-hours metadata, time validation and reading labels; ui/working-hours.js owns the mode/time controls. Work reports use the same electricity engine and factors, with no daily utilities. Migration 004 adds report_kind and same-date work periods, and a database trigger prevents older code from discarding trial drafts during rollback. It never rewrites snapshots. A code rollback keeps trial records but older UI cannot edit them; preserve a full backup and restore the new code to resume the trial. Legacy backup files without workingHours leave existing trial drafts intact.
 - schema.js owns equipment names, meter counts, fixed factors, report units, and utility labels.
 - engine.js, numbers.js, and worksheet.js are pure business logic. They must not import DOM, language state, storage, or network modules.

@@ -35,7 +35,7 @@ export function workPeriodTitle(draft) {
   return (
     formatReportDate(draft.startDate) +
     ' / ' +
-    (isNightShift(draft) ? 'Night Shift' : 'Day Shift') +
+    (isNightShift(draft) ? 'NIGHT SHIFT' : 'AFTER PRODUCTION') +
     ' / ' +
     draft.startDate +
     ' ' +
