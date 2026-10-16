@@ -1,10 +1,12 @@
 # Midea Daily Energy Report
 
-**v0.11.1-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.2-alpha** · JRE / UNILAND · made in <3 by gede
 
 [English](#english) | [中文](#中文) | [Indonesia](#indonesia)
 
 ## English
+
+JRE Dehumidifier now includes its original direct meter plus Vacuum Box x40. Piping Building 3# uses x40. Electricity Building 3# reports its raw consumption minus these two converted branch usages. Area Repair Injection Molding is a separate direct reading at row 30. All three electricity periods use these rules. Layout 3 preserves old readings and leaves the two new fields blank; old raw imports preserve omitted cells only at matching dates/times. Missing dependencies or negative net consumption show a check note. Saved history stays unchanged. The worksheet keeps its 19 columns; Repair is separately available in reports, raw exports and graphs. Keep a private workspace backup before a code rollback, as older UI cannot edit layout 3.
 
 UNILAND now includes SV window, Painting and Dryer as separate direct kWh readings in 24 HOURS, AFTER PRODUCTION and NIGHT SHIFT. Consumption is end minus start. Existing drafts preserve all previous readings; the new fields start blank. New reports, raw/blank templates and graph choices include the new meters. Saved historical output and the 16-column worksheet format stay unchanged. In work imports, the selected morning/evening column supplies the time when no Reading time line is present. Pagi/Sore labels beside the date are optional; explicit times still take precedence.
 
@@ -70,7 +72,7 @@ Enter cumulative readings in a table, check consumption, and copy the official f
 
 Accounts are created by an admin; there is no public sign-up or Google login. Temporary passwords must be changed at first login. Admins can create, reset, disable, and enable operator accounts. Admin status does not grant access to another account's reports. Without email, account recovery requires an admin; admin recovery uses a local maintenance command.
 
-The interface supports English (default), Simplified Chinese, and Indonesian. Equipment names, units, and copied reports retain the English factory templates. JRE has 29 equipment rows and 57 meters. UNILAND has 34 rows, and Trafo 1, 2, and 3 cumulative readings are already **MWh**. See [meter rules](docs/meter-rules.md).
+The interface supports English (default), Simplified Chinese, and Indonesian. Equipment names, units, and copied reports retain the English factory templates. JRE has 30 equipment rows and 59 meters. UNILAND has 34 rows, and Trafo 1, 2, and 3 cumulative readings are already **MWh**. See [meter rules](docs/meter-rules.md).
 
 ### Develop and deploy
 
@@ -126,6 +128,8 @@ Modules: `engine.js`, `numbers.js`, and `worksheet.js` hold pure calculation log
 This is an alpha reporting tool. Scheduled backups, restore drills, runtime monitoring, and independent security review remain deployment responsibilities. See [SECURITY.md](SECURITY.md). Rolling back code does not roll back database data; preserve revisions and use compatible forward migrations.
 
 ## 中文
+
+JRE Dehumidifier 保留原直读电表，新增 Vacuum Box ×40；Piping Building 3# 改为 ×40。Electricity Building 3# 净用量为本表用量减去这两个分支经倍率换算后的用量。Area Repair Injection Molding 为第30项独立直读电表。三个用电时段均采用这些规则。布局3保留旧读数，两个新字段留空；旧文本未包含的读数仅在日期与时间一致时保留。缺失依赖或净用量为负时显示核查提示。历史报告不变，工作表仍为19列；Repair 单独出现在报告、原始导出及图表中。代码回退前保留私密备份，旧界面无法编辑布局3。
 
 UNILAND 新增 SV window、Painting、Dryer 三个独立直读 kWh 电表，适用于24小时、生产时段与夜班。用量为结束减开始。旧草稿保留原读数，新字段留空；新报告、原始及空白模板、图表可选变量包含新增电表。历史输出与16列工作表格式不变。工作时段导入若没有 Reading time 行，则采用所选早晚列的时间；日期旁 Pagi/Sore 标签可有可无，明确填写的时间仍优先。
 
@@ -191,7 +195,7 @@ JRE 和 UNILAND 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) �
 
 管理员创建账户，没有公开注册或 Google 登录。首次登录必须修改临时密码。管理员可创建、重置、停用及启用操作员账户，但不能查看其他用户的私人报告。没有邮件恢复流程；操作员联系管理员，管理员通过本地维护命令恢复账户。
 
-界面支持 English（默认）、简体中文和 Indonesia。设备名称、单位和复制的报告保留英文模板。JRE 有 29 个设备项目、57 个电表。UNILAND 有 34 项；Trafo 1、2、3 的累计读数已经是 **MWh**。详见[计量规则](docs/meter-rules.md)。
+界面支持 English（默认）、简体中文和 Indonesia。设备名称、单位和复制的报告保留英文模板。JRE 有 30 个设备项目、59 个电表。UNILAND 有 34 项；Trafo 1、2、3 的累计读数已经是 **MWh**。详见[计量规则](docs/meter-rules.md)。
 
 ### 开发与部署
 
@@ -216,6 +220,8 @@ v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语�
 计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
 
 ## Indonesia
+
+Dehumidifier JRE memakai meter direct existing ditambah Vacuum Box ×40. Piping Building 3# menjadi ×40. Konsumsi bersih Electricity Building 3# adalah selisih meter aslinya dikurangi konsumsi kedua cabang tersebut setelah ratio. Area Repair Injection Molding menjadi baris 30 direct. Aturan berlaku untuk ketiga periode listrik. Layout 3 mempertahankan reading lama dan mengosongkan dua kolom baru; impor lama hanya mempertahankan kolom yang tidak disertakan bila tanggal/jam cocok. Dependensi kosong atau hasil bersih negatif diberi catatan pemeriksaan. Histori tetap utuh; worksheet tetap 19 kolom. Repair tersedia terpisah di laporan, raw export, dan grafik. Simpan backup privat sebelum rollback kode karena UI lama tidak bisa mengedit layout 3.
 
 UNILAND menambah SV window, Painting dan Dryer sebagai meter direct kWh terpisah di mode 24 HOURS, AFTER PRODUCTION dan NIGHT SHIFT. Konsumsi = akhir dikurangi awal. Draft lama mempertahankan reading yang sudah ada; kolom baru kosong. Meter baru ikut laporan, template raw/kosong, ekspor dan pilihan grafik. Hasil historis serta format worksheet 16 kolom tetap. Impor jam kerja tanpa baris Reading time memakai waktu kolom pagi/sore yang dipilih. Label tanggal Pagi/Sore opsional; jam eksplisit di teks tetap diutamakan.
 
@@ -281,7 +287,7 @@ Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi 
 
 Admin membuat akun, tanpa registrasi publik atau login Google. Password sementara wajib diganti saat login pertama. Admin bisa membuat, mereset, menonaktifkan, dan mengaktifkan akun operator. Admin tidak mendapat akses ke laporan pribadi akun lain. Pemulihan operator melalui admin; pemulihan admin menggunakan perintah pemeliharaan lokal.
 
-Antarmuka mendukung English (default), 简体中文, dan Indonesia. Nama equipment, satuan, dan laporan yang disalin tetap mengikuti template English. JRE memiliki 29 equipment dan 57 meter. UNILAND memiliki 34 equipment; reading Trafo 1, 2, dan 3 sudah **MWh**. Lihat [aturan meter](docs/meter-rules.md).
+Antarmuka mendukung English (default), 简体中文, dan Indonesia. Nama equipment, satuan, dan laporan yang disalin tetap mengikuti template English. JRE memiliki 30 equipment dan 59 meter. UNILAND memiliki 34 equipment; reading Trafo 1, 2, dan 3 sudah **MWh**. Lihat [aturan meter](docs/meter-rules.md).
 
 ### Pengembangan dan deployment
 

@@ -32,14 +32,14 @@ export const catalog = {
   replayLogo: ['Replay logo animation', '重播标志动画', 'Putar ulang animasi logo'],
   ...waterMessages,
   netUsageHint: [
-    'Enter original readings. Usage excludes {name}, meter {meter} only.',
-    '填写原始读数。仅扣除 {name} 的第 {meter} 个电表用量。',
-    'Isi reading asli. Pemakaian hanya dikurangi {name}, meter {meter}.',
+    'Enter original readings. Usage excludes {meters}.',
+    '填写原始读数。扣除 {meters} 的用量。',
+    'Isi reading asli. Pemakaian dikurangi {meters}.',
   ],
   netUsageCalculation: [
-    'Net: {gross} - {name}, meter {meter} ({deducted}) = {net} {unit}',
-    '净用量：{gross} - {name} 第 {meter} 个电表 ({deducted}) = {net} {unit}',
-    'Murni: {gross} - {name}, meter {meter} ({deducted}) = {net} {unit}',
+    'Net: {gross} - {deductions} = {net} {unit}',
+    '净用量：{gross} - {deductions} = {net} {unit}',
+    'Murni: {gross} - {deductions} = {net} {unit}',
   ],
   ...draftMessages,
   updateAvailable: [
@@ -386,6 +386,11 @@ export const catalog = {
     'Readings imported into the table.',
     '读数已导入表格。',
     'Reading berhasil diimpor ke tabel.',
+  ],
+  importedLegacyJre: [
+    'Imported. Check Vacuum Box and Area Repair readings before saving a report.',
+    '导入完成。保存报告前请检查 Vacuum Box 与 Area Repair 读数。',
+    'Impor selesai. Periksa reading Vacuum Box dan Area Repair sebelum menyimpan laporan.',
   ],
   importedOmitted: [
     'Imported. Complete missing Trafo readings before saving a report.',

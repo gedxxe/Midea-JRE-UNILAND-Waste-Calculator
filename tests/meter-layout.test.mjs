@@ -7,7 +7,7 @@ import { parseReading } from '../importer.js';
 import { exportRawReading } from '../raw-export.js';
 import { reportSnapshot } from '../server/report-data.js';
 import { graphValues } from '../graph-data.js';
-import { legacyDraft, legacyText } from './fixtures/legacy-layout.mjs';
+import { legacyDraft, legacyText, fillNewJreMeters } from './fixtures/legacy-layout.mjs';
 
 test('legacy draft remapping preserves all 57 raw meters exactly once and is idempotent', () => {
   const legacy = legacyDraft(),
@@ -21,16 +21,19 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
       },
     }),
   ).JRE;
-  assert.equal(current.meterLayout, 2);
+  assert.equal(current.meterLayout, 3);
   for (const side of ['start', 'end']) {
     assert.deepEqual(current.rows[3][side], [...legacy.rows[3][side], legacy.rows[25][side][2]]);
     assert.deepEqual(current.rows[15][side], [...legacy.rows[15][side], legacy.rows[25][side][1]]);
     assert.deepEqual(current.rows[25][side], [legacy.rows[25][side][0]]);
     assert.deepEqual(
-      current.rows.flatMap((r) => r[side]).sort(),
+      current.rows
+        .flatMap((r) => r[side])
+        .filter(Boolean)
+        .sort(),
       legacy.rows.flatMap((r) => r[side]).sort(),
     );
-    assert.equal(current.rows.flatMap((r) => r[side]).length, 57);
+    assert.equal(current.rows.flatMap((r) => r[side]).length, 59);
   }
   assert.deepEqual(legacy, before);
   assert.deepEqual(migrateMeterLayout(current), current);
@@ -41,7 +44,7 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
 });
 
 test('new grouping preserves overall consumption and only Piping meter 1 reduces Structural', () => {
-  const draft = migrateMeterLayout(legacyDraft()),
+  const draft = fillNewJreMeters(migrateMeterLayout(legacyDraft())),
     before = structuredClone(draft);
   const r = calculateDraft(draft);
   assert.equal(r.success, true);
@@ -70,8 +73,13 @@ test('legacy and current text exports import into the same layout, without accep
       imported.values,
       next.rows.map((r) => r[side]),
     );
-    const raw = exportRawReading(next, side);
-    assert.deepEqual(parseReading(raw.text, 'JRE').values, imported.values);
+    assert.equal(exportRawReading(next, side).text, '');
+    const filled = fillNewJreMeters(next);
+    const raw = exportRawReading(filled, side);
+    assert.deepEqual(
+      parseReading(raw.text, 'JRE').values,
+      filled.rows.map((r) => r[side]),
+    );
     assert.match(raw.text, /26\. Warehouse Area: [\d.,]+ \(Ratio 40\)\n/);
   }
   const mixed = legacyText(old, 'end').replace('4. Window: ', '4. Window: 1 + ');
@@ -111,7 +119,7 @@ test('moved ratio warnings retain their actual meter coordinates and malformed d
 test('stored graph output stays immutable and stale clients must review regrouped reports', () => {
   const old = legacyDraft();
   assert.throws(() => reportSnapshot(old), /METER_LAYOUT_CHANGED/);
-  const snapshot = reportSnapshot(migrateMeterLayout(old));
+  const snapshot = reportSnapshot(fillNewJreMeters(migrateMeterLayout(old)));
   const original = structuredClone(snapshot);
   const metric = graphValues(snapshot, 'JRE');
   assert.equal(metric.w2, 3);
