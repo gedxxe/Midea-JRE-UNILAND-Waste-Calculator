@@ -1831,11 +1831,22 @@ dialog textarea {
   font-size: 1.1rem;
 }
 
-#shift-copies {
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+.report-options {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
-#shift-copies .button {
-  flex: 1 1 120px;
+.report-options label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.report-options select {
+  width: 100%;
+  min-width: 0;
+  font-size: 14px;
+}
+.report-options .small {
+  margin-top: 8px;
+  line-height: 1.5;
 }

@@ -341,12 +341,14 @@
           <label
             ><span data-i18n="readingMode">Reading mode</span
             ><select id="reading-mode">
-              <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+              <option value="daily" data-i18n="dailyMode">
+                24 HOURS · morning to next morning
+              </option>
               <option value="workingHours" data-i18n="workingMode">
-                Working hours · morning to after work
+                AFTER PRODUCTION · morning to evening
               </option>
               <option value="nightShift" data-i18n="nightMode">
-                Night · evening to next morning
+                NIGHT SHIFT · evening to next morning
               </option>
             </select></label
           >
@@ -702,6 +704,24 @@
                 <p id="validation-summary"></p>
                 <ul id="validation-list"></ul>
               </div>
+              <div class="report-options">
+                <label for="report-periods" data-i18n="reportPeriods">Report contents</label>
+                <select id="report-periods">
+                  <option value="daily">24 HOURS</option>
+                  <option value="dailyAfter">24 HOURS &amp; AFTER PRODUCTION</option>
+                  <option
+                    value="all"
+                    data-i18n="allReportPeriods"
+                    title="24 HOURS, AFTER PRODUCTION, &amp; NIGHT SHIFT"
+                  >
+                    24 HOURS + both shifts
+                  </option>
+                  <option value="after">AFTER PRODUCTION only</option>
+                  <option value="night">NIGHT SHIFT only</option>
+                </select>
+                <p class="small" data-i18n="reportOptionsHint"></p>
+                <p id="shared-reading-note" class="notice" role="status" hidden></p>
+              </div>
               <div class="preview-heading">
                 <label for="report-view"><span data-i18n="preview">Preview</span></label
                 ><select id="report-view">
@@ -721,17 +741,6 @@
                 data-i18n-placeholder="previewPlaceholder"
               ></textarea>
               <button id="copy-report" class="button primary full">Copy report</button>
-              <div id="shift-copies" class="copy-extra" hidden>
-                <button id="copy-shift-day" class="button secondary" data-i18n="copyDay">
-                  Copy Day
-                </button>
-                <button id="copy-shift-night" class="button secondary" data-i18n="copyNight">
-                  Copy Night
-                </button>
-                <button id="copy-shift-both" class="button secondary" data-i18n="copyShifts">
-                  Copy Day + Night
-                </button>
-              </div>
               <div class="copy-extra">
                 <button id="copy-combined" class="text-button" data-i18n="copyCombined">
                   Copy combined</button
@@ -801,11 +810,13 @@
       <label
         ><span data-i18n="readingMode">Reading mode</span
         ><select id="graph-kind">
-          <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+          <option value="daily" data-i18n="dailyMode">24 HOURS · morning to next morning</option>
           <option value="workingHours" data-i18n="workingMode">
-            Working hours · morning to after work
+            AFTER PRODUCTION · morning to evening
           </option>
-          <option value="nightShift" data-i18n="nightMode">Night · evening to next morning</option>
+          <option value="nightShift" data-i18n="nightMode">
+            NIGHT SHIFT · evening to next morning
+          </option>
         </select></label
       >
       <p id="graph-mode-note" class="notice" hidden></p>
@@ -837,11 +848,13 @@
       <label
         ><span data-i18n="readingMode">Reading mode</span
         ><select id="raw-template-kind">
-          <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+          <option value="daily" data-i18n="dailyMode">24 HOURS · morning to next morning</option>
           <option value="workingHours" data-i18n="workingMode">
-            Working hours · morning to after work
+            AFTER PRODUCTION · morning to evening
           </option>
-          <option value="nightShift" data-i18n="nightMode">Night · evening to next morning</option>
+          <option value="nightShift" data-i18n="nightMode">
+            NIGHT SHIFT · evening to next morning
+          </option>
         </select></label
       >
       <p id="raw-template-help" class="hint" data-i18n="rawTemplateHelp"></p>
@@ -960,11 +973,13 @@
       <label
         ><span data-i18n="readingMode">Reading mode</span
         ><select id="history-kind">
-          <option value="daily" data-i18n="dailyMode">Daily · 08:00 to next morning</option>
+          <option value="daily" data-i18n="dailyMode">24 HOURS · morning to next morning</option>
           <option value="workingHours" data-i18n="workingMode">
-            Working hours · morning to after work
+            AFTER PRODUCTION · morning to evening
           </option>
-          <option value="nightShift" data-i18n="nightMode">Night · evening to next morning</option>
+          <option value="nightShift" data-i18n="nightMode">
+            NIGHT SHIFT · evening to next morning
+          </option>
         </select></label
       >
       <ul id="history-list" class="history-list"></ul>
