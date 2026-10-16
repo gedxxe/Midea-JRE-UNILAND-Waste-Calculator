@@ -1,6 +1,6 @@
-import { createWorkingHoursDraft, createNightShiftDraft, calculateDraft } from './engine.js';
-import { isNightShift, periodKind, workPeriodError, validTime } from './reading-period.js';
-import { shiftDate, formatReportDate, scaledReading } from './numbers.js';
+import { createWorkingHoursDraft, createNightShiftDraft } from './engine.js';
+import { isNightShift, workPeriodError, validTime } from './reading-period.js';
+import { shiftDate, scaledReading } from './numbers.js';
 import { emptyAdditionalReadings } from './additional-readings.js';
 
 const samePoint = (a, side, b, key) =>
@@ -111,36 +111,4 @@ export function reconcileShiftPair(day, night) {
       }
     }
   return { day: a, night: b };
-}
-export function copyShiftReport(day, night, selection, calculated) {
-  const d = calculated?.day || calculateDraft(day),
-    n = calculated?.night || calculateDraft(night);
-  if (selection === 'day' || selection === 'night') {
-    const report = selection === 'day' ? d : n;
-    if (!report.success) throw Error('Complete the selected shift first.');
-    return report.reportSectionText;
-  }
-  if (
-    !d.success ||
-    !n.success ||
-    periodKind(day) !== 'workingHours' ||
-    !isNightShift(night) ||
-    day.plantKey !== night.plantKey ||
-    day.startDate !== night.startDate ||
-    day.endTime !== night.startTime
-  )
-    throw Error('Complete matching Day and Night shifts first.');
-  reconcileShiftPair(day, night);
-  const body = (r) => r.reportSectionText.split('\n').slice(1).join('\n');
-  return (
-    d.mainText.slice(0, 2) +
-    ' ' +
-    day.plantKey +
-    ' (' +
-    formatReportDate(day.startDate) +
-    ')\n\nDay:\n' +
-    body(d) +
-    '\n\nNight:\n' +
-    body(n)
-  );
 }

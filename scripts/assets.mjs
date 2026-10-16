@@ -16,6 +16,8 @@ export const PUBLIC_FILES = [
   'engine.js',
   'reading-period.js',
   'shifts.js',
+  'observations.js',
+  'report-options.js',
   'ui/working-hours.js',
   'i18n/working-hours.js',
   'gas.js',

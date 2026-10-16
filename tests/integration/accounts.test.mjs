@@ -1,3 +1,6 @@
+import { reportPeriods } from '../fixtures/report-periods.mjs';
+import { selectReport } from '../../report-options.js';
+import { shareElectricityEdits } from '../../observations.js';
 import { layout3Draft } from '../fixtures/uniland-input.mjs';
 import { PLANT_SCHEMAS } from '../../schema.js';
 import { draftsHandler } from '../../server/drafts.js';
@@ -1017,4 +1020,64 @@ test('Night drafts reject old writers, conflicting shared cells and direct rollb
   const kept = (await call('/api/drafts', { actor })).value;
   assert.equal(kept.version, first.value.version);
   assert.equal(kept.workspace.nightShifts.JRE.rows[0].start[0], '123.');
+});
+
+test('three-period drafts round trip, preserve legacy differences and leave saved outputs immutable', async () => {
+  const actor = await login(await seed());
+  const workspace = { version: 4, drafts: {}, workingHours: {}, nightShifts: {} };
+  for (const plant of ['JRE', 'UNILAND']) {
+    const [daily, after, night] = reportPeriods(plant);
+    daily.rows[0].start[0] = '999';
+    workspace.drafts[plant] = daily;
+    workspace.workingHours[plant] = after;
+    workspace.nightShifts[plant] = night;
+  }
+  const first = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(first.status, 200);
+  const kept = (await call('/api/drafts', { actor })).value;
+  const snapshots = [];
+  for (const plant of ['JRE', 'UNILAND']) {
+    const periods = [
+      kept.workspace.drafts[plant],
+      kept.workspace.workingHours[plant],
+      kept.workspace.nightShifts[plant],
+    ];
+    assert.equal(periods[0].rows[0].start[0], '999');
+    assert.equal(periods[1].rows[0].start[0], '1000');
+    assert.equal(selectReport(periods, 'all').error, 'selectionReadings');
+    const next = shareElectricityEdits(periods, 'workingHours', [{ ri: 0, mi: 0, side: 'start' }]);
+    assert.equal(selectReport(next, 'all').success, true);
+    for (const draft of next) {
+      const saved = await call('/api/reports', { actor, body: { draft } });
+      assert.equal(saved.status, 201);
+      snapshots.push({
+        id: saved.value.id,
+        kind: draft.periodKind || 'daily',
+        output: saved.value.snapshot.output,
+      });
+    }
+    assert.equal(new Set(snapshots.map((s) => s.id)).size, snapshots.length);
+    next[1].rows[0].end[0] = '1005';
+    const edited = shareElectricityEdits(next, 'workingHours', [{ ri: 0, mi: 0, side: 'end' }]);
+    [
+      kept.workspace.drafts[plant],
+      kept.workspace.workingHours[plant],
+      kept.workspace.nightShifts[plant],
+    ] = edited;
+  }
+  const updated = await call('/api/drafts', {
+    actor,
+    body: { workspace: kept.workspace, baseVersion: kept.version },
+  });
+  assert.equal(updated.status, 200);
+  const reread = (await call('/api/drafts', { actor })).value;
+  for (const plant of ['JRE', 'UNILAND']) {
+    assert.equal(reread.workspace.workingHours[plant].rows[0].end[0], '1005');
+    assert.equal(reread.workspace.nightShifts[plant].rows[0].start[0], '1005');
+    assert.equal(reread.workspace.drafts[plant].water.end, '102');
+  }
+  for (const snapshot of snapshots) {
+    const old = await call('/api/reports?id=' + snapshot.id + '&kind=' + snapshot.kind, { actor });
+    assert.deepEqual(old.value.snapshot.output, snapshot.output);
+  }
 });

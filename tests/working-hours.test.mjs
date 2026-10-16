@@ -43,7 +43,7 @@ test('both work modes use unchanged electricity factors, Structural, worksheet a
     assert.equal(result.gapKWh, daily.gapKWh);
     assert.deepEqual(result.worksheet, daily.worksheet);
     assert.equal(workMinutes(draft), 540);
-    assert.match(result.mainText.split('\n')[0], /Day Shift.*08:00 to .*17:00 WIB/);
+    assert.match(result.mainText.split('\n')[0], /AFTER PRODUCTION.*08:00 to .*17:00 WIB/);
     assert.doesNotMatch(result.mainText, /24 HOURS|^\* LPG:|^\* Water:/m);
     const snapshot = reportSnapshot(draft);
     assert.equal(snapshot.draft.endDate, snapshot.draft.startDate);
@@ -74,7 +74,7 @@ test('work periods reject overnight, mismatched dates, unknown modes, malformed 
   assert.equal(calculateDraft(d).success, false);
   const jre = calculateDraft(work()),
     uniland = calculateDraft(work('UNILAND'));
-  assert.match(generateFullIndonesiaReport(jre, uniland), /Day Shift/);
+  assert.match(generateFullIndonesiaReport(jre, uniland), /AFTER PRODUCTION/);
   assert.throws(
     () => generateFullIndonesiaReport(jre, calculateDraft(exampleDraft('UNILAND'))),
     /must match/,

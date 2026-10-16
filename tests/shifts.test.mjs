@@ -12,7 +12,6 @@ import {
   nextShiftPair,
   syncShiftReading,
   reconcileShiftPair,
-  copyShiftReport,
 } from '../shifts.js';
 import { emptyWorkingHours, restoreWorkspace } from '../storage.js';
 import { exampleDraft } from '../examples.js';
@@ -45,7 +44,7 @@ test('Day and Night subtract real cumulative readings and retain the start date,
     assert.equal(workMinutes(day), 540);
     assert.equal(workMinutes(night), 900);
     assert.equal(n.reportDate, '2026-09-16');
-    assert.match(n.mainText.split('\n')[0], /Night Shift.*2026-09-16 17:00 to 2026-09-17 08:00/);
+    assert.match(n.mainText.split('\n')[0], /NIGHT SHIFT.*2026-09-16 17:00 to 2026-09-17 08:00/);
     assert.equal(n.totalDirectEnergy, plant === 'JRE' ? 10 : 32);
     assert.equal(reportSnapshot(night).output.reportText, n.reportSectionText);
     assert.doesNotMatch(n.mainText, /^\* LPG:|^\* Water:|24 HOURS/m);
@@ -107,20 +106,6 @@ test('paired date/time edits and Next day retain only exact timestamp matches in
   );
   assert.deepEqual(undone.day.rows, day.rows);
   assert.deepEqual(undone.night.rows, night.rows);
-});
-test('Day, Night and combined copies have independent completion and a single date with two sections', () => {
-  const { day, night } = pair('UNILAND');
-  assert.match(copyShiftReport(day, night, 'day'), /Day Shift/);
-  assert.match(copyShiftReport(day, night, 'night'), /Night Shift/);
-  const both = copyShiftReport(day, night, 'both');
-  assert.match(both, /^B\) UNILAND \(SEPTEMBER 16, 2026\)/);
-  assert.equal(both.split('Day:').length, 2);
-  assert.equal(both.split('Night:').length, 2);
-  assert.doesNotMatch(both, /Utilities:|Water:/);
-  night.rows[0].end[0] = '';
-  assert.doesNotThrow(() => copyShiftReport(day, night, 'day'));
-  assert.throws(() => copyShiftReport(day, night, 'night'));
-  assert.throws(() => copyShiftReport(day, night, 'both'));
 });
 test('workspace and private backup preserve all three modes, partials and shared conflicts atomically', () => {
   const p = pair(),

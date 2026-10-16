@@ -1,12 +1,13 @@
 import { createWorkingHoursPicker } from './ui/working-hours.js';
 import { isWorkingHours, isNightShift, periodKind } from './reading-period.js';
+import { emptyNightShifts, changeShiftPair, nextShiftPair, syncShiftReading } from './shifts.js';
 import {
-  emptyNightShifts,
-  changeShiftPair,
-  nextShiftPair,
-  syncShiftReading,
-  copyShiftReport,
-} from './shifts.js';
+  seedElectricity,
+  shareElectricityEdits,
+  electricityConflicts,
+  columnEdits,
+} from './observations.js';
+import { selectReport, combineReportSelections, selectionForMode } from './report-options.js';
 import { createBackupControls } from './ui/draft-backup.js';
 import { createDraftAutosave } from './ui/drafts.js';
 import { createGraphs } from './ui/graphs.js';
@@ -30,7 +31,6 @@ import {
   createNightShiftDraft,
   calculateDraft,
   formatRowValue,
-  generateFullIndonesiaReport,
 } from './engine.js';
 import {
   formatNumber,
@@ -69,6 +69,8 @@ let workingHours = emptyWorkingHours();
 let nightShifts = emptyNightShifts();
 let mode = 'daily';
 let reports = {};
+let finalReports = {};
+let reportFollowsMode = true;
 let undo = null;
 let periodOrigin = null;
 let dirty = false;
@@ -83,6 +85,19 @@ const current = () => activeDrafts()[plant];
 const setCurrent = (draft) => {
   activeDrafts()[plant] = draft;
 };
+const periodsFor = (key) => [drafts[key], workingHours[key], nightShifts[key]];
+function putPeriods(key, periods) {
+  // Gas controls retain references to their observations. Reconcile electricity only.
+  const existing = periodsFor(key);
+  periods.forEach((next, i) => {
+    for (const field of ['rows', 'additionalReadings', 'isExample', 'importIssues'])
+      if (field in next) existing[i][field] = next[field];
+      else delete existing[i][field];
+  });
+}
+function seedSharedReadings() {
+  for (const key of ['JRE', 'UNILAND']) putPeriods(key, seedElectricity(periodsFor(key)));
+}
 function putPair(pair) {
   workingHours[plant] = pair.day;
   nightShifts[plant] = pair.night;
@@ -121,8 +136,8 @@ const workPicker = createWorkingHoursPicker({
         )
           workingHours[key] = {
             ...draft,
-            startDate: wibDate(clock.now()),
-            endDate: wibDate(clock.now()),
+            startDate: drafts[key].startDate || wibDate(clock.now()),
+            endDate: drafts[key].startDate || wibDate(clock.now()),
           };
       }
       ensureNight();
@@ -150,8 +165,8 @@ const workPicker = createWorkingHoursPicker({
         return;
       rememberUndo();
       setCurrent(next);
+      changed(false, columnEdits(current(), ['start']));
       mountPlant();
-      changed();
       toast(t('workMorningCopied'));
     } catch {
       toast(t('workMorningUnavailable'));
@@ -200,8 +215,8 @@ const importEditor = createImportEditor({
     });
     current().importIssues = [...(current().importIssues || []), ...parsed.issues];
     current().isExample = false;
+    changed(false, columnEdits(current(), [side], parsed.suppliedRows));
     mountPlant();
-    changed();
   },
 });
 const gasPanel = createGasPanel({
@@ -270,6 +285,8 @@ function accountChanged(user) {
   workingHours = emptyWorkingHours();
   nightShifts = emptyNightShifts();
   mode = 'daily';
+  reportFollowsMode = true;
+  $('report-periods').value = 'daily';
   undo = null;
   periodOrigin = null;
   dirty = false;
@@ -317,9 +334,10 @@ const accounts = createAccounts({
     rememberUndo();
     plant = draft.plantKey;
     mode = periodKind(draft);
+    reportFollowsMode = true;
     setCurrent(draft);
+    changed(false, columnEdits(current()));
     mountPlant();
-    changed();
   },
 });
 autosave = createDraftAutosave({
@@ -363,12 +381,9 @@ function rememberUndo() {
   };
   $('undo-change').hidden = false;
 }
-function changed(periodOnly = false) {
-  if (isWorkingHours(current())) {
-    if (isNightShift(current()))
-      workingHours[plant] = syncShiftReading(current(), workingHours[plant]);
-    else nightShifts[plant] = syncShiftReading(current(), nightShifts[plant]);
-  }
+function changed(periodOnly = false, edits = []) {
+  if (edits.length) putPeriods(plant, shareElectricityEdits(periodsFor(plant), mode, edits));
+  seedSharedReadings();
   if (!periodOnly) periodOrigin = null;
   dirty = true;
   saveStatus = 'changed';
@@ -414,6 +429,8 @@ function changeWork(date, startTime, endTime) {
   toast(t('periodReadingsMoved'));
 }
 function mountPlant() {
+  seedSharedReadings();
+  if (reportFollowsMode) $('report-periods').value = selectionForMode(mode);
   periodPicker.sync();
   $('start-date').value = current().startDate;
   $('end-date').value = current().endDate;
@@ -472,15 +489,6 @@ function renderResults() {
   });
   $('main-total').textContent = formatRowValue(plant, report.calculatedRows[0]);
   $('main-unit').textContent = report.totalDirectUnit;
-  $('result-state').textContent = report.success
-    ? report.issues.filter((i) => i.level !== 'NOTICE').length
-      ? t('needsCheck')
-      : t('ready')
-    : t('incomplete');
-  $('result-state').classList.toggle(
-    'ready',
-    report.success && !report.issues.some((i) => i.level !== 'NOTICE'),
-  );
   if (plant === 'JRE') {
     $('derived-one-label').textContent = 'Sub-meter 2-29';
     $('derived-two-label').textContent = t('gapLabel');
@@ -544,13 +552,26 @@ function renderResults() {
       }),
     );
   }
-  let combined = '';
-  let combinedError = '';
+  const choice = $('report-periods').value;
+  finalReports = Object.fromEntries(
+    ['JRE', 'UNILAND'].map((key) => [
+      key,
+      selectReport(periodsFor(key), choice, { [mode]: reports[key] }),
+    ]),
+  );
+  const selected = finalReports[plant];
+  let combined = '',
+    combinedError = '';
   try {
-    combined = generateFullIndonesiaReport(reports.JRE, reports.UNILAND);
+    combined = combineReportSelections(finalReports.JRE, finalReports.UNILAND);
   } catch (error) {
-    combinedError = error.message;
+    combinedError = t(error.message);
   }
+  const conflicts = electricityConflicts(periodsFor(plant));
+  $('shared-reading-note').hidden = !conflicts.length;
+  $('shared-reading-note').textContent = conflicts.length
+    ? t('sharedReadingConflict', { count: conflicts.length })
+    : '';
   const view = $('report-view').value;
   const hasData = current().rows.some((row) => [...row.start, ...row.end].some((v) => v.trim()));
   $('report-preview').value =
@@ -560,34 +581,44 @@ function renderResults() {
         ? hasData
           ? [report.worksheetText, report.checks].filter(Boolean).join('\n\n')
           : ''
-        : hasData
-          ? report.reportSectionText
-          : '';
-  $('copy-report').disabled = view === 'combined' ? !combined : !report.success;
+        : selected.success
+          ? selected.text
+          : selected.parts.length === 1 &&
+              selected.parts[0].draft.rows.some((row) =>
+                [...row.start, ...row.end].some((v) => v.trim()),
+              )
+            ? selected.parts[0].report.reportSectionText
+            : hasData
+              ? t(selected.error)
+              : '';
+  $('copy-report').disabled =
+    view === 'worksheet' ? !report.success : view === 'combined' ? !combined : !selected.success;
   $('copy-report').textContent = view === 'worksheet' ? t('copyWorksheet') : t('copyReport');
   $('copy-combined').disabled = !combined;
   $('copy-combined').title = combinedError;
   $('copy-worksheet').disabled = !report.success;
-  $('shift-copies').hidden = !isWorkingHours(current());
-  const shiftResults = isWorkingHours(current())
-    ? {
-        day: mode === 'workingHours' ? report : calculateDraft(workingHours[plant]),
-        night: mode === 'nightShift' ? report : calculateDraft(nightShifts[plant]),
-      }
-    : null;
-  for (const choice of ['day', 'night', 'both']) {
-    let text = '';
-    try {
-      if (shiftResults)
-        text = copyShiftReport(workingHours[plant], nightShifts[plant], choice, shiftResults);
-    } catch {
-      /* Keep partial shift drafts editable. */
-    }
-    $('copy-shift-' + choice).disabled = !text;
-  }
-  $('copy-note').textContent = !report.success
-    ? t('copyIncomplete')
-    : report.issues.filter((i) => i.level !== 'NOTICE').length
+  const ready =
+    view === 'worksheet' ? report.success : view === 'combined' ? !!combined : selected.success;
+  const visibleParts =
+    view === 'worksheet'
+      ? [{ report }]
+      : view === 'combined'
+        ? [...finalReports.JRE.parts, ...finalReports.UNILAND.parts]
+        : selected.parts;
+  const hasChecks = visibleParts.some((p) => p.report.issues.some((i) => i.level !== 'NOTICE'));
+  $('result-state').textContent = !ready
+    ? t('incomplete')
+    : hasChecks
+      ? t('needsCheck')
+      : t('ready');
+  $('result-state').classList.toggle('ready', ready && !hasChecks);
+  $('copy-note').textContent = !ready
+    ? view === 'worksheet'
+      ? t('copyIncomplete')
+      : view === 'combined'
+        ? combinedError
+        : t(selected.error)
+    : hasChecks
       ? t('copyWarnings')
       : t('copyPeriod');
   filterTable();
@@ -752,6 +783,10 @@ window.addEventListener('offline', () => {
 $('search-meter').addEventListener('input', filterTable);
 $('only-incomplete').addEventListener('change', filterTable);
 $('report-view').addEventListener('change', renderResults);
+$('report-periods').addEventListener('change', () => {
+  reportFollowsMode = false;
+  renderResults();
+});
 $('check-data').addEventListener('click', () => {
   showValidation = !showValidation;
   renderResults();
@@ -761,22 +796,14 @@ $('copy-report').addEventListener('click', () => {
 });
 $('copy-combined').addEventListener('click', () => {
   try {
-    void copyText(generateFullIndonesiaReport(reports.JRE, reports.UNILAND));
+    void copyText(combineReportSelections(finalReports.JRE, finalReports.UNILAND));
   } catch (error) {
-    toast(error.message);
+    toast(t(error.message));
   }
 });
 $('copy-worksheet').addEventListener('click', () => {
   if (reports[plant].success) void copyText(worksheetRowToTSV(reports[plant].worksheet));
 });
-for (const choice of ['day', 'night', 'both'])
-  $('copy-shift-' + choice).addEventListener('click', () => {
-    try {
-      void copyText(copyShiftReport(workingHours[plant], nightShifts[plant], choice));
-    } catch (error) {
-      toast(error.message);
-    }
-  });
 $('save-draft').addEventListener('click', () => {
   autosave.changed();
   void autosave.flush();
@@ -822,8 +849,8 @@ $('load-example').addEventListener('click', () => {
     });
   } else setCurrent(example);
   current().isExample = true;
+  changed(false, columnEdits(current()));
   mountPlant();
-  changed();
   toast(t('exampleLoaded'));
 });
 $('clear-plant').addEventListener('click', () => {
@@ -838,8 +865,8 @@ $('clear-plant').addEventListener('click', () => {
         )
       : createDraft(plant, current().startDate, current().endDate),
   );
+  changed(false, columnEdits(current()));
   mountPlant();
-  changed();
   toast(t('cleared', { plant }));
 });
 $('undo-change').addEventListener('click', () => {

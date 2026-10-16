@@ -370,8 +370,9 @@ export function createGraphs({ current, request, toast }) {
               ? {
                   ...config,
                   titleEn:
-                    config.titleEn + (kind() === 'nightShift' ? ' · Night shift' : ' · Day shift'),
-                  titleZh: config.titleZh + (kind() === 'nightShift' ? ' · 夜班' : ' · 白班'),
+                    config.titleEn +
+                    (kind() === 'nightShift' ? ' · Night shift' : ' · After production'),
+                  titleZh: config.titleZh + (kind() === 'nightShift' ? ' · 夜班' : ' · 生产时段'),
                 }
               : config,
             data,
