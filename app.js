@@ -209,13 +209,21 @@ const importEditor = createImportEditor({
           periodOrigin || current(),
         ),
       );
-    parsed.values.forEach((values, ri) => {
-      if (!parsed.suppliedRows || parsed.suppliedRows.includes(ri))
-        current().rows[ri][side] = values;
-    });
+    const edits = [];
+    parsed.values.forEach((values, ri) =>
+      values.forEach((value, mi) => {
+        if (
+          parsed.suppliedMeters?.[ri]?.[mi] ??
+          (!parsed.suppliedRows || parsed.suppliedRows.includes(ri))
+        ) {
+          current().rows[ri][side][mi] = value;
+          edits.push({ ri, mi, side });
+        }
+      }),
+    );
     current().importIssues = [...(current().importIssues || []), ...parsed.issues];
     current().isExample = false;
-    changed(false, columnEdits(current(), [side], parsed.suppliedRows));
+    changed(false, edits);
     mountPlant();
   },
 });
@@ -490,7 +498,7 @@ function renderResults() {
   $('main-total').textContent = formatRowValue(plant, report.calculatedRows[0]);
   $('main-unit').textContent = report.totalDirectUnit;
   if (plant === 'JRE') {
-    $('derived-one-label').textContent = 'Sub-meter 2-29';
+    $('derived-one-label').textContent = 'Sub-meter 2-' + PLANT_SCHEMAS.JRE.rows.length;
     $('derived-two-label').textContent = t('gapLabel');
     $('derived-one').textContent =
       report.subAreasSumKWh === null ? '-' : `${report.subAreasSumKWh.toFixed(2)} kWh`;

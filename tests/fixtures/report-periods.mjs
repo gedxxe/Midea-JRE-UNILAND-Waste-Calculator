@@ -14,11 +14,13 @@ export function reportPeriods(plant = 'JRE', date = '2026-09-16') {
     night.rows[i].end.fill('1010');
   }
   if (plant === 'JRE') {
-    const index = PLANT_SCHEMAS.JRE.rows.findIndex((row) => row.name === 'Structural Laboratory');
-    daily.rows[index].end = ['2000'];
-    after.rows[index].end = ['1400'];
-    night.rows[index].start = ['1400'];
-    night.rows[index].end = ['2000'];
+    for (const name of ['Structural Laboratory', 'Electricity Building 3#']) {
+      const index = PLANT_SCHEMAS.JRE.rows.findIndex((row) => row.name === name);
+      daily.rows[index].end = ['2000'];
+      after.rows[index].end = ['1400'];
+      night.rows[index].start = ['1400'];
+      night.rows[index].end = ['2000'];
+    }
   }
   daily.utilities[0].value = '3';
   daily.water = { start: '100', end: '102' };

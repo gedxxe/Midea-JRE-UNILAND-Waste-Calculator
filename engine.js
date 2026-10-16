@@ -212,12 +212,21 @@ export function calculateDraft(draft) {
 
   // Subtract included branch usage before rounding, reporting or adding sub-meter totals.
   calculatedRows.forEach((row, ri) => {
-    if (!row.subtractUsageOf) return;
+    if (!row.deductMeters) return;
     row.grossEnergy = row.totalEnergy;
-    const included =
-      row.subtractMeter === undefined
-        ? scaledEnergy.get(row.subtractUsageOf)
-        : scaledMeters.get(`${row.subtractUsageOf}:${row.subtractMeter}`);
+    row.deductions = row.deductMeters.map(({ name, meter }) => {
+      const value = scaledMeters.get(name + ':' + meter);
+      return { name, meter, energy: value === undefined ? null : Number(value) / 1e8 };
+    });
+    const missingSources = row.deductMeters.filter(
+      ({ name, meter }) => !scaledMeters.has(name + ':' + meter),
+    );
+    const included = missingSources.length
+      ? undefined
+      : row.deductMeters.reduce(
+          (sum, { name, meter }) => sum + scaledMeters.get(name + ':' + meter),
+          0n,
+        );
     row.deductedEnergy = included === undefined ? null : Number(included) / 1e8;
     if (row.missing) return;
     if (included === undefined) {
@@ -226,7 +235,7 @@ export function calculateDraft(draft) {
       issue(
         issues,
         'DEPENDENCY_UNAVAILABLE',
-        `${row.name}: net usage needs valid ${row.subtractUsageOf} readings.`,
+        `${row.name}: net usage needs valid ${missingSources.map(({ name, meter }) => name + ', meter ' + (meter + 1)).join(' and ')} readings.`,
         ri,
       );
       return;
@@ -238,7 +247,7 @@ export function calculateDraft(draft) {
       issue(
         issues,
         'NET_USAGE_NEGATIVE',
-        `${row.name}: included ${row.subtractUsageOf} usage exceeds the parent meter usage. Check both readings for the same period.`,
+        `${row.name}: included ${row.deductMeters.map(({ name }) => name).join(' and ')} usage exceeds the parent meter usage. Check readings for the same period.`,
         ri,
       );
       return;
@@ -422,7 +431,7 @@ export function calculateDraft(draft) {
     draft.plantKey === 'JRE'
       ? [
           'CROSS-CHECK:',
-          `Sub-meter 2-29: ${subAreasSumKWh === null ? 'incomplete' : `${subAreasSumKWh.toFixed(2)} kWh`}`,
+          `Sub-meter 2-${schema.rows.length}: ${subAreasSumKWh === null ? 'incomplete' : `${subAreasSumKWh.toFixed(2)} kWh`}`,
           `Main Total: ${totalDirectEnergy === null ? '-' : `${totalDirectEnergy.toFixed(2)} kWh`}`,
           `Gap: ${gapKWh === null ? '-' : `${formatSignedNumber(gapKWh)} kWh`}`,
           `Gap: ${gapPercent === null ? '-' : `${formatSignedNumber(gapPercent)}%`}`,

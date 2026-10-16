@@ -56,7 +56,7 @@ export function createImportEditor({ current, apply, toast }) {
     $('import-dialog').close();
     toast(
       parsed.omittedRows?.length
-        ? t('importedOmitted')
+        ? t(current().plantKey === 'JRE' ? 'importedLegacyJre' : 'importedOmitted')
         : parsed.issues.length
           ? t('importedWarnings')
           : t('imported'),

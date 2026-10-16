@@ -11,8 +11,9 @@ export function exampleDraft(plant) {
   });
   if (plant === 'JRE') draft.rows[0].start[0] = '100000';
   if (plant === 'JRE') {
-    const structural = PLANT_SCHEMAS.JRE.rows.findIndex((row) => row.subtractUsageOf);
-    draft.rows[structural].end[0] = String(Number(draft.rows[structural].start[0]) + 50);
+    PLANT_SCHEMAS.JRE.rows.forEach((row, i) => {
+      if (row.deductMeters) draft.rows[i].end[0] = String(Number(draft.rows[i].start[0]) + 50);
+    });
   }
   draft.rows[0].end[0] = plant === 'JRE' ? '103000' : '1003.78';
   return draft;

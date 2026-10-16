@@ -37,11 +37,15 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             node('span', String(ri + 1).padStart(2, '0'), 'equipment-number'),
             node('span', row.name),
           );
-          if (row.subtractUsageOf)
+          if (row.deductMeters)
             equipment.append(
               node(
                 'small',
-                t('netUsageHint', { name: row.subtractUsageOf, meter: row.subtractMeter + 1 }),
+                t('netUsageHint', {
+                  meters: row.deductMeters
+                    .map(({ name, meter }) => name + ', meter ' + (meter + 1))
+                    .join(' + '),
+                }),
               ),
             );
           if (row.allowInactive) {
@@ -61,7 +65,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         }
         const ratio = node('td', undefined, 'ratio');
         ratio.append(
-          node('span', `Meter ${mi + 1}`),
+          node('span', row.meterNames?.[mi] || `Meter ${mi + 1}`),
           node(
             'strong',
             row.ratioLabel ? `× ${row.ratioLabel}` : factor === 1 ? t('direct') : `× ${factor}`,
@@ -240,14 +244,17 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             `${m.start || '?'} → ${m.end || '?'} × ${m.factor} = ${formatNumber(m.energy, 8)} ${row.unit}`,
         )
         .join('\n');
-      if (row.subtractUsageOf)
+      if (row.deductMeters)
         output.title +=
           '\n' +
           t('netUsageCalculation', {
             gross: formatNumber(row.grossEnergy, 8),
-            name: row.subtractUsageOf,
-            meter: row.subtractMeter + 1,
-            deducted: formatNumber(row.deductedEnergy, 8),
+            deductions: row.deductions
+              .map(
+                ({ name, meter, energy }) =>
+                  name + ', meter ' + (meter + 1) + ' (' + formatNumber(energy, 8) + ')',
+              )
+              .join(' - '),
             net: formatRowValue(getPlant(), row),
             unit: row.unit,
           });

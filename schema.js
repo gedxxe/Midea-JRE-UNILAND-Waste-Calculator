@@ -9,26 +9,37 @@ export const PLANT_SCHEMAS = {
       { name: 'Indoor', unit: 'kWh', factors: [250, 40] },
       { name: 'Outdoor', unit: 'kWh', factors: [1, 40] },
       { name: 'Window', unit: 'kWh', factors: [1, 90, 90, 40, 40, 1] },
-      { name: 'Dehumidifier', unit: 'kWh' },
+      {
+        name: 'Dehumidifier',
+        unit: 'kWh',
+        factors: [1, 40],
+        meterNames: ['Dehumidifier', 'Vacuum Box'],
+      },
       { name: 'Heat Exchanger', unit: 'kWh', factors: [40, 1, 1, 1] },
       { name: 'Injection Molding', unit: 'kWh', factors: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
       { name: 'Crusher Machine', unit: 'kWh' },
       { name: 'Cooling Tower and Water Pump Injection Molding', unit: 'kWh', factors: [1, 1] },
-      { name: 'Electricity Building 3#', unit: 'kWh' },
+      {
+        name: 'Electricity Building 3#',
+        unit: 'kWh',
+        deductMeters: [
+          { name: 'Dehumidifier', meter: 1 },
+          { name: 'Piping Building 3#', meter: 0 },
+        ],
+      },
       { name: 'Nitrogen and Refrigerant Station', unit: 'kWh' },
       { name: 'Air Compressor 1#', unit: 'kWh', factors: [40], allowInactive: true },
       { name: 'New Air Compressor 1#', unit: 'kWh' },
       { name: 'New Air Compressor 2#', unit: 'kWh', allowInactive: true },
       { name: 'Dryer and Cooling Tower New Air Compressor', unit: 'kWh', factors: [1, 1] },
       { name: 'Piping Building 1#', unit: 'kWh', factors: [40, 1] },
-      { name: 'Piping Building 3#', unit: 'kWh' },
+      { name: 'Piping Building 3#', unit: 'kWh', factors: [40] },
       { name: 'All Office Building', unit: 'kWh', factors: [1000] },
       { name: 'Electricity Building 2#', unit: 'kWh' },
       {
         name: 'Structural Laboratory',
         unit: 'kWh',
-        subtractUsageOf: 'Piping Building 1#',
-        subtractMeter: 0,
+        deductMeters: [{ name: 'Piping Building 1#', meter: 0 }],
       },
       { name: 'Test Control Room', unit: 'kWh', factors: [1, 1] },
       { name: 'IQC and OQC Room', unit: 'kWh' },
@@ -39,6 +50,7 @@ export const PLANT_SCHEMAS = {
       { name: 'Server Room', unit: 'kWh', factors: [1, 1] },
       { name: 'Utility Area', unit: 'kWh', factors: [1000, 40] },
       { name: 'Heater LPG', unit: 'kWh', factors: [40] },
+      { name: 'Area Repair Injection Molding', unit: 'kWh' },
     ],
   },
   UNILAND: {
@@ -157,6 +169,11 @@ for (const schema of Object.values(PLANT_SCHEMAS)) {
     row.no = String(i + 1);
     row.factors ??= [1];
     Object.freeze(row.factors);
+    if (row.meterNames) Object.freeze(row.meterNames);
+    if (row.deductMeters) {
+      row.deductMeters.forEach(Object.freeze);
+      Object.freeze(row.deductMeters);
+    }
     Object.freeze(row);
   });
   Object.freeze(schema.rows);
