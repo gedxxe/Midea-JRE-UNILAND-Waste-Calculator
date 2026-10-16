@@ -1,8 +1,15 @@
 import { PLANT_SCHEMAS } from './schema.js';
 
-export const JRE_METER_LAYOUT = 2;
+export const JRE_METER_LAYOUT = 3;
 export const UNILAND_METER_LAYOUT = 4;
-export const LEGACY_JRE_FACTORS = { 3: [1, 90, 90, 40, 40], 15: [40], 25: [40, 1, 1] };
+export const LEGACY_JRE_FACTORS = {
+  3: [1, 90, 90, 40, 40],
+  4: [1],
+  15: [40],
+  16: [1],
+  25: [40, 1, 1],
+};
+export const JRE_LAYOUT2_FACTORS = { 4: [1], 16: [1] };
 
 export function moveLegacyValues(values) {
   const moved = values.map((row) => [...row]);
@@ -89,31 +96,36 @@ export function migrateMeterLayout(input) {
     return next;
   }
   if (input?.plantKey !== 'JRE') return input;
-  if (input.meterLayout !== undefined && ![1, JRE_METER_LAYOUT].includes(input.meterLayout))
+  if (input.meterLayout !== undefined && ![1, 2, JRE_METER_LAYOUT].includes(input.meterLayout))
     throw new Error('Unknown meter layout.');
   if (input.meterLayout === JRE_METER_LAYOUT) return input;
   const rows = input.rows;
-  const legacy =
-    rows?.length === PLANT_SCHEMAS.JRE.rows.length &&
+  const matches = (factors) =>
+    rows?.length === 29 &&
     rows.every((row, i) =>
       ['start', 'end'].every(
         (side) =>
           Array.isArray(row?.[side]) &&
-          row[side].length === (LEGACY_JRE_FACTORS[i] || PLANT_SCHEMAS.JRE.rows[i].factors).length,
+          row[side].length === (factors[i] || PLANT_SCHEMAS.JRE.rows[i].factors).length,
       ),
     );
-  if (!legacy) {
-    if (input.meterLayout === 1) throw new Error('Invalid legacy meter layout.');
-    return input;
-  }
+  const layout =
+    input.meterLayout ||
+    (matches(JRE_LAYOUT2_FACTORS) ? 2 : matches(LEGACY_JRE_FACTORS) ? 1 : null);
+  if (!layout) return input;
+  if (!matches(layout === 1 ? LEGACY_JRE_FACTORS : JRE_LAYOUT2_FACTORS))
+    throw Error('Invalid legacy meter layout.');
   const next = structuredClone(input);
   for (const side of ['start', 'end']) {
-    const moved = moveLegacyValues(rows.map((row) => row[side]));
+    const values = rows.map((row) => row[side]);
+    const moved = layout === 1 ? moveLegacyValues(values) : values;
     next.rows.forEach((row, i) => {
-      row[side] = moved[i];
+      row[side] = [...moved[i]];
     });
+    next.rows[4][side].push('');
   }
+  next.rows.push({ start: [''], end: [''], inactive: false });
   next.meterLayout = JRE_METER_LAYOUT;
-  next.importIssues = moveLegacyIssues(input.importIssues);
+  if (layout === 1) next.importIssues = moveLegacyIssues(input.importIssues);
   return next;
 }

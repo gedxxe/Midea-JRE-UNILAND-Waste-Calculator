@@ -56,10 +56,12 @@ export function draftsHandler(database = getPool, env = process.env) {
       // A stale browser must reload rather than erase newly added meter slots.
       if (
         workspace &&
-        ['drafts', 'workingHours', 'nightShifts'].some(
-          (collection) =>
-            (old?.workspace?.[collection]?.UNILAND?.meterLayout || 0) >
-            (body.workspace?.[collection]?.UNILAND?.meterLayout || 0),
+        ['drafts', 'workingHours', 'nightShifts'].some((collection) =>
+          ['JRE', 'UNILAND'].some(
+            (plant) =>
+              (old?.workspace?.[collection]?.[plant]?.meterLayout || 0) >
+              (body.workspace?.[collection]?.[plant]?.meterLayout || 0),
+          ),
         )
       )
         fail(409, 'DRAFT_FORMAT_CHANGED');

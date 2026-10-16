@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.2-alpha - 2026-10-16
+
+- Add JRE Vacuum Box x40 under Dehumidifier and direct Area Repair Injection Molding; change Piping Building 3# to x40 in all electricity periods.
+- Report Electricity Building 3# net of the two included converted meter usages, preserving gross readings and main Total.
+- Upgrade existing drafts with blank new fields, preserve omitted readings on matching-time legacy imports, and reject stale layout saves. Keep historical output, graph identities and worksheet columns unchanged.
+
 ## v0.11.1-alpha - 2026-10-16
 
 - Add five final report choices covering 24 HOURS, AFTER PRODUCTION and NIGHT SHIFT for both factories; retain independent raw-reading export.

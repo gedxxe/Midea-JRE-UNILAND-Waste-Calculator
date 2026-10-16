@@ -72,8 +72,13 @@ export function parseReading(text, plantKey) {
     });
   if (times.length > 1)
     issues.push({ level: 'ERROR', code: 'IMPORT_TIME', message: 'Paste only one reading time.' });
-  const legacy =
+  const olderJre =
     plantKey === 'JRE' &&
+    !entries.some((entry) => entry.ri === 29) &&
+    entries.filter((entry) => entry.ri === 4).length === 1 &&
+    entries.find((entry) => entry.ri === 4).expr.split('+').length === 1;
+  const legacy =
+    olderJre &&
     Object.entries(LEGACY_JRE_FACTORS).every(([ri, factors]) => {
       const matches = entries.filter((entry) => entry.ri === Number(ri));
       return (
@@ -81,12 +86,16 @@ export function parseReading(text, plantKey) {
         (matches[0].expr.trim() === '-' || matches[0].expr.split('+').length === factors.length)
       );
     });
+  let suppliedMeters = schema.rows.map((row) => row.factors.map(() => false));
   for (const { ri, expr } of entries) {
     const row =
       legacy && LEGACY_JRE_FACTORS[ri]
         ? { ...schema.rows[ri], factors: LEGACY_JRE_FACTORS[ri] }
-        : schema.rows[ri];
-    if (legacy) values[ri] = row.factors.map(() => '');
+        : olderJre && ri === 4
+          ? { ...schema.rows[ri], factors: [1] }
+          : schema.rows[ri];
+    if (legacy || olderJre) values[ri] = row.factors.map(() => '');
+    suppliedMeters[ri] = row.factors.map(() => false);
     if (seen.has(ri)) {
       issues.push({
         level: 'ERROR',
@@ -119,22 +128,24 @@ export function parseReading(text, plantKey) {
         return;
       }
       values[ri][mi] = m[1];
+      suppliedMeters[ri][mi] = true;
       if (m[2] || m[3]) {
         const factor = Number((m[2] || m[3]).replace(',', '.')) / (m[4] ? Number(m[4]) : 1);
-        if (factor !== row.factors[mi])
+        const expected = schema.rows[ri].factors[mi] ?? row.factors[mi];
+        if (factor !== expected)
           issues.push({
             level: 'WARNING',
             code: 'RATIO_MISMATCH',
             rowIndex: ri,
             meterIndex: mi,
             inputRatio: factor,
-            message: `${row.name}, meter ${mi + 1}: input ratio ${factor}, template ratio ${row.factors[mi]}. Using the template ratio.`,
+            message: `${row.name}, meter ${mi + 1}: input ratio ${factor}, template ratio ${expected}. Using the template ratio.`,
           });
       }
     });
   }
   schema.rows.forEach((row, ri) => {
-    if (!seen.has(ri) && !row.optionalImport)
+    if (!seen.has(ri) && !row.optionalImport && !(olderJre && ri === 29))
       issues.push({
         level: 'ERROR',
         code: 'IMPORT_MISSING',
@@ -142,8 +153,19 @@ export function parseReading(text, plantKey) {
       });
   });
   const success = !issues.some((i) => i.level === 'ERROR');
+  if (success) {
+    if (legacy) {
+      values = moveLegacyValues(values);
+      suppliedMeters = moveLegacyValues(suppliedMeters);
+    }
+    if (olderJre) {
+      values[4].push('');
+      suppliedMeters[4].push(false);
+    }
+  }
   return {
-    values: legacy && success ? moveLegacyValues(values) : values,
+    values,
+    suppliedMeters,
     suppliedRows: [...seen],
     omittedRows: schema.rows.map((_, i) => i).filter((i) => !seen.has(i)),
     date: dates[0],
