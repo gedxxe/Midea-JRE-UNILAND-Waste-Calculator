@@ -1,6 +1,6 @@
 import { endpoint, appOrigin, send, fail } from './http.js';
 import { getPool } from './db.js';
-import { requireUser } from './auth.js';
+import { requireUser, limit } from './auth.js';
 import { dayDiff } from '../numbers.js';
 import { graphRecords } from '../graph-data.js';
 export function graphsHandler(database = getPool, env = process.env) {
@@ -13,6 +13,7 @@ export function graphsHandler(database = getPool, env = process.env) {
     const origin = appOrigin(env),
       db = database(),
       user = await requireUser(db, req, origin);
+    await limit(db, 'graphs:read:' + user.id, 120, env);
     const params = new URL(req.url, origin).searchParams;
     const plant = params.get('plant'),
       start = params.get('start'),

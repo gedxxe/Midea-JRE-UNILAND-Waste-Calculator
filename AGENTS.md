@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.2-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.3-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -82,6 +82,8 @@ New user instructions override older choices here. Update this decision record, 
 - Requested 2026-10-16: offer three electricity recording periods for both plants: 24 HOURS (08:00 to next 08:00), AFTER PRODUCTION (08:00 to 17:00) and NIGHT SHIFT (17:00 to next 08:00). Final report choices are 24 HOURS; 24 HOURS & AFTER PRODUCTION; 24 HOURS, AFTER PRODUCTION, & NIGHT SHIFT; AFTER PRODUCTION only; NIGHT SHIFT only. Raw cumulative readings remain independently copyable without completing consumption reports. Existing Day is now called AFTER PRODUCTION; gas and Water remain daily. Keep report kinds and old saved outputs unchanged.
 
 - Confirmed 2026-10-16 JRE update from power engineering: Dehumidifier adds Vacuum Box as meter 2 x40; its original meter stays direct. Piping Building 3# is x40. Add Area Repair Injection Molding as direct row 30. Electricity Building 3# net consumption is its raw delta minus Vacuum Box meter 2 consumption and Piping Building 3# consumption, both after x40. Apply to all electricity periods without changing main Total or stored historical output. Preserve old raw readings; new fields start blank.
+
+- Confirmed 2026-10-16: re-audit security and feasibility with non-destructive development tests; add shared authenticated read budgets without changing calculation rules. Remove only the duplicate footer blank-template control; keep one contextual workspace option and pre-login access on the sign-in card. Reorganize trilingual README around operator use, architecture and real limits, with documentation-only visuals. User chose rights reserved, not GPL/AGPL: no public reuse license, separate third-party/brand rights, no assumption of company approval or ownership. Keep alpha while credential rotation, platform-admin MFA and backup restoration remain unverified.
 
 ## Architecture
 

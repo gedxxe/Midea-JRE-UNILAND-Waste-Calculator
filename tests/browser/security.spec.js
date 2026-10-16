@@ -109,6 +109,10 @@ test('static allowlist rejects sensitive and encoded traversal paths', async ({ 
     '/package.json',
     '/.git/config',
     '/docs/accounts.md',
+    '/README.md',
+    '/LICENSE',
+    '/docs/architecture.md',
+    '/docs/assets/reading-flow.svg',
     '/%2e%2e%2f.env.local',
     '/asset/%2e%2e%2fserver%2fauth.js',
   ]) {

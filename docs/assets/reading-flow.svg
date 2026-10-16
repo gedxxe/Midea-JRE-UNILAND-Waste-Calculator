@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="228" viewBox="0 0 960 228" role="img" aria-labelledby="title desc">
+  <title id="title">Daily energy reporting workflow</title>
+  <desc id="desc">Record cumulative readings, check consumption, then save history or copy reports and graphs. Operator review connects each step.</desc>
+  <rect width="960" height="228" rx="18" fill="#f1f7f8"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="30" y="34" font-size="13" font-weight="700" fill="#087d89" letter-spacing="1.5">JRE / UNILAND</text>
+    <g fill="#fff" stroke="#c5dadd">
+      <rect x="28" y="54" width="278" height="112" rx="12"/>
+      <rect x="342" y="54" width="278" height="112" rx="12"/>
+      <rect x="656" y="54" width="278" height="112" rx="12"/>
+    </g>
+    <g fill="#087d89" font-size="14" font-weight="700">
+      <text x="48" y="82">01</text><text x="362" y="82">02</text><text x="676" y="82">03</text>
+    </g>
+    <g fill="#173b43" font-size="21" font-weight="700">
+      <text x="48" y="110">Record readings</text><text x="362" y="110">Check consumption</text><text x="676" y="110">Save and share</text>
+    </g>
+    <g fill="#425b63" font-size="14">
+      <text x="48" y="138">Factory · period · raw meters</text><text x="362" y="138">Individual usage · equipment totals</text><text x="676" y="138">Reports · revisions · graphs</text>
+    </g>
+    <g fill="none" stroke="#087d89" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M315 110h18m-6-6 6 6-6 6"/><path d="M629 110h18m-6-6 6 6-6 6"/>
+    </g>
+    <text x="30" y="200" font-size="14" fill="#425b63">Consistent inputs. Visible checks. Traceable corrections. Human review before decisions.</text>
+  </g>
+</svg>

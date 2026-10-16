@@ -450,6 +450,7 @@ const routes = {
   '/api/users': usersHandler(() => runtime, env),
   '/api/drafts': draftsHandler(() => runtime, env),
   '/api/graphs': graphsHandler(() => runtime, env),
+  '/api/graphs-replica': graphsHandler(() => runtime, env),
   '/api/reports': reportsHandler(() => runtime, env),
 };
 async function call(path, { body, actor, headers = {}, method } = {}) {
@@ -536,7 +537,14 @@ after(async () => {
       const keys = [
         'auth:ip:127.0.0.1',
         ...names.map((n) => 'login:user:' + n),
-        ...ids.flatMap((id) => ['password:' + id, 'reports:' + id, 'admin:' + id, 'drafts:' + id]),
+        ...ids.flatMap((id) => [
+          'password:' + id,
+          'reports:' + id,
+          'admin:' + id,
+          'drafts:' + id,
+          'reads:' + id,
+          'graphs:read:' + id,
+        ]),
       ].map((k) => rateKey(k, env));
       await client.query('DELETE FROM meter_app.rate_limits WHERE key_hash=ANY($1::text[])', [
         keys,
@@ -1081,6 +1089,42 @@ test('three-period drafts round trip, preserve legacy differences and leave save
     const old = await call('/api/reports?id=' + snapshot.id + '&kind=' + snapshot.kind, { actor });
     assert.deepEqual(old.value.snapshot.output, snapshot.output);
   }
+});
+
+test('read budgets are shared across handlers, owner-scoped and independent of editing', async () => {
+  const actor = await login(await seed());
+  const peer = await login(await seed());
+  const setBudget = async (prefix, hits, expired = false) =>
+    db.query(
+      `INSERT INTO meter_app.rate_limits(key_hash,window_start,hits)
+       VALUES($1,to_timestamp(floor(extract(epoch FROM now()) / 900) * 900) - $3::integer * interval '30 minutes',$2)
+       ON CONFLICT(key_hash) DO UPDATE SET hits=excluded.hits,window_start=excluded.window_start`,
+      [rateKey(prefix + actor.id, env), hits, expired ? 1 : 0],
+    );
+  await setBudget('reads:', 599);
+  assert.equal((await call('/api/drafts', { actor })).status, 200);
+  const blocked = await fetch(origin + '/api/reports', {
+    headers: { Cookie: actor.cookie, 'X-Meter-User': actor.id },
+  });
+  assert.equal(blocked.status, 429);
+  assert.equal(blocked.headers.get('retry-after'), '900');
+  assert.equal(blocked.headers.get('cache-control'), 'private, no-store');
+  assert.equal((await blocked.json()).error, 'RATE_LIMITED');
+  assert.equal((await call('/api/reports', { actor: peer })).status, 200);
+  assert.equal((await call('/api/users', { actor })).status, 403);
+  // An exhausted read budget must not prevent saving an unfinished draft.
+  assert.equal(
+    (await call('/api/drafts', { actor, body: { workspace: null, baseVersion: 0 } })).status,
+    200,
+  );
+  await setBudget('reads:', 600, true);
+  assert.equal((await call('/api/drafts', { actor })).status, 200);
+  await setBudget('graphs:read:', 119);
+  const query = '?plant=JRE&start=2026-01-01&end=2026-01-02';
+  assert.equal((await call('/api/graphs' + query, { actor })).status, 200);
+  assert.equal((await call('/api/graphs-replica' + query, { actor })).status, 429);
+  assert.equal((await call('/api/graphs' + query, { actor: peer })).status, 200);
+  assert.equal((await call('/api/drafts', { actor })).status, 200);
 });
 
 test('stale JRE clients cannot remove Vacuum Box or Repair fields from any electricity period', async () => {

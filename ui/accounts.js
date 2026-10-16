@@ -140,6 +140,7 @@ export function createAccounts({
     for (const id of ['report-workspace', 'draft-controls', 'entry-intro', 'skip-table'])
       $(id).hidden = !canEnter;
     document.body.classList.toggle('login-page', !canEnter);
+    $('login-raw-template').hidden = canEnter;
     for (const element of document.querySelectorAll(
       '#login-form input, #password-form input, #create-user-form input, #create-user-form button, #users-list button, #history-list button, #open-history, #open-users, #load-revision, #use-history, #history-plant, #history-kind, #reading-mode, #change-password',
     ))

@@ -1,312 +1,196 @@
+<p align="center"><img src="asset/Midea.webp" alt="Midea" width="180" /></p>
+
 # Midea Daily Energy Report
 
-**v0.11.2-alpha** · JRE / UNILAND · made in <3 by gede
+<p align="center">
+  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript"><img alt="Vanilla JavaScript" src="https://img.shields.io/badge/JavaScript-no_browser_packages-f7df1e?logo=javascript&amp;logoColor=black" /></a>
+  <a href="https://nodejs.org/"><img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&amp;logoColor=white" /></a>
+  <a href="https://vercel.com/docs"><img alt="Vercel hosting" src="https://img.shields.io/badge/Vercel-static_%2B_API-111111?logo=vercel" /></a>
+  <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
+</p>
 
-[English](#english) | [中文](#中文) | [Indonesia](#indonesia)
+**v0.11.3-alpha** · JRE / UNILAND · made in <3 by gede
+
+[Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
 ## English
 
-JRE Dehumidifier now includes its original direct meter plus Vacuum Box x40. Piping Building 3# uses x40. Electricity Building 3# reports its raw consumption minus these two converted branch usages. Area Repair Injection Molding is a separate direct reading at row 30. All three electricity periods use these rules. Layout 3 preserves old readings and leaves the two new fields blank; old raw imports preserve omitted cells only at matching dates/times. Missing dependencies or negative net consumption show a check note. Saved history stays unchanged. The worksheet keeps its 19 columns; Repair is separately available in reports, raw exports and graphs. Keep a private workspace backup before a code rollback, as older UI cannot edit layout 3.
+A table-based energy reporting tool for Midea JRE and UNILAND operators. Enter cumulative meter readings, review consumption, save account-owned history, and copy a factory report, raw reading list or Excel row.
 
-UNILAND now includes SV window, Painting and Dryer as separate direct kWh readings in 24 HOURS, AFTER PRODUCTION and NIGHT SHIFT. Consumption is end minus start. Existing drafts preserve all previous readings; the new fields start blank. New reports, raw/blank templates and graph choices include the new meters. Saved historical output and the 16-column worksheet format stay unchanged. In work imports, the selected morning/evening column supplies the time when no Reading time line is present. Pagi/Sore labels beside the date are optional; explicit times still take precedence.
+The intended contribution to Midea Business System work is practical: consistent recording, visible checks, traceable corrections and comparable energy trends. Managers can use the output in their daily reviews and improvement work. This repository does not claim official MBS approval or certification. It remains an **alpha reporting tool**, requiring human review before figures are used for decisions.
 
-**Web Analytics:** production counts aggregate visits through an asynchronous Vercel script. Local and preview builds do not collect visits. Only the root page URL passes the filter; query strings, fragments and custom events are excluded. Account and reading data are not passed to analytics. The vendor still processes normal visit metadata. This adds browser/network work, with no new Neon queries or application API calls. See [setup, privacy, limits and disable switches](docs/analytics.md).
+![Record readings, review consumption and save or share the result](docs/assets/reading-flow.svg)
 
-**Electricity and report options:** both factories have 24 HOURS (morning D to morning D+1), AFTER PRODUCTION (morning D to evening D) and NIGHT SHIFT (evening D to morning D+1). Defaults are 08:00/17:00 WIB. Choose final report contents: 24 HOURS; 24 HOURS & AFTER PRODUCTION; 24 HOURS, AFTER PRODUCTION, & NIGHT SHIFT; AFTER PRODUCTION only; NIGHT SHIFT only. Preview and copy use only the selected sections. Gas and Water stay daily and appear once when 24 HOURS is included. Save and Excel row still use the period being edited. No new database report type is created.
+### Operator quick start
 
-Raw export needs only its selected cumulative reading column, so operators can copy a morning or evening list without finishing a consumption report. Empty electricity cells can reuse observations at the same factory/date/time. Existing nonempty differences are preserved and shown as a neutral notice; bundled copy waits for correction. An explicit edit updates only matching cells. Different times remain separate. After production replaces the Day label; stored output is unchanged.
+1. Sign in with the account provided by your admin. Change a temporary password when prompted.
+2. Choose **JRE / UNILAND**, recording mode, and actual reading dates/times.
+3. Enter cumulative readings. Decimal comma or dot is accepted, without thousands separators. Text import is optional. Use `-` for explicitly unavailable readings; blank means unfinished.
+4. Review individual usage, equipment totals and check notes. Complete required fields before copying a finished report.
+5. Choose the final report sections, copy the report or Excel row, and **Save report** for historian and graphs. A correction creates a revision; old saved output is retained.
 
-Full JSON backups include all three modes for both factories. Older backups keep absent shift collections. Conflicting After production/Night readings reject the restore; pre-existing differences between Daily and shifts are retained for review and block bundled copying. Undo restores the full workspace. Migrations 004 and 005 are prerequisites; this release adds no new migration, and builds never migrate. Rollback preserves reports and protects newer drafts from old writers, although older UI cannot edit Night. See [shift workflow and release steps](docs/working-hours.md).
+| Mode             | Reading interval, editable times                  | Report date |
+| ---------------- | ------------------------------------------------- | ----------- |
+| 24 HOURS         | Morning D → morning D+1, normally 08:00–08:00 WIB | D           |
+| AFTER PRODUCTION | Morning D → evening D, normally 08:00–17:00 WIB   | D           |
+| NIGHT SHIFT      | Evening D → morning D+1, normally 17:00–08:00 WIB | D           |
 
-UNILAND Building A/B, hydrant, pump and power house now accept three meters and sum each converted delta. HE accepts three direct meters. Two repeated 10HP lab observations are retained under distinct labels; the second uses (2) pending equipment clarification. Trafo rows may be omitted from text import: matching-date readings are retained, otherwise they remain blank and need completion before a report can be finalized. Legacy drafts keep original readings and gain empty new slots; historical outputs stay unchanged.
+Only observations with the same factory, date and time are shared. Unknown readings stay blank. Final copy offers five choices: 24 HOURS; 24 HOURS + AFTER PRODUCTION; all three; AFTER PRODUCTION only; NIGHT SHIFT only. Gas and Water remain daily and appear once when 24 HOURS is included. Save and Excel row follow the active recording mode. See [periods and shifts](docs/working-hours.md).
 
-**Draft backup and restore** below the period controls downloads a private JSON copy of both factories, including incomplete electricity, gas, temperatures, refills, Water, notes and T1–T4. Restore requires the same account and validates the whole file (maximum 256 KB) before replacing both drafts. Confirmation and Undo protect the current workspace. Report revision links are excluded; restore creates no reports or revisions. Review inputs before finalizing. Keep backup files private. Save status distinguishes tab recovery from the last database-confirmed account save, displayed in WIB. A tab copy is lost when its tab is closed. Check notes now focus the relevant gas reading, R32 temperature, refill, Water or manual utility field.
+### Everyday features
 
-UNILAND adds separate Piping (×40, direct, direct) and New Office Building A (direct) rows, retaining Trafo 1–3. Existing drafts keep their readings; new rows start blank. Building and HE now have three readings; both 10HP observations are retained separately. Saved reports stay immutable. New worksheets sum HE and Piping under the existing HE & Piping column.
+| Need                               | Where and how                                                                                                                                                                                                                                                                                       |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Send readings without calculations | **Export Raw Table Data**, beside the electricity table. Choose Start or End; only that column must be complete. Excludes gas, Water and JRE T1–T4.                                                                                                                                                 |
+| Prepare for an outage              | **Blank reading template**, beside raw export after login or on the sign-in card before login. Copy/download a schema-only `.txt` with `____` and `DD/MM/YYYY`, then keep it outside the website. Contains no saved readings; no duplicate in the footer.                                           |
+| Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery; server sync after 30 seconds idle or 120 seconds continuous editing. Check the account save time before closing. Conflicts require an explicit choice.                                     |
+| Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                |
+| Calculate gas and Water            | Both plants use raw LPG %, O2 mmWC, N2 mmH2O and R32 mm/temperature with their reference tables. Convert observations to kg before stock/refill subtraction. Water is cumulative m³ end minus start. Both remain daily.                                                                             |
+| Review trends                      | **Graphs** reads saved reports and approved consumption imports. White background, thin lines, English/Chinese titles, custom series, 9 JRE / 7 UNILAND presets, every period labelled and optional Y-axis bounds. Copy high-resolution PNG or download PNG/SVG. Unsaved edits do not enter graphs. |
 
-Security checks now run before release: a local secret guard supplements GitHub scanning, CI rejects high/critical dependency advisories, and weekly dependency PRs still require review and tests. Graph requests load only saved report/worksheet text, avoiding unused raw snapshots. See [security scope and remaining operational checks](docs/security.md). This remains an alpha tool, not a security certification.
+The interface supports English, Simplified Chinese and Indonesian. Equipment, units and copied templates retain factory wording. Combined dates remain a period total, not an invented daily average.
 
-JRE has optional T1–T4 start/end readings in direct kWh. Consumption appears as unnumbered report notes, excluded from totals, gaps, worksheets, graphs and raw templates/exports. Drafts retain partial pairs; complete any started pair before finalizing a report. Dates and Next day carry matching observations. Existing UNILAND Trafo 1–3 readings remain separate in MWh.
+Current electricity layouts: **JRE 30 equipment rows / 59 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Building 3 and Structural use defined branch deductions; the main Total stays independent. JRE T1–T4 are optional notes outside totals and raw exports. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
 
-**Blank reading template** is available below the electricity table and in the page footer, including before login. Choose JRE or UNILAND, then copy or download the .txt file before an outage. It contains the current equipment names, all meter slots and ratios, with `____` for readings and `DD/MM/YYYY` for the date. No entered readings are included, even if the table is already filled. Fill the saved file outside the website, then use **Import text** once all readings and the date are complete. This template covers electricity only; the existing **Export Raw Table Data** still copies filled readings.
+### Architecture
 
-The login page repeats a 10-second logo cycle: reconstruct, hold the complete logo for five seconds after the entrance, then disassemble and repeat. Pause/resume and replay controls are available. Hidden tabs pause playback; reduced-motion preferences show a static logo. Login stays usable during playback. To disable motion, set `data-motion="off"` on `#logo-intro` in index.html; reverting the animation PR removes the feature.
+```mermaid
+flowchart LR
+  Operator[Operator browser] --> UI[Static HTML / CSS / JavaScript]
+  UI --> Logic[Pure validation and calculation]
+  UI --> Recovery[Tab recovery / private JSON backup]
+  UI -->|HTTPS and session cookie| API[Vercel Node.js APIs]
+  API --> Guard[Session / ownership / validation / limits]
+  Guard -->|Parameterized SQL and verified TLS| DB[(Neon PostgreSQL)]
+  DB --> Saved[Draft workspace / immutable revisions]
+  Saved -->|Owner-scoped API response| UI
+  API -->|Fixed time servers| NTP[Asynchronous NTP]
+  UI --> Outputs[Reports / raw exports / saved-data graphs]
+```
 
-JRE Warehouse meter 3 now belongs to Window as direct meter 6; Warehouse meter 2 belongs to Piping 1 as its second, direct meter. Warehouse keeps only its first ×40 meter. Structural still subtracts only Piping 1 meter 1 ×40. Legacy drafts and complete legacy text imports move the original readings once into the new layout; saved report and graph output stays unchanged. Start and End inputs stay level. Individual meter usage is visible below each end reading, with equipment totals separate.
+The browser has **no runtime packages**. Vercel serves static files and Node API handlers; PostgreSQL stores accounts, sessions, drafts, reports and revisions. The server validates and recalculates new reports rather than trusting client totals. GitHub Actions checks PRs before an owner merge to `main` triggers the existing Vercel Git deployment. README images and badges are excluded from the website bundle.
 
-JRE and UNILAND Water below the gas section uses cumulative flow-meter m³: end minus start, reported for the start date or full combined period. Partial readings can be saved as drafts; missing, invalid and decreasing values are never assumed to be zero. Raw water readings follow Next day and date changes. Older consumption-only entries remain available without invented readings. Manual gas values and notes are in their gas cards. The Daily utilities section is removed. UNILAND Air Compressor and existing manual R454B fields are in the gas section; new R454B conversion and JRE support wait for a datasheet.
+Read [architecture, module boundaries and capacity limits](docs/architecture.md) for the data flow and maintenance map.
 
-Releases remain alpha. Patch numbers continue through 0.9.9, 0.9.10, 0.9.11 and onward; beta or 1.0.0 requires an explicit release decision.
+### Security and operating limits
 
-Changing the reading period moves existing readings to matching dates and leaves unknown dates empty. This also applies to Use latest period and Weekend / combined period. Date fields can be edited in either order; Undo restores the prior period while editing. Gas observations and temperatures follow the same dates; period utilities, refill events and inactive confirmations reset. Column headers show their dates. Import text opens the selected table column; switching Start/End keeps pending edits separate until Check & fill table succeeds. Closing the dialog discards unapplied text.
+Passwords use Argon2id. HTTPS session cookies are Secure, HttpOnly and SameSite=Strict. Private APIs enforce ownership and no-store responses; writes require the exact origin. SQL is parameterized, user text stays text, and the public build uses a file allowlist plus same-origin Content Security Policy. CI checks selected secret patterns, known dependency advisories and synthetic injection/account-isolation cases.
 
-JRE cross-check gap = sub-meter total - main meter. The percentage uses the main meter as its denominator. A lower sub-meter total gives a negative gap. Both the panel and copied reports show + for positive gaps and - for negative gaps, including percentages; rounded zero has no sign. Existing saved reports retain their original output.
+Protected report/draft/admin reads share **600 requests per account per 15-minute window**; graphs have a separate **120-request** budget. Each protected read adds one database counter query. Writes keep separate limits, so excessive reads do not consume autosave capacity. This reduces authenticated abuse; it does not replace platform DDoS protection or prevent every attack.
 
-Saved draft ratio warnings are checked against current factors. Obsolete warnings clear when reopening a draft; equal valid readings produce zero consumption. Genuine ratio mismatches remain visible.
+Production-only Vercel Web Analytics counts root-page visits. The filter excludes query strings, custom events, account identifiers and meter values. Vercel still processes visit metadata; local/preview builds omit tracking. See [privacy and disable controls](docs/analytics.md).
 
-JRE Air Compressor 1# (row 12) uses reading difference x40. New Air Compressor 1# and 2# remain direct. Raw export keeps original readings and adds Ratio 40. Existing saved history is unchanged; correcting an old report requires saving a revision.
+**Beta readiness is not established.** Rotation after a prior credential exposure, administrator MFA and a backup restore exercise still need owner verification. Browser recovery/backups are not encrypted; NTP is not an authenticated audit clock. Equipment names, client formulas and blank templates are public assets. See [security review and remaining actions](docs/security.md); [report vulnerabilities privately](SECURITY.md).
 
-JRE Structural Laboratory consumption now excludes Piping Building 1#: Structural meter delta minus Piping 1 delta x40. Enter original cumulative readings. Reports, worksheets and graphs from newly saved reports use net Structural usage; stored history stays unchanged. Missing inputs or a negative net result show `-` with a check note.
+### Develop, test and release
 
-Incomplete readings autosave to one replaceable account draft for JRE and UNILAND. A local tab backup is immediate; database sync follows 30 seconds idle or two minutes of continuous editing. Watch the save status before closing the tab. Conflicts require choosing a copy. Save stores unfinished entries as a draft, and complete entries as a report; only reports have revisions. Combined readings use a neutral notice and a title such as 18-20 SEPTEMBER 2026 - 3 DAYS, without dividing the total. See [draft behavior](docs/accounts.md#working-draft-autosave).
-
-Each graph labels every consumption period, including combined dates such as 18–20/09. Wide graphs scroll horizontally. Configure graph → Y-axis scale offers Auto or manual minimum/maximum; the data stays unchanged. Weekend / combined period lets you choose inclusive consumption dates and previews the final reading on the following morning. PNG/clipboard width adapts from 4000 to 16384 pixels; SVG remains vector. Import values live in the private database, not in Git; removal is a separate batch-specific maintenance operation, not a website button.
-
-Graphs can also include imported Excel consumption history, labelled with its workbook source. Imports retain combined periods, skip existing saved reports and never invent cumulative readings. Future reports saved normally join the same graph. Historical consumption cannot populate Next day meter readings. Imports are a maintenance operation, not a workbook upload button. See [historical import instructions](docs/history-import.md). An update notice asks you to save your draft and reload when a new release is available; the footer identifies the page actually loaded.
-
-**Graphs** builds charts from your saved energy reports. Select JRE (Branch 1) or UNILAND (Branch 2), choose report dates, then configure variables and English/Chinese titles for each chart. The Excel presets contain 9 JRE and 7 UNILAND charts. JRE legends use Window A for Window and Window B for Dehumidifier. Add, duplicate or remove charts to arrange your own groups. Use **Copy graph** to paste a high-resolution PNG into a document or chat (400 DPI metadata; the destination may resize it). The date range adapts the axes, and data tables expand or collapse. Export white-background SVG or high-resolution PNG with thin lines and Arial/Helvetica titles. Refresh reads the latest saved revisions; unsaved table edits are not included. Settings stay in this browser per account. Missing values remain gaps, overlapping periods are excluded from plots, and multi-day values remain period totals. See [graph rules and workbook mapping](docs/graphs.md).
-
-JRE and UNILAND gas consumption accept raw LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), and R32 (mm) readings. Enable each gas, enter Before Work and After Work, and add paired Before/After Refill observations when needed. R32 accepts a temperature for every reading from -20 to 50 °C, including decimals such as 33.5. Conversion follows the supplied reference tables before calculating initial kg + refill kg - final kg. Next day carries final readings and temperatures forward. Saved manual utilities remain available; enabled tank calculations replace their report values. Raw readings, temperatures, refills and calibration version are saved in your historian. UNILAND uses its own LPG, O2 and N2 mass tables; R32 matches the supplied JRE table. Calculated gas is reported in kg. Disabling tank calculation restores manual values with their original units. Historical raw-unit gas and new kg values use separate graph series. See [gas rules and source ranges](docs/gas.md).
-
-Enter cumulative readings in a table, check consumption, and copy the official factory report or Excel row. Sign in with a username and password to save reports to your own historian and reopen them on another device. The opening screen shows only sign-in controls. The reading workspace opens after login and any required password change. Entry text is larger, with black table labels and readings.
-
-### Use
-
-1. Select a factory and reading dates. Both reports use the **start date**: 16 September 08:00 to 17 September 08:00 WIB is a 16 September report.
-2. Fill the table or paste one or two Excel columns. Decimal commas and dots are accepted; thousands separators are not. Missing readings use `-`; empty or invalid entries block completed reports but can still be saved as drafts.
-3. Check the report. Combined reports require matching start and end dates for both factories.
-4. **Save draft** syncs both factories to the account draft. The local sessionStorage backup is cleared on logout or account change; the saved account draft remains. Existing guest drafts are preserved separately and never uploaded automatically.
-5. **Save** stores incomplete entries as a draft or sends the complete current factory report to your account. The server validates and recalculates it. Historian lets you view the original saved output, choose a revision, and load readings into the editor. Saving an edited report adds a revision. A conflicting edit from another device is rejected so you can reopen the latest version.
-
-**Export Raw Table Data** below the meter table opens a copy-ready list for the current factory. Choose start or end readings (end is the default). The export uses that column’s date in DD/MM/YYYY, preserves entered decimal precision, and lists ratios without multiplying or subtracting readings. Only electricity meter rows are included, including direct MWh Trafo readings and electric meters whose equipment name mentions LPG. Daily gas, water, and other utility fields are excluded. Every selected meter must be filled or explicitly marked `-`; the other reading column is not required. UNILAND follows the current 31-row table, without inventing additional meters or equipment.
-
-Accounts are created by an admin; there is no public sign-up or Google login. Temporary passwords must be changed at first login. Admins can create, reset, disable, and enable operator accounts. Admin status does not grant access to another account's reports. Without email, account recovery requires an admin; admin recovery uses a local maintenance command.
-
-The interface supports English (default), Simplified Chinese, and Indonesian. Equipment names, units, and copied reports retain the English factory templates. JRE has 30 equipment rows and 59 meters. UNILAND has 34 rows, and Trafo 1, 2, and 3 cumulative readings are already **MWh**. See [meter rules](docs/meter-rules.md).
-
-### Develop and deploy
-
-Use Node.js **22.x**, Vercel for the static site and Node APIs, and PostgreSQL (Neon) for accounts, sessions, reports, and revisions. The browser has no runtime packages. Server dependencies are pinned: `pg` for PostgreSQL and `@node-rs/argon2` for password hashing.
+Use **Node.js 22.x**. Follow [account/database setup](docs/accounts.md) before configuring credentials, explicit migrations and admin bootstrap. Development/Preview must use a separate database from Production. Maintenance credentials stay local; the API uses a restricted runtime role. Never commit secrets or operational workbooks/readings.
 
 ```sh
 npm ci
-# Create .env.local using .env.example, then enter development credentials locally.
-npm run db:check
-npm run db:migrate -- --apply
-npm run admin:create -- power-engineer
-node scripts/runtime-role.mjs --apply
+# Configure development-only .env.local from .env.example.
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000`. The first admin password is written to the ignored `.admin-setup.local.txt` file. Change it at first login and delete that file afterward. Bootstrap refuses to overwrite an existing admin.
-
-Server configuration: `DATABASE_URL`, `AUTH_SECRET` (at least 32 random characters), and `APP_ORIGIN` (exact website origin, without a trailing slash). A Vercel Preview can derive its origin from `VERCEL_URL` if `APP_ORIGIN` is unset. `DATABASE_MIGRATION_URL` is an optional privileged connection for local maintenance only. Never put credentials in browser code, public variables, chat, or Git.
-
-Use separate Neon development and production branches. Development/Preview use development credentials; Production uses production credentials. Production needs its own migrations, admin bootstrap, secret, and exact origin. Use a restricted database role for the running API. See [account setup and recovery](docs/accounts.md) before deployment.
+Open `http://127.0.0.1:3000`. Builds never migrate or create users.
 
 ```sh
 npm run verify
-# TEST_DATABASE_URL must point to a test/development PostgreSQL database.
+npm run security:audit
+# TEST_DATABASE_URL must be an isolated development/test database.
 npm run test:integration
 npx playwright install chromium
 npm run test:e2e
 ```
 
-Integration tests create synthetic accounts and reports, test the actual HTTP handlers against PostgreSQL, and remove their own records. They never use production credentials in CI. GitHub's **Quality gate** runs source/format checks, unit tests, PostgreSQL integration tests, build, and Chromium desktop/mobile tests. Browser regression tests mock account/time services; database integration and live development checks are separate evidence.
+The required **Quality gate** runs formatting, source/secret checks, unit tests, disposable PostgreSQL integration, build and Chromium desktop/mobile tests. Mocked browser time does not prove live NTP; inspect `/api/time` and `build-info.json` after deployment.
 
-Vercel uses **Other**, repository root, Node 22.x, and `vercel.json`. The Git integration creates previews and deploys `main`. Environment configuration and database migration are explicit steps; builds never migrate the database. A successful build does not prove live database access or NTP availability.
+Releases stay `0.MINOR.PATCH-alpha`. Work in a `codex/vX.Y.Z-alpha` branch, review the PR, and preserve tested release branches/tags. Revert through a new PR; never force push or move existing tags. **Code rollback does not restore database data.** Keep a private full draft backup before rolling back across layout changes. See [release procedure](docs/releases.md) and [change history](CHANGELOG.md).
 
-### Versions and maintenance
+### License and attribution
 
-| Version      | Contents                                                                         |
-| ------------ | -------------------------------------------------------------------------------- |
-| v0.1.0-alpha | Preserved baseline: tables, meter rules, asynchronous NTP                        |
-| v0.2.0-alpha | Language switch, build metadata, version history, CI                             |
-| v0.7.0-alpha | Private Excel consumption history and safe page-update notice                    |
-| v0.6.0-alpha | Configurable bilingual charts from saved reports, SVG and PNG export             |
-| v0.5.0-alpha | JRE raw gas readings, temperature interpolation, refill accounting and historian |
-| v0.4.0-alpha | Copy raw cumulative readings by column and date, without utilities               |
-| v0.3.1-alpha | Login screen before entry, larger text and black meter-table labels              |
-| v0.3.0-alpha | Username/password accounts, private historian, revisions, database tests         |
+**Rights reserved; no public reuse license is granted.** Public visibility is not an open-source license. Obtain permission from the relevant rights holders for reuse beyond applicable law and GitHub's platform terms. Midea names/logos, company data and reference material retain separate rights. Dependencies keep their licenses. See [repository terms](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md). This policy does not establish ownership of employment-related work or imply company approval.
 
-`package.json` is the version source. Work on `codex/vX.Y.Z-alpha`, pass Quality gate, and merge through a PR. Preserve tested milestones with immutable release branches and annotated tags. Never force push. [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), and [release instructions](docs/releases.md) track changes and decisions.
+made in <3 by gede
 
-The footer and `build-info.json` identify the version, commit, build time, source hash, and local changes. NTP uses Cloudflare with Google fallback, a 60-second server cache, and asynchronous browser refresh. Failures are visible and manual entry remains available. Server timestamps record database writes; browser NTP is not an authenticated audit clock.
+## 简体中文
 
-Modules: `engine.js`, `numbers.js`, and `worksheet.js` hold pure calculation logic; `ui/` and `i18n/` hold interface behavior; `server/` holds authentication, access checks, database operations, and NTP; `api/` exposes HTTP handlers; `migrations/` holds versioned SQL.
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.3-alpha**，数据用于决策前仍需人工复核。
 
-This is an alpha reporting tool. Scheduled backups, restore drills, runtime monitoring, and independent security review remain deployment responsibilities. See [SECURITY.md](SECURITY.md). Rolling back code does not roll back database data; preserve revisions and use compatible forward migrations.
+### 操作流程与功能
 
-## 中文
+1. 使用管理员提供的账户登录，首次登录修改临时密码。
+2. 选择工厂、模式及实际日期和时间，填写累计读数。可选文字导入；支持小数点或小数逗号，不支持千位分隔符。
+3. 检查各电表用量、设备合计及提示。空白表示未完成；无法读取时用 `-`，不自动当作零。
+4. 选择最终报表内容并复制，完成后保存。修正生成新修订，原输出保留。
 
-JRE Dehumidifier 保留原直读电表，新增 Vacuum Box ×40；Piping Building 3# 改为 ×40。Electricity Building 3# 净用量为本表用量减去这两个分支经倍率换算后的用量。Area Repair Injection Molding 为第30项独立直读电表。三个用电时段均采用这些规则。布局3保留旧读数，两个新字段留空；旧文本未包含的读数仅在日期与时间一致时保留。缺失依赖或净用量为负时显示核查提示。历史报告不变，工作表仍为19列；Repair 单独出现在报告、原始导出及图表中。代码回退前保留私密备份，旧界面无法编辑布局3。
+| 模式             | 时间范围，可调整                            | 报表日期 |
+| ---------------- | ------------------------------------------- | -------- |
+| 24 HOURS         | D 日早上至 D+1 日早上，默认 08:00–08:00 WIB | D 日     |
+| AFTER PRODUCTION | D 日早上至当日傍晚，默认 08:00–17:00 WIB    | D 日     |
+| NIGHT SHIFT      | D 日傍晚至 D+1 日早上，默认 17:00–08:00 WIB | D 日     |
 
-UNILAND 新增 SV window、Painting、Dryer 三个独立直读 kWh 电表，适用于24小时、生产时段与夜班。用量为结束减开始。旧草稿保留原读数，新字段留空；新报告、原始及空白模板、图表可选变量包含新增电表。历史输出与16列工作表格式不变。工作时段导入若没有 Reading time 行，则采用所选早晚列的时间；日期旁 Pagi/Sore 标签可有可无，明确填写的时间仍优先。
+只共享工厂、日期和时间完全相同的记录。复制可选全天、全天加下班、全部三段、仅下班、仅夜班。燃气和水仅按日记录，在包含全天的报表中出现一次；保存和 Excel 行使用当前编辑模式。合并日期保持整段总量，不拆成推测的每日用量。
 
-**访问统计：**正式环境通过异步 Vercel 脚本统计访问，本地和预览环境不采集。仅允许根页面 URL，移除查询参数、片段及自定义事件，不向统计服务传递账户或读数。服务商仍处理常规访问元数据。增加少量浏览器与网络开销，不增加 Neon 查询或应用 API 调用。详见[设置、隐私、限额及关闭方法](docs/analytics.md)。
+- **原始导出：** 电表下方选择 Start 或 End，只需所选列完整；不含燃气、水和 JRE T1–T4。
+- **空白模板：** 登录后在原始导出旁，登录前在登录卡片内。页脚不再重复。复制/下载带 `____` 和 `DD/MM/YYYY` 的 `.txt`，停机前自行保存，不含实际读数。
+- **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 30 秒或连续编辑 120 秒后同步；关闭前查看账户保存时间。冲突需手动选择。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
+- **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，仅用于每日模式。
+- **图表：** 使用已保存报表及审核过的历史导入。白底细线、中英文标题、自定义变量、完整日期标签、可调 Y 轴，JRE 9 组、UNILAND 7 组预设，可复制高分辨率 PNG 或下载 PNG/SVG。未保存数据不进入图表。
 
-**用电与报告选项：** 两厂均可记录24小时（D日早晨至D+1日早晨）、生产时段（D日早晨至晚间）及夜班（D日晚间至D+1日早晨），默认08:00/17:00 WIB。报告内容可选五种：仅24小时；24小时+生产时段；24小时+生产时段+夜班；仅生产时段；仅夜班。预览和复制只使用所选部分。燃气与水仍按日记录，仅在24小时部分出现一次。保存和Excel行仍采用当前编辑时段，不新增数据库报告类型。
+JRE 为 30 项设备 / 59 个电表，UNILAND 为 34 项 / 48 个读数位置。JRE Building 3 和 Structural 按确认的分表扣减；主表 Total 独立。T1–T4 仅为 JRE 可选备注；UNILAND Trafo 原始读数已是 MWh。旧报表不会因更新而重算。见[电表规则](docs/meter-rules.md)、[燃气](docs/gas.md)、[图表](docs/graphs.md)。
 
-原始导出仅需完成所选累计读数列，无需完成用量报告即可复制早晚读数。空白电表格可采用同厂、同日期、同时间的已有读数。已有非空差异会保留并显示提示，组合复制需先更正。手动修正只更新对应单元格，不同时间仍分开。生产时段取代白班标签，历史输出不变。
+### 架构、安全与维护
 
-JSON备份包含两厂三种模式。旧备份保留未包含的班次草稿。生产时段与夜班的共用读数冲突时拒绝恢复；每日与班次之间原有差异保留供核对，修正前禁止组合复制。撤销可恢复整个工作区。迁移004与005为前置条件，本版没有新增迁移，构建不执行迁移。代码回退保留报告并保护新版草稿，旧界面无法编辑夜班。详见[班次及发布步骤](docs/working-hours.md)。
+上方架构图：无浏览器运行依赖的 HTML/CSS/JavaScript → Vercel Node API → Neon PostgreSQL。服务端验证会话、归属和输入，重算新报表并保存不可变修订。草稿可替换且检查冲突。详见[架构和模块](docs/architecture.md)。
 
-UNILAND Building A/B、消防泵、水泵和动力房接收三表读数，按各表倍率换算后求和；HE为三表直读。重复的10HP实验室读数分别保留，第二项暂以(2)区分。文本导入可省略变压器，保留同日期已有读数，否则留空并要求报告完成前补齐。旧草稿保留原读数，新槽位为空；历史输出不变。
+Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、参数化 SQL、禁止私有响应缓存、CSP 和构建文件白名单共同保护数据。报表/草稿/admin 读取每账户每 15 分钟共 600 次，图表单独 120 次。每次受保护读取增加一个计数查询，不占用自动保存额度；不等于全面防攻击。
 
-周期区下方的**草稿备份与恢复**下载两厂私密 JSON 副本，包含未完成电表读数、气体、温度、补充记录、用水、备注和 T1–T4。仅可恢复至原账户；完整验证文件（最大256 KB）后确认替换两厂草稿，支持撤销。备份不含报告修订链接，恢复不会生成报告或修订。请核对输入并私密保存文件。状态分别显示标签页副本与数据库确认的账户保存时间（WIB）；关闭标签页会丢失其副本。检查提示可跳转到对应气体、R32温度、补充、用水或手动用量输入。
+生产分析仅统计根页面访问，不发送账户或读数，供应商仍处理访问元数据；本地和预览不启用。见[分析及关闭方式](docs/analytics.md)。历史泄露凭据轮换、平台管理员 MFA 和独立备份恢复演练仍待确认，**尚不能宣称达到 beta 条件**。浏览器备份未加密，NTP 非认证审计时钟，前端公式和设备名称为公开资源。见[安全审查](docs/security.md)及[私下报告方式](SECURITY.md)。
 
-UNILAND 增加独立 Piping（×40、直读、直读）和 New Office Building A（直读）行，保留 Trafo 1–3。旧草稿保留读数，新行留空。Building 和 HE 使用三表读数，两条10HP记录分别保留。历史报告不变，新工作表的 HE & Piping 列汇总两项用量。
+开发用 Node.js 22.x，执行 `npm ci`，配置独立开发数据库后 `npm run dev`。按[账户文档](docs/accounts.md)显式迁移/初始化，维护凭据仅留本地。PR 前运行 `npm run verify`、`npm run security:audit`、开发数据库集成测试和桌面/移动端浏览器测试。Quality gate 通过后由所有者合并，Vercel Git 集成发布 `main`。保留 alpha、分支/标签，通过新 PR 回退，禁止强推。代码回退不能恢复数据库，见[发布流程](docs/releases.md)。
 
-发布前增加安全检查：本地敏感信息检查补充 GitHub 扫描，CI 阻止存在高危或严重依赖漏洞的版本，每周依赖更新仍需审核和测试。图表只读取已保存的报告及工作表文本，不加载无用的原始快照。详见[安全检查范围与后续运维事项](docs/security.md)。本工具仍处于 alpha 阶段，不代表安全认证。
+**保留权利，不授予公开复用许可。** 公开仓库不等于开源许可。复用需遵守法律、GitHub 条款和权利人授权。美的商标、公司数据、参考资料具有独立权利；依赖保留各自许可。见 [LICENSE](LICENSE) 和[第三方说明](THIRD_PARTY_NOTICES.md)。不确认职务作品归属，也不代表公司批准。
 
-JRE 可选填 T1–T4 起止累计 kWh 读数，结束减开始作为不编号的报告附注，不计入合计、差额、工作表、图表或原始读数模板及导出。草稿保留未完成读数，正式报告要求已开始填写的读数对完整。日期调整及下一天按日期移动读数。UNILAND 原 Trafo 1–3 仍为独立的 MWh 电表。
-
-电表下方和页脚提供**空白读数模板**，登录前也可使用。选择 JRE 或 UNILAND 后，可复制或提前下载 .txt 文件备用。模板按当前设备、电表数量和倍率生成，读数使用 `____`，日期使用 `DD/MM/YYYY`。即使表格已填写，也不会包含已输入的数据。在网站外填写保存的文件，补全日期和所有读数后使用**文本导入**。此模板仅包含电表；原有的**导出原始表格数据**仍用于复制已填写读数。
-
-登录页的标志动画以 10 秒为一轮循环：重组完成后停留五秒，再散开并重播。提供暂停、继续及重播按钮；标签页隐藏时自动暂停，启用减少动态效果时显示静态标志。动画不阻止登录。将 index.html 中 `#logo-intro` 的 `data-motion` 改为 `off` 可关闭动画，也可回退动画 PR 移除此功能。
-
-JRE 仓库第 3 个直读电表移至 Window，作为第 6 个电表；仓库第 2 个直读电表移至 Piping 1，作为第 2 个电表。仓库仅保留第 1 个 ×40 电表。Structural 仍只扣除 Piping 1 第 1 个 ×40 电表。旧草稿及完整旧版文本导入会迁移原始读数，已保存报告和图表结果保持不变。起止读数输入框保持对齐。每个结束读数下方直接显示该电表用量，设备合计单独显示。
-
-JRE 和 UNILAND 气体区下方的 Water 使用累计流量计读数（m³）：结束减开始，归属开始日期或完整合并周期。未完成读数可保存为草稿，缺失、无效或下降读数不会当作零。原始水表读数随下一天和日期调整移动。旧用量数据继续保留，不虚构水表读数。手动气体用量及备注移至相应气体卡片。移除 Daily utilities 区域。UNILAND 原有 Air Compressor 和 R454B 手动字段移入气体区；R454B 换算和 JRE 支持等待数据表。
-
-版本保持 alpha，补丁号可继续为 0.9.9、0.9.10、0.9.11 等。只有明确确认后才能发布 beta 或 1.0.0。
-
-更改读数周期时，现有读数按日期对应移动，新日期留空。使用最近周期及周末合并周期也遵循此规则。可按任意顺序编辑起止日期，编辑时可撤销以恢复原周期。气体读数和温度随日期移动，用量、补充记录及未运行确认重置。表头显示日期。文本导入显示所选列，切换起止列时分别保留未应用的编辑，通过检查后才写入表格。关闭窗口会丢弃未应用文本。
-
-JRE 核对差值 = 分表合计 - 总表，百分比以总表用量为分母。分表合计低于总表时差值为负。页面和复制报告的差值及百分比统一显示正号 + 或负号 -；舍入为零时不显示符号。已保存报告保留原始输出。
-
-草稿中的比例提示会按当前系数重新检查。重新打开草稿时清除过时提示；有效读数相同则用量为零。实际比例不匹配仍会提示。
-
-JRE Air Compressor 1#（第12行）用量为读数差值 x40。New Air Compressor 1# 和 2# 仍按直接差值计算。原始导出保留读数并标注 Ratio 40。已保存的历史记录不变；修改旧报告需保存新修订版。
-
-JRE Structural Laboratory 用量现在扣除 Piping Building 1#：Structural 电表差值减去 Piping 1 电表差值 x40。填写原始累计读数。新保存的报告、工作表及图表使用净用量，已有历史记录保持不变。缺少读数或净值为负时显示 `-` 并提示检查。
-
-未完成的读数也会自动保存为一个包含 JRE 和 UNILAND 的账户草稿，持续替换而不创建报告修订。本标签页立即备份，停止输入 30 秒或连续编辑两分钟后同步数据库。关闭前请检查保存状态；有冲突时需选择保留的版本。保存按钮将未完成输入保存为草稿，完整输入保存为报告。合并读数仅显示普通提示，标题如 18-20 SEPTEMBER 2026 - 3 DAYS，总量不拆分。
-
-图表显示每个用量时段，包括 18–20/09 等合并日期；宽图可横向滚动。设置图表 → Y 轴范围可选择自动或手动最小值/最大值，不改变数据。周末 / 合并时段可选择包含首尾日期的用量范围，并预览次日上午的结束读数。PNG/剪贴板宽度为 4000 至 16384 像素，SVG 保留矢量细节。导入数值存储在私有数据库中，不进入 Git；删除需按具体批次维护，网站没有删除按钮。
-
-图表也支持导入的 Excel 用量历史，并显示工作簿来源。导入保留合并时段，跳过已有报告，不虚构累计读数。之后正常保存的报告会接入同一图表。历史用量不能用作下一天的电表起始读数。导入通过维护命令完成，网站没有工作簿上传按钮。参见[历史导入说明](docs/history-import.md)。有新版本时会提示先保存草稿再刷新；页脚显示当前实际加载的版本。
-
-**图表**使用个人已保存的能耗报告。选择 JRE（一厂）或 UNILAND（二厂）及报告日期，为每张图配置变量和中英文标题。Excel 预设包含 9 张 JRE 和 7 张 UNILAND 图表。JRE 图例 Window A 对应 Window，Window B 对应 Dehumidifier。可添加、复制或删除图表，自行分组。**复制图表**可将高分辨率、含 400 DPI 元数据的 PNG 粘贴到文档或聊天中，目标应用可能调整尺寸。日期范围自动调整坐标轴，数据表可展开或折叠。支持白底 SVG 和高分辨率的 PNG，使用细线与 Arial/Helvetica 标题。刷新读取最新已保存修订，未保存的表格修改不计入。设置按账户保存在本浏览器。缺失数据留空，重叠时段不绘制，多日数值保留为时段合计。详见[图表规则与工作簿映射](docs/graphs.md)。
-
-JRE 和 UNILAND 气体用量支持 LPG (%)、Oxygen (mmWC)、Nitrogen (mmH2O) 和 R32 (mm) 原始读数。启用相应气体，填写工作前、工作后读数，并按需添加补充前后读数。每次 R32 读数需填写 -20 至 50 °C 的温度，支持 33.5 等小数。先按参考表换算，再计算初始 kg + 补充 kg - 最终 kg。下一天会带入最终读数与温度。原有手动用量保留，启用储罐计算后报告使用计算结果。历史记录保存原始读数、温度、补充记录及校准版本。UNILAND 使用自己的 LPG、O2 和 N2 质量表，R32 与所提供的 JRE 表一致。计算用量以 kg 输出；关闭储罐计算后恢复原手动值及单位。图表将旧单位历史与新 kg 数据分开。详见[气体规则与范围](docs/gas.md)。
-
-在表格中填写累计读数，检查用量，然后复制工厂正式报告或 Excel 行。使用用户名和密码登录后，可将报告保存到个人历史记录并跨设备打开。首页仅显示登录界面。登录并完成必要的密码修改后，才显示读数工作区。输入文字已放大，表格标签和读数使用黑色。
-
-### 使用方法
-
-1. 选择工厂和日期。两家工厂都使用**开始日期**：WIB 9 月 16 日 08:00 至 17 日 08:00，报告日期为 16 日。
-2. 填写表格或从 Excel 粘贴一列或两列。逗号和点均为小数分隔符，不支持千位分隔符。不可获取的数据填 `-`；空白或无效输入会阻止完整报告，但仍可保存为草稿。
-3. 检查报告。合并报告要求两家工厂的开始与结束日期一致。
-4. **保存草稿**将两家工厂的数据同步到账户草稿。退出或切换账户时清除本地 sessionStorage 备份，已保存的账户草稿仍保留。旧访客草稿单独保留，不会自动上传。
-5. **保存**会将未完成的数据存为草稿，或将当前工厂的完整报告提交到账户。服务器重新验证和计算。历史报告可查看原始输出、选择修订版、载入读数。修改后保存会新增修订版；其他设备已修改时，系统拒绝覆盖并要求重新打开最新版本。
-
-表格下方的**导出原始表格数据**可复制当前工厂的读数清单。选择开始或结束读数，默认为结束列；日期使用所选列的 DD/MM/YYYY。保留输入的小数精度，比例仅作标注，不相乘或计算差值。包含电表数据及直接以 MWh 读取的变压器数据，也保留名称含 LPG 的电表；不导出日常燃气、用水等辅助数据。所选列必须全部填写，无数据时明确填 `-`，另一列无需填写。UNILAND 按当前 34 行表格导出，不虚构其他电表或设备。
-
-管理员创建账户，没有公开注册或 Google 登录。首次登录必须修改临时密码。管理员可创建、重置、停用及启用操作员账户，但不能查看其他用户的私人报告。没有邮件恢复流程；操作员联系管理员，管理员通过本地维护命令恢复账户。
-
-界面支持 English（默认）、简体中文和 Indonesia。设备名称、单位和复制的报告保留英文模板。JRE 有 30 个设备项目、59 个电表。UNILAND 有 34 项；Trafo 1、2、3 的累计读数已经是 **MWh**。详见[计量规则](docs/meter-rules.md)。
-
-### 开发与部署
-
-使用 Node.js **22.x**，Vercel 托管网站及 Node API，Neon PostgreSQL 保存账户、会话、报告和修订。浏览器没有运行时依赖；服务器使用固定版本的 `pg` 和 `@node-rs/argon2`。
-
-运行 `npm ci`，参照 `.env.example` 创建 `.env.local` 并在本地填写开发凭据。依次执行 `npm run db:check`、`npm run db:migrate -- --apply`、`npm run admin:create -- power-engineer`、`npm run dev`。打开 `http://127.0.0.1:3000`。初始管理员密码写入 Git 忽略的 `.admin-setup.local.txt`，首次登录修改后删除该文件。已有管理员不会被覆盖。
-
-服务器需要 `DATABASE_URL`、至少 32 个随机字符的 `AUTH_SECRET` 以及无结尾斜杠的准确 `APP_ORIGIN`。Preview 未设置 origin 时可使用 `VERCEL_URL`。`DATABASE_MIGRATION_URL` 仅用于本地维护。凭据不得放入浏览器代码、聊天或 Git。
-
-开发与生产使用不同 Neon 分支。Development/Preview 连接开发分支，Production 连接生产分支。生产环境需单独迁移数据库、创建管理员并配置密钥及域名。API 使用受限数据库角色。部署步骤见[账户配置与恢复](docs/accounts.md)。
-
-提交前运行 `npm run verify`、`npm run test:integration`、`npx playwright install chromium` 和 `npm run test:e2e`。集成测试要求 `TEST_DATABASE_URL` 指向测试或开发数据库，只创建并清理自己的测试记录。CI 的 Quality gate 使用独立 PostgreSQL 服务并运行桌面与移动浏览器测试。浏览器回归测试模拟账户和时间接口，不能代替真实服务检查。
-
-Vercel 使用 Other 预设、仓库根目录和 Node 22.x。Git 集成创建 Preview 并部署 main。构建不会运行数据库迁移；环境变量与迁移需要单独配置。
-
-### 版本、维护与限制
-
-v0.1.0-alpha 保留表格、计算规则与 NTP 基线；v0.2.0-alpha 增加语言切换、构建信息与 CI；v0.3.0-alpha 增加账户、私人历史报告、修订和数据库测试；v0.3.1-alpha 增加登录首页并改善表格可读性；v0.4.0-alpha 增加原始电表读数导出；v0.5.0-alpha 增加 JRE 原始气体读数、温度插值、补充记录及历史保存；v0.6.0-alpha 增加可配置双语图表、日期筛选和高清图片复制/导出。v0.7.0-alpha 增加私人 Excel 用量历史和页面更新提示。`package.json` 为版本来源。在 `codex/vX.Y.Z-alpha` 开发，通过 Quality gate 后提交 PR，保留不可修改的发布分支和附注标签，禁止强制推送。参见 [CHANGELOG.md](CHANGELOG.md)、[AGENTS.md](AGENTS.md) 和[发布说明](docs/releases.md)。
-
-页脚及 build-info.json 显示版本、提交、构建时间和源文件哈希。浏览器异步同步 NTP，服务器先查询 Cloudflare，失败时使用 Google，缓存 60 秒。失败状态明确显示，仍可手动输入。数据库记录写入时间，浏览器时钟不是经过认证的审计时钟。
-
-计算、界面、认证、数据库和时间服务分别维护。这是 alpha 报告工具；备份、恢复演练、运行监控和独立安全审核仍需在部署时安排。回滚代码不会回滚数据库，应保留修订并使用兼容的向前迁移。见[安全说明](SECURITY.md)。
+made in <3 by gede
 
 ## Indonesia
 
-Dehumidifier JRE memakai meter direct existing ditambah Vacuum Box ×40. Piping Building 3# menjadi ×40. Konsumsi bersih Electricity Building 3# adalah selisih meter aslinya dikurangi konsumsi kedua cabang tersebut setelah ratio. Area Repair Injection Molding menjadi baris 30 direct. Aturan berlaku untuk ketiga periode listrik. Layout 3 mempertahankan reading lama dan mengosongkan dua kolom baru; impor lama hanya mempertahankan kolom yang tidak disertakan bila tanggal/jam cocok. Dependensi kosong atau hasil bersih negatif diberi catatan pemeriksaan. Histori tetap utuh; worksheet tetap 19 kolom. Repair tersedia terpisah di laporan, raw export, dan grafik. Simpan backup privat sebelum rollback kode karena UI lama tidak bisa mengedit layout 3.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.3-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
-UNILAND menambah SV window, Painting dan Dryer sebagai meter direct kWh terpisah di mode 24 HOURS, AFTER PRODUCTION dan NIGHT SHIFT. Konsumsi = akhir dikurangi awal. Draft lama mempertahankan reading yang sudah ada; kolom baru kosong. Meter baru ikut laporan, template raw/kosong, ekspor dan pilihan grafik. Hasil historis serta format worksheet 16 kolom tetap. Impor jam kerja tanpa baris Reading time memakai waktu kolom pagi/sore yang dipilih. Label tanggal Pagi/Sore opsional; jam eksplisit di teks tetap diutamakan.
+### Alur dan fitur operator
 
-**Web Analytics:** kunjungan production dicatat oleh script Vercel yang dimuat secara asynchronous. Local dan preview tidak mencatat kunjungan. Filter hanya mengizinkan URL halaman utama tanpa query, hash atau custom event. Data akun dan reading tidak dikirim ke analytics; Vercel tetap memproses metadata kunjungan biasa. Ada tambahan kerja browser dan request jaringan, tanpa query Neon atau pemanggilan API aplikasi tambahan. Lihat [pengaturan, privasi, batas penggunaan dan cara mematikan](docs/analytics.md).
+1. Login memakai akun dari admin, ganti password sementara saat diminta.
+2. Pilih pabrik, mode dan tanggal/jam sebenarnya. Isi angka kumulatif; import teks opsional. Koma atau titik desimal boleh, tanpa pemisah ribuan.
+3. Periksa konsumsi individual, total equipment dan catatan. Kosong berarti belum selesai; gunakan `-` untuk data tidak tersedia. Kosong tidak dianggap nol.
+4. Pilih isi laporan, salin, lalu simpan laporan lengkap. Koreksi menjadi revisi baru, tanpa mengubah output lama.
 
-**Listrik dan pilihan laporan:** kedua pabrik memiliki 24 HOURS (pagi D ke pagi D+1), AFTER PRODUCTION (pagi D ke sore D), dan NIGHT SHIFT (sore D ke pagi D+1), default 08.00/17.00 WIB. Pilih isi laporan: 24 HOURS; 24 HOURS & AFTER PRODUCTION; 24 HOURS, AFTER PRODUCTION, & NIGHT SHIFT; AFTER PRODUCTION only; NIGHT SHIFT only. Preview dan copy memakai bagian pilihan saja. Gas dan Water tetap harian dan muncul sekali jika 24 HOURS disertakan. Save dan baris Excel tetap memakai periode yang sedang diisi; tidak ada jenis laporan database baru.
+| Mode             | Periode reading, jam fleksibel             | Tanggal laporan |
+| ---------------- | ------------------------------------------ | --------------- |
+| 24 HOURS         | Pagi D → pagi D+1, default 08.00–08.00 WIB | D               |
+| AFTER PRODUCTION | Pagi D → sore D, default 08.00–17.00 WIB   | D               |
+| NIGHT SHIFT      | Sore D → pagi D+1, default 17.00–08.00 WIB | D               |
 
-Ekspor raw hanya membutuhkan kolom reading kumulatif pilihan, jadi daftar pagi/sore bisa disalin tanpa laporan konsumsi lengkap. Kolom kosong bisa memakai reading pada pabrik, tanggal dan jam yang sama. Perbedaan nilai lama tetap disimpan dan diberi notice; copy gabungan menunggu koreksi. Edit eksplisit hanya memperbarui kolom yang cocok. Jam berbeda tetap terpisah. Label After production menggantikan Day; hasil historis tetap.
+Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOURS; 24 HOURS + AFTER PRODUCTION; ketiganya; AFTER PRODUCTION saja; NIGHT SHIFT saja. Gas/Water tetap harian, sekali jika bagian harian dipilih. Save dan Excel mengikuti mode aktif. Periode gabungan tetap total satu periode, tanpa membagi menjadi rata-rata fiktif.
 
-Backup JSON mencakup tiga mode kedua pabrik. Backup lama mempertahankan koleksi shift yang tidak disertakan. Konflik reading After production/Night membatalkan restore; perbedaan lama antara Daily dan shift tetap disimpan untuk diperiksa dan memblokir salinan gabungan. Undo memulihkan seluruh workspace. Migration 004 dan 005 merupakan prasyarat; rilis ini tidak menambah migration, dan build tidak menjalankan migration. Rollback kode mempertahankan laporan dan melindungi draft baru dari penulisan kode lama, tetapi UI lama tidak bisa mengedit Night. Lihat [alur shift dan rilis](docs/working-hours.md).
+- **Export Raw Table Data:** pilih Start/End di bawah tabel. Cukup kolom itu lengkap; tanpa gas, Water atau T1–T4 JRE.
+- **Blank reading template:** di samping raw export setelah login, atau dalam kartu login sebelum masuk. Duplikat footer dihapus. Salin/unduh `.txt` dengan `____` dan `DD/MM/YYYY`, lalu simpan sebelum gangguan. Tanpa reading terisi.
+- **Draft/backup:** satu workspace per akun untuk dua pabrik dan tiga mode. Salinan tab langsung, sinkron setelah 30 detik idle atau 120 detik mengedit terus. Perhatikan waktu simpan akun sebelum menutup. Konflik dipilih manual. Backup JSON mencakup input belum lengkap, divalidasi utuh dan mendukung Undo. File tidak terenkripsi, simpan privat.
+- **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Tetap harian.
+- **Grafik:** laporan tersimpan dan impor histori yang ditinjau, latar putih, garis tipis, judul English/Chinese, variabel pilihan, semua label periode dan skala Y opsional. Preset 9 JRE / 7 UNILAND. Salin PNG resolusi tinggi atau unduh PNG/SVG. Input belum tersimpan tidak masuk grafik.
 
-Building A/B, hydrant, pompa, dan power house UNILAND menerima tiga meter; setiap selisih dikalikan ratio yang sama lalu dijumlahkan. HE memakai tiga meter direct. Dua reading 10HP dipertahankan terpisah; label kedua sementara (2). Impor boleh tanpa Trafo: reading bertanggal cocok dipertahankan, lainnya kosong dan perlu dilengkapi sebelum laporan final. Draft lama mempertahankan reading asli dengan slot baru kosong; histori tetap utuh.
+JRE memiliki 30 equipment / 59 meter; UNILAND 34 equipment / 48 slot. Building 3 dan Structural JRE memakai pengurangan cabang yang dikonfirmasi, Total utama independen. T1–T4 hanya catatan opsional JRE; Trafo UNILAND sudah MWh. Pembaruan tidak menghitung ulang histori. Lihat [aturan meter](docs/meter-rules.md), [gas](docs/gas.md) dan [grafik](docs/graphs.md).
 
-**Backup dan restore draft** di bawah periode mengunduh JSON privat untuk kedua pabrik, termasuk listrik belum lengkap, gas, suhu, refill, Water, catatan dan T1–T4. Restore wajib memakai akun yang sama; seluruh file divalidasi (maksimal 256 KB) sebelum konfirmasi mengganti kedua draft. Undo memulihkan workspace sebelumnya. Referensi revisi laporan tidak disertakan; restore tidak membuat laporan/revisi. Periksa isian sebelum finalisasi dan simpan file secara privat. Status membedakan salinan tab dari waktu simpan akun yang dikonfirmasi database, dalam WIB. Salinan tab hilang setelah tab ditutup. Catatan pemeriksaan bisa fokus ke reading gas, suhu R32, refill, Water atau utility manual terkait.
+### Arsitektur, keamanan dan pengembangan
 
-UNILAND menambah Piping terpisah (×40, direct, direct) dan New Office Building A (direct), dengan Trafo 1–3 tetap ada. Draft lama mempertahankan reading, kolom baru kosong. Building dan HE memakai tiga reading, kedua catatan 10HP disimpan terpisah. Histori tetap utuh; worksheet baru menjumlahkan HE dan Piping pada kolom HE & Piping.
+Diagram di atas: HTML/CSS/JavaScript tanpa paket runtime browser → API Node Vercel → Neon PostgreSQL. Server memeriksa sesi, pemilik dan input, menghitung ulang laporan baru serta menyimpan revisi tetap. Draft dapat diganti dengan pemeriksaan konflik. Baca [arsitektur, modul dan batas kapasitas](docs/architecture.md).
 
-Pemeriksaan sebelum rilis ditambah: penjagaan secret lokal melengkapi pemindaian GitHub, CI menolak dependency dengan kerentanan high/critical, dan PR dependency mingguan tetap perlu review serta tes. Grafik hanya mengambil teks laporan/worksheet tersimpan tanpa raw snapshot yang tidak digunakan. Lihat [cakupan keamanan dan pemeriksaan operasional](docs/security.md). Aplikasi tetap alpha, bukan sertifikasi keamanan.
+Password Argon2id, cookie HTTPS Secure/HttpOnly/SameSite=Strict, origin tepat, SQL berparameter, respons privat tanpa cache, CSP dan file allowlist melindungi alur. Pembacaan laporan/draft/admin dibatasi bersama 600 per akun per 15 menit, grafik 120 terpisah. Satu query counter tambahan per protected read, tanpa memakan jatah autosave. Bukan jaminan kebal serangan.
 
-JRE menyediakan reading awal/akhir T1–T4 direct kWh yang opsional. Konsumsi masuk sebagai catatan laporan tanpa nomor, tidak masuk total, gap, worksheet, grafik, template atau ekspor raw. Draft menyimpan pasangan yang belum lengkap; lengkapi pasangan yang mulai diisi sebelum menyimpan laporan final. Perubahan tanggal dan Next day memindahkan reading sesuai tanggal. Trafo 1–3 UNILAND yang sudah ada tetap terpisah dalam MWh.
+Analytics hanya kunjungan halaman utama production tanpa akun/reading; vendor tetap memproses metadata. Preview/lokal tidak merekam, lihat [privasi dan cara mematikan](docs/analytics.md). Rotasi kredensial yang pernah terpapar, MFA admin platform dan uji pemulihan backup masih perlu konfirmasi. **Kesiapan beta belum terbukti.** Backup browser tidak terenkripsi, NTP bukan jam audit terautentikasi, nama equipment/rumus frontend dapat diakses publik. Lihat [audit keamanan](docs/security.md) dan [pelaporan privat](SECURITY.md).
 
-**Template reading kosong** tersedia di bawah tabel listrik dan footer, termasuk sebelum login. Pilih JRE atau UNILAND, lalu salin atau unduh .txt sebelum terjadi gangguan. Isinya mengikuti nama equipment, jumlah meter, dan ratio terbaru, dengan `____` untuk reading serta `DD/MM/YYYY` untuk tanggal. Tidak ada reading yang ikut disalin meskipun tabel sudah terisi. Isi file yang disimpan di luar website, lalu gunakan **Import text** setelah tanggal dan seluruh reading lengkap. Template ini hanya untuk listrik; **Ekspor Data Mentah Tabel** tetap menyalin reading yang sudah diisi.
+Gunakan Node.js 22.x, `npm ci`, konfigurasi database development terpisah, lalu `npm run dev`. Ikuti [setup akun](docs/accounts.md) untuk migration/bootstrap eksplisit; koneksi maintenance tetap lokal. Jalankan `npm run verify`, `npm run security:audit`, integrasi development dan browser desktop/mobile. Quality gate wajib lulus; pemilik merge, lalu Vercel Git integration men-deploy `main`. Tetap alpha, simpan branch/tag, rollback melalui PR baru, tanpa force push. Rollback kode tidak memulihkan database. Lihat [rilis dan rollback](docs/releases.md).
 
-Animasi logo login berulang dalam siklus 10 detik: rekonstruksi, jeda lima detik setelah animasi masuk, lalu animasi keluar dan ulang. Tersedia jeda/lanjutkan serta putar ulang; tab tersembunyi otomatis menjeda animasi, dan reduced motion menampilkan logo statis. Form login tetap bisa digunakan. Untuk menonaktifkan animasi, ubah `data-motion="off"` pada `#logo-intro` di index.html; revert PR animasi untuk menghapus fiturnya.
+**Hak tetap dilindungi; tidak ada lisensi penggunaan ulang publik.** Repo publik tidak otomatis open source. Reuse perlu izin pemegang hak sesuai hukum dan ketentuan GitHub. Merek Midea, data perusahaan dan materi acuan memiliki hak tersendiri; dependensi mempertahankan lisensinya. Lihat [LICENSE](LICENSE) dan [catatan pihak ketiga](THIRD_PARTY_NOTICES.md). Tidak menetapkan kepemilikan karya hubungan kerja atau menyatakan persetujuan perusahaan.
 
-Meter 3 Warehouse JRE pindah ke Window sebagai meter ke-6 direct. Meter 2 Warehouse pindah ke Piping 1 sebagai meter kedua direct. Warehouse tinggal meter pertama ×40. Structural hanya dikurangi meter pertama Piping 1 ×40. Draft lama dan impor teks lengkap format lama memindahkan reading asli sekali ke susunan baru; hasil laporan dan grafik tersimpan tetap utuh. Input Start dan End tetap sejajar. Konsumsi tiap meter terlihat di bawah reading akhir, terpisah dari total equipment.
-
-Water JRE dan UNILAND di bawah gas memakai reading kumulatif flow meter m³: akhir dikurangi awal, untuk tanggal awal atau seluruh periode gabungan. Isian parsial bisa disimpan sebagai draft; reading kosong, tidak valid, atau menurun tidak dianggap nol. Reading air mengikuti Next day dan perubahan tanggal. Konsumsi lama tetap tersedia tanpa mengarang reading. Nilai gas manual dan catatannya berada dalam kartu gas masing-masing. Daily utilities dihapus. Air Compressor dan R454B manual yang sudah ada di UNILAND dipindahkan ke bagian gas. Konversi R454B dan dukungan JRE menunggu datasheet.
-
-Versi tetap alpha. Nomor patch dapat lanjut 0.9.9, 0.9.10, 0.9.11, dan seterusnya; beta atau 1.0.0 harus melalui keputusan rilis tersendiri.
-
-Perubahan periode memindahkan reading ke tanggal yang sesuai dan mengosongkan tanggal yang belum diketahui. Gunakan periode terakhir dan periode gabungan memakai aturan yang sama. Tanggal awal/akhir bisa diedit dalam urutan mana pun; Undo mengembalikan periode sebelumnya selama pengeditan. Reading gas dan suhu mengikuti tanggal; utilitas periode, refill, dan konfirmasi unit tidak aktif direset. Tanggal tampil pada judul kolom. Import text menampilkan kolom tabel pilihan; teks Start/End yang belum diterapkan tetap terpisah sampai pemeriksaan berhasil. Menutup dialog membuang teks yang belum diterapkan.
-
-Selisih pengecekan JRE = total sub-meter - main meter. Persentase memakai main meter sebagai pembagi. Jika total sub-meter lebih kecil, selisihnya negatif. Panel dan laporan salinan memakai + untuk selisih positif serta - untuk negatif, termasuk persentasenya; hasil yang dibulatkan ke nol tidak memakai tanda. Laporan tersimpan tetap mempertahankan hasil aslinya.
-
-Catatan ratio pada draft diperiksa ulang sesuai faktor saat ini. Catatan lama yang sudah tidak berlaku dibersihkan saat draft dibuka; reading valid yang sama menghasilkan konsumsi nol. Ratio yang memang berbeda tetap diberi catatan.
-
-Air Compressor 1# JRE (baris 12) memakai selisih reading x40. New Air Compressor 1# dan 2# tetap direct. Ekspor mentah mempertahankan reading asli dengan keterangan Ratio 40. Histori tersimpan tetap sama; koreksi laporan lama perlu disimpan sebagai revisi.
-
-Pemakaian Structural Laboratory JRE sekarang dikurangi Piping Building 1#: selisih meter Structural dikurangi selisih meter Piping 1 x40. Masukkan reading kumulatif asli. Laporan, worksheet, dan grafik dari laporan baru memakai Structural murni; histori tersimpan tetap sama. Reading tidak tersedia atau hasil negatif menjadi `-` dengan catatan pemeriksaan.
-
-Reading yang belum lengkap ikut autosave ke satu draft akun berisi JRE dan UNILAND. Cadangan tab langsung diperbarui; database disinkron setelah 30 detik berhenti mengetik atau dua menit mengetik terus. Periksa status simpan sebelum menutup tab. Konflik perlu memilih salinan. Save menyimpan isian belum lengkap sebagai draft dan isian lengkap sebagai laporan; revisi hanya untuk laporan. Rekap memakai notice biasa dan judul seperti 18-20 SEPTEMBER 2026 - 3 DAYS, tanpa membagi totalnya.
-
-Setiap periode memiliki label tanggal, termasuk rekap seperti 18–20/09. Grafik lebar bisa digeser horizontal. Atur grafik → Skala sumbu Y menyediakan Otomatis atau minimum/maksimum manual tanpa mengubah data. Weekend / periode gabungan memakai tanggal konsumsi inklusif dan menampilkan preview reading akhir pada pagi berikutnya. Lebar PNG/clipboard menyesuaikan dari 4000 hingga 16384 piksel; SVG tetap vektor. Nilai impor berada di database privat, bukan di Git; penghapusan dilakukan lewat maintenance untuk batch tertentu, belum melalui tombol website.
-
-Grafik juga bisa memakai histori konsumsi Excel dengan penanda sumber workbook. Impor mempertahankan periode gabungan, melewati laporan tersimpan yang sudah ada, dan tidak membuat cumulative reading fiktif. Laporan berikutnya yang disimpan normal akan masuk ke grafik yang sama. Histori konsumsi tidak bisa menjadi reading awal untuk Next day. Impor dilakukan lewat perintah maintenance, belum ada tombol upload workbook. Lihat [panduan impor histori](docs/history-import.md). Jika ada versi baru, muncul pemberitahuan untuk menyimpan draft sebelum reload; footer menunjukkan versi halaman yang benar-benar dimuat.
-
-**Grafik** memakai energy report yang tersimpan di akunmu. Pilih JRE (Branch 1) atau UNILAND (Branch 2), rentang tanggal laporan, lalu atur variabel dan judul English/Chinese per grafik. Preset Excel berisi 9 grafik JRE dan 7 UNILAND. Legend JRE memakai Window A untuk Window dan Window B untuk Dehumidifier. Tambah, duplikat, atau hapus grafik untuk membuat kelompok sendiri. **Copy grafik** menyalin PNG resolusi tinggi dengan metadata 400 DPI untuk ditempel ke dokumen atau chat; aplikasi tujuan bisa mengubah ukurannya. Rentang tanggal menyesuaikan sumbu otomatis dan tabel data bisa dibuka/tutup. Ekspor SVG atau PNG resolusi tinggi, berlatar putih, garis tipis, dan judul Arial/Helvetica. Refresh mengambil revisi tersimpan terbaru; perubahan tabel yang belum disimpan belum masuk grafik. Pengaturan disimpan di browser per akun. Data kosong menjadi celah, periode tumpang tindih tidak diplot, dan nilai beberapa hari tetap berupa total periode. Lihat [aturan grafik dan pemetaan workbook](docs/graphs.md).
-
-Konsumsi gas JRE dan UNILAND menerima reading mentah LPG (%), Oxygen (mmWC), Nitrogen (mmH2O), dan R32 (mm). Aktifkan gas yang dicatat, isi Before Work dan After Work, lalu tambahkan pasangan Before/After Refill jika ada pengisian. Setiap reading R32 memerlukan suhu -20 hingga 50 °C, termasuk desimal seperti 33,5. Konversi mengikuti tabel referensi sebelum menghitung kg awal + kg refill - kg akhir. Next day membawa reading akhir dan suhunya ke awal periode berikutnya. Nilai utility manual lama tetap tersimpan; gas yang diaktifkan memakai hasil kalkulasi pada laporan. Reading mentah, suhu, refill, dan versi kalibrasi ikut tersimpan di historian. UNILAND memakai tabel massa LPG, O2, dan N2 tersendiri; tabel R32 cocok dengan sumber JRE. Hasil gas dilaporkan dalam kg. Menonaktifkan kalkulasi tangki mengembalikan nilai manual beserta satuan aslinya. Grafik memisahkan histori bersatuan lama dari data kg baru. Lihat [aturan dan rentang gas](docs/gas.md).
-
-Isi reading kumulatif melalui tabel, periksa konsumsi, lalu salin laporan resmi pabrik atau baris Excel. Login dengan username dan password untuk menyimpan laporan ke historian pribadi dan membukanya dari perangkat lain. Halaman awal hanya menampilkan login. Tabel muncul setelah login dan penggantian password awal bila diwajibkan. Teks pengisian diperbesar, dengan label tabel dan angka berwarna hitam.
-
-### Pemakaian
-
-1. Pilih pabrik dan tanggal. Kedua laporan menggunakan **tanggal awal**: 16 September 08.00 sampai 17 September 08.00 WIB menjadi laporan 16 September.
-2. Isi tabel atau tempel satu atau dua kolom Excel. Koma dan titik berarti desimal, bukan ribuan. Data tidak tersedia memakai `-`; isian kosong atau invalid memblokir laporan lengkap, tetapi tetap bisa disimpan sebagai draft.
-3. Periksa laporan. Laporan gabungan membutuhkan tanggal awal dan akhir yang sama.
-4. **Simpan draft** menyinkronkan kedua pabrik ke draft akun. Cadangan sessionStorage dibersihkan saat logout atau berganti akun; draft yang tersimpan di akun tetap ada. Draft tamu lama disimpan terpisah dan tidak diunggah otomatis.
-5. **Simpan** menyimpan isian belum lengkap sebagai draft atau mengirim laporan lengkap pabrik yang sedang dibuka ke akun. Server memvalidasi dan menghitung ulang reading. Historian menampilkan laporan asli, pilihan revisi, dan tombol untuk memuat reading. Koreksi menghasilkan revisi baru. Perubahan bersamaan dari perangkat lain ditolak agar pengguna membuka revisi terbaru.
-
-**Ekspor Data Mentah Tabel** di bawah tabel membuka daftar siap salin untuk pabrik yang sedang dipilih. Pilih reading awal atau akhir (default akhir). Tanggal mengikuti kolom terpilih dengan format DD/MM/YYYY. Presisi desimal dipertahankan; ratio hanya ditulis, tanpa perkalian atau pengurangan. Hanya baris meter listrik yang diekspor, termasuk Trafo dalam MWh dan meter listrik bernama LPG. Isian utility harian seperti gas dan air tidak ikut. Semua meter pada kolom terpilih harus diisi atau diberi `-`; kolom satunya tidak wajib lengkap. UNILAND mengikuti 34 baris tabel saat ini, tanpa membuat rincian meter atau equipment tambahan.
-
-Admin membuat akun, tanpa registrasi publik atau login Google. Password sementara wajib diganti saat login pertama. Admin bisa membuat, mereset, menonaktifkan, dan mengaktifkan akun operator. Admin tidak mendapat akses ke laporan pribadi akun lain. Pemulihan operator melalui admin; pemulihan admin menggunakan perintah pemeliharaan lokal.
-
-Antarmuka mendukung English (default), 简体中文, dan Indonesia. Nama equipment, satuan, dan laporan yang disalin tetap mengikuti template English. JRE memiliki 30 equipment dan 59 meter. UNILAND memiliki 34 equipment; reading Trafo 1, 2, dan 3 sudah **MWh**. Lihat [aturan meter](docs/meter-rules.md).
-
-### Pengembangan dan deployment
-
-Gunakan Node.js **22.x**, Vercel untuk website dan API Node, serta Neon PostgreSQL untuk akun, sesi, laporan, dan revisi. Browser tetap tanpa dependency runtime. Dependency server memakai versi tetap: `pg` dan `@node-rs/argon2`.
-
-Jalankan `npm ci`, buat `.env.local` berdasarkan `.env.example`, lalu isi kredensial development langsung di file lokal. Jalankan `npm run db:check`, `npm run db:migrate -- --apply`, `npm run admin:create -- power-engineer`, dan `npm run dev`. Buka `http://127.0.0.1:3000`. Password admin sementara tersimpan di `.admin-setup.local.txt` yang diabaikan Git. Ganti saat login pertama lalu hapus file tersebut. Bootstrap tidak menimpa admin yang sudah ada.
-
-Konfigurasi server: `DATABASE_URL`, `AUTH_SECRET` minimal 32 karakter acak, dan `APP_ORIGIN` berupa origin website lengkap tanpa slash di akhir. Preview dapat memakai `VERCEL_URL` jika origin belum diatur. `DATABASE_MIGRATION_URL` opsional untuk pemeliharaan lokal. Kredensial tidak boleh masuk kode browser, chat, atau Git.
-
-Pisahkan branch Neon development dan production. Development/Preview memakai koneksi development; Production memakai koneksi production. Production membutuhkan migration, admin, secret, dan origin sendiri. Gunakan role database terbatas untuk API. Baca [setup dan pemulihan akun](docs/accounts.md).
-
-Sebelum PR, jalankan `npm run verify`, `npm run test:integration`, `npx playwright install chromium`, dan `npm run test:e2e`. Tes integrasi membutuhkan `TEST_DATABASE_URL` menuju database test/development dan membersihkan hanya data tesnya sendiri. Quality gate di CI menggunakan PostgreSQL terpisah, pengujian unit, build, serta browser desktop dan mobile. Tes browser memakai mock akun dan waktu; pemeriksaan layanan langsung dilakukan terpisah.
-
-Vercel memakai preset Other, root repo, dan Node 22.x. Integrasi Git membuat preview dan deploy main. Build tidak menjalankan migration; konfigurasi environment dan database merupakan langkah tersendiri.
-
-### Versi, pemeliharaan, dan batasan
-
-v0.1.0-alpha menyimpan baseline tabel, aturan meter, dan NTP. v0.2.0-alpha menambahkan bahasa, informasi build, dan CI. v0.3.0-alpha menambahkan akun, historian pribadi, revisi, serta tes database. v0.3.1-alpha menambahkan halaman login dan memperjelas teks tabel. v0.4.0-alpha menambahkan ekspor reading listrik mentah. v0.5.0-alpha menambahkan reading gas JRE, interpolasi suhu, perhitungan refill, dan penyimpanan historian. v0.7.0-alpha menambah histori konsumsi Excel privat dan pemberitahuan versi baru. Versi bersumber dari `package.json`. Kerjakan di `codex/vX.Y.Z-alpha`, lolos Quality gate, lalu gunakan PR. Simpan milestone melalui branch rilis dan annotated tag yang tidak dipindahkan. Jangan force push. Lihat [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), dan [panduan rilis](docs/releases.md).
-
-Footer dan build-info.json menunjukkan versi, commit, waktu build, serta hash sumber. NTP berjalan asynchronous melalui Cloudflare dengan Google sebagai cadangan dan cache server 60 detik. Kegagalan ditampilkan dan input manual tetap tersedia. Waktu pencatatan memakai server database; clock browser bukan waktu audit terautentikasi.
-
-Modul perhitungan, UI, autentikasi, database, dan NTP dipisahkan. Aplikasi masih alpha. Backup terjadwal, latihan pemulihan, monitoring, dan tinjauan keamanan independen tetap perlu disiapkan untuk deployment. Rollback kode tidak mengembalikan database; pertahankan revisi dan gunakan migration lanjutan yang kompatibel. Lihat [SECURITY.md](SECURITY.md).
+made in <3 by gede
