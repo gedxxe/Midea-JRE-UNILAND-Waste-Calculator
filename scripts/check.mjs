@@ -68,6 +68,7 @@ for (const file of PUBLIC_FILES) {
 // v0.9.18 adds owner-validated recovery files and translated draft status (~12 kB). No browser dependencies.
 // v0.10.0 adds separate work periods, time validation and translations (~24 kB), without dependencies.
 // v0.11.0 adds shared Day/Night drafts, copy output and translations (~15 kB); still no browser dependencies.
-assert.ok(size < 440000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.1 adds five report choices and timestamp-based reuse (~11 kB), replacing old shift copy controls.
+assert.ok(size < 450000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

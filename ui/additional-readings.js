@@ -47,7 +47,7 @@ export function createAdditionalReadingsPanel({ current, changed }) {
         input.addEventListener('input', () => {
           current().additionalReadings ??= emptyAdditionalReadings();
           current().additionalReadings[i][side] = input.value;
-          changed();
+          changed(false, [{ index: i, side }]);
         });
         cell.append(input);
         row.append(cell);
