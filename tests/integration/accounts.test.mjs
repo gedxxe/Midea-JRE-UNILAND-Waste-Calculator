@@ -1,3 +1,4 @@
+import { layout2Draft } from '../fixtures/legacy-layout.mjs';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { selectReport } from '../../report-options.js';
 import { shareElectricityEdits } from '../../observations.js';
@@ -1080,4 +1081,36 @@ test('three-period drafts round trip, preserve legacy differences and leave save
     const old = await call('/api/reports?id=' + snapshot.id + '&kind=' + snapshot.kind, { actor });
     assert.deepEqual(old.value.snapshot.output, snapshot.output);
   }
+});
+
+test('stale JRE clients cannot remove Vacuum Box or Repair fields from any electricity period', async () => {
+  const actor = await login(await seed());
+  const [daily, after, night] = reportPeriods('JRE');
+  const workspace = {
+    version: 4,
+    drafts: { JRE: daily, UNILAND: createDraft('UNILAND') },
+    workingHours: { JRE: after, UNILAND: createWorkingHoursDraft('UNILAND') },
+    nightShifts: { JRE: night, UNILAND: createNightShiftDraft('UNILAND') },
+  };
+  daily.rows[4].end[1] = '1010,';
+  const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(saved.status, 200);
+  for (const collection of ['drafts', 'workingHours', 'nightShifts']) {
+    const old = structuredClone(workspace);
+    old[collection].JRE = layout2Draft(old[collection].JRE);
+    const rejected = await call('/api/drafts', {
+      actor,
+      body: { workspace: old, baseVersion: saved.value.version },
+    });
+    assert.equal(rejected.status, 409);
+    assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+    const report = await call('/api/reports', { actor, body: { draft: old[collection].JRE } });
+    assert.equal(report.status, 409);
+    assert.equal(report.value.error, 'METER_LAYOUT_CHANGED');
+  }
+  const kept = (await call('/api/drafts', { actor })).value;
+  assert.equal(kept.version, saved.value.version);
+  assert.equal(kept.workspace.drafts.JRE.rows[4].end[1], '1010,');
+  assert.equal(kept.workspace.workingHours.JRE.rows[29].end[0], '1004');
+  assert.equal(kept.workspace.nightShifts.JRE.rows[29].start[0], '1004');
 });

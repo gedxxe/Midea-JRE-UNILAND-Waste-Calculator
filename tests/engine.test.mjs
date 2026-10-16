@@ -38,12 +38,12 @@ function raw(draft, side = 'start') {
 }
 
 test('fixed schemas match every meter in the supplied templates', () => {
-  assert.equal(PLANT_SCHEMAS.JRE.rows.length, 29);
+  assert.equal(PLANT_SCHEMAS.JRE.rows.length, 30);
   assert.equal(PLANT_SCHEMAS.UNILAND.rows.length, 34);
   const jre = PLANT_SCHEMAS.JRE.rows;
   assert.deepEqual(
     jre.map((r) => r.factors.length),
-    [1, 2, 2, 6, 1, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1],
+    [1, 2, 2, 6, 2, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1],
   );
   assert.deepEqual(jre[17].factors, [1000]);
   assert.deepEqual(jre[27].factors, [1000, 40]);
@@ -60,15 +60,16 @@ test('JRE main, Office, Utility and Piping use the documented examples', () => {
   set(d, 'Utility Area', ['660,610', '29,09'], ['660,700', '29,53']);
   set(d, 'Piping Building 1#', ['100', '1000'], ['100.25', '1000']);
   set(d, 'Piping Building 3#', '200', '205');
+  set(d, 'Electricity Building 3#', '1000', '1200');
   set(d, 'Structural Laboratory', '1000', '1010');
   const r = calculateDraft(d);
   assert.equal(value(r, 'Total'), 25283);
   assert.equal(value(r, 'All Office Building'), 400);
   assert.equal(value(r, 'Utility Area'), 107.6);
-  assert.equal(r.worksheet.derived.pipingAll, 15);
+  assert.equal(r.worksheet.derived.pipingAll, 210);
   assert.equal(value(r, 'Structural Laboratory'), 0);
-  assert.equal(r.subAreasSumKWh, 522.6);
-  assert.equal(r.gapKWh, -24760.4);
+  assert.equal(r.subAreasSumKWh, 717.6);
+  assert.equal(r.gapKWh, -24565.4);
   assert.match(r.reportSectionText, /18\. All Office Building: 400\.00 kWh/);
   assert.match(r.reportSectionText, /28\. Utility Area: 107\.60 kWh/);
   assert.match(r.reportSectionText, /CROSS-CHECK:/);
@@ -80,7 +81,8 @@ test('Structural excludes converted Piping 1 usage once while preserving raw rea
   set(d, 'Total', '1000', '1200');
   set(d, 'Structural Laboratory', '1000', '1150');
   set(d, 'Piping Building 1#', ['10', '1000'], ['11', '1000']);
-  set(d, 'Piping Building 3#', '100', '105');
+  set(d, 'Piping Building 3#', '100', '100.125');
+  set(d, 'Electricity Building 3#', '1000', '1005');
   const original = structuredClone(d);
   const result = calculateDraft(d);
   assert.equal(value(result, 'Structural Laboratory'), 110);
@@ -302,7 +304,7 @@ test('UNILAND missing Trafo and missing grouped worksheet components stay unavai
 test('decreasing meters are flagged and excluded, with valid equipment still calculated', () => {
   const d = complete();
   set(d, 'Total', '1000', '1200');
-  set(d, 'Dehumidifier', '2345', '345');
+  set(d, 'Dehumidifier', ['2345', '1000'], ['345', '1000']);
   const r = calculateDraft(d);
   assert.equal(value(r, 'Dehumidifier'), null);
   assert.equal(value(r, 'Total'), 200);
@@ -311,7 +313,7 @@ test('decreasing meters are flagged and excluded, with valid equipment still cal
 });
 test('large jumps produce a warning without modifying readings', () => {
   const d = complete();
-  set(d, 'Dehumidifier', '1000', '10000');
+  set(d, 'Dehumidifier', ['1000', '1000'], ['10000', '1000']);
   const r = calculateDraft(d);
   assert.equal(value(r, 'Dehumidifier'), 9000);
   assert.ok(r.issues.some((i) => i.code === 'SUSPICIOUS_JUMP'));
