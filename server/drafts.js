@@ -15,6 +15,7 @@ export function draftsHandler(database = getPool, env = process.env) {
     if (req.method === 'POST') checkOrigin(req, origin);
     const user = await requireUser(db, req, origin);
     if (req.method === 'GET') {
+      await limit(db, 'reads:' + user.id, 600, env);
       const row = (
         await db.query(
           'SELECT workspace,version,updated_at FROM meter_app.working_drafts WHERE owner_id=$1',

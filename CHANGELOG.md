@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.3-alpha - 2026-10-16
+
+- Limit authenticated content reads across serverless handlers with independent graph and editing budgets; retain draft-save availability when reads are throttled.
+- Remove the footer blank-template duplicate while keeping contextual export and sign-in access.
+- Reorganize trilingual README with workflow/architecture visuals, documented operating limits and rights-reserved licensing. Correct analytics/draft privacy disclosure and record the security review scope and unresolved readiness checks.
+
 ## v0.11.2-alpha - 2026-10-16
 
 - Add JRE Vacuum Box x40 under Dehumidifier and direct Area Repair Injection Molding; change Piping Building 3# to x40 in all electricity periods.

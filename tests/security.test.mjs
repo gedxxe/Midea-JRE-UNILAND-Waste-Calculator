@@ -5,6 +5,29 @@ import { securityFindings } from '../scripts/security-rules.mjs';
 import { readBody, endpoint } from '../server/http.js';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { usersHandler } from '../server/auth-handlers.js';
+
+test('account administration fails closed before database access when the auth secret is absent or weak', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  for (const secret of [undefined, 'short']) {
+    let accessed = false;
+    const response = {
+      setHeader() {},
+      end(raw) {
+        this.body = JSON.parse(raw);
+      },
+    };
+    await usersHandler(
+      () => {
+        accessed = true;
+      },
+      { AUTH_SECRET: secret },
+    )({ method: 'GET', headers: {} }, response);
+    assert.equal(accessed, false);
+    assert.equal(response.statusCode, 503);
+    assert.equal(response.body.error, 'NOT_CONFIGURED');
+  }
+});
 
 test('deployment secret checks work without Git and without reading local environment files', () => {
   const env = Object.fromEntries(

@@ -18,6 +18,8 @@ Production page views use a separate same-origin Vercel tracker. The filter remo
 
 Passwords use salted Argon2id. Session cookies are HttpOnly, SameSite=Strict and Secure/host-only over HTTPS. Origin checks protect JSON mutations; SQL values are parameterized; report ownership comes from the server session. Login throttling is shared through PostgreSQL, and authenticated mutations have per-user limits. Responses containing account data use private, no-store. API logs contain fixed metadata rather than raw requests or database errors.
 
+Report/draft/admin GET requests now share 600 requests per verified account per 15-minute fixed window. Graph GET requests have a separate budget of 120. Limits use the existing HMAC-keyed PostgreSQL counter across handlers and devices. A graph budget cannot exhaust draft read/write budgets; read exhaustion does not prevent an otherwise valid draft write. Every protected read adds a counter query after authentication and before querying private content. 429 responses remain no-store with Retry-After. Session lookup, counter updates and rejected function calls still cost work; fixed windows permit bursts around a boundary. This reduces authenticated resource abuse, not distributed denial of service.
+
 Graph requests select only the immutable saved report and worksheet text needed for graph extraction. They do not fetch cumulative readings, gas observations or unused calculation fields from the snapshot. This reduces database-to-function bytes without recalculating history or changing chart values. It does not establish a production latency SLA; network and database wake-up time still contribute.
 
 ## Operational work outside this code review
@@ -27,6 +29,7 @@ Graph requests select only the immutable saved report and worksheet text needed 
 - Verify Neon backup retention and practice restoration into a separate database. A Git tag rolls back code, not lost data.
 - Review who can access GitHub, Vercel and Neon; protect those administrator accounts with MFA. Application accounts currently use passwords without MFA.
 - Review production access logs and rate-limit behavior. Application throttling does not by itself cover distributed denial of service or every authenticated read. Network restrictions/WAF rules require an explicit access policy and testing so factory operators are not locked out.
+- Monitor rate-limit keys, audit events, report revisions and sessions. There is no scheduled retention process; expired sessions for an account are removed at login. Set retention requirements before adding automatic deletion. Per-process connection limits are not global serverless connection limits.
 - Keep security reports private and omit credentials and operational readings. A broader penetration test needs a defined target/environment, test accounts, rate limits and recovery plan. This review does not run brute-force, load or destructive tests against production.
 
 References: [OWASP authentication guidance](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html), [GitHub secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning), [GitHub push protection](https://docs.github.com/en/code-security/concepts/secret-security/push-protection).
@@ -38,3 +41,23 @@ GitHub secret scanning and push protection were enabled, with no open secret ale
 ## Release readiness
 
 Passing targeted security tests is necessary evidence, not a complete penetration test or beta approval. Before a beta decision, verify credential rotation, administrator MFA and a backup restoration exercise; use only a separate restore target. Keep detailed operational findings local and out of public issues. UI and security-test improvements may continue as alpha releases while these checks are incomplete.
+
+## Review on 2026-10-16 (v0.11.3-alpha)
+
+Scope: browser rendering/export, JSON/backup validation, API authorization, SQL/TLS and role boundaries, session invalidation, resource consumption, build exposure, dependency advisories, Git history secret-pattern checks and CI/release configuration. Active injection and account tests use synthetic development data. Production checks were unauthenticated read-only requests, not brute-force, load, exploit-chain or destructive tests. This is a code/configuration review with targeted tests, not an independent full penetration test.
+
+| Finding                                                              | Action / status                                                                                                                                                                              |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authenticated content reads had no budget                            | Added shared account limits before content queries; graph and editing budgets are separate. Tests cover cross-handler sharing, account isolation, window reset and draft-write availability. |
+| SECURITY.md said analytics was absent and omitted draft upload       | Corrected the disclosure to include debounced draft sync and production-only aggregate analytics, with links to controls.                                                                    |
+| README mixed release history with operation and had stale row counts | Reorganized operator/developer guidance, architecture and current limits. Release history remains in CHANGELOG.                                                                              |
+| Credential rotation, administrator MFA and restoration exercise      | Still unverified by the owner. No beta approval; source scans and tests cannot establish these.                                                                                              |
+| Capacity, retention and perimeter policy                             | No production load test or SLA; no automatic retention. Application limits do not replace a tested platform/network policy. See [feasibility and capacity](architecture.md).                 |
+
+Production reads at review time reported v0.11.2-alpha, commit 588d19e. Unauthenticated report/draft/user/graph endpoints returned 401 and private no-store responses without permissive CORS headers. Representative environment, Git, server, migration, dependency and Vercel-local paths returned 404. The root returned same-origin CSP with frame-ancestors none, HSTS, nosniff, no-referrer and restricted device permissions. These observations do not prove authenticated behavior or future deployment state.
+
+The selected-pattern scanner checked 804 reachable historical blobs and found no matches. GitHub settings were read back: secret scanning and push protection enabled, zero open secret/dependency alerts, strict Quality gate on main, admin enforcement, force-push/deletion disabled. A clean scan is limited to its patterns and current alerts. It cannot prove a previously disclosed credential was revoked, that all kinds of secrets are absent, or that administrators use MFA.
+
+No production database changes, credential rotation, firewall policy changes or backup restoration were performed. Keep any broader test evidence private and agree targets/accounts, rates and recovery before live testing.
+
+Local evidence: npm run verify passed 155 unit tests and the build/format/source checks; dependency audit returned zero known vulnerabilities. The 23 integration tests used a separate development database and restricted runtime role. A synthetic browser-to-API-to-database flow verified login, server-calculated report persistence, historian output and confirmed logout/session revocation with no browser errors; its temporary records were removed. The targeted desktop/mobile template and hostile-text/static-exposure checks passed. Full CI remains the required release gate; these results are not a production load or recovery test.

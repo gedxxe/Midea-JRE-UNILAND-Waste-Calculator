@@ -18,6 +18,7 @@ export function reportsHandler(database = getPool, env = process.env) {
     const user = await requireUser(db, req, origin);
     const params = new URL(req.url, origin).searchParams;
     if (req.method === 'GET') {
+      await limit(db, 'reads:' + user.id, 600, env);
       const kind = params.get('kind') || 'daily';
       if (!['daily', 'workingHours', 'nightShift'].includes(kind)) fail(400, 'INVALID_INPUT');
       const id = params.get('id');

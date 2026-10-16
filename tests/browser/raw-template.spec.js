@@ -20,9 +20,12 @@ test('blank templates copy and download before login even when the account servi
   );
   await page.goto('/');
   await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('.release-footer [data-open-raw-template]')).toHaveCount(0);
+  await expect(page.locator('[data-open-raw-template]:visible')).toHaveCount(1);
+  await page.screenshot({ path: info.outputPath('login-template.png'), fullPage: true });
   for (const language of ['en', 'zh-CN', 'id']) {
     await page.locator('#language-select').selectOption(language);
-    await page.locator('.release-footer [data-open-raw-template]').click();
+    await page.locator('#login-raw-template').click();
     for (const plant of ['JRE', 'UNILAND']) {
       await page.locator('#raw-template-plant').selectOption(plant);
       const expected = formatBlankReadingTemplate(plant);
@@ -57,7 +60,7 @@ test('blank templates copy and download before login even when the account servi
 
 test('blank template leaves a filled draft and report unchanged and supports manual copy', async ({
   page,
-}) => {
+}, info) => {
   await page.route('**/api/auth', (route) =>
     route.fulfill({
       json: {
@@ -73,6 +76,9 @@ test('blank template leaves a filled draft and report unchanged and supports man
   );
   await page.goto('/');
   await expect(page.locator('#report-workspace')).toBeVisible();
+  await expect(page.locator('#login-raw-template')).toBeHidden();
+  await expect(page.locator('[data-open-raw-template]:visible')).toHaveCount(1);
+  await expect(page.locator('.release-footer [data-open-raw-template]')).toHaveCount(0);
   await page.locator('#load-example').click();
   const report = await page.locator('#report-preview').inputValue();
   const readings = await page
@@ -114,5 +120,20 @@ test('blank template leaves a filled draft and report unchanged and supports man
   await expect(page.locator('#raw-template-plant')).toHaveValue('UNILAND');
   await expect(page.locator('#raw-template-preview')).toHaveValue(
     formatBlankReadingTemplate('UNILAND'),
+  );
+  await page.locator('[data-close-dialog="raw-template-dialog"]').click();
+  await page.locator('#report-workspace [data-open-raw-template]').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('workspace-template.png') });
+  await page.route('**/api/auth', (route) =>
+    route.fulfill({ json: { available: true, user: null } }),
+  );
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#logout').click();
+  await expect(page.locator('#report-workspace')).toBeHidden();
+  await expect(page.locator('[data-open-raw-template]:visible')).toHaveCount(1);
+  await page.locator('#login-raw-template').click();
+  await page.locator('#raw-template-plant').selectOption('JRE');
+  await expect(page.locator('#raw-template-preview')).toHaveValue(
+    formatBlankReadingTemplate('JRE'),
   );
 });

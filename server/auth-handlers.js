@@ -104,6 +104,7 @@ const publicOrNull = (user) => (user ? publicUser(user) : null);
 
 export function usersHandler(database = getPool, env = process.env) {
   return endpoint(async (req, res) => {
+    if (!env.AUTH_SECRET || env.AUTH_SECRET.length < 32) fail(503, 'NOT_CONFIGURED');
     const origin = appOrigin(env);
     const db = database();
     if (!['GET', 'POST'].includes(req.method)) {
@@ -113,6 +114,7 @@ export function usersHandler(database = getPool, env = process.env) {
     if (req.method === 'POST') checkOrigin(req, origin);
     const user = await requireUser(db, req, origin, { admin: true });
     if (req.method === 'GET') {
+      await limit(db, 'reads:' + user.id, 600, env);
       const rows = (
         await db.query(
           'SELECT id, username, role, active, must_change_password FROM meter_app.users ORDER BY username LIMIT 200',
