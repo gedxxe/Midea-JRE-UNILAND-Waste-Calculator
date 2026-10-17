@@ -79,6 +79,7 @@ let showValidation = false;
 let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
+let copyGeneration = 0;
 const activeDrafts = () =>
   mode === 'nightShift' ? nightShifts : mode === 'workingHours' ? workingHours : drafts;
 const current = () => activeDrafts()[plant];
@@ -277,6 +278,7 @@ let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  copyGeneration++;
   graphs?.reset(user);
   backupControls.reset(user);
   rawExport.reset();
@@ -639,10 +641,20 @@ function renderResults() {
   autosave?.render();
 }
 async function copyText(text) {
+  const generation = ++copyGeneration,
+    preview = $('report-preview').value,
+    factory = plant,
+    period = mode;
+  const stillCurrent = () =>
+    generation === copyGeneration &&
+    factory === plant &&
+    period === mode &&
+    preview === $('report-preview').value;
   try {
     await navigator.clipboard.writeText(text);
-    toast(t('copied'));
+    if (stillCurrent()) toast(t('copied'));
   } catch {
+    if (!stillCurrent()) return;
     $('report-preview').value = text;
     $('report-preview').focus();
     $('report-preview').select();

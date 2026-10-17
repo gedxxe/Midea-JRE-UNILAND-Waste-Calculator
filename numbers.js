@@ -3,7 +3,10 @@ export function decimalText(raw) {
   const text = String(raw ?? '').trim();
   if (!/^[+]?\d+(?:[.,]\d{1,6})?$/.test(text)) return null;
   const normalized = text.replace(',', '.').replace(/^\+/, '');
-  if (Number(normalized) > 1e12) return null;
+  const [whole, fraction = ''] = normalized.split('.');
+  const integer = BigInt(whole);
+  if (integer > 1000000000000n || (integer === 1000000000000n && /[1-9]/.test(fraction)))
+    return null;
   return normalized;
 }
 

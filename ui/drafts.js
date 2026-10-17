@@ -1,6 +1,6 @@
 import { $ } from './dom.js';
 import { t, getLanguage } from '../i18n/index.js';
-import { STORAGE_KEY, restoreWorkspace } from '../storage.js';
+import { STORAGE_KEY, restoreWorkspace, sameWorkspace } from '../storage.js';
 
 // One replaceable workspace per account. Local recovery is immediate; remote writes are coalesced.
 export function createDraftAutosave({ request, read, apply, localSaved }) {
@@ -58,11 +58,20 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
     if (!user) return;
     try {
       const now = new Date().toISOString();
-      sessionStorage.setItem(key(), raw());
+      // Store readings and sync state atomically; a failed second write must never
+      // leave newer readings labelled as already saved by older metadata.
       sessionStorage.setItem(
-        key() + '_sync',
-        JSON.stringify({ version, pending: dirty, localAt: now, accountAt }),
+        key(),
+        JSON.stringify({
+          ...read(),
+          tabRecovery: { version, pending: dirty, localAt: now, accountAt },
+        }),
       );
+      try {
+        sessionStorage.removeItem(key() + '_sync');
+      } catch {
+        /* Atomic copy is intact. */
+      }
       localAt = now;
       localOk = true;
       localSaved();
@@ -95,7 +104,7 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
       const saved = await remote();
       if (identity !== epoch) return false;
       accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
-      const same = saved.workspace && JSON.stringify(saved.workspace) === raw();
+      const same = saved.workspace && sameWorkspace(saved.workspace, read());
       if (dirty && !same && saved.version !== version) {
         conflict = true;
         status('draftConflict');
@@ -213,13 +222,25 @@ export function createDraftAutosave({ request, read, apply, localSaved }) {
     if (!user) return;
     try {
       const local = sessionStorage.getItem(key());
-      const meta = JSON.parse(sessionStorage.getItem(key() + '_sync'));
       if (local) {
         apply(restoreWorkspace(local));
+        let meta = JSON.parse(local).tabRecovery;
+        const atomic =
+          Number.isSafeInteger(meta?.version) &&
+          meta.version >= 0 &&
+          typeof meta.pending === 'boolean';
+        if (!atomic) {
+          try {
+            meta = JSON.parse(sessionStorage.getItem(key() + '_sync'));
+          } catch {
+            meta = null;
+          }
+        }
         localAt = timestamp(meta?.localAt);
         accountAt = timestamp(meta?.accountAt);
-        version = Number.isSafeInteger(meta?.version) ? meta.version : 0;
-        dirty = meta?.pending !== false;
+        version = Number.isSafeInteger(meta?.version) && meta.version >= 0 ? meta.version : 0;
+        // Legacy split metadata cannot prove the saved flag belongs to this copy.
+        dirty = !atomic || meta.pending;
         firstDirty = performance.now();
       }
     } catch {

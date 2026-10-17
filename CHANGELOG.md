@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.4-alpha - 2026-10-17
+
+- Recover identical account drafts after a lost save response even when JSON object keys are returned in a different order; keep real concurrent-edit conflicts.
+- Prevent delayed clipboard callbacks from restoring a stale report preview after edits or an account change.
+- Store tab recovery and save metadata atomically; preserve legacy pending readings and require explicit resolution when the server copy changed.
+- Enforce the cumulative reading maximum exactly, including fractions that floating-point rounding previously accepted above the limit.
+
 ## v0.11.3-alpha - 2026-10-16
 
 - Limit authenticated content reads across serverless handlers with independent graph and editing budgets; retain draft-save availability when reads are throttled.

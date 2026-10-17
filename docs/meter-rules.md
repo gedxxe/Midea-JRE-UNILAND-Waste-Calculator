@@ -8,6 +8,8 @@ Both plants use the starting reading date. The normal period is 08:00 WIB to 08:
 
 Use nonnegative cumulative numbers with at most six decimal places and a maximum of 1000000000000. A single comma or dot is a decimal separator. Thousands separators, exponent notation, unit suffixes, and mixed separators are rejected. Scaled BigInt subtraction preserves small deltas on large counters. Configured factors have at most two decimal places; energy is accumulated at eight-place precision.
 
+The maximum is checked exactly before floating-point conversion. A nonzero fractional part above the maximum is invalid, even when JavaScript would round it down to the boundary. This applies to validation of new inputs; saved report output is not recalculated.
+
 Blank or malformed input blocks copying. `-` explicitly marks unavailable data. A decreasing reading is unavailable and produces a check note; reset/rollover is not guessed. A missing component invalidates the equipment total. An increase over both 100 raw units and 50% of the starting value produces a warning without changing the reading. This is a simple threshold, not a historical anomaly model.
 
 ## JRE
