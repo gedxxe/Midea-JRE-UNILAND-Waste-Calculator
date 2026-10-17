@@ -1,7 +1,13 @@
 import { validTime } from './reading-period.js';
 import { PLANT_SCHEMAS } from './schema.js';
 import { normalizeName, decimalText, validDate } from './numbers.js';
-import { LEGACY_JRE_FACTORS, moveLegacyValues, moveLegacyIssues } from './meter-layout.js';
+import {
+  LEGACY_JRE_FACTORS,
+  JRE_LAYOUT2_FACTORS,
+  JRE_LAYOUT3_FACTORS,
+  moveLegacyValues,
+  moveLegacyIssues,
+} from './meter-layout.js';
 
 export function parseReading(text, plantKey) {
   const schema = PLANT_SCHEMAS[plantKey];
@@ -86,15 +92,22 @@ export function parseReading(text, plantKey) {
         (matches[0].expr.trim() === '-' || matches[0].expr.split('+').length === factors.length)
       );
     });
+  const layout3 =
+    plantKey === 'JRE' &&
+    !olderJre &&
+    entries.filter((entry) => entry.ri === 15).length === 1 &&
+    entries.find((entry) => entry.ri === 15).expr.split('+').length === 2;
   let suppliedMeters = schema.rows.map((row) => row.factors.map(() => false));
   for (const { ri, expr } of entries) {
     const row =
       legacy && LEGACY_JRE_FACTORS[ri]
         ? { ...schema.rows[ri], factors: LEGACY_JRE_FACTORS[ri] }
-        : olderJre && ri === 4
-          ? { ...schema.rows[ri], factors: [1] }
-          : schema.rows[ri];
-    if (legacy || olderJre) values[ri] = row.factors.map(() => '');
+        : olderJre && JRE_LAYOUT2_FACTORS[ri]
+          ? { ...schema.rows[ri], factors: JRE_LAYOUT2_FACTORS[ri] }
+          : layout3 && JRE_LAYOUT3_FACTORS[ri]
+            ? { ...schema.rows[ri], factors: JRE_LAYOUT3_FACTORS[ri] }
+            : schema.rows[ri];
+    if (legacy || olderJre || layout3) values[ri] = row.factors.map(() => '');
     suppliedMeters[ri] = row.factors.map(() => false);
     if (seen.has(ri)) {
       issues.push({
@@ -161,6 +174,10 @@ export function parseReading(text, plantKey) {
     if (olderJre) {
       values[4].push('');
       suppliedMeters[4].push(false);
+    }
+    if (olderJre || layout3) {
+      values[15].push('');
+      suppliedMeters[15].push(false);
     }
   }
   return {

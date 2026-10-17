@@ -14,20 +14,20 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 
 ## JRE
 
-30 equipment rows, 59 meters. Counts in template order:
+30 equipment rows, 60 meters. Counts in template order:
 
 ```text
-1,2,2,6,2,4,13,1,2,1,1,1,1,1,2,2,1,1,1,1,2,1,1,1,1,1,2,2,1,1
+1,2,2,6,2,4,13,1,2,1,1,1,1,1,2,3,1,1,1,1,2,1,1,1,1,1,2,2,1,1
 ```
 
 - Total is the direct main-meter delta, never a sub-meter sum or x1000.
-- Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40, x1. The sixth meter was Warehouse meter 3.
+- Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40, x40. Meter 6 is the Window Vacuum Box, previously moved from Warehouse meter 3; preserve its raw cumulative values.
 - Dehumidifier: original direct meter plus Vacuum Box x40. Electricity Building 3# net = its gross direct delta minus Vacuum Box delta x40 and Piping Building 3# delta x40. Deduct only the Vacuum Box component, not all Dehumidifier usage. Each dependency is validated independently; a missing unrelated Dehumidifier meter does not erase a valid Building 3 net. Negative net or unavailable dependencies produce a check note and no numeric result. Raw readings and gross meter detail stay unchanged.
 - Area Repair Injection Molding: direct, appended as row 30. Included in the sub-meter sum and new graph key r29. The worksheet keeps its 19 columns; do not silently add Repair to the existing Injection column.
 - Heat Exchanger: x40, x1, x1, x1. Injection Molding: 13 direct meters.
 - Air Compressor 1#: x40. New Air Compressor 1# and New Air Compressor 2#: direct. The confirmed inactive exception remains available for the same two rows.
 - Cooling water: two direct meters. Dryer: two direct meters. Control: two direct meters. Server Room: two direct meters.
-- Piping Building 1#: x40 and direct. The direct meter was Warehouse meter 2. Piping Building 3#: x40. Office: x1000.
+- Piping Building 1#: x40, direct, direct. Meter 2 was Warehouse meter 2. Meter 3 net usage = its direct delta minus Window meter 6 delta x40. Piping total = meter 1 x40 + meter 2 direct + meter 3 net. Subtract at scaled precision before rounding; retain gross meter 3 detail and original readings. A negative meter 3 net remains unavailable even when other Piping meters would make the equipment total positive. An unavailable dependency invalidates meter 3 and the equipment total; unrelated missing meters do not erase a valid individual meter 3 result. Piping Building 3#: x40. Office: x1000.
 - Structural Laboratory includes only Piping Building 1# meter 1 x40. Net Structural usage = direct Structural delta minus Piping 1 meter 1 delta x40, for the same reading period. Subtract at scaled precision before rounding. Keep meter readings and gross meter detail unchanged; reports, worksheet Structural and new graph snapshots use net usage. A missing dependency or negative result becomes unavailable with a check note, never zero. Existing saved reports and imported history are not recalculated.
 - Warehouse: x40 only. Utility Area: x1000, x40. Heater: x40.
 - Other factors remain as defined in schema.js, not editable through the UI or import.
@@ -35,7 +35,7 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 
 Examples: Office `394,850` to `395,250` = `400.00 kWh`. Utility `660,610 + 29,09` to `660,700 + 29,53` = `107.60 kWh`.
 
-Cross-check compares Total to equipment 2 through 30, using net Structural and net Electricity Building 3# so their included branch meters are counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. The panel and copied reports use the same signed two-decimal format for both kWh and percentage: +20.00, -20.00, or unsigned 0.00. Values rounded to zero never show +0.00 or -0.00. This changes presentation only; stored numeric values and historical output are unchanged. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
+Cross-check compares Total to equipment 2 through 30, using net Structural, net Electricity Building 3# and corrected Piping Building 1# so their included branch meters are counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. The panel and copied reports use the same signed two-decimal format for both kWh and percentage: +20.00, -20.00, or unsigned 0.00. Values rounded to zero never show +0.00 or -0.00. This changes presentation only; stored numeric values and historical output are unchanged. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
 
 Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an ISO date plus 18 values. Piping All is Piping Building 1# + Piping Building 3# and does not add a report row.
 
@@ -96,6 +96,8 @@ UNILAND layout 4 adds SV window, Painting and Dryer as direct kWh pairs. Migrate
 JRE layout 3 retains all original row numbers and adds Vacuum Box meter 2 under Dehumidifier plus direct Repair row 30. Upgrade layouts 1 and 2 without inventing new values. Full legacy text import returns a per-meter supplied mask; omitted new fields preserve only exact matching-date/time observations. Current-server draft saves reject older JRE payloads after layout 3 is stored. No SQL migration is added; keep a full private backup before a code rollback, since older UI cannot edit the new layout. Do not rewrite saved snapshots or imported history.
 
 ## Electricity periods
+
+JRE layout 4 adds blank Piping 1 meter 3 while preserving all raw readings from layouts 1–3. Window meter 6 is now x40. Complete older text imports may omit the new meter; the supplied mask preserves only exact matching-date/time readings already in the table. New dates stay blank. Report saves require layout 4, and draft saves reject stale writers once layout 4 is stored. No SQL migration or graph-key change is required. Keep a full private backup before a code rollback; older code cannot edit the expanded layout. Stored output remains immutable.
 
 The same factors, BigInt subtraction, Structural and Building 3 corrections, optional JRE T1–T4 notes, completeness checks and worksheet grouping apply to all three electricity periods. 24 HOURS is morning D to morning D+1. AFTER PRODUCTION uses the workingHours kind from morning D to evening D, default 08:00 to 17:00. NIGHT SHIFT uses nightShift from evening D to morning D+1. Actual shift times are editable and retained in report snapshots. Gas, Water and manual utilities remain daily.
 

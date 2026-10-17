@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.js';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
-import { layout2Draft, legacyText } from '../fixtures/legacy-layout.mjs';
+import { layout2Draft, layout3JreDraft, legacyText } from '../fixtures/legacy-layout.mjs';
 const cell = (page, row, side = 'start', meter = 0) =>
   page.locator(`.meter-input[data-row="${row}"][data-side="${side}"][data-meter="${meter}"]`);
 async function setup(page, legacy = false) {
@@ -17,7 +17,9 @@ async function setup(page, legacy = false) {
   };
   if (legacy)
     for (const collection of ['drafts', 'workingHours', 'nightShifts'])
-      state.workspace[collection].JRE = layout2Draft(state.workspace[collection].JRE);
+      state.workspace[collection].JRE = (legacy === 3 ? layout3JreDraft : layout2Draft)(
+        state.workspace[collection].JRE,
+      );
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
@@ -112,16 +114,19 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await expect(cell(page, 4)).toHaveValue('1000');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('');
   await expect(cell(page, 29, 'end')).toHaveValue('');
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('');
   await expect(page.locator('#copy-report')).toBeDisabled();
   for (const side of ['start', 'end']) {
     await cell(page, 4, side, 1).fill(side === 'start' ? '1000' : '1010');
     await cell(page, 29, side).fill(side === 'start' ? '1000' : '1010');
+    await cell(page, 15, side, 2).fill(side === 'start' ? '1000' : '2000');
   }
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1000');
   await expect(cell(page, 4, 'end', 1)).toHaveValue('');
   await cell(page, 4, 'end', 1).fill('1004');
   await cell(page, 29, 'end').fill('1004');
+  await cell(page, 15, 'end', 2).fill('1400');
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1004');
   await expect(cell(page, 29, 'end')).toHaveValue('1010');
@@ -130,12 +135,13 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await page.locator('#save-draft').click();
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
   for (const key of ['drafts', 'workingHours', 'nightShifts']) {
-    expect(state.workspace[key].JRE.meterLayout).toBe(3);
+    expect(state.workspace[key].JRE.meterLayout).toBe(4);
     expect(state.workspace[key].JRE.rows).toHaveLength(30);
   }
   await page.reload();
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
   await expect(cell(page, 4, 'end', 1)).toHaveValue('1010');
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1004');
   await page.locator('#next-day').click();
@@ -143,6 +149,7 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1010');
   await expect(cell(page, 29)).toHaveValue('1010');
   await expect(cell(page, 4, 'end', 1)).toHaveValue('');
+  await expect(cell(page, 15, 'start', 2)).toHaveValue('2000');
   expect(errors).toEqual([]);
 });
 test('legacy imports preserve only matching-date Vacuum Box and Repair readings and Undo restores all modes', async ({
@@ -162,6 +169,7 @@ test('legacy imports preserve only matching-date Vacuum Box and Repair readings 
     await apply(side, legacyText(old, side));
     await expect(cell(page, 4, side, 1)).toHaveValue(side === 'start' ? '1000' : '1010');
     await expect(cell(page, 29, side)).toHaveValue(side === 'start' ? '1000' : '1010');
+    await expect(cell(page, 15, side, 2)).toHaveValue(side === 'start' ? '1000' : '2000');
   }
   await expect(cell(page, 4, 'end')).toHaveValue('1011');
   await expect(page.locator('#copy-report')).toBeEnabled();
@@ -169,6 +177,7 @@ test('legacy imports preserve only matching-date Vacuum Box and Repair readings 
   await apply('end', legacyText(old, 'end'));
   await expect(cell(page, 4, 'end', 1)).toHaveValue('');
   await expect(cell(page, 29, 'end')).toHaveValue('');
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('');
   await expect(page.locator('#copy-report')).toBeDisabled();
   await page.locator('#undo-change').click();
   await expect(cell(page, 4, 'end', 1)).toHaveValue('1010');
@@ -176,5 +185,77 @@ test('legacy imports preserve only matching-date Vacuum Box and Repair readings 
   await expect(page.locator('#end-date')).toHaveValue('2026-09-17');
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 4, 'end', 1)).toHaveValue('1004');
+  expect(errors).toEqual([]);
+});
+
+test('JRE Window Vacuum Box and Piping meter 3 show separate net usage with aligned inputs in all periods', async ({
+  page,
+}, info) => {
+  const { errors } = await setup(page);
+  for (const [mode, window, meter, piping] of [
+    ['daily', '3010.00', '600.00', '1010.00'],
+    ['workingHours', '1204.00', '240.00', '404.00'],
+    ['nightShift', '1806.00', '360.00', '606.00'],
+  ]) {
+    await page.locator('#reading-mode').selectOption(mode);
+    const report = await page.locator('#report-preview').inputValue();
+    for (const lang of ['zh-CN', 'id', 'en']) {
+      await page.locator('#language-select').selectOption(lang);
+      await expect(page.locator('tr[data-row="3"] .ratio').nth(5)).toContainText('Vacuum Box');
+      await expect(page.locator('tr[data-row="3"] .ratio strong').nth(5)).toHaveText('× 40');
+      await expect(page.locator('tr[data-row="3"] .energy > span')).toHaveText(window);
+      await expect(page.locator('[data-meter-usage="15-2"] strong')).toHaveText(meter + ' kWh');
+      await expect(page.locator('tr[data-row="15"] .energy > span')).toHaveText(piping);
+      await expect(page.locator('tr[data-row="15"] .equipment small')).toContainText(
+        'Window, meter 6',
+      );
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+      const a = await cell(page, 15, 'start', 2).boundingBox(),
+        b = await cell(page, 15, 'end', 2).boundingBox();
+      expect(Math.abs(a.y - b.y)).toBeLessThan(2);
+      await expect(page.locator('#copy-report')).toBeEnabled();
+    }
+  }
+  await page.locator('#reading-mode').selectOption('daily');
+  await page.locator('#search-meter').fill('Piping Building 1');
+  await cell(page, 15, 'end', 2).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('jre-piping-meter3-net.png') });
+  await cell(page, 15, 'end', 2).fill('1399');
+  await expect(page.locator('[data-meter-usage="15-2"] strong')).toHaveText('- kWh');
+  await expect(page.locator('tr[data-row="15"] .energy > span')).toHaveText('-');
+  await expect(cell(page, 15, 'end', 2)).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('tr[data-row="19"] .energy > span')).toHaveText('600.00');
+  expect(errors).toEqual([]);
+});
+
+test('layout 3 Piping upgrades with a blank third meter and old imports preserve only matching observations', async ({
+  page,
+}) => {
+  const { state, errors } = await setup(page, 3);
+  await expect(cell(page, 15, 'start', 2)).toHaveValue('');
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await cell(page, 15, 'start', 2).fill('1000');
+  await cell(page, 15, 'end', 2).fill('2000');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(4);
+  await page.reload();
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
+  const old = layout3JreDraft(reportPeriods()[0]);
+  const apply = async () => {
+    await page.locator('#open-import').click();
+    await page.locator('#import-side').selectOption('end');
+    await page.locator('#import-text').fill(legacyText(old, 'end'));
+    await page.locator('#apply-import').click();
+    await expect(page.locator('#import-dialog')).toBeHidden();
+  };
+  await apply();
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
+  old.endDate = '2026-09-18';
+  await apply();
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('');
+  await page.locator('#undo-change').click();
+  await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
   expect(errors).toEqual([]);
 });

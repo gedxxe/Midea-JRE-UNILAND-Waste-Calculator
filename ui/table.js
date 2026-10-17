@@ -41,7 +41,8 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             equipment.append(
               node(
                 'small',
-                t('netUsageHint', {
+                t(row.netMeter === undefined ? 'netUsageHint' : 'netMeterUsageHint', {
+                  meter: row.netMeter + 1,
                   meters: row.deductMeters
                     .map(({ name, meter }) => name + ', meter ' + (meter + 1))
                     .join(' + '),
@@ -102,7 +103,10 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
           if (side === 'end') {
             const usage = node('div', undefined, 'meter-usage');
             usage.dataset.meterUsage = `${ri}-${mi}`;
-            usage.append(node('span', t('meterUsage')), node('strong', '-'));
+            usage.append(
+              node('span', t(row.netMeter === mi ? 'netMeterUsage' : 'meterUsage')),
+              node('strong', '-'),
+            );
             meterUsageNodes[ri][mi] = usage.lastChild;
             td.append(usage);
           }
@@ -241,7 +245,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
       output.title = row.meters
         .map(
           (m) =>
-            `${m.start || '?'} → ${m.end || '?'} × ${m.factor} = ${formatNumber(m.energy, 8)} ${row.unit}`,
+            `${m.start || '?'} → ${m.end || '?'} × ${m.factor} = ${formatNumber(m.grossEnergy ?? m.energy, 8)} ${row.unit}`,
         )
         .join('\n');
       if (row.deductMeters)

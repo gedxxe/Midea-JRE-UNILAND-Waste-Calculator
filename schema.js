@@ -8,7 +8,12 @@ export const PLANT_SCHEMAS = {
       { name: 'Total', unit: 'kWh', isTotal: true },
       { name: 'Indoor', unit: 'kWh', factors: [250, 40] },
       { name: 'Outdoor', unit: 'kWh', factors: [1, 40] },
-      { name: 'Window', unit: 'kWh', factors: [1, 90, 90, 40, 40, 1] },
+      {
+        name: 'Window',
+        unit: 'kWh',
+        factors: [1, 90, 90, 40, 40, 40],
+        meterNames: ['Meter 1', 'Meter 2', 'Meter 3', 'Meter 4', 'Meter 5', 'Vacuum Box'],
+      },
       {
         name: 'Dehumidifier',
         unit: 'kWh',
@@ -32,7 +37,13 @@ export const PLANT_SCHEMAS = {
       { name: 'New Air Compressor 1#', unit: 'kWh' },
       { name: 'New Air Compressor 2#', unit: 'kWh', allowInactive: true },
       { name: 'Dryer and Cooling Tower New Air Compressor', unit: 'kWh', factors: [1, 1] },
-      { name: 'Piping Building 1#', unit: 'kWh', factors: [40, 1] },
+      {
+        name: 'Piping Building 1#',
+        unit: 'kWh',
+        factors: [40, 1, 1],
+        netMeter: 2,
+        deductMeters: [{ name: 'Window', meter: 5 }],
+      },
       { name: 'Piping Building 3#', unit: 'kWh', factors: [40] },
       { name: 'All Office Building', unit: 'kWh', factors: [1000] },
       { name: 'Electricity Building 2#', unit: 'kWh' },

@@ -21,10 +21,14 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
       },
     }),
   ).JRE;
-  assert.equal(current.meterLayout, 3);
+  assert.equal(current.meterLayout, 4);
   for (const side of ['start', 'end']) {
     assert.deepEqual(current.rows[3][side], [...legacy.rows[3][side], legacy.rows[25][side][2]]);
-    assert.deepEqual(current.rows[15][side], [...legacy.rows[15][side], legacy.rows[25][side][1]]);
+    assert.deepEqual(current.rows[15][side], [
+      ...legacy.rows[15][side],
+      legacy.rows[25][side][1],
+      '',
+    ]);
     assert.deepEqual(current.rows[25][side], [legacy.rows[25][side][0]]);
     assert.deepEqual(
       current.rows
@@ -33,7 +37,7 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
         .sort(),
       legacy.rows.flatMap((r) => r[side]).sort(),
     );
-    assert.equal(current.rows.flatMap((r) => r[side]).length, 59);
+    assert.equal(current.rows.flatMap((r) => r[side]).length, 60);
   }
   assert.deepEqual(legacy, before);
   assert.deepEqual(migrateMeterLayout(current), current);
@@ -43,18 +47,18 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
   assert.deepEqual(again, current);
 });
 
-test('new grouping preserves overall consumption and only Piping meter 1 reduces Structural', () => {
+test('upgraded grouping applies Window x40 and only Piping meter 1 reduces Structural', () => {
   const draft = fillNewJreMeters(migrateMeterLayout(legacyDraft())),
     before = structuredClone(draft);
   const r = calculateDraft(draft);
   assert.equal(r.success, true);
-  assert.equal(r.calculatedRows[3].totalEnergy, 3);
+  assert.equal(r.calculatedRows[3].totalEnergy, 120);
   assert.equal(r.calculatedRows[15].totalEnergy, 42);
   assert.equal(r.calculatedRows[25].totalEnergy, 40);
   assert.equal(r.calculatedRows[19].totalEnergy, 110);
   assert.equal(r.worksheet.derived.pipingAll, 42);
-  assert.equal(r.subAreasSumKWh, 195);
-  assert.equal(r.gapKWh, -5);
+  assert.equal(r.subAreasSumKWh, 312);
+  assert.equal(r.gapKWh, 112);
   assert.deepEqual(draft, before);
   draft.rows[15].end[1] = '';
   const incomplete = calculateDraft(draft);
@@ -98,7 +102,7 @@ test('moved ratio warnings retain their actual meter coordinates and malformed d
       rowIndex: 25,
       meterIndex: 2,
       message:
-        'Warehouse Area, meter 3: input ratio 40, template ratio 1. Using the template ratio.',
+        'Warehouse Area, meter 3: input ratio 90, template ratio 1. Using the template ratio.',
     },
   ];
   const restore = (draft) =>
@@ -108,7 +112,7 @@ test('moved ratio warnings retain their actual meter coordinates and malformed d
   const next = restore(d);
   assert.equal(next.importIssues[0].rowIndex, 3);
   assert.equal(next.importIssues[0].meterIndex, 5);
-  assert.equal(next.importIssues[0].inputRatio, 40);
+  assert.equal(next.importIssues[0].inputRatio, 90);
   assert.match(next.importIssues[0].message, /Window, meter 6/);
   assert.throws(() => restore({ ...d, meterLayout: 2 }));
   assert.throws(() => restore({ ...d, meterLayout: 99 }));
@@ -122,7 +126,7 @@ test('stored graph output stays immutable and stale clients must review regroupe
   const snapshot = reportSnapshot(fillNewJreMeters(migrateMeterLayout(old)));
   const original = structuredClone(snapshot);
   const metric = graphValues(snapshot, 'JRE');
-  assert.equal(metric.w2, 3);
+  assert.equal(metric.w2, 120);
   snapshot.draft = old;
   assert.deepEqual(graphValues(snapshot, 'JRE'), metric);
   assert.deepEqual(snapshot.output, original.output);

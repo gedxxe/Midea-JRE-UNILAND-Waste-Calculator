@@ -34,10 +34,10 @@ test('blank templates contain every current meter slot and can be filled then im
   const jre = formatBlankReadingTemplate('JRE');
   assert.ok(
     jre.includes(
-      '4. Window: ____ + ____ (Ratio 90) + ____ (Ratio 90) + ____ (Ratio 40) + ____ (Ratio 40) + ____\n',
+      '4. Window: ____ + ____ (Ratio 90) + ____ (Ratio 90) + ____ (Ratio 40) + ____ (Ratio 40) + ____ (Ratio 40)\n',
     ),
   );
-  assert.ok(jre.includes('16. Piping Building 1#: ____ (Ratio 40) + ____\n'));
+  assert.ok(jre.includes('16. Piping Building 1#: ____ (Ratio 40) + ____ + ____\n'));
   assert.ok(jre.includes('26. Warehouse Area: ____ (Ratio 40)\n'));
   assert.ok(jre.includes('12. Air Compressor 1#: ____ (Ratio 40)\n'));
   const uniland = formatBlankReadingTemplate('UNILAND');
