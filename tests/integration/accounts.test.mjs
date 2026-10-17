@@ -1091,6 +1091,19 @@ test('three-period drafts round trip, preserve legacy differences and leave save
   }
 });
 
+test('new reports reject cumulative readings fractionally above the documented maximum', async () => {
+  const actor = await login(await seed());
+  const draft = exampleDraft('UNILAND');
+  draft.rows[0].start[0] = draft.rows[0].end[0] = '1000000000000.000001';
+  const response = await call('/api/reports', { actor, body: { draft } });
+  assert.equal(response.status, 422);
+  assert.equal(response.value.error, 'INCOMPLETE_REPORT');
+  assert.equal(
+    (await db.query('SELECT id FROM meter_app.reports WHERE owner_id=$1', [actor.id])).rowCount,
+    0,
+  );
+});
+
 test('read budgets are shared across handlers, owner-scoped and independent of editing', async () => {
   const actor = await login(await seed());
   const peer = await login(await seed());

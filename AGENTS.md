@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.3-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.4-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -84,6 +84,8 @@ New user instructions override older choices here. Update this decision record, 
 - Confirmed 2026-10-16 JRE update from power engineering: Dehumidifier adds Vacuum Box as meter 2 x40; its original meter stays direct. Piping Building 3# is x40. Add Area Repair Injection Molding as direct row 30. Electricity Building 3# net consumption is its raw delta minus Vacuum Box meter 2 consumption and Piping Building 3# consumption, both after x40. Apply to all electricity periods without changing main Total or stored historical output. Preserve old raw readings; new fields start blank.
 
 - Confirmed 2026-10-16: re-audit security and feasibility with non-destructive development tests; add shared authenticated read budgets without changing calculation rules. Remove only the duplicate footer blank-template control; keep one contextual workspace option and pre-login access on the sign-in card. Reorganize trilingual README around operator use, architecture and real limits, with documentation-only visuals. User chose rights reserved, not GPL/AGPL: no public reuse license, separate third-party/brand rights, no assumption of company approval or ownership. Keep alpha while credential rotation, platform-admin MFA and backup restoration remain unverified.
+
+- Requested 2026-10-17: carefully re-audit and fix reproducible bugs. Scope delayed report/worksheet clipboard callbacks to the current account and preview. Store tab workspace and sync metadata in one atomic value; retain legacy split-key recovery conservatively and keep server conflicts explicit. Compare identical server drafts independently of JSON object key order after a lost save response, preserving array order and all field differences. Validate the cumulative maximum exactly before floating-point conversion. Keep the existing alpha workflow and immutable saved history.
 
 ## Architecture
 

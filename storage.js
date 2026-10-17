@@ -19,6 +19,22 @@ import {
 import { validDate, shiftDate, decimalText } from './numbers.js';
 
 export const STORAGE_KEY = 'midea_energy_draft_v4';
+
+// JSONB may reorder object keys. Arrays and every stored value remain significant.
+export function sameWorkspace(left, right) {
+  const canonical = (input) =>
+    JSON.stringify(input, (_, value) =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.fromEntries(
+            Object.keys(value)
+              .sort()
+              .map((key) => [key, value[key]]),
+          )
+        : value,
+    );
+  return canonical(left) === canonical(right);
+}
+
 export function restoreWorkspace(raw) {
   const saved = JSON.parse(raw);
   const drafts = restoreDrafts(raw),
