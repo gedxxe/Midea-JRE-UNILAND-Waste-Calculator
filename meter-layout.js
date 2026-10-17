@@ -1,6 +1,6 @@
 import { PLANT_SCHEMAS } from './schema.js';
 
-export const JRE_METER_LAYOUT = 3;
+export const JRE_METER_LAYOUT = 4;
 export const UNILAND_METER_LAYOUT = 4;
 export const LEGACY_JRE_FACTORS = {
   3: [1, 90, 90, 40, 40],
@@ -9,7 +9,8 @@ export const LEGACY_JRE_FACTORS = {
   16: [1],
   25: [40, 1, 1],
 };
-export const JRE_LAYOUT2_FACTORS = { 4: [1], 16: [1] };
+export const JRE_LAYOUT3_FACTORS = { 3: [1, 90, 90, 40, 40, 1], 15: [40, 1] };
+export const JRE_LAYOUT2_FACTORS = { ...JRE_LAYOUT3_FACTORS, 4: [1], 16: [1] };
 
 export function moveLegacyValues(values) {
   const moved = values.map((row) => [...row]);
@@ -96,12 +97,12 @@ export function migrateMeterLayout(input) {
     return next;
   }
   if (input?.plantKey !== 'JRE') return input;
-  if (input.meterLayout !== undefined && ![1, 2, JRE_METER_LAYOUT].includes(input.meterLayout))
+  if (input.meterLayout !== undefined && ![1, 2, 3, JRE_METER_LAYOUT].includes(input.meterLayout))
     throw new Error('Unknown meter layout.');
   if (input.meterLayout === JRE_METER_LAYOUT) return input;
   const rows = input.rows;
-  const matches = (factors) =>
-    rows?.length === 29 &&
+  const matches = (factors, count = 29) =>
+    rows?.length === count &&
     rows.every((row, i) =>
       ['start', 'end'].every(
         (side) =>
@@ -111,9 +112,20 @@ export function migrateMeterLayout(input) {
     );
   const layout =
     input.meterLayout ||
-    (matches(JRE_LAYOUT2_FACTORS) ? 2 : matches(LEGACY_JRE_FACTORS) ? 1 : null);
+    (matches(JRE_LAYOUT3_FACTORS, 30)
+      ? 3
+      : matches(JRE_LAYOUT2_FACTORS)
+        ? 2
+        : matches(LEGACY_JRE_FACTORS)
+          ? 1
+          : null);
   if (!layout) return input;
-  if (!matches(layout === 1 ? LEGACY_JRE_FACTORS : JRE_LAYOUT2_FACTORS))
+  if (
+    !matches(
+      layout === 1 ? LEGACY_JRE_FACTORS : layout === 2 ? JRE_LAYOUT2_FACTORS : JRE_LAYOUT3_FACTORS,
+      layout === 3 ? 30 : 29,
+    )
+  )
     throw Error('Invalid legacy meter layout.');
   const next = structuredClone(input);
   for (const side of ['start', 'end']) {
@@ -122,9 +134,10 @@ export function migrateMeterLayout(input) {
     next.rows.forEach((row, i) => {
       row[side] = [...moved[i]];
     });
-    next.rows[4][side].push('');
+    if (layout < 3) next.rows[4][side].push('');
+    next.rows[15][side].push('');
   }
-  next.rows.push({ start: [''], end: [''], inactive: false });
+  if (layout < 3) next.rows.push({ start: [''], end: [''], inactive: false });
   next.meterLayout = JRE_METER_LAYOUT;
   if (layout === 1) next.importIssues = moveLegacyIssues(input.importIssues);
   return next;

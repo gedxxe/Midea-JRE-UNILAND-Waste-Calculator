@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.5-alpha - 2026-10-17
+
+- Change JRE Window meter 6 (Vacuum Box) to x40 and add direct Piping Building 1# meter 3.
+- Subtract converted Window meter 6 usage from Piping meter 3 before summing Piping. Show its net usage directly; keep Structural dependent only on Piping meter 1.
+- Upgrade old JRE drafts with the new slot blank, support complete older raw imports without inventing readings, and reject stale layout saves. Preserve saved report output, graph identities and worksheet columns.
+
 ## v0.11.4-alpha - 2026-10-17
 
 - Recover identical account drafts after a lost save response even when JSON object keys are returned in a different order; keep real concurrent-edit conflicts.

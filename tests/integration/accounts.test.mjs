@@ -1,4 +1,4 @@
-import { layout2Draft } from '../fixtures/legacy-layout.mjs';
+import { layout2Draft, layout3JreDraft } from '../fixtures/legacy-layout.mjs';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { selectReport } from '../../report-options.js';
 import { shareElectricityEdits } from '../../observations.js';
@@ -1140,7 +1140,7 @@ test('read budgets are shared across handlers, owner-scoped and independent of e
   assert.equal((await call('/api/drafts', { actor })).status, 200);
 });
 
-test('stale JRE clients cannot remove Vacuum Box or Repair fields from any electricity period', async () => {
+test('stale JRE clients cannot remove new meter fields from any electricity period', async () => {
   const actor = await login(await seed());
   const [daily, after, night] = reportPeriods('JRE');
   const workspace = {
@@ -1152,22 +1152,52 @@ test('stale JRE clients cannot remove Vacuum Box or Repair fields from any elect
   daily.rows[4].end[1] = '1010,';
   const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
   assert.equal(saved.status, 200);
-  for (const collection of ['drafts', 'workingHours', 'nightShifts']) {
-    const old = structuredClone(workspace);
-    old[collection].JRE = layout2Draft(old[collection].JRE);
-    const rejected = await call('/api/drafts', {
-      actor,
-      body: { workspace: old, baseVersion: saved.value.version },
-    });
-    assert.equal(rejected.status, 409);
-    assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
-    const report = await call('/api/reports', { actor, body: { draft: old[collection].JRE } });
-    assert.equal(report.status, 409);
-    assert.equal(report.value.error, 'METER_LAYOUT_CHANGED');
-  }
+  for (const collection of ['drafts', 'workingHours', 'nightShifts'])
+    for (const legacy of [layout2Draft, layout3JreDraft]) {
+      const old = structuredClone(workspace);
+      old[collection].JRE = legacy(old[collection].JRE);
+      const rejected = await call('/api/drafts', {
+        actor,
+        body: { workspace: old, baseVersion: saved.value.version },
+      });
+      assert.equal(rejected.status, 409);
+      assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+      const report = await call('/api/reports', { actor, body: { draft: old[collection].JRE } });
+      assert.equal(report.status, 409);
+      assert.equal(report.value.error, 'METER_LAYOUT_CHANGED');
+    }
   const kept = (await call('/api/drafts', { actor })).value;
   assert.equal(kept.version, saved.value.version);
   assert.equal(kept.workspace.drafts.JRE.rows[4].end[1], '1010,');
   assert.equal(kept.workspace.workingHours.JRE.rows[29].end[0], '1004');
   assert.equal(kept.workspace.nightShifts.JRE.rows[29].start[0], '1004');
+  assert.equal(kept.workspace.drafts.JRE.rows[15].end[2], '2000');
+});
+
+test('JRE report API stores raw Piping meter 3 while recalculating net Window and Piping output', async () => {
+  const actor = await login(await seed());
+  for (const [i, draft] of reportPeriods('JRE').entries()) {
+    const response = await call('/api/reports', { actor, body: { draft, totalEnergy: 999999 } });
+    assert.equal(response.status, 201);
+    const loaded = await call(
+      '/api/reports?id=' + response.value.id + '&kind=' + (draft.periodKind || 'daily'),
+      { actor },
+    );
+    assert.equal(loaded.status, 200);
+    const saved = loaded.value.snapshot;
+    assert.equal(saved.draft.meterLayout, 4);
+    assert.deepEqual(saved.draft.rows[15], draft.rows[15]);
+    assert.match(
+      saved.output.reportText,
+      new RegExp('16\\. Piping Building 1#: ' + [1010, 404, 606][i] + '\\.00 kWh'),
+    );
+    assert.match(
+      saved.output.reportText,
+      new RegExp('4\\. Window: ' + [3010, 1204, 1806][i] + '\\.00 kWh'),
+    );
+    assert.match(
+      saved.output.reportText,
+      new RegExp('20\\. Structural Laboratory: ' + [600, 240, 360][i] + '\\.00 kWh'),
+    );
+  }
 });

@@ -213,6 +213,9 @@ export function calculateDraft(draft) {
   // Subtract included branch usage before rounding, reporting or adding sub-meter totals.
   calculatedRows.forEach((row, ri) => {
     if (!row.deductMeters) return;
+    const mi = row.netMeter;
+    const target = mi === undefined ? null : row.meters[mi];
+    if (target) target.grossEnergy = target.energy;
     row.grossEnergy = row.totalEnergy;
     row.deductions = row.deductMeters.map(({ name, meter }) => {
       const value = scaledMeters.get(name + ':' + meter);
@@ -228,31 +231,39 @@ export function calculateDraft(draft) {
           0n,
         );
     row.deductedEnergy = included === undefined ? null : Number(included) / 1e8;
-    if (row.missing) return;
+    if (mi !== undefined && !target) return;
+    if (target ? target.energy === null : row.missing) return;
     if (included === undefined) {
       row.missing = true;
       row.totalEnergy = null;
+      if (target) target.energy = null;
       issue(
         issues,
         'DEPENDENCY_UNAVAILABLE',
         `${row.name}: net usage needs valid ${missingSources.map(({ name, meter }) => name + ', meter ' + (meter + 1)).join(' and ')} readings.`,
         ri,
+        mi ?? null,
       );
       return;
     }
-    const net = scaledEnergy.get(row.name) - included;
+    const net =
+      (target ? scaledMeters.get(`${row.name}:${mi}`) : scaledEnergy.get(row.name)) - included;
     if (net < 0n) {
       row.missing = true;
       row.totalEnergy = null;
+      if (target) target.energy = null;
       issue(
         issues,
         'NET_USAGE_NEGATIVE',
-        `${row.name}: included ${row.deductMeters.map(({ name }) => name).join(' and ')} usage exceeds the parent meter usage. Check readings for the same period.`,
+        `${row.name}${target ? ', meter ' + (mi + 1) : ''}: included ${row.deductMeters.map(({ name }) => name).join(' and ')} usage exceeds the parent meter usage. Check readings for the same period.`,
         ri,
+        mi ?? null,
       );
       return;
     }
-    row.totalEnergy = Number(net) / 1e8;
+    if (target) target.energy = Number(net) / 1e8;
+    if (!row.missing)
+      row.totalEnergy = Number(target ? scaledEnergy.get(row.name) - included : net) / 1e8;
   });
 
   const gasResults = [];

@@ -121,7 +121,7 @@ test('layouts 1 and 2 preserve all old raw strings and new blank slots across al
         JSON.stringify({ version: 4, drafts: { JRE: old, UNILAND: createDraft('UNILAND') } }),
       ).JRE;
     assert.deepEqual(old, before);
-    assert.equal(next.meterLayout, 3);
+    assert.equal(next.meterLayout, 4);
     assert.equal(next.rows.length, 30);
     assert.deepEqual(next.rows[4].start, [old.rows[4].start[0], '']);
     assert.deepEqual(next.rows[29].end, ['']);
@@ -133,7 +133,7 @@ test('layouts 1 and 2 preserve all old raw strings and new blank slots across al
     assert.deepEqual(migrateMeterLayout(next), next);
     assert.equal(calculateDraft(next).success, false);
     assert.throws(() => reportSnapshot(old), /METER_LAYOUT_CHANGED/);
-    assert.throws(() => reportSnapshot({ ...old, meterLayout: 3 }), /INVALID_REPORT/);
+    assert.throws(() => reportSnapshot({ ...old, meterLayout: 4 }), /INVALID_REPORT/);
   }
   const old = legacyDraft(),
     next = migrateMeterLayout(old);
@@ -174,7 +174,7 @@ test('complete older raw imports identify supplied cells; mixed or incomplete la
       );
     }
   const template = formatBlankReadingTemplate('JRE');
-  assert.equal([...template.matchAll(/____/g)].length, 59);
+  assert.equal([...template.matchAll(/____/g)].length, 60);
   assert.match(template, /5\. Dehumidifier: ____ \+ ____ \(Ratio 40\)/);
   assert.match(template, /30\. Area Repair Injection Molding: ____$/);
 });

@@ -36,6 +36,12 @@ export const catalog = {
     '填写原始读数。扣除 {meters} 的用量。',
     'Isi reading asli. Pemakaian dikurangi {meters}.',
   ],
+  netMeterUsage: ['Net usage', '净用量', 'Pemakaian bersih'],
+  netMeterUsageHint: [
+    'Enter original readings. Meter {meter} usage excludes {meters}.',
+    '填写原始读数。电表 {meter} 扣除 {meters} 的用量。',
+    'Isi reading asli. Pemakaian meter {meter} dikurangi {meters}.',
+  ],
   netUsageCalculation: [
     'Net: {gross} - {deductions} = {net} {unit}',
     '净用量：{gross} - {deductions} = {net} {unit}',
