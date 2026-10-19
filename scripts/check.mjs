@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { PUBLIC_FILES, RUNTIME_FILES } from './assets.mjs';
 import { catalog } from '../i18n/catalog.js';
+import { guideMessages } from '../i18n/guide.js';
 
 const root = resolve(import.meta.dirname, '..');
 const skip = new Set([
@@ -41,7 +42,7 @@ assert.deepEqual(
 for (const version of Object.values(pkg.dependencies)) assert.match(version, /^\d+\.\d+\.\d+$/);
 const changelog = await readFile(resolve(root, 'CHANGELOG.md'), 'utf8');
 assert.ok(changelog.includes(`## v${pkg.version}`), 'Add release notes when bumping the version.');
-for (const [key, messages] of Object.entries(catalog)) {
+for (const [key, messages] of Object.entries({ ...catalog, ...guideMessages })) {
   assert.equal(messages.length, 3, key);
   const placeholders = (text) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
   for (const text of messages) {
@@ -69,6 +70,7 @@ for (const file of PUBLIC_FILES) {
 // v0.10.0 adds separate work periods, time validation and translations (~24 kB), without dependencies.
 // v0.11.0 adds shared Day/Night drafts, copy output and translations (~15 kB); still no browser dependencies.
 // v0.11.1 adds five report choices and timestamp-based reuse (~11 kB), replacing old shift copy controls.
-assert.ok(size < 450000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.6 adds an optional guide; its illustrations, styles and long translations load on demand.
+assert.ok(size < 482000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

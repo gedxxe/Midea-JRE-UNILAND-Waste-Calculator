@@ -309,6 +309,14 @@
           </button>
           <button id="open-graphs" class="button secondary" data-i18n="graphs">Graphs</button>
           <button id="open-history" class="button secondary" data-i18n="history">Historian</button>
+          <button
+            id="open-guide"
+            class="button secondary"
+            data-i18n="guideOpen"
+            aria-haspopup="dialog"
+          >
+            Quick guide
+          </button>
           <button id="open-users" class="text-button" data-i18n="manageUsers" hidden>
             Manage accounts
           </button>
@@ -333,6 +341,22 @@
         </button>
       </section>
       <div id="report-workspace" hidden>
+        <aside
+          id="guide-invitation"
+          class="guide-invitation"
+          aria-label="Quick guide"
+          data-i18n-aria-label="guideOpen"
+          hidden
+        >
+          <span data-i18n="guideInvitation"
+            >New here? Take a short tour without changing your readings.</span
+          >
+          <div>
+            <button id="start-guide" class="text-button" data-i18n="guideStart">Show me</button>
+            <button id="dismiss-guide" class="text-button" data-i18n="guideDismiss">Dismiss</button>
+          </div>
+        </aside>
+        <p id="guide-load-status" class="small muted" role="status"></p>
         <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
           <div class="plant-tabs">
             <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
