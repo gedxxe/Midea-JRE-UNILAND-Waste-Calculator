@@ -19,6 +19,7 @@ import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
 import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
 import { initLogoIntro } from './ui/logo.js';
+import { createGuideLauncher } from './ui/guide-launcher.js';
 import { createAccounts } from './ui/accounts.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
@@ -52,6 +53,7 @@ import { NetworkClock, wibDate } from './clock.js';
 import { exampleDraft } from './examples.js';
 
 initLogoIntro();
+const guide = createGuideLauncher({ toast });
 
 const table = createMeterTable({
   getPlant: () => plant,
@@ -279,6 +281,7 @@ const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORA
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
   copyGeneration++;
+  guide.reset(user);
   graphs?.reset(user);
   backupControls.reset(user);
   rawExport.reset();
@@ -748,6 +751,7 @@ $('language-select').addEventListener('change', () => {
   mountPlant();
   renderClock();
   accounts.render();
+  guide.translate();
   graphs.render();
 });
 void showBuildInfo();

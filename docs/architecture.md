@@ -4,6 +4,8 @@
 
 ## One record from entry to review
 
+The optional [Quick guide](guide.md) is isolated from this data flow. Its decorative cursor illustrations, styles and long translations load on demand. It changes only a bounded browser invitation preference, never workspace data or database records.
+
 1. The signed-in operator chooses a factory and daily, After production or Night period. The table stores cumulative reading strings, not precomputed totals. Exact factory/date/time identifies shared electricity observations. The language selection changes interface messages, not copied report bytes.
 2. Pure modules validate numbers, periods, factors, gas calibration and water readings. Empty readings stay incomplete. Explicit unavailable values retain their check notes. The browser shows individual usage and equipment totals before the operator saves.
 3. Incomplete work goes to a tab recovery copy and one replaceable account workspace. Debounced autosave sends an expected version. The API checks the session, owner, payload and version in a transaction; conflicting writers cannot silently replace one another.

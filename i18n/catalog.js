@@ -7,6 +7,20 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  guideOpen: ['Quick guide', '快速指南', 'Panduan singkat'],
+  guideInvitation: [
+    'New here? Take a short tour without changing your readings.',
+    '第一次使用？查看简短指南，不会更改读数。',
+    'Baru di sini? Lihat panduan singkat tanpa mengubah reading.',
+  ],
+  guideStart: ['Show me', '查看指南', 'Lihat panduan'],
+  guideDismiss: ['Dismiss', '暂不查看', 'Tutup'],
+  guideLoading: ['Loading guide...', '正在加载指南…', 'Memuat panduan...'],
+  guideLoadFailed: [
+    'The guide could not load. Try again; your readings are unchanged.',
+    '指南加载失败，请重试。读数未更改。',
+    'Panduan gagal dimuat. Coba lagi; reading tidak berubah.',
+  ],
   ...workingHoursMessages,
   additionalTitle: ['Additional readings T1–T4', '附加读数 T1–T4', 'Reading tambahan T1–T4'],
   additionalMeter: ['Meter', '电表', 'Meter'],

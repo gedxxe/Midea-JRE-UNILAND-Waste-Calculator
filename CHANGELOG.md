@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.6-alpha - 2026-10-19
+
+- Add an optional eight-step Quick guide with animated cursor illustrations, Back/Next, pause and reduced-motion support.
+- Offer a small dismissible invitation once per account/browser, with a permanent guide button after sign-in. Load the illustrations, translations and styles only when opened.
+- Keep guide actions separate from readings, autosave, report history and database requests; close and invalidate pending opens on account changes.
+
 ## v0.11.5-alpha - 2026-10-17
 
 - Change JRE Window meter 6 (Vacuum Box) to x40 and add direct Piping Building 1# meter 3.
