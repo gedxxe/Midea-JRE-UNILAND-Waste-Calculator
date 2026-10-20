@@ -5,6 +5,7 @@ import {
   createGasDraft,
   calculateGas,
   gasMassText,
+  gasUsageText,
 } from '../gas.js';
 import { t } from '../i18n/index.js';
 import { $, node } from './dom.js';
@@ -169,14 +170,21 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
           input.setAttribute('aria-invalid', String(Boolean(point.error))),
         );
       }
-      view.output.textContent = t('gasTotal') + ': ' + gasMassText(result.kg) + ' kg';
+      const value = gasUsageText(result.kg);
+      view.output.textContent =
+        t(value.startsWith('+') ? 'gasIncreaseTotal' : 'gasTotal') + ': ' + value + ' kg';
+      view.status.dataset.notice = String(
+        !result.errors.length && !result.unavailable && result.warnings.length > 0,
+      );
       view.status.textContent = result.errors.some((e) => e.code === 'gasSequence')
         ? t('gasSequence')
         : result.errors.length
           ? t('gasPending')
           : result.unavailable
             ? t('gasUnavailable')
-            : '';
+            : result.warnings.length
+              ? t('gasStockIncrease')
+              : '';
     }
   }
   function focusIssue(target) {

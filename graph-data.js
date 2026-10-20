@@ -49,13 +49,16 @@ export function graphValues(snapshot, plant) {
     values['r' + (row.legacyIndex ?? i)] =
       value === null ? null : round(value * (row.unit.toLowerCase() === 'mwh' ? 1000 : 1), 8);
   });
+  // Check notes can repeat utility labels; only the report body contains measured values.
+  const checksStart = report.indexOf('CHECK RAW DATA:');
+  const utilityReport = checksStart < 0 ? report : report.slice(0, checksStart);
   UTILITIES[plant].forEach(([name, unit], i) => {
-    values['u' + i] = extract(report, schema.utilityPrefix + ' ' + name + ': ', unit);
+    values['u' + i] = extract(utilityReport, schema.utilityPrefix + ' ' + name + ': ', unit);
   });
   for (const metric of GRAPH_METRICS[plant])
     if (metric.utilityIndex !== undefined)
       values[metric.key] = extract(
-        report,
+        utilityReport,
         schema.utilityPrefix + ' ' + UTILITIES[plant][metric.utilityIndex][0] + ': ',
         'Kg',
       );

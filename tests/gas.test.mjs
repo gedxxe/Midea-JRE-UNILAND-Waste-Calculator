@@ -66,15 +66,21 @@ test('consumption converts individual observations and counts each refill once',
   e.refills[1].after.reading = '-';
   assert.equal(calculateGas('LPG', e).unavailable, true);
 });
-test('unexpected inventory increases and reversed refill events block consumption', () => {
+test('inventory increases warn without blocking; reversed refills still block consumption', () => {
   const e = entry();
   e.end = point(80);
-  assert.equal(calculateGas('LPG', e).errors[0].code, 'gasSequence');
+  const increase = calculateGas('LPG', e);
+  assert.equal(increase.errors.length, 0);
+  assert.ok(increase.kg < 0);
+  assert.deepEqual(increase.warnings, [{ point: 'end', code: 'gasStockIncrease' }]);
   e.end = point(40);
   e.refills = [{ before: point(50), after: point(45) }];
   assert.equal(calculateGas('LPG', e).kg, null);
   e.refills = [{ before: point(70), after: point(90) }];
-  assert.equal(calculateGas('LPG', e).kg, null);
+  const beforeRefill = calculateGas('LPG', e);
+  assert.equal(beforeRefill.errors.length, 0);
+  assert.ok(beforeRefill.kg > 0);
+  assert.equal(beforeRefill.warnings[0].point, 'before0');
 });
 test('old manual drafts remain byte-compatible and new raw observations survive restore/next day', () => {
   const drafts = { JRE: exampleDraft('JRE'), UNILAND: exampleDraft('UNILAND') };

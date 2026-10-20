@@ -1,5 +1,5 @@
 import { isWorkingHours, periodKind, workPeriodError, workPeriodTitle } from './reading-period.js';
-import { createGasDraft, calculateGas, gasCalibration, gasMassText } from './gas.js';
+import { createGasDraft, calculateGas, gasCalibration, gasUsageText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
@@ -274,6 +274,7 @@ export function calculateDraft(draft) {
     issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
   (working ? [] : UTILITIES[draft.plantKey]).forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
+    let stockIncrease = false;
     if (i === 4 && waterResult.active) {
       value = waterResult.value;
       if (waterResult.error) {
@@ -323,7 +324,7 @@ export function calculateDraft(draft) {
               gasRange: 'Reading is outside the reference table range.',
               gasTemperature: 'Enter R32 temperature from -20 to 50 C.',
               gasSequence:
-                'Tank mass increased without a matching refill, or refill mass decreased. Check readings, temperatures, and refill order.',
+                'Converted stock decreased during refill. Check readings, temperatures, and refill order.',
             }[error.code],
           null,
           null,
@@ -334,6 +335,19 @@ export function calculateDraft(draft) {
             point: error.point,
             field: error.code === 'gasTemperature' ? 'temperature' : 'reading',
           },
+        );
+      for (const warning of result.warnings)
+        issue(
+          issues,
+          'GAS_STOCK_INCREASE',
+          name +
+            ': ' +
+            warning.point +
+            '. Converted stock increased outside a recorded refill. Check readings, temperatures and any missing refill; measurement conditions may affect the estimate.',
+          null,
+          null,
+          'WARNING',
+          { kind: 'gas', gas: gas.id, point: warning.point, field: 'reading' },
         );
       if (result.unavailable)
         issue(
@@ -350,7 +364,8 @@ export function calculateDraft(draft) {
             field: 'reading',
           },
         );
-      value = gasMassText(result.kg);
+      value = gasUsageText(result.kg);
+      stockIncrease = value.startsWith('+');
     }
     if (!String(value).trim()) {
       if (String(note).trim())
@@ -377,7 +392,7 @@ export function calculateDraft(draft) {
       .trim()
       .replace(/[\r\n\t]+/g, ' ');
     utilities.push(
-      `${schema.utilityPrefix} ${name}: ${value === '-' ? '-' : formatNumber(Number(normalized))}${unit ? ` ${unit}` : ''}${cleanNote ? ` (${cleanNote})` : ''}`,
+      `${schema.utilityPrefix} ${name}: ${stockIncrease ? '+' : ''}${value === '-' ? '-' : formatNumber(Number(normalized))}${unit ? ` ${unit}` : ''}${stockIncrease ? ' (measured stock increase)' : ''}${cleanNote ? ` (${cleanNote})` : ''}`,
     );
   });
 

@@ -2,6 +2,17 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.9-alpha - 2026-10-20
+
+- Read graph utility values from the report body, excluding check notes that can repeat a gas label after an unusual stock movement.
+- Preserve numeric consumption when a stock notice is present, keep +stock increases out of consumption series, and continue rejecting genuine duplicate measurement lines.
+
+## v0.11.8-alpha - 2026-10-20
+
+- Keep calculated LPG, Oxygen, Nitrogen and R32 stock increases visible for both plants, with a + amount and measured-stock-increase label instead of blocking completed reports.
+- Warn about increases outside recorded refills while keeping the signed balance and raw observations in new snapshots. Keep invalid inputs and decreasing refill events blocked.
+- Keep stock gains out of consumption graph series, preserve ordinary consumption formatting and immutable history, and add browser/API regressions for save, copy and language changes.
+
 ## v0.11.7-alpha - 2026-10-20
 
 - Report JRE Electricity Building 2# net of all Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, and Indoor meter 2, with each configured ratio applied before subtraction.

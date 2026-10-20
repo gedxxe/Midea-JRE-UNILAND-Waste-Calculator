@@ -673,6 +673,77 @@ test('UNILAND tank gas persists incomplete drafts, recalculates on the server an
   );
 });
 
+test('both plants persist stock increases without plotting them as gas consumption or rewriting revisions', async () => {
+  const actor = await login(await seed());
+  for (const plant of ['JRE', 'UNILAND']) {
+    const draft = exampleDraft(plant);
+    const point = (reading) => ({ reading, temperature: '' });
+    draft.gas.entries[2] = { enabled: true, start: point('1050'), end: point('1000'), refills: [] };
+    const original = await call('/api/reports', { actor, body: { draft } });
+    assert.equal(original.status, 201);
+    [draft.gas.entries[2].start, draft.gas.entries[2].end] = [
+      draft.gas.entries[2].end,
+      draft.gas.entries[2].start,
+    ];
+    draft.gas.entries[2].kg = 999999;
+    const saved = await call('/api/reports', {
+      actor,
+      body: {
+        id: original.value.id,
+        baseRevision: 1,
+        draft,
+        output: { reportText: 'forged', gas: [{ kg: 999999 }] },
+      },
+    });
+    assert.equal(saved.status, 200);
+    const stored = (await call('/api/reports?id=' + saved.value.id, { actor })).value.snapshot;
+    assert.ok(stored.output.gas[0].kg < 0);
+    assert.equal(stored.draft.gas.entries[2].kg, undefined);
+    assert.equal(stored.draft.gas.entries[2].end.reading, '1050');
+    assert.equal(stored.output.gas[0].warnings[0].code, 'gasStockIncrease');
+    assert.match(stored.output.reportText, /Nitrogen: \+[\d.]+ Kg \(measured stock increase\)/);
+    const old = await call('/api/reports?id=' + saved.value.id + '&revision=1', { actor });
+    assert.equal(old.value.snapshot.output.reportText, original.value.snapshot.output.reportText);
+    const graphs = await call('/api/graphs?plant=' + plant + '&start=2026-09-01&end=2026-09-30', {
+      actor,
+    });
+    assert.equal(graphs.status, 200);
+    assert.equal(graphs.value.records[0].values[plant === 'JRE' ? 'u2' : 'kg3'], null);
+    draft.gas.entries[2].end = point('950');
+    draft.gas.entries[2].refills = [{ before: point('1010'), after: point('1100') }];
+    const positive = await call('/api/reports', {
+      actor,
+      body: { id: saved.value.id, baseRevision: 2, draft },
+    });
+    assert.equal(positive.status, 200);
+    assert.ok(positive.value.snapshot.output.gas[0].kg > 0);
+    assert.equal(positive.value.snapshot.output.gas[0].warnings[0].point, 'before0');
+    const positiveGraphs = await call(
+      '/api/graphs?plant=' + plant + '&start=2026-09-01&end=2026-09-30',
+      { actor },
+    );
+    assert.equal(
+      positiveGraphs.value.records[0].values[plant === 'JRE' ? 'u2' : 'kg3'],
+      Number(positive.value.snapshot.output.gas[0].kg.toFixed(6)),
+    );
+    assert.equal(
+      (await call('/api/reports?id=' + saved.value.id + '&revision=2', { actor })).value.snapshot
+        .output.reportText,
+      stored.output.reportText,
+    );
+    draft.gas.entries[2].refills = [{ before: point('1100'), after: point('1090') }];
+    assert.equal(
+      (await call('/api/reports', { actor, body: { id: saved.value.id, baseRevision: 3, draft } }))
+        .status,
+      422,
+    );
+    assert.equal(
+      (await call('/api/reports?id=' + saved.value.id, { actor })).value.latestRevision,
+      3,
+    );
+  }
+});
+
 test('report ownership comes from the session; server output and raw readings are retained', async () => {
   const draft = exampleDraft('JRE');
   draft.water = { start: '100,25', end: '125.75' };

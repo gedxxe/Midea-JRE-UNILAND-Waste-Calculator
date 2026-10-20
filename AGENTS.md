@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.7-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.9-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -88,6 +88,8 @@ New user instructions override older choices here. Update this decision record, 
 - Requested 2026-10-17: carefully re-audit and fix reproducible bugs. Scope delayed report/worksheet clipboard callbacks to the current account and preview. Store tab workspace and sync metadata in one atomic value; retain legacy split-key recovery conservatively and keep server conflicts explicit. Compare identical server drafts independently of JSON object key order after a lost save response, preserving array order and all field differences. Validate the cumulative maximum exactly before floating-point conversion. Keep the existing alpha workflow and immutable saved history.
 
 - Confirmed 2026-10-17 JRE revision: Window meter 6 (Vacuum Box) is x40. Add direct Piping Building 1# meter 3; its net usage is its raw delta minus Window meter 6 delta x40. Sum meter 1 x40, meter 2 direct and meter 3 net for Piping. Structural still deducts only Piping meter 1. Apply to all electricity periods, show individual net usage, preserve raw readings and stored outputs. Layout 4 adds the new blank slot to layouts 1–3; old complete text imports preserve omitted cells only at matching dates/times.
+
+- Confirmed 2026-10-20 gas revision: for JRE and UNILAND LPG/O2/N2/R32, increases outside recorded refills are nonblocking notices, not unavailable or zero. Preserve initial kg + refill kg - final kg as a signed calculation in new snapshots; show a negative balance as +amount with the explicit measured-stock-increase label in UI and canonical English reports. Ordinary consumption remains unsigned. Check readings, temperatures and omitted refills without assuming thermal expansion caused the increase or adding any temperature correction/calibration. Decreasing refill events and incomplete/invalid/out-of-range inputs remain blocking. Do not plot the +stock increase as positive consumption; keep it available in saved reports. Graph utility extraction excludes the canonical CHECK RAW DATA section so an otherwise positive consumption with a stock notice remains numeric; genuine duplicate measurement lines still yield null. Preserve manual units, raw observations/refills, daily scope and old stored output. No schema/database migration.
 
 ## Architecture
 
