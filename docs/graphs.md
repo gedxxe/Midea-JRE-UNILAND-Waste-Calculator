@@ -36,7 +36,7 @@ Every non-excluded period has its own x-axis label. Periods use equal slots, not
 
 Opening graphs, changing the factory/range or refreshing fetches current revisions. Saving in this tab refreshes an open graph view. Changes made on another device require Refresh or reopening. Unsaved table edits never change graphs. Account changes and closing the dialog clear fetched values and invalidate in-flight responses/exports.
 
-Starting in v0.11.8, a converted gas stock increase is saved as an explicit +amount Kg (measured stock increase) report line. Consumption extractors deliberately leave this as null, breaking the series rather than counting the absolute amount as usage or inventing zero. Its amount and notice remain visible in the saved report; ordinary consumption retains the same graph keys and extraction. Old report strings are never rewritten.
+Starting in v0.11.8, a converted gas stock increase is saved as an explicit +amount Kg (measured stock increase) report line. Consumption extractors deliberately leave this as null, breaking the series rather than counting the absolute amount as usage or inventing zero. Its amount and notice remain visible in the saved report; ordinary consumption retains the same graph keys. From v0.11.9, extract utility values only before the canonical CHECK RAW DATA section, since a notice can repeat the gas label. Positive consumption with a notice remains numeric; duplicate measured values in the report body remain ambiguous and yield null. Old report strings are never rewritten.
 
 ## Configuration and export
 

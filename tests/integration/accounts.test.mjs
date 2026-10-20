@@ -709,15 +709,37 @@ test('both plants persist stock increases without plotting them as gas consumpti
     });
     assert.equal(graphs.status, 200);
     assert.equal(graphs.value.records[0].values[plant === 'JRE' ? 'u2' : 'kg3'], null);
+    draft.gas.entries[2].end = point('950');
+    draft.gas.entries[2].refills = [{ before: point('1010'), after: point('1100') }];
+    const positive = await call('/api/reports', {
+      actor,
+      body: { id: saved.value.id, baseRevision: 2, draft },
+    });
+    assert.equal(positive.status, 200);
+    assert.ok(positive.value.snapshot.output.gas[0].kg > 0);
+    assert.equal(positive.value.snapshot.output.gas[0].warnings[0].point, 'before0');
+    const positiveGraphs = await call(
+      '/api/graphs?plant=' + plant + '&start=2026-09-01&end=2026-09-30',
+      { actor },
+    );
+    assert.equal(
+      positiveGraphs.value.records[0].values[plant === 'JRE' ? 'u2' : 'kg3'],
+      Number(positive.value.snapshot.output.gas[0].kg.toFixed(6)),
+    );
+    assert.equal(
+      (await call('/api/reports?id=' + saved.value.id + '&revision=2', { actor })).value.snapshot
+        .output.reportText,
+      stored.output.reportText,
+    );
     draft.gas.entries[2].refills = [{ before: point('1100'), after: point('1090') }];
     assert.equal(
-      (await call('/api/reports', { actor, body: { id: saved.value.id, baseRevision: 2, draft } }))
+      (await call('/api/reports', { actor, body: { id: saved.value.id, baseRevision: 3, draft } }))
         .status,
       422,
     );
     assert.equal(
       (await call('/api/reports?id=' + saved.value.id, { actor })).value.latestRevision,
-      2,
+      3,
     );
   }
 });

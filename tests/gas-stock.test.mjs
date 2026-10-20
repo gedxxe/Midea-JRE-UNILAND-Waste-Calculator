@@ -134,3 +134,32 @@ test('gas display distinguishes stock gains from consumption and normalizes roun
   for (const kg of [0, -0, -0.0000004, 0.0000004]) assert.equal(gasUsageText(kg), '0');
   for (const kg of [null, undefined, NaN, Infinity]) assert.equal(gasUsageText(kg), '-');
 });
+
+for (const plant of ['JRE', 'UNILAND'])
+  test(
+    plant + ' graphs preserve ordinary consumption when a stock notice repeats the utility label',
+    () => {
+      const draft = exampleDraft(plant);
+      draft.gas.entries[0] = {
+        enabled: true,
+        start: point(50),
+        end: point(40),
+        refills: [{ before: point(51), after: point(80) }],
+      };
+      const snapshot = reportSnapshot(draft);
+      assert.ok(snapshot.output.gas[0].kg > 0);
+      assert.equal(snapshot.output.gas[0].warnings[0].point, 'before0');
+      assert.ok(snapshot.output.reportText.includes('CHECK RAW DATA:'));
+      const key = plant === 'JRE' ? 'u0' : 'kg0';
+      assert.equal(
+        graphValues(snapshot, plant)[key],
+        Number(gasMassText(snapshot.output.gas[0].kg)),
+      );
+      // Actual duplicate measurement lines stay ambiguous, even if their numbers agree.
+      const lines = snapshot.output.reportText.split('\n');
+      const measured = lines.find((l) => l.includes('LPG: ') && l.includes(' Kg'));
+      const duplicate = structuredClone(snapshot);
+      duplicate.output.reportText = [measured, ...lines].join('\n');
+      assert.equal(graphValues(duplicate, plant)[key], null);
+    },
+  );
