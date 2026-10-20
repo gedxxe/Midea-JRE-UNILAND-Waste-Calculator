@@ -134,24 +134,30 @@ export function calculateGas(id, entry, plant = 'JRE') {
   const errors = Object.entries(points)
     .filter(([, p]) => p.error)
     .map(([point, p]) => ({ point, code: p.error }));
-  if (errors.length) return { points, errors, kg: null };
+  const warnings = [];
+  if (errors.length) return { points, errors, warnings, kg: null };
   if (Object.values(points).some((p) => p.unavailable))
-    return { points, errors, kg: null, unavailable: true };
+    return { points, errors, warnings, kg: null, unavailable: true };
   let previous = points.start.kg,
     refillKg = 0;
   for (let i = 0; i < entry.refills.length; i++) {
     const before = points['before' + i].kg,
       after = points['after' + i].kg;
-    if (before > previous + 1e-7 || after < before - 1e-7)
-      errors.push({ point: 'before' + i, code: 'gasSequence' });
+    if (before > previous + 1e-7) warnings.push({ point: 'before' + i, code: 'gasStockIncrease' });
+    if (after < before - 1e-7) errors.push({ point: 'after' + i, code: 'gasSequence' });
     refillKg += after - before;
     previous = after;
   }
-  if (points.end.kg > previous + 1e-7) errors.push({ point: 'end', code: 'gasSequence' });
+  if (points.end.kg > previous + 1e-7) warnings.push({ point: 'end', code: 'gasStockIncrease' });
   const kg = points.start.kg + refillKg - points.end.kg;
-  return { points, errors, refillKg, kg: errors.length ? null : Math.max(0, kg) };
+  // Preserve the signed balance: a negative value represents a measured stock increase.
+  return { points, errors, warnings, refillKg, kg: errors.length ? null : kg };
 }
 export const gasMassText = (kg) => (kg === null || kg === undefined ? '-' : formatNumber(kg, 6));
+export function gasUsageText(kg) {
+  const text = gasMassText(kg);
+  return text.startsWith('-') && text !== '-' ? '+' + text.slice(1) : text;
+}
 export function nextGasDay(input, plant = 'JRE') {
   const next = createGasDraft(plant);
   if (!input) return next;

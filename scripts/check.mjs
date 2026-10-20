@@ -71,6 +71,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.0 adds shared Day/Night drafts, copy output and translations (~15 kB); still no browser dependencies.
 // v0.11.1 adds five report choices and timestamp-based reuse (~11 kB), replacing old shift copy controls.
 // v0.11.6 adds an optional guide; its illustrations, styles and long translations load on demand.
-assert.ok(size < 482000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.8 adds stock-increase notices and signed report presentation (~2 kB), without dependencies.
+assert.ok(size < 484500, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

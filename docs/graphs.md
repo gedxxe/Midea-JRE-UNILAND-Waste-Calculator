@@ -36,6 +36,8 @@ Every non-excluded period has its own x-axis label. Periods use equal slots, not
 
 Opening graphs, changing the factory/range or refreshing fetches current revisions. Saving in this tab refreshes an open graph view. Changes made on another device require Refresh or reopening. Unsaved table edits never change graphs. Account changes and closing the dialog clear fetched values and invalidate in-flight responses/exports.
 
+Starting in v0.11.8, a converted gas stock increase is saved as an explicit +amount Kg (measured stock increase) report line. Consumption extractors deliberately leave this as null, breaking the series rather than counting the absolute amount as usage or inventing zero. Its amount and notice remain visible in the saved report; ordinary consumption retains the same graph keys and extraction. Old report strings are never rewritten.
+
 ## Configuration and export
 
 Up to 32 graphs per factory; select any available variables with the same unit. Titles can be edited in English and Chinese. Default department/title text remains bilingual regardless of interface language. At least one variable and both title languages are needed before exporting. Add, duplicate, remove, or restore Excel grouping. Y-axis scaling defaults to Auto with a zero minimum. Manual accepts finite nonnegative minimum and larger maximum up to 10^15, with a span of at least 0.00000001. Bounds persist per chart and reset to Auto when its unit changes. Invalid bounds block drawing/export. Clipping is only visual: a note is included in the chart and exports when values fall outside the selected bounds, and the data table retains all values.

@@ -35,6 +35,7 @@ export const gasMessages = {
   gasRemove: ['Remove refill {number}', '删除第 {number} 次补充', 'Hapus refill {number}'],
   gasRefill: ['Refill {number}', '第 {number} 次补充', 'Refill {number}'],
   gasTotal: ['Consumption', '用量', 'Konsumsi'],
+  gasIncreaseTotal: ['Measured stock increase', '测得库存增加', 'Kenaikan stok terukur'],
   gasFormula: [
     'Initial kg + refill kg − final kg. Add refills in time order; without a refill, leave the list empty.',
     '初始 kg + 补充 kg − 最终 kg。按时间顺序添加补充记录；未补充时保持列表为空。',
@@ -67,9 +68,14 @@ export const gasMessages = {
     'Isi suhu dari -20 hingga 50 °C.',
   ],
   gasSequence: [
-    'Mass increased without a matching refill, or decreased during refill. Check readings, temperatures and event order.',
-    '质量在未补充时增加，或在补充时减少。请检查读数、温度和记录顺序。',
-    'Massa naik tanpa refill yang sesuai, atau turun saat refill. Periksa reading, suhu, dan urutan pencatatan.',
+    'Converted stock decreased during refill. Check readings, temperatures and event order.',
+    '换算库存在补充时减少。请检查读数、温度和记录顺序。',
+    'Stok hasil konversi turun saat refill. Periksa reading, suhu, dan urutan pencatatan.',
+  ],
+  gasStockIncrease: [
+    'Converted stock increased outside a recorded refill. Check readings, temperatures and any missing refill; measurement conditions may affect the estimate. You can still save and copy the report.',
+    '换算库存在已记录补充之外增加。请检查读数、温度及是否漏记补充；测量条件可能影响估算。仍可保存和复制报告。',
+    'Stok hasil konversi naik di luar refill yang dicatat. Periksa reading, suhu, dan kemungkinan refill belum dicatat; kondisi pengukuran dapat memengaruhi estimasi. Laporan tetap bisa disimpan dan disalin.',
   ],
   gasUnavailable: [
     'Consumption unavailable: a reading is marked -.',

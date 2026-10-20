@@ -2,7 +2,7 @@ import { observationLabel } from '../reading-period.js';
 import { PLANT_SCHEMAS, UTILITIES } from '../schema.js';
 import { formatNumber, normalizeName } from '../numbers.js';
 import { formatRowValue } from '../engine.js';
-import { gasCalibration } from '../gas.js';
+import { gasCalibration, gasUsageText } from '../gas.js';
 import { planTablePaste } from '../importer.js';
 import { t } from '../i18n/index.js';
 import { $, node } from './dom.js';
@@ -235,7 +235,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         (gas) => gas.id === result.gas,
       ).utilityIndex;
       const input = document.querySelector(`[data-utility="${index}"]`);
-      if (input) input.value = formatNumber(result.kg, 6);
+      if (input) input.value = gasUsageText(result.kg);
     });
     report.calculatedRows.forEach((row, ri) => {
       const rowIssues = report.issues.filter((i) => i.rowIndex === ri);
