@@ -7,6 +7,16 @@ import { planTablePaste } from '../importer.js';
 import { t } from '../i18n/index.js';
 import { $, node } from './dom.js';
 
+function includedMeterNames(sources) {
+  const groups = new Map();
+  for (const { name, meter } of sources) groups.set(name, [...(groups.get(name) || []), meter + 1]);
+  return [...groups]
+    .map(
+      ([name, meters]) => name + ', meter' + (meters.length > 1 ? 's ' : ' ') + meters.join(', '),
+    )
+    .join(' + ');
+}
+
 export function createMeterTable({ getPlant, current, getReport, changed, rememberUndo, toast }) {
   const coordinates = [];
   const rowNodes = [];
@@ -43,9 +53,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
                 'small',
                 t(row.netMeter === undefined ? 'netUsageHint' : 'netMeterUsageHint', {
                   meter: row.netMeter + 1,
-                  meters: row.deductMeters
-                    .map(({ name, meter }) => name + ', meter ' + (meter + 1))
-                    .join(' + '),
+                  meters: includedMeterNames(row.deductMeters),
                 }),
               ),
             );

@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.6-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.7-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -90,6 +90,8 @@ New user instructions override older choices here. Update this decision record, 
 - Confirmed 2026-10-17 JRE revision: Window meter 6 (Vacuum Box) is x40. Add direct Piping Building 1# meter 3; its net usage is its raw delta minus Window meter 6 delta x40. Sum meter 1 x40, meter 2 direct and meter 3 net for Piping. Structural still deducts only Piping meter 1. Apply to all electricity periods, show individual net usage, preserve raw readings and stored outputs. Layout 4 adds the new blank slot to layouts 1–3; old complete text imports preserve omitted cells only at matching dates/times.
 
 ## Architecture
+
+- Confirmed 2026-10-20 JRE: Electricity Building 2# net usage equals its direct meter delta minus all four Heat Exchanger consumptions, Outdoor meter 2, Window meters 4 and 5, and Indoor meter 2, after each configured factor. Exclude all unrelated meter components. Apply to Daily, After production and Night, sub-meter sums, gaps and newly saved graph values; preserve raw pairs, raw exports/templates, worksheet columns and stored historical output. Missing dependencies or negative net remain unavailable, never silently zero. This uses the existing layout and deduction engine; no migration is required.
 
 - Quick guide confirmed 2026-10-19: optional button plus a small once-per-account/browser invitation, never an automatic modal. Explain eight essential workflows using decorative animated cursor illustrations above the text. Keep actual controls/readings unchanged, with manual navigation, close, pause and reduced-motion support. Test with synthetic local/development accounts; do not enable preview auth or reuse production credentials. Remain alpha.
 - ui/guide-launcher.js owns the bounded browser-only invitation preference and identity-guarded lazy loading. ui/guide.js, guide.css and i18n/guide.js load on demand; they have no workspace, API or account data access. The modal closes on account changes, blocks reporting shortcuts while open and never advances automatically.

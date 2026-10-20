@@ -107,6 +107,56 @@ test('JRE names the Vacuum Box, uses converted branch deductions and keeps all p
   await page.screenshot({ path: info.outputPath('jre-building3-net.png') });
   expect(errors).toEqual([]);
 });
+test('Building 2 shows gross readings and net usage in all periods, preserves language bytes and blocks incomplete deductions', async ({
+  page,
+}, info) => {
+  const { state, errors } = await setup(page);
+  await page.locator('#search-meter').fill('Electricity Building 2#');
+  const row = page.locator('tr[data-row="18"]');
+  for (const [mode, net, gross] of [
+    ['daily', '970.00', '3000.00'],
+    ['workingHours', '388.00', '1200.00'],
+    ['nightShift', '582.00', '1800.00'],
+  ]) {
+    await page.locator('#reading-mode').selectOption(mode);
+    const report = await page.locator('#report-preview').inputValue();
+    expect(report).toContain('19. Electricity Building 2#: ' + net + ' kWh');
+    for (const language of ['zh-CN', 'id', 'en']) {
+      await page.locator('#language-select').selectOption(language);
+      await expect(row.locator('.energy > span')).toHaveText(net);
+      await expect(page.locator('[data-meter-usage="18-0"] strong')).toHaveText(gross + ' kWh');
+      for (const name of ['Heat Exchanger', 'Outdoor', 'Window', 'Indoor'])
+        await expect(row.locator('.equipment small')).toContainText(name);
+      await expect(row.locator('.equipment small')).toContainText(
+        'Heat Exchanger, meters 1, 2, 3, 4',
+      );
+      await expect(row.locator('.equipment small')).toContainText('Window, meters 4, 5');
+      expect(await page.locator('#report-preview').inputValue()).toBe(report);
+    }
+    const [start, end] = await Promise.all([
+      cell(page, 18).boundingBox(),
+      cell(page, 18, 'end').boundingBox(),
+    ]);
+    expect(Math.abs(start.y - end.y)).toBeLessThan(2);
+  }
+  await row.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('jre-building2-net.png') });
+  await page.locator('#reading-mode').selectOption('daily');
+  await cell(page, 18, 'end').fill('3029');
+  await expect(row.locator('.energy > span')).toHaveText('-');
+  await cell(page, 18, 'end').fill('4000');
+  await page.locator('#search-meter').fill('Indoor');
+  await cell(page, 1, 'end', 1).fill('');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#search-meter').fill('Electricity Building 2#');
+  await expect(row.locator('.energy > span')).toHaveText('-');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  expect(state.workspace.drafts.JRE.rows[18].end[0]).toBe('4000');
+  expect(state.workspace.drafts.JRE.rows[1].end[1]).toBe('');
+  expect(errors).toEqual([]);
+});
+
 test('old JRE drafts keep new readings blank, then retain entered values through autosave, reload and next day', async ({
   page,
 }) => {

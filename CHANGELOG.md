@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.7-alpha - 2026-10-20
+
+- Report JRE Electricity Building 2# net of all Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, and Indoor meter 2, with each configured ratio applied before subtraction.
+- Apply the correction to all electricity periods, sub-meter sums, gaps and newly saved graph output. Preserve cumulative readings, raw templates/exports, worksheet columns and historical reports.
+- Keep missing dependencies and negative net usage unavailable with check notes; do not invent zeros or deduct unrelated components.
+
 ## v0.11.6-alpha - 2026-10-19
 
 - Add an optional eight-step Quick guide with animated cursor illustrations, Back/Next, pause and reduced-motion support.
