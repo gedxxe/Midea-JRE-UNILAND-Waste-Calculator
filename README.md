@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.6-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.7-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -55,6 +55,8 @@ The interface supports English, Simplified Chinese and Indonesian. Equipment, un
 Current electricity layouts: **JRE 30 equipment rows / 60 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 and Structural retain their defined branch deductions; the main Total stays independent. JRE T1–T4 are optional notes outside totals and raw exports. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
 
 ### Architecture
+
+JRE **Electricity Building 2#** reports its direct consumption minus all four Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, and Indoor meter 2, after their ratios. This applies to all three electricity modes and the sub-meter/gap check. Raw exports retain original cumulative values; saved history and worksheet columns stay unchanged.
 
 ```mermaid
 flowchart LR
@@ -119,7 +121,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.6-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.7-alpha**，数据用于决策前仍需人工复核。
 
 ### 操作流程与功能
 
@@ -150,6 +152,8 @@ JRE 为 30 项设备 / 60 个电表，UNILAND 为 34 项 / 48 个读数位置。
 
 ### 架构、安全与维护
 
+JRE **Electricity Building 2#** 的净用量为本表用量减去 Heat Exchanger 全部四个电表、Outdoor 电表 2、Window 电表 4 和 5、Indoor 电表 2 的用量，各分表先应用倍率。三个电力模式及分表合计/差额均采用净值；原始导出保留累计读数，已存历史与工作表列不变。
+
 上方架构图：无浏览器运行依赖的 HTML/CSS/JavaScript → Vercel Node API → Neon PostgreSQL。服务端验证会话、归属和输入，重算新报表并保存不可变修订。草稿可替换且检查冲突。详见[架构和模块](docs/architecture.md)。
 
 Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、参数化 SQL、禁止私有响应缓存、CSP 和构建文件白名单共同保护数据。报表/草稿/admin 读取每账户每 15 分钟共 600 次，图表单独 120 次。每次受保护读取增加一个计数查询，不占用自动保存额度；不等于全面防攻击。
@@ -164,7 +168,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.6-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.7-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 ### Alur dan fitur operator
 
@@ -194,6 +198,8 @@ JRE memiliki 30 equipment / 60 meter; UNILAND 34 equipment / 48 slot. Window met
 Lihat [bug yang direproduksi, perbaikan dan kompatibilitas](docs/reliability.md).
 
 ### Arsitektur, keamanan dan pengembangan
+
+JRE **Electricity Building 2#** memakai konsumsi meter utamanya dikurangi seluruh empat meter Heat Exchanger, Outdoor meter 2, Window meter 4 dan 5, serta Indoor meter 2 setelah ratio masing-masing. Berlaku untuk ketiga mode listrik, sub-meter sum dan gap. Ekspor raw tetap berisi angka kumulatif asli; histori tersimpan dan kolom worksheet tetap sama.
 
 Diagram di atas: HTML/CSS/JavaScript tanpa paket runtime browser → API Node Vercel → Neon PostgreSQL. Server memeriksa sesi, pemilik dan input, menghitung ulang laporan baru serta menyimpan revisi tetap. Draft dapat diganti dengan pemeriksaan konflik. Baca [arsitektur, modul dan batas kapasitas](docs/architecture.md).
 

@@ -46,7 +46,20 @@ export const PLANT_SCHEMAS = {
       },
       { name: 'Piping Building 3#', unit: 'kWh', factors: [40] },
       { name: 'All Office Building', unit: 'kWh', factors: [1000] },
-      { name: 'Electricity Building 2#', unit: 'kWh' },
+      {
+        name: 'Electricity Building 2#',
+        unit: 'kWh',
+        deductMeters: [
+          { name: 'Heat Exchanger', meter: 0 },
+          { name: 'Heat Exchanger', meter: 1 },
+          { name: 'Heat Exchanger', meter: 2 },
+          { name: 'Heat Exchanger', meter: 3 },
+          { name: 'Outdoor', meter: 1 },
+          { name: 'Window', meter: 3 },
+          { name: 'Window', meter: 4 },
+          { name: 'Indoor', meter: 1 },
+        ],
+      },
       {
         name: 'Structural Laboratory',
         unit: 'kWh',

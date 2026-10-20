@@ -25,6 +25,11 @@ export function reportPeriods(plant = 'JRE', date = '2026-09-16') {
     after.rows[15].end[2] = '1400';
     night.rows[15].start[2] = '1400';
     night.rows[15].end[2] = '2000';
+    // Building 2 includes HE plus selected Indoor/Outdoor/Window components.
+    daily.rows[18].end[0] = '4000';
+    after.rows[18].end[0] = '2200';
+    night.rows[18].start[0] = '2200';
+    night.rows[18].end[0] = '4000';
   }
   daily.utilities[0].value = '3';
   daily.water = { start: '100', end: '102' };

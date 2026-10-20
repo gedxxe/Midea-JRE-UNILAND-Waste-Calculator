@@ -1201,3 +1201,35 @@ test('JRE report API stores raw Piping meter 3 while recalculating net Window an
     );
   }
 });
+
+test('JRE report API recalculates Building 2 from exact scaled components, preserving raw observations and saved revisions', async () => {
+  const actor = await login(await seed());
+  for (const [index, draft] of reportPeriods('JRE').entries()) {
+    const response = await call('/api/reports', {
+      actor,
+      body: { draft, totalEnergy: 999999, engineVersion: '0.11.6-alpha' },
+    });
+    assert.equal(response.status, 201);
+    const url = '/api/reports?id=' + response.value.id + '&kind=' + (draft.periodKind || 'daily');
+    const loaded = await call(url, { actor });
+    assert.equal(loaded.status, 200);
+    const saved = loaded.value.snapshot;
+    assert.deepEqual(saved.draft.rows[18], draft.rows[18]);
+    assert.deepEqual(saved.draft.rows[5], draft.rows[5]);
+    assert.match(
+      saved.output.reportText,
+      new RegExp('19\\. Electricity Building 2#: ' + [970, 388, 582][index] + '\\.00 kWh'),
+    );
+    const invalid = structuredClone(draft);
+    invalid.rows[5].end[0] = '';
+    const rejected = await call('/api/reports', {
+      actor,
+      body: { draft: invalid, id: response.value.id, baseRevision: 1 },
+    });
+    assert.equal(rejected.status, 422);
+    assert.equal(rejected.value.error, 'INCOMPLETE_REPORT');
+    const kept = await call(url, { actor });
+    assert.equal(kept.value.revision, 1);
+    assert.deepEqual(kept.value.snapshot, saved);
+  }
+});

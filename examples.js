@@ -14,7 +14,18 @@ export function exampleDraft(plant) {
     PLANT_SCHEMAS.JRE.rows.forEach((row, i) => {
       if (row.deductMeters) {
         const mi = row.netMeter ?? 0;
-        draft.rows[i].end[mi] = String(Number(draft.rows[i].start[mi]) + 50);
+        const included = row.deductMeters.reduce((sum, { name, meter }) => {
+          const source = PLANT_SCHEMAS.JRE.rows.findIndex((item) => item.name === name);
+          const input = draft.rows[source];
+          return (
+            sum +
+            (Number(input.end[meter]) - Number(input.start[meter])) *
+              PLANT_SCHEMAS.JRE.rows[source].factors[meter]
+          );
+        }, 0);
+        draft.rows[i].end[mi] = String(
+          Number(draft.rows[i].start[mi]) + Math.max(50, included + 10),
+        );
       }
     });
   }
