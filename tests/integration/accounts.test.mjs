@@ -1287,18 +1287,21 @@ test('JRE report API recalculates Building 2 from exact scaled components, prese
     const saved = loaded.value.snapshot;
     assert.deepEqual(saved.draft.rows[18], draft.rows[18]);
     assert.deepEqual(saved.draft.rows[5], draft.rows[5]);
+    assert.deepEqual(saved.draft.rows[10], draft.rows[10]);
     assert.match(
       saved.output.reportText,
-      new RegExp('19\\. Electricity Building 2#: ' + [970, 388, 582][index] + '\\.00 kWh'),
+      new RegExp('19\\. Electricity Building 2#: ' + [960, 384, 576][index] + '\\.00 kWh'),
     );
-    const invalid = structuredClone(draft);
-    invalid.rows[5].end[0] = '';
-    const rejected = await call('/api/reports', {
-      actor,
-      body: { draft: invalid, id: response.value.id, baseRevision: 1 },
-    });
-    assert.equal(rejected.status, 422);
-    assert.equal(rejected.value.error, 'INCOMPLETE_REPORT');
+    for (const source of [5, 10]) {
+      const invalid = structuredClone(draft);
+      invalid.rows[source].end[0] = '';
+      const rejected = await call('/api/reports', {
+        actor,
+        body: { draft: invalid, id: response.value.id, baseRevision: 1 },
+      });
+      assert.equal(rejected.status, 422);
+      assert.equal(rejected.value.error, 'INCOMPLETE_REPORT');
+    }
     const kept = await call(url, { actor });
     assert.equal(kept.value.revision, 1);
     assert.deepEqual(kept.value.snapshot, saved);

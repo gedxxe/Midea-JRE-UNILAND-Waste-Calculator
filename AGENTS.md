@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.9-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.10-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -93,7 +93,7 @@ New user instructions override older choices here. Update this decision record, 
 
 ## Architecture
 
-- Confirmed 2026-10-20 JRE: Electricity Building 2# net usage equals its direct meter delta minus all four Heat Exchanger consumptions, Outdoor meter 2, Window meters 4 and 5, and Indoor meter 2, after each configured factor. Exclude all unrelated meter components. Apply to Daily, After production and Night, sub-meter sums, gaps and newly saved graph values; preserve raw pairs, raw exports/templates, worksheet columns and stored historical output. Missing dependencies or negative net remain unavailable, never silently zero. This uses the existing layout and deduction engine; no migration is required.
+- Confirmed 2026-10-20 JRE, extended 2026-10-21: Electricity Building 2# net usage equals its direct meter delta minus all four Heat Exchanger consumptions, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, and direct Nitrogen and Refrigerant Station electricity, after each configured factor. The Station remains a separate electricity row and is deducted once from Building 2; gas stock/calculations are unrelated. Exclude all unrelated meter components. Apply to Daily, After production and Night, sub-meter sums, gaps and newly saved graph values; preserve raw pairs, raw exports/templates, worksheet columns and stored historical output. Missing dependencies or negative net remain unavailable, never silently zero. This uses the existing layout and deduction engine; no migration is required.
 
 - Quick guide confirmed 2026-10-19: optional button plus a small once-per-account/browser invitation, never an automatic modal. Explain eight essential workflows using decorative animated cursor illustrations above the text. Keep actual controls/readings unchanged, with manual navigation, close, pause and reduced-motion support. Test with synthetic local/development accounts; do not enable preview auth or reuse production credentials. Remain alpha.
 - ui/guide-launcher.js owns the bounded browser-only invitation preference and identity-guarded lazy loading. ui/guide.js, guide.css and i18n/guide.js load on demand; they have no workspace, API or account data access. The modal closes on account changes, blocks reporting shortcuts while open and never advances automatically.

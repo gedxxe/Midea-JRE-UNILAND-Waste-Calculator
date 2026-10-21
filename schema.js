@@ -58,6 +58,7 @@ export const PLANT_SCHEMAS = {
           { name: 'Window', meter: 3 },
           { name: 'Window', meter: 4 },
           { name: 'Indoor', meter: 1 },
+          { name: 'Nitrogen and Refrigerant Station', meter: 0 },
         ],
       },
       {
