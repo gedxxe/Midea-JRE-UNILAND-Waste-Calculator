@@ -246,8 +246,9 @@ export function calculateDraft(draft) {
       );
       return;
     }
-    const net =
+    let net =
       (target ? scaledMeters.get(`${row.name}:${mi}`) : scaledEnergy.get(row.name)) - included;
+    if (net < 0n && row.floorNetAtZero && mi === undefined) net = 0n;
     if (net < 0n) {
       row.missing = true;
       row.totalEnergy = null;

@@ -64,6 +64,7 @@ export const PLANT_SCHEMAS = {
       {
         name: 'Structural Laboratory',
         unit: 'kWh',
+        floorNetAtZero: true,
         deductMeters: [{ name: 'Piping Building 1#', meter: 0 }],
       },
       { name: 'Test Control Room', unit: 'kWh', factors: [1, 1] },

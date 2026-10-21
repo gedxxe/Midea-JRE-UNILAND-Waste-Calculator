@@ -84,7 +84,23 @@ test('new Structural snapshots graph net usage while historical snapshots retain
   );
   assert.equal(graphValues(historical, 'JRE').w11, 150);
   draft.rows[piping].end = ['20', '1000', '1020'];
-  assert.equal(graphValues(reportSnapshot(draft), 'JRE').w11, null);
+  const floored = reportSnapshot(draft);
+  assert.equal(graphValues(floored, 'JRE').w11, 0);
+  assert.match(floored.output.reportText, /20\. Structural Laboratory: 0 kWh/);
+  assert.equal(graphValues(historical, 'JRE').w11, 150);
+  const unavailable = structuredClone(floored);
+  unavailable.engineVersion = '0.11.10-alpha';
+  unavailable.output.worksheetText = unavailable.output.worksheetText.replace(
+    /^Structural:.*$/m,
+    'Structural: -',
+  );
+  unavailable.output.reportText = unavailable.output.reportText.replace(
+    'Structural Laboratory: 0 kWh',
+    'Structural Laboratory: -',
+  );
+  const before = structuredClone(unavailable);
+  assert.equal(graphValues(unavailable, 'JRE').w11, null);
+  assert.deepEqual(unavailable, before);
 });
 
 test('period labels show every included consumption date without treating the final reading as another day', () => {

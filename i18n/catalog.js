@@ -56,10 +56,15 @@ export const catalog = {
     '填写原始读数。电表 {meter} 扣除 {meters} 的用量。',
     'Isi reading asli. Pemakaian meter {meter} dikurangi {meters}.',
   ],
+  netZeroFloorHint: [
+    'Net usage is 0 if included usage is higher.',
+    '扣除用量高于本表用量时，净用量按 0 计。',
+    'Pemakaian bersih 0 jika pemakaian pengurang lebih besar.',
+  ],
   netUsageCalculation: [
-    'Net: {gross} - {deductions} = {net} {unit}',
-    '净用量：{gross} - {deductions} = {net} {unit}',
-    'Murni: {gross} - {deductions} = {net} {unit}',
+    'Net: {floor}{gross} - {deductions}{close} = {net} {unit}',
+    '净用量：{floor}{gross} - {deductions}{close} = {net} {unit}',
+    'Murni: {floor}{gross} - {deductions}{close} = {net} {unit}',
   ],
   ...draftMessages,
   updateAvailable: [

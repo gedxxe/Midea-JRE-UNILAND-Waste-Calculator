@@ -54,7 +54,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
                 t(row.netMeter === undefined ? 'netUsageHint' : 'netMeterUsageHint', {
                   meter: row.netMeter + 1,
                   meters: includedMeterNames(row.deductMeters),
-                }),
+                }) + (row.floorNetAtZero ? ' ' + t('netZeroFloorHint') : ''),
               ),
             );
           if (row.allowInactive) {
@@ -260,6 +260,8 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
         output.title +=
           '\n' +
           t('netUsageCalculation', {
+            floor: row.floorNetAtZero ? 'max(0, ' : '',
+            close: row.floorNetAtZero ? ')' : '',
             gross: formatNumber(row.grossEnergy, 8),
             deductions: row.deductions
               .map(

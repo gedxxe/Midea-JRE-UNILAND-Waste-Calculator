@@ -104,7 +104,7 @@ test('Structural subtraction preserves small differences before output rounding'
   assert.equal(value(calculateDraft(d), 'Structural Laboratory'), 0.000001);
 });
 
-test('Structural stays unavailable when either meter is missing or the net consumption is negative', () => {
+test('Structural stays unavailable for missing or invalid readings and floors only valid negative net usage', () => {
   for (const reading of ['', '-', 'bad', '9']) {
     const d = complete();
     set(d, 'Structural Laboratory', '1000', '1150');
@@ -118,10 +118,10 @@ test('Structural stays unavailable when either meter is missing or the net consu
   set(d, 'Structural Laboratory', '1000', '1010');
   set(d, 'Piping Building 1#', ['10', '1000', '1000'], ['11', '1000', '1000']);
   const result = calculateDraft(d);
-  assert.equal(value(result, 'Structural Laboratory'), null);
-  assert.equal(result.gapKWh, null);
-  assert.match(result.mainText, /20\. Structural Laboratory: -\n/);
-  assert.ok(result.issues.some((issue) => issue.code === 'NET_USAGE_NEGATIVE'));
+  assert.equal(value(result, 'Structural Laboratory'), 0);
+  assert.equal(result.gapKWh, 40);
+  assert.match(result.mainText, /20\. Structural Laboratory: 0 kWh/);
+  assert.ok(!result.issues.some((issue) => issue.code === 'NET_USAGE_NEGATIVE'));
   set(d, 'Structural Laboratory', '-', '1010');
   assert.equal(value(calculateDraft(d), 'Structural Laboratory'), null);
 });
