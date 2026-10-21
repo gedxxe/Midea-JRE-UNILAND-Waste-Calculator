@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.11-alpha - 2026-10-21
+
+- Set JRE Structural Laboratory net consumption to 0 when valid Piping Building 1# meter 1 usage after x40 exceeds its gross usage. Keep positive differences and apply the rule in all three electricity periods, worksheets, sub-meter/gap totals and new saved graphs.
+- Explain the zero rule in the table and show max(0, gross minus included usage) in the calculation detail. Preserve raw counters, missing/invalid checks, other equipment deductions and historical output. No layout or database migration.
+
 ## v0.11.10-alpha - 2026-10-21
 
 - Also exclude the direct kWh consumption of Nitrogen and Refrigerant Station from JRE Electricity Building 2# in every electricity period, while retaining the Station as a separate equipment row.

@@ -1307,3 +1307,40 @@ test('JRE report API recalculates Building 2 from exact scaled components, prese
     assert.deepEqual(kept.value.snapshot, saved);
   }
 });
+
+test('Structural zero rule is enforced by the server in every period without replacing raw observations or saved revisions', async () => {
+  const actor = await login(await seed());
+  for (const [index, draft] of reportPeriods('JRE').entries()) {
+    draft.rows[19].start[0] = index === 2 ? '1004' : '1000';
+    draft.rows[19].end[0] = index === 1 ? '1004' : '1010';
+    const raw = structuredClone(draft),
+      kind = draft.periodKind || 'daily';
+    const response = await call('/api/reports', { actor, body: { draft, totalEnergy: 999999 } });
+    assert.equal(response.status, 201);
+    const url = '/api/reports?id=' + response.value.id + '&kind=' + kind;
+    const saved = (await call(url, { actor })).value.snapshot;
+    assert.deepEqual(saved.draft.rows[19], raw.rows[19]);
+    assert.deepEqual(saved.draft.rows[15], raw.rows[15]);
+    assert.match(saved.output.reportText, /20\. Structural Laboratory: 0 kWh/);
+    assert.match(saved.output.worksheetText, /^Structural: 0$/m);
+    assert.doesNotMatch(saved.output.reportText, /included Piping Building 1# usage exceeds/);
+    const graph = await call('/api/graphs?plant=JRE&start=2026-09-01&end=2026-09-30&kind=' + kind, {
+      actor,
+    });
+    assert.equal(graph.status, 200);
+    assert.equal(graph.value.records[0].values.w11, 0);
+    for (const row of [15, 19]) {
+      const invalid = structuredClone(draft);
+      invalid.rows[row].end[0] = '';
+      const rejected = await call('/api/reports', {
+        actor,
+        body: { draft: invalid, id: response.value.id, baseRevision: 1 },
+      });
+      assert.equal(rejected.status, 422);
+      assert.equal(rejected.value.error, 'INCOMPLETE_REPORT');
+    }
+    const kept = (await call(url, { actor })).value;
+    assert.equal(kept.revision, 1);
+    assert.deepEqual(kept.snapshot, saved);
+  }
+});

@@ -293,6 +293,51 @@ test('JRE Window Vacuum Box and Piping meter 3 show separate net usage with alig
   expect(errors).toEqual([]);
 });
 
+test('Structural zero rule applies to every electricity period with original readings and translated guidance', async ({
+  page,
+}, info) => {
+  const { state, errors } = await setup(page);
+  await cell(page, 19, 'end').fill('1010');
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await cell(page, 19, 'end').fill('1004');
+  await page.locator('#search-meter').fill('Structural Laboratory');
+  const row = page.locator('tr[data-row="19"]');
+  for (const [mode, start, end, gross] of [
+    ['daily', '1000', '1010', '10.00'],
+    ['workingHours', '1000', '1004', '4.00'],
+    ['nightShift', '1004', '1010', '6.00'],
+  ]) {
+    await page.locator('#reading-mode').selectOption(mode);
+    const report = await page.locator('#report-preview').inputValue();
+    for (const [lang, hint] of [
+      ['zh-CN', '净用量按 0 计'],
+      ['id', 'pengurang lebih besar'],
+      ['en', 'included usage is higher'],
+    ]) {
+      await page.locator('#language-select').selectOption(lang);
+      await expect(row.locator('.equipment small')).toContainText(hint);
+      await expect(row.locator('.energy > span')).toHaveText('0');
+      await expect(page.locator('[data-meter-usage="19-0"] strong')).toHaveText(gross + ' kWh');
+      await expect(cell(page, 19, 'start')).toHaveValue(start);
+      await expect(cell(page, 19, 'end')).toHaveValue(end);
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+      await expect(page.locator('#copy-report')).toBeEnabled();
+      expect(report).toContain('20. Structural Laboratory: 0 kWh');
+    }
+  }
+  await cell(page, 19, 'end').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('structural-zero-all-periods.png') });
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  expect(state.workspace.drafts.JRE.rows[19].end).toEqual(['1010']);
+  expect(state.workspace.workingHours.JRE.rows[19].end).toEqual(['1004']);
+  expect(state.workspace.nightShifts.JRE.rows[19].start).toEqual(['1004']);
+  await page.reload();
+  await page.locator('#search-meter').fill('Structural Laboratory');
+  await expect(row.locator('.energy > span')).toHaveText('0');
+  expect(errors).toEqual([]);
+});
+
 test('layout 3 Piping upgrades with a blank third meter and old imports preserve only matching observations', async ({
   page,
 }) => {
