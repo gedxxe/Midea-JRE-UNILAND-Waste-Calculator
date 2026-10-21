@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.10-alpha - 2026-10-21
+
+- Also exclude the direct kWh consumption of Nitrogen and Refrigerant Station from JRE Electricity Building 2# in every electricity period, while retaining the Station as a separate equipment row.
+- Update the table explanation, sub-meter/gap totals and newly saved graph values. Preserve original cumulative readings, daily gas calculations and historical output; no layout or database migration.
+
 ## v0.11.9-alpha - 2026-10-20
 
 - Read graph utility values from the report body, excluding check notes that can repeat a gas label after an unusual stock movement.

@@ -114,9 +114,9 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
   await page.locator('#search-meter').fill('Electricity Building 2#');
   const row = page.locator('tr[data-row="18"]');
   for (const [mode, net, gross] of [
-    ['daily', '970.00', '3000.00'],
-    ['workingHours', '388.00', '1200.00'],
-    ['nightShift', '582.00', '1800.00'],
+    ['daily', '960.00', '3000.00'],
+    ['workingHours', '384.00', '1200.00'],
+    ['nightShift', '576.00', '1800.00'],
   ]) {
     await page.locator('#reading-mode').selectOption(mode);
     const report = await page.locator('#report-preview').inputValue();
@@ -125,7 +125,13 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
       await page.locator('#language-select').selectOption(language);
       await expect(row.locator('.energy > span')).toHaveText(net);
       await expect(page.locator('[data-meter-usage="18-0"] strong')).toHaveText(gross + ' kWh');
-      for (const name of ['Heat Exchanger', 'Outdoor', 'Window', 'Indoor'])
+      for (const name of [
+        'Heat Exchanger',
+        'Outdoor',
+        'Window',
+        'Indoor',
+        'Nitrogen and Refrigerant Station',
+      ])
         await expect(row.locator('.equipment small')).toContainText(name);
       await expect(row.locator('.equipment small')).toContainText(
         'Heat Exchanger, meters 1, 2, 3, 4',
@@ -145,6 +151,15 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
   await cell(page, 18, 'end').fill('3029');
   await expect(row.locator('.energy > span')).toHaveText('-');
   await cell(page, 18, 'end').fill('4000');
+  await page.locator('#search-meter').fill('Nitrogen and Refrigerant Station');
+  await cell(page, 10, 'end').fill('');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#search-meter').fill('Electricity Building 2#');
+  await expect(row.locator('.energy > span')).toHaveText('-');
+  await page.locator('#search-meter').fill('Nitrogen and Refrigerant Station');
+  await cell(page, 10, 'end').fill('1010');
+  await page.locator('#search-meter').fill('Electricity Building 2#');
+  await expect(row.locator('.energy > span')).toHaveText('960.00');
   await page.locator('#search-meter').fill('Indoor');
   await cell(page, 1, 'end', 1).fill('');
   await expect(page.locator('#copy-report')).toBeDisabled();

@@ -23,12 +23,13 @@ function entered(make = createDraft) {
   draft.rows[3].end = ['1005', '1001', '1002', '1003', '1004', '1000'];
   draft.rows[5].start = ['20', '100', '200', '300'];
   draft.rows[5].end = ['21.25', '110', '220', '330'];
+  draft.rows[10].end[0] = '1075';
   draft.rows[18].end[0] = '2000';
   return draft;
 }
 const building2 = (result) => result.calculatedRows[18];
 
-test('JRE Building 2 deducts converted HE and only the four specified branch meters in all periods', () => {
+test('JRE Building 2 deducts converted HE, specified branch meters and direct Nitrogen/Refrigerant Station in all periods', () => {
   for (const make of [createDraft, createWorkingHoursDraft, createNightShiftDraft]) {
     const draft = entered(make),
       before = structuredClone(draft),
@@ -37,17 +38,17 @@ test('JRE Building 2 deducts converted HE and only the four specified branch met
     assert.equal(result.success, true);
     assert.equal(result.calculatedRows[5].totalEnergy, 110);
     assert.equal(row.grossEnergy, 1000);
-    assert.equal(row.deductedEnergy, 630);
-    assert.equal(row.totalEnergy, 370);
+    assert.equal(row.deductedEnergy, 705);
+    assert.equal(row.totalEnergy, 295);
     assert.equal(row.meters[0].energy, 1000);
     assert.deepEqual(
       row.deductions.map((item) => item.energy),
-      [50, 10, 20, 30, 160, 120, 160, 80],
+      [50, 10, 20, 30, 160, 120, 160, 80, 75],
     );
     assert.equal(result.totalDirectEnergy, 4000);
     assert.equal(result.subAreasSumKWh, 1528);
     assert.equal(result.gapKWh, -2472);
-    assert.match(result.reportSectionText, /19\. Electricity Building 2#: 370\.00 kWh/);
+    assert.match(result.reportSectionText, /19\. Electricity Building 2#: 295\.00 kWh/);
     assert.equal(result.worksheet.values.length, 19);
     assert.equal(result.worksheet.values[5], 110);
     assert.deepEqual(draft, before);
@@ -59,7 +60,7 @@ test('JRE Building 2 deducts converted HE and only the four specified branch met
       draft.rows.map((item) => item.end),
     );
     const saved = reportSnapshot(draft);
-    assert.equal(graphValues(saved, 'JRE').r18, 370);
+    assert.equal(graphValues(saved, 'JRE').r18, 295);
     assert.deepEqual(saved.draft.rows[18], before.rows[18]);
   }
 });
@@ -74,6 +75,7 @@ test('Building 2 needs every included component, with no invented zero or partia
     [3, 3],
     [3, 4],
     [1, 1],
+    [10, 0],
   ]) {
     for (const value of ['', '-', 'bad', '0']) {
       const draft = entered();
@@ -103,21 +105,21 @@ test('missing unrelated meters never invalidate valid Building 2 component deduc
   ]) {
     const draft = entered();
     draft.rows[ri].end[mi] = '';
-    assert.equal(building2(calculateDraft(draft)).totalEnergy, 370);
+    assert.equal(building2(calculateDraft(draft)).totalEnergy, 295);
   }
   const draft = entered();
   draft.rows[3].end[5] = '1001';
   draft.rows[15].end[2] = '1040';
-  assert.equal(building2(calculateDraft(draft)).totalEnergy, 370);
+  assert.equal(building2(calculateDraft(draft)).totalEnergy, 295);
 });
 
 test('Building 2 zero is valid while negative net and its own unavailable raw reading stay unavailable', () => {
   const draft = entered();
-  draft.rows[18].end[0] = '1630';
+  draft.rows[18].end[0] = '1705';
   const zero = calculateDraft(draft);
   assert.equal(building2(zero).totalEnergy, 0);
   assert.match(zero.reportSectionText, /19\. Electricity Building 2#: 0 kWh/);
-  draft.rows[18].end[0] = '1629.999999';
+  draft.rows[18].end[0] = '1704.999999';
   const negative = calculateDraft(draft);
   assert.equal(building2(negative).totalEnergy, null);
   assert.equal(negative.gapKWh, null);
@@ -137,19 +139,38 @@ test('Building 2 applies deductions at scaled precision before rounding near the
     row.end.fill('0');
   });
   draft.rows[5].end[0] = '0,000001';
-  draft.rows[18].start[0] = '999999999999.999959';
+  draft.rows[10].end[0] = '0.000001';
+  draft.rows[18].start[0] = '999999999999.999958';
   draft.rows[18].end[0] = '1000000000000';
   assert.equal(building2(calculateDraft(draft)).totalEnergy, 0.000001);
 });
 
 test('historical Building 2 output and graph values remain immutable after the new deduction rule', () => {
   const saved = reportSnapshot(entered());
-  saved.engineVersion = '0.11.6-alpha';
+  saved.engineVersion = '0.11.9-alpha';
   saved.output.reportText = saved.output.reportText.replace(
+    '19. Electricity Building 2#: 295.00 kWh',
     '19. Electricity Building 2#: 370.00 kWh',
-    '19. Electricity Building 2#: 1000.00 kWh',
   );
   const before = structuredClone(saved);
-  assert.equal(graphValues(saved, 'JRE').r18, 1000);
+  assert.equal(graphValues(saved, 'JRE').r18, 370);
   assert.deepEqual(saved, before);
+});
+
+test('Station electricity is deducted once, remains a separate row and never uses the Nitrogen gas amount', () => {
+  const draft = entered();
+  draft.rows[10].end[0] = '1000';
+  draft.utilities[2] = { value: '77.5', note: '' };
+  const zero = calculateDraft(draft);
+  assert.equal(building2(zero).totalEnergy, 370);
+  draft.rows[10].end[0] = '1025';
+  const raw = structuredClone(draft);
+  const result = calculateDraft(draft);
+  assert.equal(result.calculatedRows[10].totalEnergy, 25);
+  assert.equal(building2(result).totalEnergy, 345);
+  assert.equal(result.subAreasSumKWh, zero.subAreasSumKWh);
+  assert.equal(result.totalDirectEnergy, zero.totalDirectEnergy);
+  assert.match(result.reportSectionText, /11\. Nitrogen and Refrigerant Station: 25\.00 kWh/);
+  assert.match(result.reportSectionText, /- Nitrogen: 77\.5 Kg/);
+  assert.deepEqual(draft, raw);
 });
