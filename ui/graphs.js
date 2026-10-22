@@ -1,3 +1,6 @@
+import { monthRange, adjacentMonth } from '../graph-month.js';
+import { renderMonthlyTable } from './graph-matrix.js';
+import { attachGraphInteraction } from './graph-interaction.js';
 import { periodKind } from '../reading-period.js';
 import { $, node } from './dom.js';
 import { getLanguage, t } from '../i18n/index.js';
@@ -21,7 +24,9 @@ export function createGraphs({ current, request, toast }) {
     loading = false,
     layouts = {},
     status = '',
-    animateNext = false;
+    animateNext = false,
+    view = 'charts',
+    visibility = new WeakMap();
   const kind = () => $('graph-kind').value;
   const key = (mode = kind(), version = 2) =>
     'midea_graph_layout_v' + version + '_' + user.id + (mode !== 'daily' ? '_' + mode : '');
@@ -59,6 +64,11 @@ export function createGraphs({ current, request, toast }) {
     status = '';
     layouts = { daily: defaults(), workingHours: defaults(), nightShift: defaults() };
     animateNext = false;
+    view = 'charts';
+    visibility = new WeakMap();
+    $('graph-month').value = '';
+    $('graph-search').value = '';
+    $('graph-matrix').replaceChildren();
     $('graph-kind').value = 'daily';
     $('graph-department').replaceChildren();
     $('graphs-dialog').close();
@@ -99,9 +109,11 @@ export function createGraphs({ current, request, toast }) {
   }
   function render() {
     if (!$('graphs-dialog').open) return;
+    updateView();
     $('graph-refresh').disabled = loading;
     $('graph-mode-note').hidden = kind() === 'daily';
     $('graph-mode-note').textContent = t('graphPeriodHint');
+    $('graph-status').hidden = view === 'table' && Boolean(data) && !loading && !status;
     $('graph-status').textContent = loading
       ? t('graphLoading')
       : status
@@ -116,12 +128,16 @@ export function createGraphs({ current, request, toast }) {
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
         ['graphSuperseded', data.records.filter((r) => r.superseded).length],
       ])
-        if (count)
+        if (count && !(view === 'table' && key === 'graphMulti'))
           $('graph-warnings').append(
             node('p', t(key, { count }), key === 'graphMulti' ? 'notice' : 'notice warning'),
           );
     const department = $('graph-department').value || 'all';
-    const available = new Set(activeLayouts()[factory()].map((c) => graphDepartment(factory(), c)));
+    const available = new Set(
+      view === 'table'
+        ? GRAPH_METRICS[factory()].map((m) => m.department)
+        : activeLayouts()[factory()].map((c) => graphDepartment(factory(), c)),
+    );
     $('graph-department').replaceChildren();
     for (const name of ['all', ...Object.keys(DEPARTMENTS).filter((name) => available.has(name))]) {
       const option = node('option', departmentLabel(name, getLanguage()));
@@ -129,9 +145,93 @@ export function createGraphs({ current, request, toast }) {
       $('graph-department').append(option);
     }
     $('graph-department').value = available.has(department) ? department : 'all';
-    renderCards(Boolean(data && animateNext));
+    if (view === 'table') renderMatrix();
+    else renderCards(Boolean(data && animateNext));
     if (data) animateNext = false;
   }
+  function updateView() {
+    const table = view === 'table';
+    $('graphs-dialog').classList.toggle('graph-table-view', table);
+    $('graph-view-charts').setAttribute('aria-pressed', !table);
+    $('graph-view-table').setAttribute('aria-pressed', table);
+    $('graph-month-controls').hidden = !table;
+    $('graph-search-label').hidden = !table;
+    $('graph-layout-tools').hidden = table;
+    $('graph-cards').hidden = table;
+    $('graph-matrix').hidden = !table;
+    document.querySelectorAll('[data-graph-date]').forEach((label) => (label.hidden = table));
+    document.querySelector('.graph-filter-bar').classList.toggle('matrix-mode', table);
+  }
+  function renderMatrix() {
+    $('graph-cards').replaceChildren();
+    $('graph-matrix').replaceChildren();
+    if (data)
+      $('graph-matrix').append(
+        renderMonthlyTable({
+          plant: factory(),
+          month: $('graph-month').value,
+          records: data.records,
+          department: $('graph-department').value || 'all',
+          search: $('graph-search').value,
+        }),
+      );
+    else
+      $('graph-matrix').append(
+        node(
+          'p',
+          loading ? t('graphLoading') : status ? t(status) : t('graphEmpty'),
+          'graph-empty-state',
+        ),
+      );
+  }
+  function changeMonth() {
+    const range = monthRange($('graph-month').value);
+    if (!range) {
+      sequence++;
+      data = null;
+      loading = false;
+      status = 'graphRange';
+      render();
+      return;
+    }
+    $('graph-start').value = range.start;
+    $('graph-end').value = range.end;
+    void load();
+  }
+  for (const next of ['charts', 'table'])
+    $('graph-view-' + next).addEventListener('click', () => {
+      if (view === next) return;
+      view = next;
+      if (view === 'table') {
+        const month = $('graph-start').value.slice(0, 7) || current().startDate?.slice(0, 7);
+        $('graph-month').value = monthRange(month) ? month : '';
+        const range = monthRange($('graph-month').value);
+        if (
+          !range ||
+          range.start !== $('graph-start').value ||
+          range.end !== $('graph-end').value
+        ) {
+          changeMonth();
+          return;
+        }
+      }
+      render();
+    });
+  $('graph-month').addEventListener('change', changeMonth);
+  for (const [id, offset] of [
+    ['graph-month-prev', -1],
+    ['graph-month-next', 1],
+  ])
+    $(id).addEventListener('click', () => {
+      const month = adjacentMonth($('graph-month').value, offset);
+      if (month) {
+        $('graph-month').value = month;
+        changeMonth();
+      }
+    });
+  $('graph-search').addEventListener('input', () => {
+    if (view === 'table') renderMatrix();
+  });
   async function load() {
     if (!user) return;
     const plant = factory(),
@@ -172,6 +272,7 @@ export function createGraphs({ current, request, toast }) {
     }
   }
   function renderCards(animate = false) {
+    $('graph-matrix').replaceChildren();
     const plant = factory();
     $('graph-cards').replaceChildren();
     (activeLayouts()[plant] || []).forEach((config, index) => {
@@ -180,6 +281,8 @@ export function createGraphs({ current, request, toast }) {
         graphDepartment(plant, config) !== $('graph-department').value
       )
         return;
+      const hidden = visibility.get(config) || new Set();
+      visibility.set(config, hidden);
       const card = node('article', undefined, 'graph-card' + (animate ? ' graph-enter' : ''));
       card.dataset.chartIndex = index;
       const controls = node('details', undefined, 'graph-settings');
@@ -421,15 +524,31 @@ export function createGraphs({ current, request, toast }) {
           config.series.length && config[graphTitleField(getLanguage())]?.trim() && axisValid;
         const usable = data?.records.some(
           (r) =>
-            !r.overlap && !r.superseded && chosen.some((m) => Number.isFinite(r.values[m.key])),
+            !r.overlap &&
+            !r.superseded &&
+            chosen.some((m) => !hidden.has(m.key) && Number.isFinite(r.values[m.key])),
         );
         exports.forEach((b) => (b.disabled = !valid || !usable || loading));
-        prompt.textContent = !axisValid ? t('graphAxisInvalid') : valid ? '' : t('graphSelect');
+        prompt.textContent = !axisValid
+          ? t('graphAxisInvalid')
+          : !valid
+            ? t('graphSelect')
+            : config.series.every((key) => hidden.has(key))
+              ? t('graphAllHidden')
+              : '';
         frame.replaceChildren();
         svg = null;
         if (data && axisValid) {
-          svg = renderGraph(config, { ...data, kind: kind() });
-          frame.append(svg);
+          const presentation = { ...config, plant, hiddenSeries: [...hidden] };
+          svg = renderGraph(presentation, { ...data, kind: kind() });
+          attachGraphInteraction(frame, svg, presentation, data.records, (key) => {
+            if (hidden.has(key)) hidden.delete(key);
+            else hidden.add(key);
+            draw();
+            frame
+              .querySelector('[data-graph-toggle="' + key + '"]')
+              ?.focus({ preventScroll: true });
+          });
         } else if (!data)
           frame.append(
             node('p', loading ? t('graphLoading') : status ? t(status) : t('graphEmpty')),
@@ -486,12 +605,23 @@ export function createGraphs({ current, request, toast }) {
       $('graph-end').value = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
     }
     animateNext = true;
+    if (view === 'table') {
+      const month = $('graph-start').value.slice(0, 7),
+        range = monthRange(month);
+      if (range) {
+        $('graph-month').value = month;
+        $('graph-start').value = range.start;
+        $('graph-end').value = range.end;
+      }
+    }
     $('graph-layout-tools').open = false;
     $('graph-about').open = false;
     $('graphs-dialog').showModal();
     void load();
   });
-  $('graph-department').addEventListener('change', () => renderCards());
+  $('graph-department').addEventListener('change', () =>
+    view === 'table' ? renderMatrix() : renderCards(),
+  );
   $('graph-refresh').addEventListener('click', () => void load());
   for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end'])
     $(id).addEventListener('change', () => void load());
@@ -522,12 +652,14 @@ export function createGraphs({ current, request, toast }) {
     card.scrollIntoView({ block: 'start' });
   });
   $('graphs-dialog').addEventListener('close', () => {
+    visibility = new WeakMap();
     sequence++;
     data = null;
     loading = false;
     $('graph-cards').replaceChildren();
     $('graph-status').textContent = '';
     $('graph-warnings').replaceChildren();
+    $('graph-matrix').replaceChildren();
   });
   return {
     reset,

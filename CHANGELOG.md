@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.15-alpha - 2026-10-22
+
+- Add a localized monthly consumption matrix for JRE and UNILAND, with month/year headings, full date headers, frozen equipment names, department/search filters and one cell for each combined period. Keep missing values distinct from zero and preserve full totals across month boundaries.
+- Refresh the monitoring surfaces and add bounded smooth chart paths, shared pointer/touch/keyboard tooltips, crosshairs and temporary legend visibility. Preserve saved values, gaps, static high-resolution exports and reduced motion.
+- Reuse the existing owner-scoped graph endpoint without database, account, calculation or dependency changes.
+
 ## v0.11.14-alpha - 2026-10-22
 
 - Simplify graph viewing with concise titles, a department filter, one-click image copy and a PNG/SVG download menu. Keep workbook groupings, all period labels, raw data gaps and optional scale controls.

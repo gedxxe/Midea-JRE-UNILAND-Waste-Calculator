@@ -76,6 +76,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.12 adds shared shift utilities, compatibility guards and translations (~10.5 kB), without dependencies.
 // v0.11.13 adds one JRE meter and layout/import compatibility (~0.5 kB), without dependencies.
 // v0.11.14 adds trilingual display labels, layout recovery and compact graph controls (~16.5 kB); no dependencies.
-assert.ok(size < 513000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.15 adds calendar matrix, bounded curves and accessible graph interactions; no dependencies.
+assert.ok(size < 550000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);
