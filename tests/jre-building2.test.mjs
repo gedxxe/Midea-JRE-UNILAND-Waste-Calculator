@@ -43,7 +43,7 @@ test('JRE Building 2 deducts converted HE, specified branch meters and direct Ni
     assert.equal(row.meters[0].energy, 1000);
     assert.deepEqual(
       row.deductions.map((item) => item.energy),
-      [50, 10, 20, 30, 160, 120, 160, 80, 75],
+      [50, 10, 20, 30, 160, 120, 160, 80, 75, 0],
     );
     assert.equal(result.totalDirectEnergy, 4000);
     assert.equal(result.subAreasSumKWh, 1528);
@@ -76,6 +76,7 @@ test('Building 2 needs every included component, with no invented zero or partia
     [3, 4],
     [1, 1],
     [10, 0],
+    [30, 0],
   ]) {
     for (const value of ['', '-', 'bad', '0']) {
       const draft = entered();
@@ -140,7 +141,8 @@ test('Building 2 applies deductions at scaled precision before rounding near the
   });
   draft.rows[5].end[0] = '0,000001';
   draft.rows[10].end[0] = '0.000001';
-  draft.rows[18].start[0] = '999999999999.999958';
+  draft.rows[30].end[0] = '0.000001';
+  draft.rows[18].start[0] = '999999999999.999957';
   draft.rows[18].end[0] = '1000000000000';
   assert.equal(building2(calculateDraft(draft)).totalEnergy, 0.000001);
 });

@@ -49,7 +49,7 @@ test('JRE Vacuum Box, Piping 3 and Repair use the requested factors in every ele
     assert.equal(report.totalDirectEnergy, 1000);
     assert.equal(report.subAreasSumKWh, 325);
     assert.equal(report.gapKWh, -675);
-    assert.match(report.reportSectionText, /Sub-meter 2-30: 325.00 kWh/);
+    assert.match(report.reportSectionText, /Sub-meter 2-31: 325.00 kWh/);
     assert.match(report.mainText, /30\. Area Repair Injection Molding: 15.00 kWh/);
     assert.equal(report.worksheet.values.length, 19);
     assert.equal(report.worksheet.values[4], 70);
@@ -121,8 +121,8 @@ test('layouts 1 and 2 preserve all old raw strings and new blank slots across al
         JSON.stringify({ version: 4, drafts: { JRE: old, UNILAND: createDraft('UNILAND') } }),
       ).JRE;
     assert.deepEqual(old, before);
-    assert.equal(next.meterLayout, 4);
-    assert.equal(next.rows.length, 30);
+    assert.equal(next.meterLayout, 5);
+    assert.equal(next.rows.length, 31);
     assert.deepEqual(next.rows[4].start, [old.rows[4].start[0], '']);
     assert.deepEqual(next.rows[29].end, ['']);
     assert.deepEqual(next.water, old.water);
@@ -133,7 +133,7 @@ test('layouts 1 and 2 preserve all old raw strings and new blank slots across al
     assert.deepEqual(migrateMeterLayout(next), next);
     assert.equal(calculateDraft(next).success, false);
     assert.throws(() => reportSnapshot(old), /METER_LAYOUT_CHANGED/);
-    assert.throws(() => reportSnapshot({ ...old, meterLayout: 4 }), /INVALID_REPORT/);
+    assert.throws(() => reportSnapshot({ ...old, meterLayout: 5 }), /INVALID_REPORT/);
   }
   const old = legacyDraft(),
     next = migrateMeterLayout(old);
@@ -147,7 +147,7 @@ test('complete older raw imports identify supplied cells; mixed or incomplete la
       const raw = legacyText(old, side),
         result = parseReading(raw, 'JRE');
       assert.equal(result.success, true);
-      assert.equal(result.values.length, 30);
+      assert.equal(result.values.length, 31);
       assert.deepEqual(result.suppliedMeters[4], [true, false]);
       assert.deepEqual(result.suppliedMeters[29], [false]);
       assert.deepEqual(
@@ -174,9 +174,9 @@ test('complete older raw imports identify supplied cells; mixed or incomplete la
       );
     }
   const template = formatBlankReadingTemplate('JRE');
-  assert.equal([...template.matchAll(/____/g)].length, 60);
+  assert.equal([...template.matchAll(/____/g)].length, 61);
   assert.match(template, /5\. Dehumidifier: ____ \+ ____ \(Ratio 40\)/);
-  assert.match(template, /30\. Area Repair Injection Molding: ____$/);
+  assert.match(template, /30\. Area Repair Injection Molding: ____\n/);
 });
 test('saved old graph output is read as approved, with no fabricated repair series or net recalculation', () => {
   const d = entered(),

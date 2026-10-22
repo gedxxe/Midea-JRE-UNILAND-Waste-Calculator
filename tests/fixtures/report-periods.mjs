@@ -25,7 +25,7 @@ export function reportPeriods(plant = 'JRE', date = '2026-09-16') {
     after.rows[15].end[2] = '1400';
     night.rows[15].start[2] = '1400';
     night.rows[15].end[2] = '2000';
-    // Building 2 includes HE, selected Indoor/Outdoor/Window meters and the Station.
+    // Building 2 includes HE, selected Indoor/Outdoor/Window meters the Station and Forklift Building 2.
     daily.rows[18].end[0] = '4000';
     after.rows[18].end[0] = '2200';
     night.rows[18].start[0] = '2200';

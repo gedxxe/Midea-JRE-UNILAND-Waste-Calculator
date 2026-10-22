@@ -80,7 +80,7 @@ export function parseReading(text, plantKey) {
     issues.push({ level: 'ERROR', code: 'IMPORT_TIME', message: 'Paste only one reading time.' });
   const olderJre =
     plantKey === 'JRE' &&
-    !entries.some((entry) => entry.ri === 29) &&
+    !entries.some((entry) => entry.ri >= 29) &&
     entries.filter((entry) => entry.ri === 4).length === 1 &&
     entries.find((entry) => entry.ri === 4).expr.split('+').length === 1;
   const legacy =
@@ -95,6 +95,7 @@ export function parseReading(text, plantKey) {
   const layout3 =
     plantKey === 'JRE' &&
     !olderJre &&
+    !entries.some((entry) => entry.ri === 30) &&
     entries.filter((entry) => entry.ri === 15).length === 1 &&
     entries.find((entry) => entry.ri === 15).expr.split('+').length === 2;
   let suppliedMeters = schema.rows.map((row) => row.factors.map(() => false));
@@ -158,7 +159,12 @@ export function parseReading(text, plantKey) {
     });
   }
   schema.rows.forEach((row, ri) => {
-    if (!seen.has(ri) && !row.optionalImport && !(olderJre && ri === 29))
+    if (
+      !seen.has(ri) &&
+      !row.optionalImport &&
+      !(olderJre && ri === 29) &&
+      !(plantKey === 'JRE' && ri === 30)
+    )
       issues.push({
         level: 'ERROR',
         code: 'IMPORT_MISSING',

@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.13-alpha - 2026-10-22
+
+- Add JRE Charging Forklift Building 2 as a direct kWh Start/End pair in all three periods. Subtract its consumption from Electricity Building 2# alongside existing deductions, retaining the separate Forklift row and graph series without double counting.
+- Upgrade old JRE drafts to layout 5 with the new pair blank; preserve exact-date/time observations during older text imports. Keep raw exports/templates current, reject stale layout saves and retain saved historical output and worksheet columns. No SQL migration or new dependency.
+
 ## v0.11.12-alpha - 2026-10-22
 
 - Record gas, Water and existing manual utilities separately in 24 HOURS, AFTER PRODUCTION and NIGHT SHIFT for both factories. Display actual period timestamps, apply the existing tank/refill engine and water subtraction, and include entered values in each selected report section and saved graph period.

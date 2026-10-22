@@ -1,5 +1,5 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
-import { layout2Draft, layout3JreDraft } from '../fixtures/legacy-layout.mjs';
+import { layout2Draft, layout3JreDraft, layout4JreDraft } from '../fixtures/legacy-layout.mjs';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { selectReport } from '../../report-options.js';
 import { shareElectricityEdits } from '../../observations.js';
@@ -1225,7 +1225,7 @@ test('stale JRE clients cannot remove new meter fields from any electricity peri
   const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
   assert.equal(saved.status, 200);
   for (const collection of ['drafts', 'workingHours', 'nightShifts'])
-    for (const legacy of [layout2Draft, layout3JreDraft]) {
+    for (const legacy of [layout2Draft, layout3JreDraft, layout4JreDraft]) {
       const old = structuredClone(workspace);
       old[collection].JRE = legacy(old[collection].JRE);
       const rejected = await call('/api/drafts', {
@@ -1257,7 +1257,7 @@ test('JRE report API stores raw Piping meter 3 while recalculating net Window an
     );
     assert.equal(loaded.status, 200);
     const saved = loaded.value.snapshot;
-    assert.equal(saved.draft.meterLayout, 4);
+    assert.equal(saved.draft.meterLayout, 5);
     assert.deepEqual(saved.draft.rows[15], draft.rows[15]);
     assert.match(
       saved.output.reportText,
@@ -1291,9 +1291,15 @@ test('JRE report API recalculates Building 2 from exact scaled components, prese
     assert.deepEqual(saved.draft.rows[10], draft.rows[10]);
     assert.match(
       saved.output.reportText,
-      new RegExp('19\\. Electricity Building 2#: ' + [960, 384, 576][index] + '\\.00 kWh'),
+      new RegExp('19\\. Electricity Building 2#: ' + [950, 380, 570][index] + '\\.00 kWh'),
     );
-    for (const source of [5, 10]) {
+    assert.deepEqual(saved.draft.rows[30], draft.rows[30]);
+    const graph = await call(
+      '/api/graphs?plant=JRE&start=2026-09-01&end=2026-09-30&kind=' + (draft.periodKind || 'daily'),
+      { actor },
+    );
+    assert.equal(graph.value.records[0].values.r30, [10, 4, 6][index]);
+    for (const source of [5, 10, 30]) {
       const invalid = structuredClone(draft);
       invalid.rows[source].end[0] = '';
       const rejected = await call('/api/reports', {

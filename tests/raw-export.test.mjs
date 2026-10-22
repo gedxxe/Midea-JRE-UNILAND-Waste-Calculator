@@ -79,7 +79,7 @@ test('JRE exports the chosen raw column, ratios and date without applying consum
     output.text.includes('28. Utility Area: 125,250000 (Ratio 1000) + 125,250000 (Ratio 40)'),
   );
   assert.ok(output.text.includes('29. Heater LPG: 125,250000 (Ratio 40)\n'));
-  assert.ok(output.text.endsWith('30. Area Repair Injection Molding: 125,250000'));
+  assert.ok(output.text.endsWith('31. Charging Forklift Building 2: 125,250000'));
   assert.equal(output.text.includes('EXCLUDED UTILITY'), false);
   assert.equal(output.text.includes('not a number'), false);
   assert.deepEqual(draft, before);
