@@ -129,7 +129,7 @@ test('layout 3 upgrades preserve incomplete observations, old raw values and cur
     old.water = { start: '1.', end: '' };
     const before = structuredClone(old),
       next = migrateMeterLayout(old);
-    assert.equal(next.meterLayout, 4);
+    assert.equal(next.meterLayout, 5);
     assert.deepEqual(next.rows[15].start, ['10', '100,', '']);
     assert.deepEqual(next.rows[15].end, ['10.5', '107', '']);
     assert.deepEqual(next.rows[3], old.rows[3]);
@@ -144,7 +144,7 @@ test('layout 3 upgrades preserve incomplete observations, old raw values and cur
   }
 });
 
-test('old complete JRE imports omit only the new Piping meter and templates use 60 raw slots', () => {
+test('old complete JRE imports omit only the new Piping meter and templates use 61 raw slots', () => {
   const old = layout3JreDraft(entered());
   for (const side of ['start', 'end']) {
     const parsed = parseReading(legacyText(old, side), 'JRE');
@@ -153,7 +153,7 @@ test('old complete JRE imports omit only the new Piping meter and templates use 
     assert.deepEqual(parsed.values[15], [...old.rows[15][side], '']);
   }
   const template = formatBlankReadingTemplate('JRE');
-  assert.equal([...template.matchAll(/____/g)].length, 60);
+  assert.equal([...template.matchAll(/____/g)].length, 61);
   assert.match(template, /16\. Piping Building 1#: ____ \(Ratio 40\) \+ ____ \+ ____/);
   assert.match(template, /4\. Window: .* \+ ____ \(Ratio 40\)\n/);
 });

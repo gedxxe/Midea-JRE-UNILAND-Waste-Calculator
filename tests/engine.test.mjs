@@ -38,12 +38,12 @@ function raw(draft, side = 'start') {
 }
 
 test('fixed schemas match every meter in the supplied templates', () => {
-  assert.equal(PLANT_SCHEMAS.JRE.rows.length, 30);
+  assert.equal(PLANT_SCHEMAS.JRE.rows.length, 31);
   assert.equal(PLANT_SCHEMAS.UNILAND.rows.length, 34);
   const jre = PLANT_SCHEMAS.JRE.rows;
   assert.deepEqual(
     jre.map((r) => r.factors.length),
-    [1, 2, 2, 6, 2, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1],
+    [1, 2, 2, 6, 2, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1],
   );
   assert.deepEqual(jre[17].factors, [1000]);
   assert.deepEqual(jre[27].factors, [1000, 40]);

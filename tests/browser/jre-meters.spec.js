@@ -1,6 +1,11 @@
 import { test, expect } from './fixtures.js';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
-import { layout2Draft, layout3JreDraft, legacyText } from '../fixtures/legacy-layout.mjs';
+import {
+  layout2Draft,
+  layout3JreDraft,
+  layout4JreDraft,
+  legacyText,
+} from '../fixtures/legacy-layout.mjs';
 const cell = (page, row, side = 'start', meter = 0) =>
   page.locator(`.meter-input[data-row="${row}"][data-side="${side}"][data-meter="${meter}"]`);
 async function setup(page, legacy = false) {
@@ -17,9 +22,9 @@ async function setup(page, legacy = false) {
   };
   if (legacy)
     for (const collection of ['drafts', 'workingHours', 'nightShifts'])
-      state.workspace[collection].JRE = (legacy === 3 ? layout3JreDraft : layout2Draft)(
-        state.workspace[collection].JRE,
-      );
+      state.workspace[collection].JRE = (
+        legacy === 4 ? layout4JreDraft : legacy === 3 ? layout3JreDraft : layout2Draft
+      )(state.workspace[collection].JRE);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
@@ -114,9 +119,9 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
   await page.locator('#search-meter').fill('Electricity Building 2#');
   const row = page.locator('tr[data-row="18"]');
   for (const [mode, net, gross] of [
-    ['daily', '960.00', '3000.00'],
-    ['workingHours', '384.00', '1200.00'],
-    ['nightShift', '576.00', '1800.00'],
+    ['daily', '950.00', '3000.00'],
+    ['workingHours', '380.00', '1200.00'],
+    ['nightShift', '570.00', '1800.00'],
   ]) {
     await page.locator('#reading-mode').selectOption(mode);
     const report = await page.locator('#report-preview').inputValue();
@@ -131,6 +136,7 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
         'Window',
         'Indoor',
         'Nitrogen and Refrigerant Station',
+        'Charging Forklift Building 2',
       ])
         await expect(row.locator('.equipment small')).toContainText(name);
       await expect(row.locator('.equipment small')).toContainText(
@@ -159,7 +165,7 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
   await page.locator('#search-meter').fill('Nitrogen and Refrigerant Station');
   await cell(page, 10, 'end').fill('1010');
   await page.locator('#search-meter').fill('Electricity Building 2#');
-  await expect(row.locator('.energy > span')).toHaveText('960.00');
+  await expect(row.locator('.energy > span')).toHaveText('950.00');
   await page.locator('#search-meter').fill('Indoor');
   await cell(page, 1, 'end', 1).fill('');
   await expect(page.locator('#copy-report')).toBeDisabled();
@@ -169,6 +175,72 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
   expect(state.workspace.drafts.JRE.rows[18].end[0]).toBe('4000');
   expect(state.workspace.drafts.JRE.rows[1].end[1]).toBe('');
+  expect(errors).toEqual([]);
+});
+
+test('layout 4 adds a blank direct Forklift meter and shares only exact observations across periods and old imports', async ({
+  page,
+}, info) => {
+  const { state, errors } = await setup(page, 4);
+  await page.locator('#search-meter').fill('Charging Forklift Building 2');
+  await expect(cell(page, 30)).toHaveValue('');
+  await expect(cell(page, 30, 'end')).toHaveValue('');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await cell(page, 30).fill('200');
+  await cell(page, 30, 'end').fill('225');
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await expect(cell(page, 30)).toHaveValue('200');
+  await expect(cell(page, 30, 'end')).toHaveValue('');
+  await cell(page, 30, 'end').fill('210');
+  for (const [mode, start, end, usage, net] of [
+    ['daily', '200', '225', '25.00', '935.00'],
+    ['workingHours', '200', '210', '10.00', '374.00'],
+    ['nightShift', '210', '225', '15.00', '561.00'],
+  ]) {
+    await page.locator('#reading-mode').selectOption(mode);
+    const report = await page.locator('#report-preview').inputValue();
+    expect(report).toContain('31. Charging Forklift Building 2: ' + usage + ' kWh');
+    expect(report).toContain('19. Electricity Building 2#: ' + net + ' kWh');
+    for (const language of ['zh-CN', 'id', 'en']) {
+      await page.locator('#language-select').selectOption(language);
+      await expect(cell(page, 30)).toHaveValue(start);
+      await expect(cell(page, 30, 'end')).toHaveValue(end);
+      await expect(page.locator('tr[data-row="30"] .ratio strong')).toContainText(
+        language === 'zh-CN' ? '直接读数' : language === 'id' ? 'Langsung' : 'Direct',
+      );
+      await expect(page.locator('[data-meter-usage="30-0"] strong')).toHaveText(usage + ' kWh');
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+      await expect(page.locator('#copy-report')).toBeEnabled();
+    }
+  }
+  await cell(page, 30).scrollIntoViewIfNeeded();
+  const startBox = await cell(page, 30).boundingBox(),
+    endBox = await cell(page, 30, 'end').boundingBox();
+  expect(Math.abs(startBox.y - endBox.y)).toBeLessThan(2);
+  await page.screenshot({ path: info.outputPath('jre-forklift-building2.png') });
+  await page.locator('#reading-mode').selectOption('daily');
+  const old = layout4JreDraft(reportPeriods()[0]);
+  const apply = async () => {
+    await page.locator('#open-import').click();
+    await page.locator('#import-side').selectOption('end');
+    await page.locator('#import-text').fill(legacyText(old, 'end'));
+    await page.locator('#apply-import').click();
+    await expect(page.locator('#import-dialog')).toBeHidden();
+  };
+  await apply();
+  await expect(cell(page, 30, 'end')).toHaveValue('225');
+  old.endDate = '2026-09-18';
+  await apply();
+  await expect(cell(page, 30, 'end')).toHaveValue('');
+  await page.locator('#undo-change').click();
+  await expect(cell(page, 30, 'end')).toHaveValue('225');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(5);
+  expect(state.workspace.nightShifts.JRE.rows[30].start).toEqual(['210']);
+  await page.reload();
+  await page.locator('#search-meter').fill('Charging Forklift Building 2');
+  await expect(cell(page, 30, 'end')).toHaveValue('225');
   expect(errors).toEqual([]);
 });
 
@@ -184,6 +256,7 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   for (const side of ['start', 'end']) {
     await cell(page, 4, side, 1).fill(side === 'start' ? '1000' : '1010');
     await cell(page, 29, side).fill(side === 'start' ? '1000' : '1010');
+    await cell(page, 30, side).fill(side === 'start' ? '1000' : '1010');
     await cell(page, 15, side, 2).fill(side === 'start' ? '1000' : '2000');
   }
   await page.locator('#reading-mode').selectOption('workingHours');
@@ -191,6 +264,7 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await expect(cell(page, 4, 'end', 1)).toHaveValue('');
   await cell(page, 4, 'end', 1).fill('1004');
   await cell(page, 29, 'end').fill('1004');
+  await cell(page, 30, 'end').fill('1004');
   await cell(page, 15, 'end', 2).fill('1400');
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1004');
@@ -200,8 +274,8 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await page.locator('#save-draft').click();
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
   for (const key of ['drafts', 'workingHours', 'nightShifts']) {
-    expect(state.workspace[key].JRE.meterLayout).toBe(4);
-    expect(state.workspace[key].JRE.rows).toHaveLength(30);
+    expect(state.workspace[key].JRE.meterLayout).toBe(5);
+    expect(state.workspace[key].JRE.rows).toHaveLength(31);
   }
   await page.reload();
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
@@ -349,7 +423,7 @@ test('layout 3 Piping upgrades with a blank third meter and old imports preserve
   await cell(page, 15, 'end', 2).fill('2000');
   await page.locator('#save-draft').click();
   await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
-  expect(state.workspace.drafts.JRE.meterLayout).toBe(4);
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(5);
   await page.reload();
   await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
   const old = layout3JreDraft(reportPeriods()[0]);

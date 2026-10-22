@@ -59,6 +59,7 @@ export const PLANT_SCHEMAS = {
           { name: 'Window', meter: 4 },
           { name: 'Indoor', meter: 1 },
           { name: 'Nitrogen and Refrigerant Station', meter: 0 },
+          { name: 'Charging Forklift Building 2', meter: 0 },
         ],
       },
       {
@@ -77,6 +78,7 @@ export const PLANT_SCHEMAS = {
       { name: 'Utility Area', unit: 'kWh', factors: [1000, 40] },
       { name: 'Heater LPG', unit: 'kWh', factors: [40] },
       { name: 'Area Repair Injection Molding', unit: 'kWh' },
+      { name: 'Charging Forklift Building 2', unit: 'kWh' },
     ],
   },
   UNILAND: {

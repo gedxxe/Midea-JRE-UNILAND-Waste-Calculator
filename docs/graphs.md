@@ -67,3 +67,5 @@ The mode selector filters 24 HOURS, After production or Night at the owner-scope
 JRE layout 3 retains w0–w17 and all previous report identities. New saved Dehumidifier values include Vacuum Box; Piping #3 uses x40; Electricity Building 3# (r9) is net of Vacuum Box and Piping #3. Area Repair Injection Molding is available separately as r29. Historical output is read exactly as saved, including older gross Building 3 values; absent Repair history is null. No new worksheet column or preset aggregation is added.
 
 JRE layout 4 keeps all graph keys. New Window values include meter 6 x40, and new Piping/Piping All values include meter 3 net of that Window component. Graphs read these saved results without subtracting again; previous results stay unchanged.
+
+JRE layout 5 adds Charging Forklift Building 2 as r30, separate from the existing Building 3 worksheet forklift series w16. Newly saved Building 2 r18 values also deduct this direct usage. Existing keys, worksheet columns and presets stay unchanged. Historical reports without the new row yield null for r30; their Building 2 values remain as saved.

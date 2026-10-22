@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.12-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.13-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -54,11 +54,11 @@ The interface supports English, Simplified Chinese and Indonesian. Equipment, un
 
 Gas stock increases stay visible as **+amount (measured stock increase)**, with a nonblocking notice to check readings, temperatures and omitted refills. Ordinary consumption keeps its usual format. Invalid observations or decreasing refill events still block final reports; stock gains are not plotted as positive consumption. The application does not infer a physical cause or rewrite saved history.
 
-Current electricity layouts: **JRE 30 equipment rows / 60 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 retains its defined deductions. Structural is max(0, its direct usage minus Piping 1 meter 1 usage x40), only when both readings are valid. The main Total stays independent. JRE T1–T4 are optional notes outside totals and raw exports. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
+Current electricity layouts: **JRE 31 equipment rows / 61 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 retains its defined deductions. Structural is max(0, its direct usage minus Piping 1 meter 1 usage x40), only when both readings are valid. The main Total stays independent. JRE T1–T4 are optional notes outside totals and raw exports. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
 
 ### Architecture
 
-JRE **Electricity Building 2#** reports its direct consumption minus all four Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, and the direct kWh of Nitrogen and Refrigerant Station, after their ratios. The Station remains its own electricity row; gas quantities are not deducted. This applies to all three electricity modes and the sub-meter/gap check. Raw exports retain original cumulative values; saved history and worksheet columns stay unchanged.
+JRE **Electricity Building 2#** reports its direct consumption minus all four Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, the direct kWh of Nitrogen and Refrigerant Station, and Charging Forklift Building 2 direct consumption, after their ratios. The Station and Forklift remain separate electricity rows; gas quantities are not deducted. Charging Forklift Building 2 is row 31 with one direct Start/End pair. Older drafts add this pair blank; complete older text imports retain it only at matching reading dates/times. This applies to all three electricity modes and the sub-meter/gap check. Raw exports retain original cumulative values; saved history and worksheet columns stay unchanged.
 
 ```mermaid
 flowchart LR
@@ -123,7 +123,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.12-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.13-alpha**，数据用于决策前仍需人工复核。
 
 ### 操作流程与功能
 
@@ -150,13 +150,13 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 
 燃气换算库存增加时显示 **+数值（测得库存增加）**，并提示检查读数、温度及是否漏记补充，仍可保存和复制。正常用量格式不变；无效读数或补充量下降仍需修正。库存增加不作为正用量绘图，不推断物理原因，也不重算旧报表。
 
-JRE 为 30 项设备 / 60 个电表，UNILAND 为 34 项 / 48 个读数位置。JRE Window 电表 6 为 x40；Piping 1 电表 3 的直读差值扣除 Window 电表 6 用量后计入 Piping 合计。Building 3 保留既定扣减。Structural 为 max(0, 本表用量减去 Piping 1 电表 1 用量 x40)，两者读数均须有效；主表 Total 独立。T1–T4 仅为 JRE 可选备注；UNILAND Trafo 原始读数已是 MWh。旧报表不会因更新而重算。见[电表规则](docs/meter-rules.md)、[燃气](docs/gas.md)、[图表](docs/graphs.md)。
+JRE 为 31 项设备 / 61 个电表，UNILAND 为 34 项 / 48 个读数位置。JRE Window 电表 6 为 x40；Piping 1 电表 3 的直读差值扣除 Window 电表 6 用量后计入 Piping 合计。Building 3 保留既定扣减。Structural 为 max(0, 本表用量减去 Piping 1 电表 1 用量 x40)，两者读数均须有效；主表 Total 独立。T1–T4 仅为 JRE 可选备注；UNILAND Trafo 原始读数已是 MWh。旧报表不会因更新而重算。见[电表规则](docs/meter-rules.md)、[燃气](docs/gas.md)、[图表](docs/graphs.md)。
 
 已记录修复的复现、兼容性和限制见[问题审查](docs/reliability.md)。
 
 ### 架构、安全与维护
 
-JRE **Electricity Building 2#** 的净用量为本表用量减去 Heat Exchanger 全部四个电表、Outdoor 电表 2、Window 电表 4 和 5、Indoor 电表 2，以及 Nitrogen and Refrigerant Station 直读电表的用量，各分表先应用倍率。Station 保留为独立电力项目，不扣减气体数量。三个电力模式及分表合计/差额均采用净值；原始导出保留累计读数，已存历史与工作表列不变。
+JRE **Electricity Building 2#** 的净用量为本表用量减去 Heat Exchanger 全部四个电表、Outdoor 电表 2、Window 电表 4 和 5、Indoor 电表 2，Nitrogen and Refrigerant Station 直读电表，以及 Charging Forklift Building 2 直读电表的用量，各分表先应用倍率。Station 与 Forklift 保留为独立电力项目，不扣减气体数量。新增 Forklift 为第 31 行，采用一组直读 Start/End；旧草稿新增空白位置，完整旧文本仅在读数日期和时间一致时保留已有 Forklift 读数。三个电力模式及分表合计/差额均采用净值；原始导出保留累计读数，已存历史与工作表列不变。
 
 上方架构图：无浏览器运行依赖的 HTML/CSS/JavaScript → Vercel Node API → Neon PostgreSQL。服务端验证会话、归属和输入，重算新报表并保存不可变修订。草稿可替换且检查冲突。详见[架构和模块](docs/architecture.md)。
 
@@ -172,7 +172,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.12-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.13-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 ### Alur dan fitur operator
 
@@ -199,13 +199,13 @@ Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOU
 
 Kenaikan stok gas hasil konversi tetap tampil sebagai **+angka (kenaikan stok terukur)**, dengan notice untuk memeriksa reading, suhu dan refill yang mungkin belum dicatat. Laporan tetap bisa disimpan/disalin; konsumsi biasa memakai format semula. Input tidak valid atau stok yang turun saat refill tetap perlu dikoreksi. Kenaikan stok tidak diplot sebagai konsumsi positif, penyebab fisiknya tidak ditebak, dan histori tidak dihitung ulang.
 
-JRE memiliki 30 equipment / 60 meter; UNILAND 34 equipment / 48 slot. Window meter 6 JRE memakai x40. Selisih direct Piping 1 meter 3 dikurangi pemakaian Window meter 6, lalu nilai bersihnya masuk total Piping. Building 3 tetap memakai pengurangan yang dikonfirmasi. Structural = max(0, pemakaian mentahnya dikurangi Piping 1 meter 1 x40), hanya jika kedua reading valid. Total utama independen. T1–T4 hanya catatan opsional JRE; Trafo UNILAND sudah MWh. Pembaruan tidak menghitung ulang histori. Lihat [aturan meter](docs/meter-rules.md), [gas](docs/gas.md) dan [grafik](docs/graphs.md).
+JRE memiliki 31 equipment / 61 meter; UNILAND 34 equipment / 48 slot. Window meter 6 JRE memakai x40. Selisih direct Piping 1 meter 3 dikurangi pemakaian Window meter 6, lalu nilai bersihnya masuk total Piping. Building 3 tetap memakai pengurangan yang dikonfirmasi. Structural = max(0, pemakaian mentahnya dikurangi Piping 1 meter 1 x40), hanya jika kedua reading valid. Total utama independen. T1–T4 hanya catatan opsional JRE; Trafo UNILAND sudah MWh. Pembaruan tidak menghitung ulang histori. Lihat [aturan meter](docs/meter-rules.md), [gas](docs/gas.md) dan [grafik](docs/graphs.md).
 
 Lihat [bug yang direproduksi, perbaikan dan kompatibilitas](docs/reliability.md).
 
 ### Arsitektur, keamanan dan pengembangan
 
-JRE **Electricity Building 2#** memakai konsumsi meter utamanya dikurangi seluruh empat meter Heat Exchanger, Outdoor meter 2, Window meter 4 dan 5, Indoor meter 2, serta kWh direct Nitrogen and Refrigerant Station setelah ratio masing-masing. Station tetap menjadi baris listrik tersendiri; angka gas tidak dikurangkan. Berlaku untuk ketiga mode listrik, sub-meter sum dan gap. Ekspor raw tetap berisi angka kumulatif asli; histori tersimpan dan kolom worksheet tetap sama.
+JRE **Electricity Building 2#** memakai konsumsi meter utamanya dikurangi seluruh empat meter Heat Exchanger, Outdoor meter 2, Window meter 4 dan 5, Indoor meter 2, kWh direct Nitrogen and Refrigerant Station, serta konsumsi direct Charging Forklift Building 2 setelah ratio masing-masing. Station dan Forklift tetap baris listrik tersendiri; angka gas tidak dikurangkan. Forklift baru adalah baris 31, satu pasangan Start/End direct. Draft lama mendapat pasangan kosong; import teks lama mempertahankannya hanya pada tanggal/jam reading yang sama. Berlaku untuk ketiga mode listrik, sub-meter sum dan gap. Ekspor raw tetap berisi angka kumulatif asli; histori tersimpan dan kolom worksheet tetap sama.
 
 Diagram di atas: HTML/CSS/JavaScript tanpa paket runtime browser → API Node Vercel → Neon PostgreSQL. Server memeriksa sesi, pemilik dan input, menghitung ulang laporan baru serta menyimpan revisi tetap. Draft dapat diganti dengan pemeriksaan konflik. Baca [arsitektur, modul dan batas kapasitas](docs/architecture.md).
 

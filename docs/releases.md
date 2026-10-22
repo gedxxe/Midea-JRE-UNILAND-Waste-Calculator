@@ -66,3 +66,7 @@ v0.3.0-alpha adds PostgreSQL. See docs/accounts.md for environment separation, e
 ## Shift utilities (v0.11.12-alpha)
 
 Apply migration 006_shift_utilities.sql explicitly after a verified private backup and before the production merge. It extends the existing draft guard and adds a report-revision format guard, without rewriting readings or snapshots. New shift reports/drafts carry utilityLayout 1. Backup v4 retains period-owned gas, Water and manual entries and reads older files; older application versions reject v4 backups. A rollback keeps stored data but older writers cannot replace protected shift records. Use a compatible release to resume editing. Never remove guards or drop fields to force an older client to save. Production migration and merge need the owner's applicable authorization; builds do neither.
+
+## JRE Forklift meter (v0.11.13-alpha)
+
+JRE layout 5 adds one raw pair. No database migration is required. Existing layouts upgrade to a blank new pair, while stale report clients must reload and current-server draft writes cannot replace a stored layout 5 with an older layout. Keep a full private workspace backup before code rollback: older code cannot edit layout 5. Do not remove the new row to force an older client to save. Existing saved reports, utility layout 1 and backup v4 remain intact.
