@@ -62,3 +62,7 @@ These are settings verified at that time, not immutable guarantees. Recheck GitH
 ## Database releases
 
 v0.3.0-alpha adds PostgreSQL. See docs/accounts.md for environment separation, explicit migration/bootstrap, limited runtime grants, and recovery. A code rollback never deletes database records. Do not publish a milestone as production-ready until live account storage and its permissions have been verified.
+
+## Shift utilities (v0.11.12-alpha)
+
+Apply migration 006_shift_utilities.sql explicitly after a verified private backup and before the production merge. It extends the existing draft guard and adds a report-revision format guard, without rewriting readings or snapshots. New shift reports/drafts carry utilityLayout 1. Backup v4 retains period-owned gas, Water and manual entries and reads older files; older application versions reject v4 backups. A rollback keeps stored data but older writers cannot replace protected shift records. Use a compatible release to resume editing. Never remove guards or drop fields to force an older client to save. Production migration and merge need the owner's applicable authorization; builds do neither.

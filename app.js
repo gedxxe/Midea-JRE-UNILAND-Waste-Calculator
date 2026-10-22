@@ -1,3 +1,9 @@
+import {
+  seedUtilityReadings,
+  shareUtilityEdits,
+  utilityConflicts,
+  hasUtilityData,
+} from './utility-periods.js';
 import { createWorkingHoursPicker } from './ui/working-hours.js';
 import { isWorkingHours, isNightShift, periodKind } from './reading-period.js';
 import { emptyNightShifts, changeShiftPair, nextShiftPair, syncShiftReading } from './shifts.js';
@@ -90,16 +96,22 @@ const setCurrent = (draft) => {
 };
 const periodsFor = (key) => [drafts[key], workingHours[key], nightShifts[key]];
 function putPeriods(key, periods) {
-  // Gas controls retain references to their observations. Reconcile electricity only.
+  // Keep gas input references live when shared endpoints are reconciled.
   const existing = periodsFor(key);
   periods.forEach((next, i) => {
     for (const field of ['rows', 'additionalReadings', 'isExample', 'importIssues'])
       if (field in next) existing[i][field] = next[field];
       else delete existing[i][field];
+    next.gas.entries.forEach((entry, index) => {
+      for (const side of ['start', 'end'])
+        Object.assign(existing[i].gas.entries[index][side], entry[side]);
+    });
+    if (next.water) existing[i].water = { ...next.water };
   });
 }
 function seedSharedReadings() {
-  for (const key of ['JRE', 'UNILAND']) putPeriods(key, seedElectricity(periodsFor(key)));
+  for (const key of ['JRE', 'UNILAND'])
+    putPeriods(key, seedUtilityReadings(seedElectricity(periodsFor(key))));
 }
 function putPair(pair) {
   workingHours[plant] = pair.day;
@@ -112,7 +124,8 @@ function ensureNight() {
       !nightShifts[key].endDate &&
       workingHours[key].startDate &&
       !nightShifts[key].rows.some((row) => [...row.start, ...row.end].some(Boolean)) &&
-      !nightShifts[key].additionalReadings?.some((row) => row.start || row.end)
+      !nightShifts[key].additionalReadings?.some((row) => row.start || row.end) &&
+      !hasUtilityData(nightShifts[key])
     ) {
       nightShifts[key] = syncShiftReading(
         workingHours[key],
@@ -394,7 +407,9 @@ function rememberUndo() {
   };
   $('undo-change').hidden = false;
 }
-function changed(periodOnly = false, edits = []) {
+function changed(periodOnly = false, edits = [], utilityEdits = []) {
+  if (utilityEdits.length)
+    putPeriods(plant, shareUtilityEdits(periodsFor(plant), mode, utilityEdits));
   if (edits.length) putPeriods(plant, shareElectricityEdits(periodsFor(plant), mode, edits));
   seedSharedReadings();
   if (!periodOnly) periodOrigin = null;
@@ -453,10 +468,8 @@ function mountPlant() {
     button.classList.toggle('active', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
-  if (!isWorkingHours(current())) {
-    gasPanel.rebuild();
-    waterPanel.rebuild();
-  }
+  gasPanel.rebuild();
+  waterPanel.rebuild();
   additionalPanel.rebuild();
   table.rebuild();
   workPicker.sync();
@@ -580,7 +593,10 @@ function renderResults() {
   } catch (error) {
     combinedError = t(error.message);
   }
-  const conflicts = electricityConflicts(periodsFor(plant));
+  const conflicts = [
+    ...electricityConflicts(periodsFor(plant)),
+    ...utilityConflicts(periodsFor(plant)),
+  ];
   $('shared-reading-note').hidden = !conflicts.length;
   $('shared-reading-note').textContent = conflicts.length
     ? t('sharedReadingConflict', { count: conflicts.length })
@@ -636,10 +652,8 @@ function renderResults() {
       : t('copyPeriod');
   filterTable();
   rawExport.render();
-  if (!isWorkingHours(current())) {
-    gasPanel.update();
-    waterPanel.update();
-  }
+  gasPanel.update();
+  waterPanel.update();
   additionalPanel.update();
   autosave?.render();
 }

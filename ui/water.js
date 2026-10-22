@@ -1,3 +1,4 @@
+import { observationLabel } from '../reading-period.js';
 import { scaledReading } from '../numbers.js';
 import { calculateWater } from '../water.js';
 import { t } from '../i18n/index.js';
@@ -13,7 +14,7 @@ export function createWaterPanel({ current, changed, rememberUndo }) {
     $('water-' + side).addEventListener('input', () => {
       if (!current().water) startReadings();
       current().water[side] = $('water-' + side).value;
-      changed();
+      changed(false, [], [{ kind: 'water', side }]);
     });
   $('water-note').addEventListener('input', () => {
     current().utilities[4].note = $('water-note').value;
@@ -33,8 +34,11 @@ export function createWaterPanel({ current, changed, rememberUndo }) {
     $('water-legacy-text').textContent = legacy
       ? t('waterLegacy', { value: draft.utilities[4].value })
       : '';
-    for (const side of ['start', 'end'])
-      $('water-' + side + '-date').textContent = draft[side + 'Date'] || '-';
+    for (const side of ['start', 'end']) {
+      $('water-' + side + '-date').textContent = observationLabel(draft, side);
+      if (document.activeElement !== $('water-' + side))
+        $('water-' + side).value = draft.water?.[side] || '';
+    }
     const result = calculateWater(draft.water);
     $('water-total').textContent =
       `${t('consumption')}: ${legacy ? draft.utilities[4].value : result.value || '-'} m³`;

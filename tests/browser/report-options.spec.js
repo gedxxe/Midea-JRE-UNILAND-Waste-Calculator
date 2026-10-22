@@ -236,6 +236,9 @@ test('report contents stay independent of editable time, worksheet and the perio
   await expect(page.locator('#copy-report')).toBeDisabled();
   await page.locator('#reading-mode').selectOption('daily');
   await page.locator('#water-end').fill('102');
+  await expect(page.locator('#copy-report')).toBeDisabled();
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await page.locator('#water-end').fill('101');
   await expect(page.locator('#copy-report')).toBeEnabled();
   await expect(page.locator('#report-preview')).toHaveValue(
     /24 HOURS:\n[\s\S]*AFTER PRODUCTION:\n[\s\S]*NIGHT SHIFT:/,

@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.11-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.12-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -35,7 +35,7 @@ The intended contribution to Midea Business System work is practical: consistent
 | AFTER PRODUCTION | Morning D → evening D, normally 08:00–17:00 WIB   | D           |
 | NIGHT SHIFT      | Evening D → morning D+1, normally 17:00–08:00 WIB | D           |
 
-Only observations with the same factory, date and time are shared. Unknown readings stay blank. Final copy offers five choices: 24 HOURS; 24 HOURS + AFTER PRODUCTION; all three; AFTER PRODUCTION only; NIGHT SHIFT only. Gas and Water remain daily and appear once when 24 HOURS is included. Save and Excel row follow the active recording mode. See [periods and shifts](docs/working-hours.md).
+Only observations with the same factory, date and time are shared. Unknown readings stay blank. Final copy offers five choices: 24 HOURS; 24 HOURS + AFTER PRODUCTION; all three; AFTER PRODUCTION only; NIGHT SHIFT only. Gas, Water and existing manual utilities are calculated separately for each period and appear in each selected section. Matching gas/Water observations are shared; refill lists and manual totals belong to their period. Save and Excel row follow the active recording mode. See [periods and shifts](docs/working-hours.md).
 
 ### Everyday features
 
@@ -47,7 +47,7 @@ Only observations with the same factory, date and time are shared. Unknown readi
 | Prepare for an outage              | **Blank reading template**, beside raw export after login or on the sign-in card before login. Copy/download a schema-only `.txt` with `____` and `DD/MM/YYYY`, then keep it outside the website. Contains no saved readings; no duplicate in the footer.                                           |
 | Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery; server sync after 30 seconds idle or 120 seconds continuous editing. Check the account save time before closing. Conflicts require an explicit choice.                                     |
 | Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                |
-| Calculate gas and Water            | Both plants use raw LPG %, O2 mmWC, N2 mmH2O and R32 mm/temperature with their reference tables. Convert observations to kg before stock/refill subtraction. Water is cumulative m³ end minus start. Both remain daily.                                                                             |
+| Calculate gas and Water            | Both plants use raw LPG %, O2 mmWC, N2 mmH2O and R32 mm/temperature with their reference tables. Convert observations to kg before stock/refill subtraction. Water is cumulative m³ end minus start. Both support all three periods.                                                                |
 | Review trends                      | **Graphs** reads saved reports and approved consumption imports. White background, thin lines, English/Chinese titles, custom series, 9 JRE / 7 UNILAND presets, every period labelled and optional Y-axis bounds. Copy high-resolution PNG or download PNG/SVG. Unsaved edits do not enter graphs. |
 
 The interface supports English, Simplified Chinese and Indonesian. Equipment, units and copied templates retain factory wording. Combined dates remain a period total, not an invented daily average.
@@ -123,7 +123,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.11-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.12-alpha**，数据用于决策前仍需人工复核。
 
 ### 操作流程与功能
 
@@ -140,12 +140,12 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 | AFTER PRODUCTION | D 日早上至当日傍晚，默认 08:00–17:00 WIB    | D 日     |
 | NIGHT SHIFT      | D 日傍晚至 D+1 日早上，默认 17:00–08:00 WIB | D 日     |
 
-只共享工厂、日期和时间完全相同的记录。复制可选全天、全天加下班、全部三段、仅下班、仅夜班。燃气和水仅按日记录，在包含全天的报表中出现一次；保存和 Excel 行使用当前编辑模式。合并日期保持整段总量，不拆成推测的每日用量。
+只共享工厂、日期和时间完全相同的记录。复制可选全天、全天加下班、全部三段、仅下班、仅夜班。燃气、水及现有手填公用工程按时段分别计算，在所选各段显示。共用相同时间的库存及水表读数，补充记录和手填用量属于各自时段；保存和 Excel 行使用当前编辑模式。合并日期保持整段总量，不拆成推测的每日用量。
 
 - **原始导出：** 电表下方选择 Start 或 End，只需所选列完整；不含燃气、水和 JRE T1–T4。
 - **空白模板：** 登录后在原始导出旁，登录前在登录卡片内。页脚不再重复。复制/下载带 `____` 和 `DD/MM/YYYY` 的 `.txt`，停机前自行保存，不含实际读数。
 - **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 30 秒或连续编辑 120 秒后同步；关闭前查看账户保存时间。冲突需手动选择。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
-- **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，仅用于每日模式。
+- **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，三个时段均可记录。
 - **图表：** 使用已保存报表及审核过的历史导入。白底细线、中英文标题、自定义变量、完整日期标签、可调 Y 轴，JRE 9 组、UNILAND 7 组预设，可复制高分辨率 PNG 或下载 PNG/SVG。未保存数据不进入图表。
 
 燃气换算库存增加时显示 **+数值（测得库存增加）**，并提示检查读数、温度及是否漏记补充，仍可保存和复制。正常用量格式不变；无效读数或补充量下降仍需修正。库存增加不作为正用量绘图，不推断物理原因，也不重算旧报表。
@@ -172,7 +172,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.11-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.12-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 ### Alur dan fitur operator
 
@@ -189,12 +189,12 @@ Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulat
 | AFTER PRODUCTION | Pagi D → sore D, default 08.00–17.00 WIB   | D               |
 | NIGHT SHIFT      | Sore D → pagi D+1, default 17.00–08.00 WIB | D               |
 
-Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOURS; 24 HOURS + AFTER PRODUCTION; ketiganya; AFTER PRODUCTION saja; NIGHT SHIFT saja. Gas/Water tetap harian, sekali jika bagian harian dipilih. Save dan Excel mengikuti mode aktif. Periode gabungan tetap total satu periode, tanpa membagi menjadi rata-rata fiktif.
+Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOURS; 24 HOURS + AFTER PRODUCTION; ketiganya; AFTER PRODUCTION saja; NIGHT SHIFT saja. Gas/Water dan utility manual dihitung terpisah per periode, lalu muncul di setiap bagian yang dipilih. Observasi gas/Water dengan waktu sama dipakai bersama; refill dan total manual tetap milik periodenya. Save dan Excel mengikuti mode aktif. Periode gabungan tetap total satu periode, tanpa membagi menjadi rata-rata fiktif.
 
 - **Export Raw Table Data:** pilih Start/End di bawah tabel. Cukup kolom itu lengkap; tanpa gas, Water atau T1–T4 JRE.
 - **Blank reading template:** di samping raw export setelah login, atau dalam kartu login sebelum masuk. Duplikat footer dihapus. Salin/unduh `.txt` dengan `____` dan `DD/MM/YYYY`, lalu simpan sebelum gangguan. Tanpa reading terisi.
 - **Draft/backup:** satu workspace per akun untuk dua pabrik dan tiga mode. Salinan tab langsung, sinkron setelah 30 detik idle atau 120 detik mengedit terus. Perhatikan waktu simpan akun sebelum menutup. Konflik dipilih manual. Backup JSON mencakup input belum lengkap, divalidasi utuh dan mendukung Undo. File tidak terenkripsi, simpan privat.
-- **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Tetap harian.
+- **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Berlaku di ketiga periode.
 - **Grafik:** laporan tersimpan dan impor histori yang ditinjau, latar putih, garis tipis, judul English/Chinese, variabel pilihan, semua label periode dan skala Y opsional. Preset 9 JRE / 7 UNILAND. Salin PNG resolusi tinggi atau unduh PNG/SVG. Input belum tersimpan tidak masuk grafik.
 
 Kenaikan stok gas hasil konversi tetap tampil sebagai **+angka (kenaikan stok terukur)**, dengan notice untuk memeriksa reading, suhu dan refill yang mungkin belum dicatat. Laporan tetap bisa disimpan/disalin; konsumsi biasa memakai format semula. Input tidak valid atau stok yang turun saat refill tetap perlu dikoreksi. Kenaikan stok tidak diplot sebagai konsumsi positif, penyebab fisiknya tidak ditebak, dan histori tidak dihitung ulang.

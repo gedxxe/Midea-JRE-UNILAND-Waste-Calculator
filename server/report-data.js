@@ -1,3 +1,5 @@
+import { UTILITY_LAYOUT } from '../utility-periods.js';
+import { isWorkingHours } from '../reading-period.js';
 import { createDraft, calculateDraft } from '../engine.js';
 import { restoreDrafts } from '../storage.js';
 import { fail } from './http.js';
@@ -10,6 +12,8 @@ export function reportSnapshot(input) {
   // A stale client must reload and review the new grouping before saving a report.
   if (plant === 'JRE' && input.meterLayout !== JRE_METER_LAYOUT) fail(409, 'METER_LAYOUT_CHANGED');
   if (plant === 'UNILAND' && input.meterLayout !== UNILAND_METER_LAYOUT)
+    fail(409, 'METER_LAYOUT_CHANGED');
+  if (isWorkingHours(input) && input.utilityLayout !== UTILITY_LAYOUT)
     fail(409, 'METER_LAYOUT_CHANGED');
   let draft;
   try {

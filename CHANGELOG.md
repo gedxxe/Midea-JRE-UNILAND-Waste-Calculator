@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.12-alpha - 2026-10-22
+
+- Record gas, Water and existing manual utilities separately in 24 HOURS, AFTER PRODUCTION and NIGHT SHIFT for both factories. Display actual period timestamps, apply the existing tank/refill engine and water subtraction, and include entered values in each selected report section and saved graph period.
+- Share matching gas observations with R32 temperatures and cumulative Water readings by factory/date/time. Preserve manual totals, tank selections and untimed refill lists per period; detect conflicting observations and inconsistent refill lists in bundled reports. Date changes and next day retain matching observations and support Undo.
+- Add shift utility format markers and backup v4, reading older backups without inventing shift consumption. Migration 006 protects newer drafts and report revisions from older writers during code rollback. Apply it explicitly before production merge; builds never migrate or rewrite history.
+
 ## v0.11.11-alpha - 2026-10-21
 
 - Set JRE Structural Laboratory net consumption to 0 when valid Piping Building 1# meter 1 usage after x40 exceeds its gross usage. Keep positive differences and apply the rule in all three electricity periods, worksheets, sub-meter/gap totals and new saved graphs.

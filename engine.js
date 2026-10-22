@@ -1,3 +1,4 @@
+import { UTILITY_LAYOUT } from './utility-periods.js';
 import { isWorkingHours, periodKind, workPeriodError, workPeriodTitle } from './reading-period.js';
 import { createGasDraft, calculateGas, gasCalibration, gasUsageText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
@@ -39,13 +40,20 @@ export function createWorkingHoursDraft(
   startTime = '08:00',
   endTime = '17:00',
 ) {
-  return { ...createDraft(plantKey, date, date), periodKind: 'workingHours', startTime, endTime };
+  return {
+    ...createDraft(plantKey, date, date),
+    periodKind: 'workingHours',
+    utilityLayout: UTILITY_LAYOUT,
+    startTime,
+    endTime,
+  };
 }
 
 export function createNightShiftDraft(plantKey, date = '', startTime = '17:00', endTime = '08:00') {
   return {
     ...createDraft(plantKey, date, date ? shiftDate(date, 1) : ''),
     periodKind: 'nightShift',
+    utilityLayout: UTILITY_LAYOUT,
     startTime,
     endTime,
   };
@@ -80,20 +88,6 @@ export function calculateDraft(draft) {
   if (working) {
     const error = workPeriodError(draft);
     if (error) issue(issues, 'DATE_WORK', error, null, null, 'ERROR');
-    if (
-      draft.utilities?.some((v) => v.value?.trim() || v.note?.trim()) ||
-      draft.gas?.entries.some((v) => v.enabled) ||
-      draft.water?.start?.trim() ||
-      draft.water?.end?.trim()
-    )
-      issue(
-        issues,
-        'WORK_UTILITIES',
-        'Working-hours reports contain electricity only. Use the daily workspace for gas and Water.',
-        null,
-        null,
-        'ERROR',
-      );
   } else if (days === null)
     issue(issues, 'DATE_INVALID', 'Enter valid start and end dates.', null, null, 'ERROR');
   else if (days <= 0)
@@ -273,7 +267,7 @@ export function calculateDraft(draft) {
   const calibration = gasCalibration(draft.plantKey);
   if (draft.gas && draft.gas.version !== calibration.version)
     issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
-  (working ? [] : UTILITIES[draft.plantKey]).forEach(([name, unit], i) => {
+  UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
     let stockIncrease = false;
     if (i === 4 && waterResult.active) {

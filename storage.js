@@ -1,3 +1,4 @@
+import { UTILITY_LAYOUT, moveUtilityPeriod } from './utility-periods.js';
 import { reconcileShiftPair } from './shifts.js';
 import { restoreGasDraft, nextGasDay } from './gas.js';
 import {
@@ -133,7 +134,7 @@ export function changeWorkPeriod(draft, date, startTime, endTime, origin = draft
     next.rows.forEach((row, i) => {
       row.inactive = draft.rows[i].inactive;
     });
-  return next;
+  return moveUtilityPeriod(next, draft, [draft, origin]);
 }
 
 export function useDailyMorning(work, daily) {
@@ -197,6 +198,9 @@ export function restoreDrafts(raw) {
     if (isWorkingHours(input)) {
       if (!['startTime', 'endTime'].every((key) => input[key] === '' || validTime(input[key])))
         throw new Error('Invalid reading time.');
+      if (input.utilityLayout !== undefined && input.utilityLayout !== UTILITY_LAYOUT)
+        throw Error('Unknown shift utility format.');
+      draft.utilityLayout = UTILITY_LAYOUT;
       draft.periodKind = periodKind(input);
       draft.startTime = input.startTime;
       draft.endTime = input.endTime;

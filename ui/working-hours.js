@@ -23,8 +23,8 @@ export function createWorkingHoursPicker({ current, switchMode, changePeriod, co
       $('daily-period').hidden = working;
       $('combined-period').hidden = working;
       $('work-period').hidden = !working;
-      $('gas-section').hidden = working;
-      $('water-section').hidden = working;
+      $('gas-section').hidden = false;
+      $('water-section').hidden = false;
       $('work-date').value = working ? draft.startDate : '';
       $('work-start-time').value = working ? draft.startTime : '';
       $('work-end-time').value = working ? draft.endTime : '';

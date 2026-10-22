@@ -6,9 +6,9 @@ export const gasMessages = {
     'Menggunakan tabel massa workbook UNILAND. Setiap reading R32 perlu suhu. LPG mengikuti angka kg tabel yang berbeda dari keterangan densitas dan kapasitas. Batas tabel bukan batas pengisian tangki.',
   ],
   gasHint: [
-    "Enter tank readings. Each observation is converted to kg before calculating consumption. After Work normally uses the following morning's reading.",
-    '填写储罐原始读数。每次读数先换算为 kg，再计算用量。工作后通常使用次日早上的读数。',
-    'Isi reading tangki. Setiap reading dikonversi ke kg sebelum menghitung konsumsi. After Work biasanya memakai reading pagi hari berikutnya.',
+    "Enter stock readings at the selected period's start and end. Each observation is converted to kg first. Matching date/time readings are shared; enable each tank calculation in the periods you use.",
+    '填写所选时段期初和期末库存读数，逐次换算为 kg。相同日期和时间的读数共用；请在需要的时段启用各储罐计算。',
+    'Isi stok awal dan akhir periode yang dipilih. Setiap reading dikonversi ke kg. Reading pada tanggal dan jam sama dipakai bersama; aktifkan kalkulasi tangki di periode yang digunakan.',
   ],
   gasSource: [
     'Uses the supplied tank tables. R32 requires temperature for each reading. LPG uses the corrected reference values documented in the workbook.',
@@ -26,6 +26,8 @@ export const gasMessages = {
     '（根据储罐读数计算）',
     ' (dihitung dari reading tangki)',
   ],
+  gasShiftStart: ['Start stock', '期初库存', 'Stok awal'],
+  gasShiftEnd: ['End stock', '期末库存', 'Stok akhir'],
   gasStart: ['Before Work', '工作前', 'Before Work'],
   gasEnd: ['After Work / next morning', '工作后 / 次日早上', 'After Work / pagi berikutnya'],
   gasBefore: ['Before Refill', '补充前', 'Before Refill'],
@@ -37,9 +39,9 @@ export const gasMessages = {
   gasTotal: ['Consumption', '用量', 'Konsumsi'],
   gasIncreaseTotal: ['Measured stock increase', '测得库存增加', 'Kenaikan stok terukur'],
   gasFormula: [
-    'Initial kg + refill kg − final kg. Add refills in time order; without a refill, leave the list empty.',
-    '初始 kg + 补充 kg − 最终 kg。按时间顺序添加补充记录；未补充时保持列表为空。',
-    'Kg awal + kg refill − kg akhir. Tambahkan refill sesuai urutan waktu; tanpa refill, biarkan daftar kosong.',
+    'Initial kg + refill kg − final kg. Enter refills for this period only, in time order. The 24-hour record needs the refills from both shifts. Without refill, leave the list empty.',
+    '初始 kg + 补充 kg − 最终 kg。按时间顺序填写本时段补充记录；24小时记录包含两个班次的补充。未补充时留空。',
+    'Kg awal + kg refill − kg akhir. Isi refill untuk periode ini sesuai urutan waktu. Catatan 24 jam perlu refill dari kedua shift. Tanpa refill, biarkan kosong.',
   ],
   gasRangeHint: [
     'Range: {min}–{max} {unit}. Use - for unavailable readings.',

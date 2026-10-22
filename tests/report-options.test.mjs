@@ -12,7 +12,7 @@ import { reportPeriods } from './fixtures/report-periods.mjs';
 import { exportRawReading } from '../raw-export.js';
 import { reportSnapshot } from '../server/report-data.js';
 
-test('all five report options work for both factories; utilities appear only once under 24 HOURS', () => {
+test('all five report options work for both factories; only entered utility values appear in their own period', () => {
   for (const plant of ['JRE', 'UNILAND']) {
     const periods = reportPeriods(plant),
       before = JSON.stringify(periods);

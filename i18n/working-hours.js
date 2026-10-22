@@ -27,11 +27,15 @@ export const workingHoursMessages = {
     '生产时段 · 早晨至下班',
     'AFTER PRODUCTION · pagi ke sore',
   ],
-  workTitle: ['After-production electricity', '生产时段用电', 'Listrik After production'],
+  workTitle: [
+    'After-production energy report',
+    '生产时段能源报表',
+    'Laporan energi After production',
+  ],
   workHint: [
-    '24 HOURS: morning to next morning. AFTER PRODUCTION: morning to evening. NIGHT SHIFT: evening to next morning. Matching readings are reused; gas and Water stay daily.',
-    '24小时：早晨至次日早晨。生产时段：早晨至下班。夜班：晚间至次日早晨。共用相同时间的读数；燃气与水仍按日记录。',
-    '24 HOURS: pagi ke pagi berikutnya. AFTER PRODUCTION: pagi ke sore. NIGHT SHIFT: sore ke pagi berikutnya. Reading pada waktu yang sama dipakai bersama; gas dan Water tetap harian.',
+    '24 HOURS: morning to next morning. AFTER PRODUCTION: morning to evening. NIGHT SHIFT: evening to next morning. Electricity, gas and Water belong to each period; matching observations are shared.',
+    '24小时：早晨至次日早晨。生产时段：早晨至下班。夜班：晚间至次日早晨。每个时段分别记录电、气和水，并共用相同时间的读数。',
+    '24 HOURS: pagi ke pagi berikutnya. AFTER PRODUCTION: pagi ke sore. NIGHT SHIFT: sore ke pagi berikutnya. Listrik, gas dan Water dicatat per periode; reading yang waktunya sama dipakai bersama.',
   ],
   workDate: ['Shift date', '班次日期', 'Tanggal shift'],
   workStart: ['Morning reading time', '早晨抄表时间', 'Waktu reading pagi'],
@@ -82,9 +86,9 @@ export const workingHoursMessages = {
     'Isi waktu reading yang valid sebelum ekspor.',
   ],
   workGraphHint: [
-    'Saved electricity for the selected shift only. Actual reading times are retained. Daily utilities are excluded.',
-    '仅显示所选班次已保存的用电量，并保留实际抄表时间。不含每日公用工程。',
-    'Hanya listrik tersimpan untuk shift yang dipilih. Waktu reading asli dipertahankan. Utilities harian tidak digabung.',
+    'Saved energy and utilities for the selected period. Actual reading times are retained. Older electricity-only records have no utility values.',
+    '显示所选时段已保存的能源与公用工程数据，并保留实际抄表时间。旧的纯电力记录没有公用工程数值。',
+    'Energi dan utility tersimpan untuk periode terpilih. Waktu reading asli dipertahankan. Catatan lama yang hanya listrik tidak memiliki nilai utility.',
   ],
   draftFormatChanged: [
     'A newer workspace uses an updated meter layout or reading mode. Reload before saving; your tab copy is retained.',
@@ -96,7 +100,7 @@ export const workingHoursMessages = {
     '夜班 · 晚间至次日早晨',
     'NIGHT SHIFT · sore ke pagi berikutnya',
   ],
-  nightTitle: ['Night shift electricity', '夜班用电', 'Listrik Night shift'],
+  nightTitle: ['Night shift energy report', '夜班能源报表', 'Laporan energi Night shift'],
   nightNotice: [
     '{date} {start} to {endDate} {end} WIB. Night shift uses the starting date.',
     '{date} {start} 至 {endDate} {end} WIB。夜班报告使用开始日期。',
@@ -121,6 +125,11 @@ export const workingHoursMessages = {
     'Match the dates and shared reading times of the selected report sections. Bundled reports need one 24-hour period.',
     '请使所选报告部分的日期与共用读数时间一致。组合报告需为一个24小时时段。',
     'Samakan tanggal dan waktu reading bersama pada bagian laporan pilihan. Laporan gabungan ini memerlukan satu periode 24 jam.',
+  ],
+  selectionRefills: [
+    'Refill records differ between 24 HOURS and the selected shifts. Review the refill list in each period.',
+    '24小时与所选班次的补充记录不一致，请检查各时段补充列表。',
+    'Catatan refill 24 HOURS dan shift terpilih berbeda. Periksa daftar refill tiap periode.',
   ],
   selectionReadings: [
     'Shared readings differ between the selected periods. Check the matching cells before copying this report.',

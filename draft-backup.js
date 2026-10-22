@@ -11,7 +11,7 @@ export function createDraftBackup(workspace, ownerId, createdAt = new Date().toI
   const raw = JSON.stringify(
     {
       format: FORMAT,
-      version: 3,
+      version: 4,
       ownerId,
       createdAt,
       workspace: {
@@ -36,7 +36,7 @@ export function restoreDraftBackup(raw, ownerId) {
   } catch {
     throw new Error('backupInvalid');
   }
-  if (input?.format !== FORMAT || ![1, 2, 3].includes(input.version))
+  if (input?.format !== FORMAT || ![1, 2, 3, 4].includes(input.version))
     throw new Error('backupInvalid');
   if (!validOwner(ownerId) || input.ownerId !== ownerId) throw new Error('backupAccount');
   try {

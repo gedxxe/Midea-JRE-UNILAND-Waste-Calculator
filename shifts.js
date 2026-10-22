@@ -1,3 +1,4 @@
+import { moveUtilityPeriod, seedUtilityReadings, utilityConflicts } from './utility-periods.js';
 import { createWorkingHoursDraft, createNightShiftDraft } from './engine.js';
 import { isNightShift, workPeriodError, validTime } from './reading-period.js';
 import { shiftDate, scaledReading } from './numbers.js';
@@ -38,7 +39,7 @@ export function syncShiftReading(source, companion) {
   for (const side of ['start', 'end'])
     for (const key of ['start', 'end'])
       if (samePoint(next, side, source, key)) copyPoint(next, side, source, key);
-  return next;
+  return moveUtilityPeriod(next, companion, [source, companion]);
 }
 export function changeShiftPair(day, night, kind, date, startTime, endTime, origin = []) {
   if (day.plantKey !== night.plantKey) throw Error('Shift factories must match.');
@@ -64,6 +65,7 @@ export function changeShiftPair(day, night, kind, date, startTime, endTime, orig
       if (!found && !previous[side + 'Date'] && previous[side + 'Time'] === target[side + 'Time'])
         copyPoint(target, side, previous, side);
     }
+    moveUtilityPeriod(target, previous, [day, night, ...origin]);
     if (
       previous.startDate === target.startDate &&
       previous.endDate === target.endDate &&
@@ -110,5 +112,7 @@ export function reconcileShiftPair(day, night) {
         });
       }
     }
-  return { day: a, night: b };
+  if (utilityConflicts([a, b]).length) throw Error('shiftConflict');
+  const [dayResult, nightResult] = seedUtilityReadings([a, b]);
+  return { day: dayResult, night: nightResult };
 }

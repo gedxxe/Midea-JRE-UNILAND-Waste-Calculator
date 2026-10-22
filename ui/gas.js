@@ -7,6 +7,7 @@ import {
   gasMassText,
   gasUsageText,
 } from '../gas.js';
+import { isWorkingHours, observationLabel, observationTime } from '../reading-period.js';
 import { t } from '../i18n/index.js';
 import { $, node } from './dom.js';
 
@@ -71,7 +72,13 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         input.setAttribute('aria-label', gas.name + ': ' + caption + ' (' + gas.unit + ')');
         input.addEventListener('input', () => {
           point.reading = input.value;
-          changed();
+          changed(
+            false,
+            [],
+            ['start', 'end'].includes(key)
+              ? [{ kind: 'gas', index, side: key, field: 'reading' }]
+              : [],
+          );
         });
         label.append(input);
         group.append(label);
@@ -90,7 +97,13 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
           );
           temp.addEventListener('input', () => {
             point.temperature = temp.value;
-            changed();
+            changed(
+              false,
+              [],
+              ['start', 'end'].includes(key)
+                ? [{ kind: 'gas', index, side: key, field: 'temperature' }]
+                : [],
+            );
           });
           tempLabel.append(temp);
           group.append(tempLabel);
@@ -101,12 +114,26 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         error.id = 'gas-error-' + gas.id + '-' + key;
         inputs.forEach((input) => input.setAttribute('aria-describedby', error.id));
         group.append(mass, error);
-        view.points[key] = { inputs, mass, error };
+        view.points[key] = { inputs, mass, error, raw: point };
         return group;
       }
       const endpoints = node('div', undefined, 'gas-pair');
       for (const side of ['start', 'end'])
-        endpoints.append(observation(entry[side], side, t(labelKeys[side])));
+        endpoints.append(
+          observation(
+            entry[side],
+            side,
+            t(
+              isWorkingHours(current())
+                ? side === 'start'
+                  ? 'gasShiftStart'
+                  : 'gasShiftEnd'
+                : labelKeys[side],
+            ) +
+              ' · ' +
+              observationLabel(current(), side),
+          ),
+        );
       card.append(endpoints);
       entry.refills.forEach((event, i) => {
         const block = node('fieldset', undefined, 'gas-refill');
@@ -159,10 +186,22 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
   }
   function update() {
     $('gas-period').textContent =
-      (current().startDate || '?') + ' 08:00 → ' + (current().endDate || '?') + ' 08:00 WIB';
+      (current().startDate || '?') +
+      ' ' +
+      (observationTime(current(), 'start') || '?') +
+      ' → ' +
+      (current().endDate || '?') +
+      ' ' +
+      (observationTime(current(), 'end') || '?') +
+      ' WIB';
     for (const view of views) {
       const result = calculateGas(view.gas.id, view.entry, current().plantKey);
       for (const [key, elements] of Object.entries(view.points)) {
+        for (const [i, field] of ['reading', 'temperature'].entries()) {
+          const input = elements.inputs[i];
+          if (input && document.activeElement !== input && input.value !== elements.raw[field])
+            input.value = elements.raw[field];
+        }
         const point = result.points[key];
         elements.mass.textContent = gasMassText(point.kg) + ' kg';
         elements.error.textContent = point.error ? t(point.error) : '';

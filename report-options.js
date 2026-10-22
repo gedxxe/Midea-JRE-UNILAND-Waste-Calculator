@@ -1,3 +1,4 @@
+import { utilityConflicts, refillConflicts } from './utility-periods.js';
 import { calculateDraft, generateFullIndonesiaReport } from './engine.js';
 import { periodKind, observationTime } from './reading-period.js';
 import { dayDiff, formatReportDate } from './numbers.js';
@@ -39,6 +40,8 @@ export function selectReport(periods, selection, calculated = {}) {
         (!samePoint(after, 'end', night, 'start') || !samePoint(daily, 'end', night, 'end')))
     )
       return { ...result, error: 'selectionPeriod' };
+    if (refillConflicts(selected)) return { ...result, error: 'selectionRefills' };
+    if (utilityConflicts(selected).length) return { ...result, error: 'selectionReadings' };
     if (electricityConflicts(selected).length) return { ...result, error: 'selectionReadings' };
   }
   if (kinds.length === 1)
