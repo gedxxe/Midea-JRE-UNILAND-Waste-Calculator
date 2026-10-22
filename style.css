@@ -1664,16 +1664,12 @@ dialog textarea {
 }
 
 #graphs-dialog {
-  width: min(1240px, 96vw);
-  max-width: 1240px;
-  max-height: 94vh;
   padding: 24px;
 }
 #graphs-dialog > .dialog-heading {
   position: sticky;
   top: -24px;
-  z-index: 3;
-  background: #fff;
+  z-index: 10;
   padding: 12px 0;
 }
 .graph-filter-bar {
@@ -1681,7 +1677,7 @@ dialog textarea {
   grid-template-columns: 0.8fr 1.2fr 1fr 1fr auto;
   align-items: end;
   gap: 12px;
-  margin: 20px 0;
+  margin: 8px 0 12px;
 }
 .graph-filter-bar label,
 .graph-view-bar label,
@@ -1706,8 +1702,6 @@ dialog textarea {
   flex-wrap: wrap;
   gap: 12px 20px;
   align-items: end;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
 }
 .graph-view-bar > label {
   width: min(260px, 100%);
@@ -2064,9 +2058,6 @@ html[data-graph-motion='off'] .graph-enter {
   border-radius: 14px;
   background: #fff;
 }
-.graph-filter-bar {
-  margin-bottom: 12px;
-}
 .graph-filter-bar label,
 .graph-view-bar label,
 .graph-month-controls label {
@@ -2105,9 +2096,6 @@ html[data-graph-motion='off'] .graph-enter {
   min-height: 43px;
   font-size: 24px;
   padding: 2px 12px;
-}
-.graph-view-bar {
-  align-items: end;
 }
 .graph-view-bar #graph-status {
   color: #536981;
@@ -2370,21 +2358,8 @@ html[data-graph-motion='off'] .graph-enter {
     padding: 12px;
     gap: 12px;
   }
-  .graph-filter-bar.matrix-mode {
-    grid-template-columns: 1fr 1fr;
-  }
-  .graph-filter-bar.matrix-mode > button {
-    grid-column: 1 / -1;
-  }
   .graph-card {
     padding: 10px;
-  }
-  .graph-matrix-heading {
-    align-items: start;
-    flex-direction: column;
-  }
-  .graph-matrix-heading h3 {
-    font-size: 22px;
   }
   .graph-matrix th:first-child {
     min-width: 165px;
@@ -2423,33 +2398,80 @@ html[data-graph-motion='off'] .graph-view-switch button {
 #graphs-dialog > .dialog-heading h2 {
   margin: 0;
 }
-#graphs-dialog[open].graph-table-view {
-  height: 94vh;
+/* Keep the dialog scrollable when controls and table exceed a short viewport.
+   The table owns a usable viewport instead of shrinking into the leftover space. */
+#graphs-dialog {
+  max-height: 94dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.graph-window-actions {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.graph-window-actions button {
+  min-height: 40px;
+}
+#graph-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+}
+.graph-window-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+#graph-filters > summary {
+  width: fit-content;
+  padding: 8px 0;
+  color: #075f63;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
 .graph-table-view #graph-matrix {
-  flex: 1;
-  min-height: 0;
   margin-top: 18px;
 }
 .graph-table-view #graph-matrix > .graph-matrix {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
   margin-top: 0;
 }
 .graph-table-view .graph-matrix-scroll {
-  min-height: 100px;
-  flex: 1;
+  height: clamp(240px, 58dvh, 680px);
   max-height: none;
+  isolation: isolate;
+  overscroll-behavior: auto;
 }
 .graph-table-view #graph-about {
-  margin-top: 12px;
-  flex-shrink: 0;
-  max-height: 100px;
-  overflow: auto;
+  margin-top: 18px;
+}
+.graph-matrix-title {
+  min-width: 0;
+}
+.graph-matrix-kind {
+  display: block;
+  margin-top: 4px;
+  color: #536981;
+  font-size: 13px;
+  font-weight: 500;
+}
+#graphs-dialog[open].graph-expanded {
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  padding: 16px 24px;
+}
+#graphs-dialog.graph-expanded > .dialog-heading {
+  top: -16px;
+}
+.graph-expanded.graph-table-view .graph-matrix-scroll {
+  height: max(240px, calc(100dvh - 280px));
 }
 @media (max-width: 700px) {
   #graphs-dialog > .dialog-heading {
@@ -2496,5 +2518,49 @@ html[data-graph-motion='off'] .graph-view-switch button {
   .graph-count {
     font-size: 11px;
     padding: 5px 7px;
+  }
+}
+
+@media (max-width: 700px) {
+  .graph-window-label {
+    display: none;
+  }
+  #graph-expand {
+    width: 40px;
+    justify-content: center;
+  }
+  .graph-expanded.graph-table-view .graph-matrix-scroll {
+    height: max(240px, calc(100dvh - 360px));
+  }
+}
+
+@media (max-height: 600px) {
+  #graphs-dialog[open].graph-expanded {
+    padding: 8px 16px;
+  }
+  #graphs-dialog.graph-expanded > .dialog-heading {
+    top: -8px;
+    padding: 4px 0;
+    margin-bottom: 4px;
+  }
+  .graph-expanded #graph-filters > summary {
+    padding: 4px 0;
+  }
+  .graph-expanded #graph-matrix {
+    margin-top: 8px;
+  }
+  .graph-expanded .graph-matrix-heading {
+    margin-bottom: 4px;
+  }
+  .graph-expanded .graph-matrix-heading h3 {
+    font-size: 20px;
+  }
+  .graph-expanded .graph-matrix > p {
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .graph-expanded.graph-table-view .graph-matrix-scroll {
+    height: max(240px, calc(100dvh - 200px));
   }
 }

@@ -33,6 +33,7 @@ export const PUBLIC_FILES = [
   'graph-month.js',
   'graph-curve.js',
   'ui/graph-matrix.js',
+  'ui/graph-window.js',
   'ui/graph-interaction.js',
   'i18n/graph-labels.js',
   'png.js',

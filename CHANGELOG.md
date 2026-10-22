@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.16-alpha - 2026-10-22
+
+- Fix the monthly table shrinking to one row on short screens. Keep a readable table viewport and let scrolling continue into the parent dialog at table boundaries.
+- Add full-window viewing for charts and tables, initially collapsed table filters, a visible recording-mode label and Escape-to-restore. Reset window state on close/account changes; keep frozen headers, saved values and exports unchanged.
+- Add actual wheel-scroll and short desktop/mobile viewport regressions. Allow 20 minutes for the unchanged CI checks because browser OS dependency installation can exceed the old job budget.
+
 ## v0.11.15-alpha - 2026-10-22
 
 - Add a localized monthly consumption matrix for JRE and UNILAND, with month/year headings, full date headers, frozen equipment names, department/search filters and one cell for each combined period. Keep missing values distinct from zero and preserve full totals across month boundaries.

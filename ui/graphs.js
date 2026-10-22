@@ -1,5 +1,6 @@
 import { monthRange, adjacentMonth } from '../graph-month.js';
 import { renderMonthlyTable } from './graph-matrix.js';
+import { createGraphWindow } from './graph-window.js';
 import { attachGraphInteraction } from './graph-interaction.js';
 import { periodKind } from '../reading-period.js';
 import { $, node } from './dom.js';
@@ -27,6 +28,7 @@ export function createGraphs({ current, request, toast }) {
     animateNext = false,
     view = 'charts',
     visibility = new WeakMap();
+  const windowView = createGraphWindow($('graphs-dialog'), $('graph-filters'), $('graph-expand'));
   const kind = () => $('graph-kind').value;
   const key = (mode = kind(), version = 2) =>
     'midea_graph_layout_v' + version + '_' + user.id + (mode !== 'daily' ? '_' + mode : '');
@@ -56,6 +58,7 @@ export function createGraphs({ current, request, toast }) {
     }
   }
   function reset(next) {
+    windowView.reset();
     epoch++;
     sequence++;
     user = next;
@@ -109,6 +112,7 @@ export function createGraphs({ current, request, toast }) {
   }
   function render() {
     if (!$('graphs-dialog').open) return;
+    windowView.render();
     updateView();
     $('graph-refresh').disabled = loading;
     $('graph-mode-note').hidden = kind() === 'daily';
@@ -169,6 +173,7 @@ export function createGraphs({ current, request, toast }) {
       $('graph-matrix').append(
         renderMonthlyTable({
           plant: factory(),
+          kind: kind(),
           month: $('graph-month').value,
           records: data.records,
           department: $('graph-department').value || 'all',
@@ -202,6 +207,7 @@ export function createGraphs({ current, request, toast }) {
     $('graph-view-' + next).addEventListener('click', () => {
       if (view === next) return;
       view = next;
+      $('graph-filters').open = view !== 'table';
       if (view === 'table') {
         const month = $('graph-start').value.slice(0, 7) || current().startDate?.slice(0, 7);
         $('graph-month').value = monthRange(month) ? month : '';
@@ -615,6 +621,7 @@ export function createGraphs({ current, request, toast }) {
       }
     }
     $('graph-layout-tools').open = false;
+    $('graph-filters').open = view !== 'table';
     $('graph-about').open = false;
     $('graphs-dialog').showModal();
     void load();
@@ -652,6 +659,7 @@ export function createGraphs({ current, request, toast }) {
     card.scrollIntoView({ block: 'start' });
   });
   $('graphs-dialog').addEventListener('close', () => {
+    windowView.reset();
     visibility = new WeakMap();
     sequence++;
     data = null;

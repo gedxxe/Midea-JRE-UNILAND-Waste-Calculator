@@ -1,6 +1,9 @@
 export const graphMessages = {
   graphMonitor: ['Energy monitoring', '能耗监测', 'Monitoring Energi'],
   graphCharts: ['Charts', '图表', 'Grafik'],
+  graphFilters: ['Filters', '筛选', 'Filter'],
+  graphFullScreen: ['Full screen', '全屏', 'Layar Penuh'],
+  graphRestoreWindow: ['Restore view', '还原视图', 'Kembali ke Tampilan Biasa'],
   graphMonthlyTable: ['Monthly table', '月度表格', 'Tabel Bulanan'],
   graphMonth: ['Month & year', '月份与年份', 'Bulan & Tahun'],
   graphPreviousMonth: ['Previous month', '上个月', 'Bulan Sebelumnya'],
