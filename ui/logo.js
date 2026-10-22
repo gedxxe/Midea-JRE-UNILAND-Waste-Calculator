@@ -7,7 +7,16 @@ export function initLogoIntro() {
   if (!scene?.getAnimations || !replay || !pause) return;
   replay.hidden = false;
   pause.hidden = false;
+  let field;
+  void import('./welcome-field.js')
+    .then(({ createWelcomeField }) => {
+      field = createWelcomeField(scene);
+    })
+    .catch(() => {
+      /* Optional decoration must never gate sign-in. */
+    });
   function syncPlayback() {
+    field?.sync();
     for (const animation of scene.getAnimations({ subtree: true })) {
       if (document.hidden || scene.dataset.paused === 'true') animation.pause();
       else animation.play();
@@ -35,6 +44,7 @@ export function initLogoIntro() {
     if (scene.dataset.motion !== 'on' || matchMedia('(prefers-reduced-motion: reduce)').matches)
       return;
     setPaused(false);
+    field?.replay();
     for (const animation of scene.getAnimations({ subtree: true })) {
       animation.currentTime = 0;
       animation.play();

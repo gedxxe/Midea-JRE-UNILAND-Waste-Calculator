@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.16-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.17-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -102,6 +102,9 @@ New user instructions override older choices here. Update this decision record, 
 - Confirmed 2026-10-22 monitoring follow-up: add a monthly matrix with a localized month/year heading, full calendar-date columns and equipment/department consumption rows for JRE/UNILAND and all three modes. Reuse saved graph values; preserve combined periods as one cell/full total attributed to their start month, mark overlaps/superseded records excluded, and never invent daily averages. Keep frozen headers/names, local department/search filters and missing-versus-zero distinction. Modernize the scoped monitoring surface with shape-preserving smooth paths, shared crosshair/tooltips and keyboard/touch exploration; temporary legend visibility affects the copied view but does not save preferences or change values. No framework, dependency, API, database or account-role change. graph-month.js owns the calendar model; graph-curve.js owns bounded path geometry; ui/graph-matrix.js and ui/graph-interaction.js own view-only rendering/interactions. Remain alpha.
 
 - Reported 2026-10-22 monthly-table layout regression: preserve a readable table height on short screens and native scroll chaining from the table into its dialog. Provide reversible full-window viewing and collapsible filters, with Escape restoring the view before closing. Reset presentation state on close/account changes; do not persist it or alter saved graph values. Test real wheel scrolling and short desktop/mobile viewports.
+
+- Requested 2026-10-22 welcome retouch: elegant, simple and animated, inspired by the spacious Antigravity reference without a framework migration or copying its assets. Keep text brief and localized. Add a slogan about manual energy reporting and the welcome attribution “Made with ❤️ by gedxxe for Midea JRE Engineering Department”. The app does not remotely inspect physical meters. Preserve the established workspace/footer attribution and all login/password gates.
+- ui/welcome-field.js is optional decoration loaded dynamically by ui/logo.js with failure isolation. It has no account, meter, storage or API access. Cap animation drawing at 30 fps, 520 points (240 on narrow scenes) and DPR 1.5; pause when hidden, out of view, manually paused, reduced motion/motion-off or authenticated. logo.css owns the signed-out composition and entrance motion. Never keep a workspace screenshot visible during account/logout transitions.
 
 ## Architecture
 

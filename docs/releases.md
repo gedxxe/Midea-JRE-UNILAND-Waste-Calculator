@@ -82,3 +82,7 @@ No database or report-format migration is required. Monthly tables and smooth/in
 ## Monitoring scroll fix (v0.11.16-alpha)
 
 Presentation-only fix with no database migration, account configuration or persisted format changes. Full-window/filter state is temporary; close or account changes reset it. A normal revert PR can remove this change without rewriting saved reports or graph preferences. Returning to v0.11.15 also restores its known short-screen table bug, so prefer a forward fix. The CI job budget is 20 minutes to accommodate slow browser OS dependency downloads; audit, source, unit, integration and browser checks remain required.
+
+## Welcome presentation (v0.11.17-alpha)
+
+No database, account, reading-layout or persisted-preference migration. The optional animation module has no account/data access and failure does not block sign-in. A normal revert PR restores the v0.11.16 welcome screen while retaining its monthly-table scrolling fix and all saved data. Keep earlier tags/branches unchanged. The CI job allows 25 minutes because observed browser OS dependency downloads can take over 13 minutes before the full browser suite begins; no audit or test is removed.
