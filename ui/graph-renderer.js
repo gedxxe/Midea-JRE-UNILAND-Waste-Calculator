@@ -1,4 +1,5 @@
-import { graphPeriodText } from '../reading-period.js';
+import { getLanguage, t } from '../i18n/index.js';
+import { graphTitleField, metricLabel, graphPeriodLabel } from '../graph-presentation.js';
 import { pngResolution } from '../png.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
 import { graphSegments } from '../graph-data.js';
@@ -22,17 +23,20 @@ function svgNode(name, attrs = {}, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-export function renderGraph(config, { plant, start, end, records }) {
+export function renderGraph(config, { plant, start, end, records, kind = 'daily' }) {
+  const language = getLanguage();
+  const title = config[graphTitleField(language)] ?? config.titleEn;
   const metrics = config.series
     .map((key) => GRAPH_METRICS[plant].find((m) => m.key === key))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((metric) => ({ ...metric, label: metricLabel(metric, language) }));
   const periods = records.filter((r) => !r.overlap && !r.superseded && r.days > 0);
-  const chartWidth = Math.max(1000, periods.length * 30 + 260);
+  const chartWidth = Math.max(1000, periods.length * 32 + 180);
   const positions = new Map(periods.map((r, i) => [r.startDate + '/' + r.endDate, i]));
   const canvas = document.createElement('canvas'),
     context = canvas.getContext('2d');
   function width(text, size = 14, bold = false) {
-    context.font = (bold ? 'bold ' : '') + size + 'px Arial';
+    context.font = (bold ? 'bold ' : '') + size + 'px ' + FONT;
     return context.measureText(text).width;
   }
   function wrap(text, max, size = 14, bold = false) {
@@ -48,10 +52,7 @@ export function renderGraph(config, { plant, start, end, records }) {
     if (line) lines.push(line.trim());
     return lines.length ? lines : [''];
   }
-  const titleLines = [
-    ...wrap(config.titleEn, 910, 18, true),
-    ...wrap(config.titleZh, 910, 18, true),
-  ];
+  const titleLines = wrap(title, chartWidth - 100, 20, true);
   const labelDepth =
     Math.ceil(
       Math.max(
@@ -59,14 +60,14 @@ export function renderGraph(config, { plant, start, end, records }) {
         ...periods.map((p) => width(periodLabel(p.startDate, p.endDate), 14) * Math.SQRT1_2),
       ),
     ) + 20;
-  const top = 32 + titleLines.length * 24 + 30,
-    left = 100,
-    right = chartWidth - 160,
-    plotHeight = 310,
+  const top = 28 + titleLines.length * 24 + 20,
+    left = 85,
+    right = chartWidth - 45,
+    plotHeight = 240,
     bottom = top + plotHeight;
   const legend = [];
   let lx = left,
-    ly = bottom + labelDepth + 64;
+    ly = bottom + labelDepth + 36;
   metrics.forEach((metric) => {
     const lines = wrap(metric.label, 250, 13),
       span = Math.min(285, Math.max(...lines.map((t) => width(t, 13))) + 42);
@@ -77,24 +78,18 @@ export function renderGraph(config, { plant, start, end, records }) {
     legend.push({ metric, x: lx, y: ly, lines });
     lx += span + 20;
   });
-  const height = ly + Math.max(1, ...legend.map((l) => l.lines.length)) * 16 + 48;
+  const height = ly + Math.max(1, ...legend.map((l) => l.lines.length)) * 16 + 32;
   const svg = svgNode('svg', {
     xmlns: NS,
     viewBox: '0 0 ' + chartWidth + ' ' + height,
     width: chartWidth,
     height,
     role: 'img',
-    'aria-label': config.titleEn + ' / ' + config.titleZh,
+    'aria-label': title,
+    lang: language,
     'font-family': FONT,
   });
-  svg.append(
-    svgNode('title', {}, config.titleEn + ' / ' + config.titleZh),
-    svgNode(
-      'desc',
-      {},
-      'Saved energy records. Missing values are gaps. Overlapping periods are not plotted.',
-    ),
-  );
+  svg.append(svgNode('title', {}, title), svgNode('desc', {}, t('graphPlotDesc')));
   svg.append(svgNode('rect', { width: chartWidth, height, fill: '#ffffff' }));
   titleLines.forEach((line, i) =>
     svg.append(
@@ -104,7 +99,7 @@ export function renderGraph(config, { plant, start, end, records }) {
           x: chartWidth / 2,
           y: 29 + i * 24,
           'text-anchor': 'middle',
-          'font-size': 18,
+          'font-size': 20,
           'font-weight': 700,
           fill: '#111111',
         },
@@ -118,12 +113,16 @@ export function renderGraph(config, { plant, start, end, records }) {
     svgNode(
       'text',
       { x: chartWidth / 2, y: top - 16, 'text-anchor': 'middle', 'font-size': 13, fill: '#333333' },
-      plant +
-        ' | ' +
-        start +
-        ' to ' +
-        end +
-        (multi ? ' | Includes multi-day period totals / 含多日合计' : ''),
+      t('graphDateRange', { start, end }) +
+        ' · ' +
+        t(
+          kind === 'nightShift'
+            ? 'graphNight'
+            : kind === 'workingHours'
+              ? 'graphAfter'
+              : 'graphDaily',
+        ) +
+        (multi ? ' · ' + t('graphMultiNote') : ''),
     ),
   );
   const segments = metrics.map((metric) => ({ metric, parts: graphSegments(records, metric.key) }));
@@ -197,10 +196,7 @@ export function renderGraph(config, { plant, start, end, records }) {
       'stroke-width': 1,
     }),
   );
-  const unitLabel =
-    config.unit === 'kWh'
-      ? 'Electricity / 用电量 (kWh)'
-      : 'Consumption / 用量 (' + config.unit + ')';
+  const unitLabel = config.unit;
   svg.append(
     svgNode(
       'text',
@@ -220,12 +216,12 @@ export function renderGraph(config, { plant, start, end, records }) {
       'text',
       {
         x: (left + right) / 2,
-        y: bottom + labelDepth + 35,
+        y: bottom + labelDepth + 16,
         'text-anchor': 'middle',
         'font-size': 14,
         fill: '#111111',
       },
-      'Consumption period / 用量时段',
+      t('graphPeriodAxis'),
     ),
   );
   const clipId = 'plot-' + crypto.randomUUID();
@@ -246,11 +242,8 @@ export function renderGraph(config, { plant, start, end, records }) {
           fill: '#70420b',
           'data-axis-note': '',
         },
-        'Manual Y: ' +
-          formatNumber(axis.min, 8) +
-          ' to ' +
-          formatNumber(axis.max, 8) +
-          (axis.clipped ? ' | Values outside view / 部分数值超出范围' : ''),
+        t('graphManualBounds', { min: formatNumber(axis.min, 8), max: formatNumber(axis.max, 8) }) +
+          (axis.clipped ? ' · ' + t('graphOutside') : ''),
       ),
     );
   segments.forEach(({ metric, parts }, index) => {
@@ -285,9 +278,11 @@ export function renderGraph(config, { plant, start, end, records }) {
               ' ' +
               config.unit +
               ' | ' +
-              graphPeriodText(p) +
+              graphPeriodLabel(p, language) +
               ' | ' +
-              (p.source === 'excel' ? 'Excel history / Excel 历史数据' : 'revision ' + p.revision),
+              (p.source === 'excel'
+                ? t('graphImported')
+                : t('graphRevision').toLowerCase() + ' ' + p.revision),
           ),
         );
         plot.append(mark);
@@ -327,15 +322,14 @@ export function renderGraph(config, { plant, start, end, records }) {
           'font-size': 16,
           fill: '#555555',
         },
-        'No saved values to plot / 无可绘制的已保存数据',
+        t('graphNoValues'),
       ),
     );
   svg.append(
     svgNode(
       'text',
       { x: left, y: height - 16, 'font-size': 11, fill: '#555555' },
-      'Missing data: gaps / 缺失数据留空' +
-        (records.some((r) => r.overlap) ? ' | Overlapping periods excluded / 已排除重叠时段' : ''),
+      t('graphGapHint') + (records.some((r) => r.overlap) ? ' ' + t('graphOverlapNote') : ''),
     ),
   );
   return svg;

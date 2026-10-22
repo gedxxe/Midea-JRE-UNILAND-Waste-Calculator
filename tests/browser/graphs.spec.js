@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { exampleDraft } from '../../examples.js';
 import { reportSnapshot } from '../../server/report-data.js';
 import { graphRecords } from '../../graph-data.js';
+import { defaultGraphs } from '../../graph-schema.js';
 
 const account = {
   id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352',
@@ -29,8 +30,8 @@ function records(plant, revision = 1) {
     plant,
   );
 }
-async function setup(page, { pending = false } = {}) {
-  let user = { ...account },
+async function setup(page, { pending = false, role = 'operator' } = {}) {
+  let user = { ...account, role },
     revision = 1,
     release,
     started = false;
@@ -78,7 +79,7 @@ async function setup(page, { pending = false } = {}) {
   };
 }
 
-test('graphs use saved revisions, configure bilingual presets, and export white SVG and PNG', async ({
+test('graphs use saved revisions, show one language and export white SVG and PNG', async ({
   page,
   context,
 }, info) => {
@@ -92,7 +93,8 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
   await expect(cards).toHaveCount(9);
   await expect(first.locator('svg')).toContainText('Window A');
   await expect(first.locator('svg')).toContainText('Window B');
-  await expect(first.locator('svg')).toContainText('一厂');
+  await expect(first.locator('svg')).toContainText('JRE · Product lines');
+  await expect(first.locator('svg')).not.toContainText('一厂');
   const point = first.locator('circle').first();
   const original = await point.locator('title').textContent();
   state.bump();
@@ -100,16 +102,17 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
   await expect(point.locator('title')).not.toHaveText(original);
   await expect(point.locator('title')).toContainText('revision 2');
   // Layout edits only affect chart settings, not stored values or factory output.
-  await first.locator('.graph-settings summary').click();
+  await first.locator('.graph-settings > summary').click();
   await first.locator('[data-graph-series="w3"]').uncheck();
   await expect(first.locator('svg circle[data-series="w3"]')).toHaveCount(0);
   await first.locator('[data-graph-title="titleEn"]').fill('Custom <title> & consumption');
-  await first.locator('[data-graph-title="titleZh"]').fill('自定义用电量');
   await expect(first.locator('svg')).toContainText('Custom <title> & consumption');
-  await first.locator('.graph-settings summary').click();
+  await first.locator('.graph-settings > summary').click();
   for (const format of ['svg', 'png']) {
+    await first.locator('.graph-download summary').click();
     const downloaded = page.waitForEvent('download');
     await first.locator('[data-graph-export="' + format + '"]').click();
+    await expect(first.locator('.graph-download')).not.toHaveAttribute('open', '');
     const download = await downloaded;
     const file = info.outputPath('chart.' + format);
     await download.saveAs(file);
@@ -117,7 +120,7 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
     if (format === 'svg') {
       expect(bytes.toString()).toContain('fill="#ffffff"');
       expect(bytes.toString()).toContain('stroke-width="1.4"');
-      expect(bytes.toString()).toContain('自定义用电量');
+      expect(bytes.toString()).not.toContain('产品线');
       expect(bytes.toString()).toContain('&lt;title&gt;');
     } else {
       expect(bytes.readUInt32BE(16)).toBe(4000);
@@ -159,7 +162,19 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
   for (const language of ['zh-CN', 'id', 'en']) {
     await page.locator('#language-select').selectOption(language);
     await page.locator('#open-graphs').click();
-    await expect(first.locator('svg')).toContainText('自定义用电量');
+    const field = language === 'zh-CN' ? 'titleZh' : language === 'id' ? 'titleId' : 'titleEn';
+    const title =
+      language === 'zh-CN'
+        ? '自定义用电量'
+        : language === 'id'
+          ? 'JRE · Grafik Pilihan'
+          : 'Custom <title> & consumption';
+    await first.locator('.graph-settings > summary').click();
+    await expect(first.locator('[data-graph-title]')).toHaveCount(1);
+    await first.locator('[data-graph-title="' + field + '"]').fill(title);
+    await first.locator('.graph-settings > summary').click();
+    await expect(first.locator('svg')).toContainText(title);
+    if (language !== 'en') await expect(first.locator('svg')).not.toContainText('Custom <title>');
     await expect(first.locator('svg')).not.toContainText('Window B');
     await page.locator('[data-close-dialog="graphs-dialog"]').click();
     await expect(page.locator('#report-preview')).toHaveValue(report);
@@ -169,18 +184,21 @@ test('graphs use saved revisions, configure bilingual presets, and export white 
   await expect(first.locator('svg')).toContainText('Custom <title> & consumption');
   await page.locator('#graph-plant').selectOption('UNILAND');
   await expect(cards).toHaveCount(7);
-  await expect(first.locator('svg')).toContainText('二厂');
+  await expect(first.locator('svg')).toContainText('UNILAND · Outdoor area');
+  await page.locator('#graph-layout-tools summary').click();
   await page.locator('#graph-add').click();
   await expect(cards).toHaveCount(8);
   const last = cards.last();
   await expect(last.locator('[data-graph-export="svg"]')).toBeDisabled();
   await last.locator('[data-graph-series="w0"]').check();
   await expect(last.locator('[data-graph-export="svg"]')).toBeEnabled();
+  await last.locator('.graph-advanced summary').click();
   await last.locator('[data-graph-unit]').selectOption('Nm3');
   await expect(last.locator('[data-graph-export="svg"]')).toBeDisabled();
   await expect(last.locator('[data-graph-series="w0"]')).toHaveCount(0);
   await last.getByRole('button', { name: 'Duplicate graph', exact: true }).click();
   await expect(cards).toHaveCount(9);
+  await cards.last().locator('.graph-settings > summary').click();
   await cards.last().getByRole('button', { name: 'Remove graph', exact: true }).click();
   await expect(cards).toHaveCount(8);
   expect(state.errors).toEqual([]);
@@ -349,6 +367,7 @@ test('all period labels survive monthly exports and manual Y limits change only 
     .locator('title')
     .textContent();
   const downloaded = page.waitForEvent('download');
+  await first.locator('.graph-download summary').click();
   await first.locator('[data-graph-export="svg"]').click();
   const file = info.outputPath('all-periods.svg');
   await (await downloaded).saveAs(file);
@@ -360,6 +379,7 @@ test('all period labels survive monthly exports and manual Y limits change only 
     height: Number(el.getAttribute('height')),
   }));
   const pngDownload = page.waitForEvent('download');
+  await first.locator('.graph-download summary').click();
   await first.locator('[data-graph-export="png"]').click();
   const pngFile = info.outputPath('all-periods.png');
   await (await pngDownload).saveAs(pngFile);
@@ -368,7 +388,8 @@ test('all period labels survive monthly exports and manual Y limits change only 
   expect(bytes.readUInt32BE(20)).toBe(
     Math.round((dimensions.height * bytes.readUInt32BE(16)) / dimensions.width),
   );
-  await first.locator('.graph-settings summary').click();
+  await first.locator('.graph-settings > summary').click();
+  await first.locator('.graph-advanced summary').click();
   await first.locator('[data-graph-axis]').selectOption('manual');
   await expect(first.locator('[data-graph-export="svg"]')).toBeDisabled();
   await first.locator('[data-graph-bound="min"]').fill('100');
@@ -381,14 +402,15 @@ test('all period labels survive monthly exports and manual Y limits change only 
   await expect(first.locator('[data-graph-export="svg"]')).toBeDisabled();
   await expect(first.locator('svg')).toHaveCount(0);
   await first.locator('[data-graph-bound="max"]').fill('150');
-  await first.locator('.graph-settings summary').click();
+  await first.locator('.graph-settings > summary').click();
   await first.screenshot({ path: info.outputPath('all-periods-card.png') });
   await expect(page.locator('#graphs-dialog')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.reload();
   await page.locator('#open-graphs').click();
   await expect(first.locator('[data-axis-note]')).toContainText('100 to 150');
-  await first.locator('.graph-settings summary').click();
+  await first.locator('.graph-settings > summary').click();
+  await first.locator('.graph-advanced summary').click();
   await first.locator('[data-graph-axis]').selectOption('auto');
   await expect(first.locator('[data-axis-note]')).toHaveCount(0);
   await expect(first.locator('circle[data-series="w1"]').first().locator('title')).toHaveText(
@@ -421,5 +443,184 @@ test('weekend picker maps endpoints to inclusive consumption dates without relab
   await page.locator('#combined-last').fill('2026-09-17');
   await expect(page.locator('#combined-apply')).toBeDisabled();
   await expect(page.locator('#end-date')).toHaveValue('2026-09-21');
+  expect(state.errors).toEqual([]);
+});
+
+test('both factories localize chart titles, legends and data without mixing languages or fetching on department filters', async ({
+  page,
+}, info) => {
+  const state = await setup(page);
+  const report = await page.locator('#report-preview').inputValue();
+  let requests = 0;
+  page.on('request', (r) => {
+    if (r.url().includes('/api/graphs?')) {
+      requests++;
+      expect(r.method()).toBe('GET');
+    }
+  });
+  for (const language of ['en', 'zh-CN', 'id']) {
+    await page.locator('#language-select').selectOption(language);
+    await page.locator('#open-graphs').click();
+    const bottoms = await page
+      .locator('#graph-plant, #graph-kind, #graph-start, #graph-end, #graph-refresh')
+      .evaluateAll((controls) => controls.map((control) => control.getBoundingClientRect().bottom));
+    const rows =
+      page.viewportSize().width > 700 ? [bottoms] : [bottoms.slice(0, 2), bottoms.slice(2, 4)];
+    for (const row of rows) expect(Math.max(...row) - Math.min(...row)).toBeLessThan(2);
+    for (const plant of ['JRE', 'UNILAND']) {
+      await page.locator('#graph-plant').selectOption(plant);
+      const first = page.locator('.graph-card').first();
+      await expect(first.locator('svg circle').first()).toBeAttached();
+      await expect(first.locator('svg')).toHaveAttribute('lang', language);
+      await expect(first.locator('svg > title')).toContainText(plant + ' · ');
+      const text = await first.locator('svg').textContent();
+      if (language === 'zh-CN') {
+        expect(text).toContain(plant === 'JRE' ? '窗机' : '外机');
+        expect(text).not.toContain('Outdoor');
+      } else {
+        expect(text).not.toMatch(/[\u3400-\u9fff]/);
+        expect(text).toContain(language === 'id' ? 'Periode' : 'Period');
+      }
+      await expect(page.locator('#graph-plant option[value="UNILAND"]')).toHaveText('UNILAND');
+      await expect(page.locator('#graph-layout-tools')).not.toHaveAttribute('open', '');
+      await expect(first.locator('.graph-settings')).not.toHaveAttribute('open', '');
+      const before = requests;
+      await page.locator('#graph-department').selectOption('quality');
+      await expect(page.locator('.graph-card')).toHaveCount(plant === 'JRE' ? 3 : 2);
+      expect(requests).toBe(before);
+      await page
+        .locator('.graph-card')
+        .first()
+        .screenshot({ path: info.outputPath(`graph-${plant}-${language}.png`) });
+      await page.locator('#graph-department').selectOption('all');
+      await expect(page.locator('.graph-card')).toHaveCount(plant === 'JRE' ? 9 : 7);
+    }
+    await page.locator('[data-close-dialog="graphs-dialog"]').click();
+    await expect(page.locator('#report-preview')).toHaveValue(report);
+  }
+  expect(state.errors).toEqual([]);
+});
+
+test('legacy browser layouts retain custom titles, axes and variables while new edits use a separate layout key', async ({
+  page,
+}) => {
+  const legacy = {
+    version: 1,
+    layouts: { JRE: defaultGraphs('JRE'), UNILAND: defaultGraphs('UNILAND') },
+  };
+  legacy.layouts.JRE[0] = {
+    ...legacy.layouts.JRE[0],
+    titleEn: 'Legacy custom chart',
+    titleZh: '旧自定义图表',
+    series: ['w1', 'w2'],
+    yAxis: { mode: 'manual', min: 0, max: 250 },
+  };
+  const key = 'midea_graph_layout_v1_' + account.id,
+    raw = JSON.stringify(legacy);
+  await page.addInitScript(
+    ({ key, raw }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, raw);
+    },
+    { key, raw },
+  );
+  const state = await setup(page);
+  await page.locator('#open-graphs').click();
+  const first = page.locator('.graph-card').first();
+  await expect(first.locator('svg > title')).toHaveText('Legacy custom chart');
+  await expect(first.locator('[data-axis-note]')).toContainText('0 to 250');
+  await expect(first.locator('circle[data-series="w3"]')).toHaveCount(0);
+  await first.locator('.graph-settings > summary').click();
+  await first.locator('[data-graph-title="titleEn"]').fill('Updated custom chart');
+  const stored = await page.evaluate(
+    (key) => ({
+      old: localStorage.getItem(key),
+      next: JSON.parse(localStorage.getItem(key.replace('_v1_', '_v2_'))),
+    }),
+    key,
+  );
+  expect(stored.old).toBe(raw);
+  expect(stored.next.version).toBe(2);
+  expect(stored.next.layouts.JRE[0].titleZh).toBe('旧自定义图表');
+  expect(stored.next.layouts.JRE[0].titleId).toBeTruthy();
+  expect(stored.next.layouts.JRE[0].series).toEqual(['w1', 'w2']);
+  expect(stored.next.layouts.JRE[0].yAxis).toEqual({ mode: 'manual', min: 0, max: 250 });
+  await page.reload();
+  await page.locator('#open-graphs').click();
+  await expect(first.locator('svg > title')).toHaveText('Updated custom chart');
+  expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(raw);
+  expect(state.errors).toEqual([]);
+});
+
+test('chart entrance is brief, respects reduced motion and never animates exported SVG or replays on a filter', async ({
+  page,
+}) => {
+  const state = await setup(page, { role: 'admin' });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.locator('#open-graphs').click();
+  const first = page.locator('.graph-card').first();
+  await expect(first.locator('svg circle').first()).toBeAttached();
+  expect(
+    await first.evaluate((el) => ({
+      name: getComputedStyle(el).animationName,
+      duration: getComputedStyle(el).animationDuration,
+    })),
+  ).toEqual({ name: 'graph-enter', duration: '0.25s' });
+  const svg = await first.locator('svg').evaluate((el) => el.outerHTML);
+  expect(svg).not.toMatch(/<animate|graph-enter/);
+  await page.locator('#graph-department').selectOption('quality');
+  expect(await first.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  await page.locator('[data-close-dialog="graphs-dialog"]').click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.locator('#open-graphs').click();
+  await expect(first.locator('svg circle').first()).toBeAttached();
+  expect(await first.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  await page.locator('[data-close-dialog="graphs-dialog"]').click();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => (document.documentElement.dataset.graphMotion = 'off'));
+  await page.locator('#open-graphs').click();
+  await expect(first.locator('svg circle').first()).toBeAttached();
+  expect(await first.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  expect(state.errors).toEqual([]);
+});
+
+test('an in-flight graph copy cannot deliver an outdated title after configuration changes', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.locator('#open-graphs').click();
+  const first = page.locator('.graph-card').first();
+  await expect(first.locator('[data-graph-copy]')).toBeEnabled();
+  await first.locator('.graph-settings > summary').click();
+  await page.evaluate(() => {
+    const original = HTMLCanvasElement.prototype.toBlob;
+    window.graphWrites = [];
+    window.holdGraph = true;
+    HTMLCanvasElement.prototype.toBlob = function (...args) {
+      if (window.holdGraph) window.finishGraph = () => original.apply(this, args);
+      else original.apply(this, args);
+    };
+    Object.defineProperty(navigator.clipboard, 'write', {
+      configurable: true,
+      value: async (items) => {
+        try {
+          await items[0].getType('image/png');
+          window.graphWrites.push('copied');
+        } catch (error) {
+          window.graphWrites.push('cancelled');
+          throw error;
+        }
+      },
+    });
+  });
+  await first.locator('[data-graph-copy]').click();
+  await expect.poll(() => page.evaluate(() => typeof window.finishGraph)).toBe('function');
+  await first.locator('[data-graph-title="titleEn"]').fill('Current chart title');
+  await page.evaluate(() => {
+    window.holdGraph = false;
+    window.finishGraph();
+  });
+  await expect.poll(() => page.evaluate(() => window.graphWrites)).toEqual(['cancelled']);
+  await first.locator('[data-graph-copy]').click();
+  await expect.poll(() => page.evaluate(() => window.graphWrites)).toEqual(['cancelled', 'copied']);
   expect(state.errors).toEqual([]);
 });

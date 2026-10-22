@@ -70,3 +70,7 @@ Apply migration 006_shift_utilities.sql explicitly after a verified private back
 ## JRE Forklift meter (v0.11.13-alpha)
 
 JRE layout 5 adds one raw pair. No database migration is required. Existing layouts upgrade to a blank new pair, while stale report clients must reload and current-server draft writes cannot replace a stored layout 5 with an older layout. Keep a full private workspace backup before code rollback: older code cannot edit layout 5. Do not remove the new row to force an older client to save. Existing saved reports, utility layout 1 and backup v4 remain intact.
+
+## Graph presentation (v0.11.14-alpha)
+
+No database, account or report-format migration is required. This release reads legacy v1 graph layouts without overwriting them; new preferences use browser-local v2 keys. A code rollback restores the earlier graph interface and its v1 settings. New v2 titles, variables and bounds remain in the same browser for a compatible release to recover. Saved reports, utility layout 1, JRE layout 5 and backup v4 remain unchanged. Viewer accounts and shared dashboards are outside this release.

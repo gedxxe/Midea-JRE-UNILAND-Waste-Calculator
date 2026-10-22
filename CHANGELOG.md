@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.14-alpha - 2026-10-22
+
+- Simplify graph viewing with concise titles, a department filter, one-click image copy and a PNG/SVG download menu. Keep workbook groupings, all period labels, raw data gaps and optional scale controls.
+- Show chart titles, legends, tooltips, table labels and exports in the selected English, Mandarin or Indonesian interface language. Retain JRE/UNILAND names, production terms and canonical saved outputs.
+- Preserve custom titles, variables and axes while reading legacy browser layouts; save new edits under a separate v2 key. Cancel delayed exports when their chart changes. Add a brief entrance animation with reduced-motion and motion-off support; exported images remain static. No account, API or database change.
+
 ## v0.11.13-alpha - 2026-10-22
 
 - Add JRE Charging Forklift Building 2 as a direct kWh Start/End pair in all three periods. Subtract its consumption from Electricity Building 2# alongside existing deductions, retaining the separate Forklift row and graph series without double counting.
