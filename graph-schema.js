@@ -161,6 +161,8 @@ export function validGraph(plant, input) {
     typeof input.titleZh !== 'string' ||
     input.titleEn.length > 160 ||
     input.titleZh.length > 100 ||
+    (input.titleId !== undefined &&
+      (typeof input.titleId !== 'string' || input.titleId.length > 160)) ||
     !Array.isArray(input.series)
   )
     return null;
@@ -177,6 +179,7 @@ export function validGraph(plant, input) {
   return {
     titleEn: input.titleEn,
     titleZh: input.titleZh,
+    ...(input.titleId !== undefined ? { titleId: input.titleId } : {}),
     unit: input.unit,
     series: [...input.series],
     yAxis:

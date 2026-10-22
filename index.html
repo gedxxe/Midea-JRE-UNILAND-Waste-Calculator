@@ -823,41 +823,49 @@
           Close
         </button>
       </div>
-      <p data-i18n="graphHint"></p>
-      <div class="graph-toolbar">
+      <p class="graph-help" data-i18n="graphHint"></p>
+      <div class="graph-filter-bar">
         <label
           ><span data-i18n="graphFactory">Factory</span
           ><select id="graph-plant">
-            <option value="JRE">Branch 1 / JRE / 一厂</option>
-            <option value="UNILAND">Branch 2 / UNILAND / 二厂</option>
+            <option value="JRE">JRE</option>
+            <option value="UNILAND">UNILAND</option>
+          </select></label
+        >
+        <label
+          ><span data-i18n="readingMode">Reading mode</span
+          ><select id="graph-kind">
+            <option value="daily" data-i18n="graphDaily">24 hours</option>
+            <option value="workingHours" data-i18n="graphAfter">After production</option>
+            <option value="nightShift" data-i18n="graphNight">Night shift</option>
           </select></label
         >
         <label><span data-i18n="graphStart"></span><input type="date" id="graph-start" /></label>
         <label><span data-i18n="graphEnd"></span><input type="date" id="graph-end" /></label>
-        <button id="graph-refresh" class="button primary" data-i18n="graphLoad"></button>
+        <button id="graph-refresh" class="button secondary" data-i18n="graphLoad"></button>
       </div>
-      <label
-        ><span data-i18n="readingMode">Reading mode</span
-        ><select id="graph-kind">
-          <option value="daily" data-i18n="dailyMode">24 HOURS · morning to next morning</option>
-          <option value="workingHours" data-i18n="workingMode">
-            AFTER PRODUCTION · morning to evening
-          </option>
-          <option value="nightShift" data-i18n="nightMode">
-            NIGHT SHIFT · evening to next morning
-          </option>
-        </select></label
-      >
-      <p id="graph-mode-note" class="notice" hidden></p>
-      <p id="graph-status" role="status"></p>
+      <div class="graph-view-bar">
+        <label
+          ><span data-i18n="graphDepartment"></span
+          ><select id="graph-department"></select
+        ></label>
+        <p id="graph-status" role="status"></p>
+        <details id="graph-layout-tools">
+          <summary data-i18n="graphManage"></summary>
+          <div class="graph-actions">
+            <button id="graph-add" class="button secondary" data-i18n="graphAdd"></button>
+            <button id="graph-presets" class="text-button" data-i18n="graphPresets"></button>
+          </div>
+        </details>
+      </div>
       <div id="graph-warnings"></div>
-      <div class="graph-actions">
-        <button id="graph-presets" class="button secondary" data-i18n="graphPresets"></button
-        ><button id="graph-add" class="button secondary" data-i18n="graphAdd"></button>
-      </div>
-      <p class="graph-help" data-i18n="graphLayoutNote"></p>
-      <p class="hint" data-i18n="graphImageNote"></p>
       <div id="graph-cards"></div>
+      <details id="graph-about" class="graph-help">
+        <summary data-i18n="graphAbout"></summary>
+        <p id="graph-mode-note" hidden></p>
+        <p data-i18n="graphLayoutNote"></p>
+        <p data-i18n="graphImageNote"></p>
+      </details>
     </dialog>
     <dialog id="raw-template-dialog" aria-labelledby="raw-template-title">
       <div class="dialog-heading">

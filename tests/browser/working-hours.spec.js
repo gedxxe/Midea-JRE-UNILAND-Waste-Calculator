@@ -242,7 +242,8 @@ test('graphs isolate work mode, preserve actual times, and include period utilit
   );
   await page.locator('.graph-data').first().locator('summary').click();
   await expect(page.locator('.graph-data').first()).toContainText('08:00 → 17:00 WIB (9 hours)');
-  await page.locator('.graph-settings').first().locator('summary').click();
+  await page.locator('.graph-settings').first().locator(':scope > summary').click();
+  await page.locator('.graph-advanced').first().locator('summary').click();
   expect(
     await page.locator('[data-graph-unit]').first().locator('option').allTextContents(),
   ).toContain('kWh');

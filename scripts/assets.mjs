@@ -29,6 +29,8 @@ export const PUBLIC_FILES = [
   'graph-data.js',
   'graph-axis.js',
   'graph-schema.js',
+  'graph-presentation.js',
+  'i18n/graph-labels.js',
   'png.js',
   'ui/graphs.js',
   'ui/period.js',

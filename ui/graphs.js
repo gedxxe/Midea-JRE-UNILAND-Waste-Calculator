@@ -1,13 +1,15 @@
-import { periodKind, graphPeriodText } from '../reading-period.js';
+import { periodKind } from '../reading-period.js';
 import { $, node } from './dom.js';
-import { t } from '../i18n/index.js';
+import { getLanguage, t } from '../i18n/index.js';
 import {
-  GRAPH_METRICS,
-  DEPARTMENTS,
-  departmentTitle,
-  defaultGraphs,
-  validGraph,
-} from '../graph-schema.js';
+  graphTitleField,
+  metricLabel,
+  departmentLabel,
+  graphDepartment,
+  upgradeGraph,
+  graphPeriodLabel,
+} from '../graph-presentation.js';
+import { GRAPH_METRICS, DEPARTMENTS, defaultGraphs } from '../graph-schema.js';
 import { dayDiff, validDate, formatNumber } from '../numbers.js';
 import { renderGraph, exportGraph, copyGraph } from './graph-renderer.js';
 import { validYAxis } from '../graph-axis.js';
@@ -18,15 +20,21 @@ export function createGraphs({ current, request, toast }) {
     data = null,
     loading = false,
     layouts = {},
-    status = '';
+    status = '',
+    animateNext = false;
   const kind = () => $('graph-kind').value;
-  const key = (mode = kind()) =>
-    'midea_graph_layout_v1_' + user.id + (mode !== 'daily' ? '_' + mode : '');
+  const key = (mode = kind(), version = 2) =>
+    'midea_graph_layout_v' + version + '_' + user.id + (mode !== 'daily' ? '_' + mode : '');
   const activeLayouts = () => layouts[kind()];
   const availableMetrics = (plant) => GRAPH_METRICS[plant];
   const factory = () => $('graph-plant').value;
   function defaults() {
-    return { JRE: defaultGraphs('JRE'), UNILAND: defaultGraphs('UNILAND') };
+    return Object.fromEntries(
+      ['JRE', 'UNILAND'].map((plant) => [
+        plant,
+        defaultGraphs(plant).map((config) => upgradeGraph(plant, config)),
+      ]),
+    );
   }
   function store() {
     if (!user) return;
@@ -37,7 +45,7 @@ export function createGraphs({ current, request, toast }) {
           configs.map((c) => ({ ...c, yAxis: validYAxis(c.yAxis) ? c.yAxis : { mode: 'auto' } })),
         ]),
       );
-      localStorage.setItem(key(), JSON.stringify({ version: 1, layouts: saved }));
+      localStorage.setItem(key(), JSON.stringify({ version: 2, layouts: saved }));
     } catch {
       toast(t('graphLayoutError'));
     }
@@ -50,7 +58,9 @@ export function createGraphs({ current, request, toast }) {
     loading = false;
     status = '';
     layouts = { daily: defaults(), workingHours: defaults(), nightShift: defaults() };
+    animateNext = false;
     $('graph-kind').value = 'daily';
+    $('graph-department').replaceChildren();
     $('graphs-dialog').close();
     $('graph-cards').replaceChildren();
     $('graph-status').textContent = '';
@@ -60,16 +70,27 @@ export function createGraphs({ current, request, toast }) {
     if (!user) return;
     try {
       for (const mode of ['daily', 'workingHours', 'nightShift']) {
-        const saved = JSON.parse(localStorage.getItem(key(mode)));
-        if (saved?.version === 1)
+        let saved;
+        for (const version of [2, 1]) {
+          try {
+            const candidate = JSON.parse(localStorage.getItem(key(mode, version)));
+            if (candidate?.version === version) {
+              saved = candidate;
+              break;
+            }
+          } catch {
+            /* Keep a malformed key intact and try the older layout. */
+          }
+        }
+        if (saved)
           for (const plant of ['JRE', 'UNILAND']) {
             const configs = saved.layouts?.[plant];
             if (
               Array.isArray(configs) &&
               configs.length <= 32 &&
-              configs.every((c) => validGraph(plant, c))
+              configs.every((c) => upgradeGraph(plant, c))
             )
-              layouts[mode][plant] = configs.map((c) => validGraph(plant, c));
+              layouts[mode][plant] = configs.map((c) => upgradeGraph(plant, c));
           }
       }
     } catch {
@@ -80,7 +101,7 @@ export function createGraphs({ current, request, toast }) {
     if (!$('graphs-dialog').open) return;
     $('graph-refresh').disabled = loading;
     $('graph-mode-note').hidden = kind() === 'daily';
-    $('graph-mode-note').textContent = t('workGraphHint');
+    $('graph-mode-note').textContent = t('graphPeriodHint');
     $('graph-status').textContent = loading
       ? t('graphLoading')
       : status
@@ -99,7 +120,17 @@ export function createGraphs({ current, request, toast }) {
           $('graph-warnings').append(
             node('p', t(key, { count }), key === 'graphMulti' ? 'notice' : 'notice warning'),
           );
-    renderCards();
+    const department = $('graph-department').value || 'all';
+    const available = new Set(activeLayouts()[factory()].map((c) => graphDepartment(factory(), c)));
+    $('graph-department').replaceChildren();
+    for (const name of ['all', ...Object.keys(DEPARTMENTS).filter((name) => available.has(name))]) {
+      const option = node('option', departmentLabel(name, getLanguage()));
+      option.value = name;
+      $('graph-department').append(option);
+    }
+    $('graph-department').value = available.has(department) ? department : 'all';
+    renderCards(Boolean(data && animateNext));
+    if (data) animateNext = false;
   }
   async function load() {
     if (!user) return;
@@ -140,18 +171,26 @@ export function createGraphs({ current, request, toast }) {
       }
     }
   }
-  function renderCards() {
+  function renderCards(animate = false) {
     const plant = factory();
     $('graph-cards').replaceChildren();
     (activeLayouts()[plant] || []).forEach((config, index) => {
-      const card = node('article', undefined, 'graph-card');
+      if (
+        $('graph-department').value !== 'all' &&
+        graphDepartment(plant, config) !== $('graph-department').value
+      )
+        return;
+      const card = node('article', undefined, 'graph-card' + (animate ? ' graph-enter' : ''));
       card.dataset.chartIndex = index;
       const controls = node('details', undefined, 'graph-settings');
-      controls.append(node('summary', t('graphConfigure') + ' ' + (index + 1)));
+      controls.append(node('summary', t('graphConfigure')));
+      controls.setAttribute(
+        'aria-label',
+        t('graphConfigure') + ': ' + config[graphTitleField(getLanguage())],
+      );
       const fields = node('div', undefined, 'graph-fields');
       for (const [field, label, max] of [
-        ['titleEn', 'graphTitleEn', 160],
-        ['titleZh', 'graphTitleZh', 100],
+        [graphTitleField(getLanguage()), 'graphTitle', getLanguage() === 'zh-CN' ? 100 : 160],
       ]) {
         const wrapper = node('label', t(label));
         const input = node('input');
@@ -167,6 +206,8 @@ export function createGraphs({ current, request, toast }) {
         wrapper.append(input);
         fields.append(wrapper);
       }
+      const advanced = node('details', undefined, 'graph-advanced');
+      advanced.append(node('summary', t('graphAdvanced')));
       const unitLabel = node('label', t('graphUnit')),
         unit = node('select');
       unit.dataset.graphUnit = '';
@@ -189,8 +230,8 @@ export function createGraphs({ current, request, toast }) {
         draw();
       });
       unitLabel.append(unit);
-      fields.append(unitLabel);
-      controls.append(fields);
+      advanced.append(unitLabel);
+      controls.append(fields, node('p', t('graphTitleHint'), 'graph-help'));
       const axisFields = node('div', undefined, 'graph-toolbar');
       const axisMode = node('select'),
         axisMin = node('input'),
@@ -240,9 +281,9 @@ export function createGraphs({ current, request, toast }) {
       axisMode.addEventListener('change', updateAxis);
       axisMin.addEventListener('input', updateAxis);
       axisMax.addEventListener('input', updateAxis);
-      controls.append(axisFields, node('p', t('graphAxisHint'), 'graph-help'));
+      advanced.append(axisFields, node('p', t('graphAxisHint'), 'graph-help'));
       const options = node('fieldset', undefined, 'graph-options');
-      controls.append(options);
+      controls.append(options, node('p', t('graphSeriesHint'), 'graph-help'), advanced);
       function variables() {
         options.replaceChildren(
           node('legend', t('graphVariables') + ' (' + config.series.length + ')'),
@@ -253,7 +294,7 @@ export function createGraphs({ current, request, toast }) {
           );
           if (!metrics.length) continue;
           const group = node('div', undefined, 'graph-variable-group');
-          group.append(node('strong', departmentTitle(plant, department).join(' / ')));
+          group.append(node('strong', departmentLabel(department, getLanguage())));
           for (const metric of metrics) {
             const label = node('label', undefined, 'check-label'),
               input = node('input');
@@ -270,7 +311,7 @@ export function createGraphs({ current, request, toast }) {
                 t('graphVariables') + ' (' + config.series.length + ')';
               draw();
             });
-            label.append(input, node('span', metric.label));
+            label.append(input, node('span', metricLabel(metric, getLanguage())));
             group.append(label);
           }
           options.append(group);
@@ -287,13 +328,16 @@ export function createGraphs({ current, request, toast }) {
         }
         activeLayouts()[plant].splice(index + 1, 0, structuredClone(config));
         store();
-        renderCards();
+        render();
       });
       remove.addEventListener('click', () => {
         activeLayouts()[plant].splice(index, 1);
         store();
-        renderCards();
+        render();
       });
+      const editActions = node('div', undefined, 'graph-actions');
+      editActions.append(duplicate, remove);
+      controls.append(editActions);
       const frame = node('div', undefined, 'graph-frame');
       frame.tabIndex = 0;
       const prompt = node('p', undefined, 'graph-prompt');
@@ -303,17 +347,23 @@ export function createGraphs({ current, request, toast }) {
       tableDetails.append(tableWrap);
       let svg;
       const exports = [];
-      const copy = node('button', t('graphCopy'), 'button secondary');
+      const copy = node('button', t('graphCopy'), 'button primary');
       copy.dataset.graphCopy = '';
       copy.addEventListener('click', async () => {
         if (copy.disabled || !svg) return;
         const identity = epoch,
-          original = data;
+          original = data,
+          image = svg;
         copy.disabled = true;
         const stillCurrent = () =>
-          identity === epoch && original === data && $('graphs-dialog').open;
+          identity === epoch &&
+          original === data &&
+          image === svg &&
+          card.isConnected &&
+          !loading &&
+          $('graphs-dialog').open;
         try {
-          await copyGraph(svg, stillCurrent);
+          await copyGraph(image, stillCurrent);
           if (stillCurrent()) toast(t('graphCopied'));
         } catch {
           if (stillCurrent()) toast(t('graphCopyError'));
@@ -323,38 +373,52 @@ export function createGraphs({ current, request, toast }) {
       });
       exports.push(copy);
       actions.append(copy);
-      for (const format of ['svg', 'png']) {
+      const download = node('details', undefined, 'graph-download');
+      download.append(node('summary', t('graphDownload')));
+      const formats = node('div', undefined, 'graph-download-options');
+      download.append(formats);
+      for (const format of ['png', 'svg']) {
         const button = node('button', format.toUpperCase(), 'button secondary');
         button.dataset.graphExport = format;
         button.addEventListener('click', async () => {
           if (button.disabled || !svg) return;
           const identity = epoch,
-            original = data;
+            original = data,
+            image = svg;
+          const stillCurrent = () =>
+            identity === epoch &&
+            original === data &&
+            image === svg &&
+            card.isConnected &&
+            !loading &&
+            $('graphs-dialog').open;
           button.disabled = true;
+          download.open = false;
+          download.querySelector('summary').focus();
           try {
             await exportGraph(
-              svg,
+              image,
               format,
               plant + '-graph-' + (index + 1) + '-' + data.start + '-' + data.end,
-              () => identity === epoch && original === data && $('graphs-dialog').open,
+              stillCurrent,
             );
           } catch {
-            if (identity === epoch) toast(t('graphExportError'));
+            if (stillCurrent()) toast(t('graphExportError'));
           } finally {
             if (identity === epoch && card.isConnected) draw();
           }
         });
         exports.push(button);
-        actions.append(button);
+        formats.append(button);
       }
-      actions.append(duplicate, remove);
+      actions.append(download);
       card.append(controls, frame, prompt, actions, tableDetails);
       $('graph-cards').append(card);
       function draw() {
         const chosen = availableMetrics(plant).filter((m) => config.series.includes(m.key));
         const axisValid = validYAxis(config.yAxis);
         const valid =
-          config.series.length && config.titleEn.trim() && config.titleZh.trim() && axisValid;
+          config.series.length && config[graphTitleField(getLanguage())]?.trim() && axisValid;
         const usable = data?.records.some(
           (r) =>
             !r.overlap && !r.superseded && chosen.some((m) => Number.isFinite(r.values[m.key])),
@@ -364,18 +428,7 @@ export function createGraphs({ current, request, toast }) {
         frame.replaceChildren();
         svg = null;
         if (data && axisValid) {
-          svg = renderGraph(
-            kind() !== 'daily'
-              ? {
-                  ...config,
-                  titleEn:
-                    config.titleEn +
-                    (kind() === 'nightShift' ? ' · Night shift' : ' · After production'),
-                  titleZh: config.titleZh + (kind() === 'nightShift' ? ' · 夜班' : ' · 生产时段'),
-                }
-              : config,
-            data,
-          );
+          svg = renderGraph(config, { ...data, kind: kind() });
           frame.append(svg);
         } else if (!data)
           frame.append(
@@ -388,7 +441,7 @@ export function createGraphs({ current, request, toast }) {
         for (const label of [
           t('graphPeriod'),
           t('graphSource'),
-          ...chosen.map((m) => m.label + ' (' + m.unit + ')'),
+          ...chosen.map((m) => metricLabel(m, getLanguage()) + ' (' + m.unit + ')'),
         ])
           header.append(node('th', label));
         head.append(header);
@@ -399,7 +452,7 @@ export function createGraphs({ current, request, toast }) {
           row.append(
             node(
               'td',
-              graphPeriodText(record) +
+              graphPeriodLabel(record, getLanguage()) +
                 (record.overlap
                   ? ' · ' + t('graphExcluded')
                   : record.superseded
@@ -432,17 +485,21 @@ export function createGraphs({ current, request, toast }) {
       const [year, month] = current().startDate.split('-').map(Number);
       $('graph-end').value = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
     }
+    animateNext = true;
+    $('graph-layout-tools').open = false;
+    $('graph-about').open = false;
     $('graphs-dialog').showModal();
     void load();
   });
+  $('graph-department').addEventListener('change', () => renderCards());
   $('graph-refresh').addEventListener('click', () => void load());
   for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end'])
     $(id).addEventListener('change', () => void load());
   $('graph-presets').addEventListener('click', () => {
     if (!confirm(t('graphResetConfirm'))) return;
-    activeLayouts()[factory()] = defaultGraphs(factory());
+    activeLayouts()[factory()] = defaultGraphs(factory()).map((c) => upgradeGraph(factory(), c));
     store();
-    renderCards();
+    render();
   });
   $('graph-add').addEventListener('click', () => {
     const plant = factory();
@@ -451,13 +508,15 @@ export function createGraphs({ current, request, toast }) {
       return;
     }
     activeLayouts()[plant].push({
-      titleEn: plant + ' electrical consumption',
-      titleZh: plant + '工厂用电量',
+      titleEn: plant + ' · ' + departmentLabel('other', 'en'),
+      titleZh: plant + ' · ' + departmentLabel('other', 'zh-CN'),
+      titleId: plant + ' · ' + departmentLabel('other', 'id'),
       unit: 'kWh',
       series: [],
     });
+    $('graph-department').value = 'all';
     store();
-    renderCards();
+    render();
     const card = $('graph-cards').lastElementChild;
     card.querySelector('details').open = true;
     card.scrollIntoView({ block: 'start' });

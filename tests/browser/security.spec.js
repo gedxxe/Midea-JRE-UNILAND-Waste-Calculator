@@ -74,11 +74,12 @@ test('stored hostile text stays inert in draft inputs, reports, historian and ex
   await page.locator('[data-close-dialog="history-dialog"]').click();
   await page.locator('#open-graphs').click();
   const card = page.locator('.graph-card').first();
-  await card.locator('.graph-settings summary').click();
+  await card.locator('.graph-settings > summary').click();
   await card.locator('[data-graph-title="titleEn"]').fill(payload);
   await expect(card.locator('svg')).toContainText(payload);
-  await card.locator('.graph-settings summary').click();
+  await card.locator('.graph-settings > summary').click();
   const pending = page.waitForEvent('download');
+  await card.locator('.graph-download summary').click();
   await card.locator('[data-graph-export="svg"]').click();
   const download = await pending;
   const file = info.outputPath('hostile-title.svg');
