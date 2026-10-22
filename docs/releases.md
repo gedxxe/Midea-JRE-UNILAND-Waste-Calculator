@@ -78,3 +78,7 @@ No database, account or report-format migration is required. This release reads 
 ## Monitoring views (v0.11.15-alpha)
 
 No database or report-format migration is required. Monthly tables and smooth/interactive graphs are views of existing saved graph values, without new persisted account or workspace fields. Layout preferences remain v2; legend visibility is temporary. A code rollback removes the new views and retains saved reports, JRE layout 5, utility layout 1 and backup v4. Use the existing release branch/tag workflow without replacing earlier milestones.
+
+## Monitoring scroll fix (v0.11.16-alpha)
+
+Presentation-only fix with no database migration, account configuration or persisted format changes. Full-window/filter state is temporary; close or account changes reset it. A normal revert PR can remove this change without rewriting saved reports or graph preferences. Returning to v0.11.15 also restores its known short-screen table bug, so prefer a forward fix. The CI job budget is 20 minutes to accommodate slow browser OS dependency downloads; audit, source, unit, integration and browser checks remain required.

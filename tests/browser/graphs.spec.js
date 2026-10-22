@@ -671,6 +671,7 @@ test('monthly matrix shows month/year, full date columns, combined totals, missi
   await expect(row.locator('td[data-date="2026-09-18"]')).toHaveAttribute('colspan', '3');
   await expect(row.locator('td[data-date="2026-09-18"] .matrix-value')).toHaveText('321.5');
   await expect(row.locator('td[data-date="2026-09-30"]')).toContainText('30/09–02/10');
+  await page.locator('#graph-filters > summary').click();
   await page.locator('#graph-search').fill('Indoor');
   await expect(matrix.locator('tbody tr[data-metric]')).toHaveCount(1);
   expect(requests).toBe(before);
@@ -787,6 +788,7 @@ test('monthly view drops delayed data on account changes and keeps period filter
   await page.locator('#open-graphs').click();
   await expect(page.locator('#graph-view-charts')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#graph-view-table').click();
+  await page.locator('#graph-filters > summary').click();
   for (const plant of ['JRE', 'UNILAND'])
     for (const kind of ['daily', 'workingHours', 'nightShift']) {
       await page.locator('#graph-plant').selectOption(plant);
@@ -795,4 +797,145 @@ test('monthly view drops delayed data on account changes and keeps period filter
       await expect(page.locator('#graph-matrix thead th[data-date]')).toHaveCount(30);
     }
   expect(state.errors).toEqual([]);
+});
+
+test('monthly table remains readable and chains wheel scrolling to its dialog on short screens', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Mouse wheel regression is checked on desktop.');
+  await page.setViewportSize({ width: 1280, height: 600 });
+  await setup(page);
+  await page.click('#open-graphs');
+  await page.click('#graph-view-table');
+  await expect(page.locator('#graph-filters')).not.toHaveAttribute('open');
+  await page.locator('#graph-filters > summary').click();
+  const dialog = page.locator('#graphs-dialog');
+  const scroller = page.locator('.graph-matrix-scroll');
+  await expect(scroller).toBeVisible();
+  expect(await scroller.evaluate((el) => el.clientHeight)).toBeGreaterThanOrEqual(230);
+  // Reach the last row inside the table, then scroll beyond its boundary.
+  await scroller.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await scroller.scrollIntoViewIfNeeded();
+  const last = scroller.locator('tbody tr[data-metric]').last();
+  await expect(last).toBeInViewport();
+  await scroller.hover();
+  const before = await dialog.evaluate((el) => el.scrollTop);
+  await page.mouse.wheel(0, 1400);
+  await expect.poll(() => dialog.evaluate((el) => el.scrollTop)).toBeGreaterThan(before + 20);
+  // Returning to the table's upper boundary also returns to the parent controls.
+  await scroller.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await scroller.hover();
+  await page.mouse.wheel(0, -4000);
+  await expect.poll(() => dialog.evaluate((el) => el.scrollTop)).toBe(0);
+});
+
+test('full screen expands the monitoring table, restores filters and exits before closing', async ({
+  page,
+  isMobile,
+}) => {
+  const { changeUser, errors } = await setup(page);
+  await page.click('#open-graphs');
+  await page.click('#graph-view-table');
+  const dialog = page.locator('#graphs-dialog');
+  const filters = page.locator('#graph-filters');
+  await filters.locator(':scope > summary').click();
+  const expand = page.locator('#graph-expand');
+  const cells = page.locator('#graph-matrix tr[data-metric="r0"] td');
+  await expect(cells.first()).toBeAttached();
+  const savedValues = await cells.allTextContents();
+  const screens = isMobile
+    ? [
+        { width: 390, height: 844 },
+        { width: 844, height: 390 },
+      ]
+    : [
+        { width: 1536, height: 700 },
+        { width: 960, height: 540 },
+      ];
+  for (const viewport of screens) {
+    await page.setViewportSize(viewport);
+    await expand.click();
+    await expect(expand).toHaveAttribute('aria-pressed', 'true');
+    await expect(filters).not.toHaveAttribute('open');
+    const bounds = await dialog.boundingBox();
+    expect(bounds.x).toBe(0);
+    expect(bounds.y).toBe(0);
+    expect(bounds.width).toBe(viewport.width);
+    expect(bounds.height).toBe(viewport.height);
+    expect(
+      await page.locator('.graph-matrix-scroll').evaluate((el) => el.clientHeight),
+    ).toBeGreaterThanOrEqual(230);
+    expect(await cells.allTextContents()).toEqual(savedValues);
+    await expect(page.locator('.graph-matrix-kind')).toHaveText('24 hours');
+    // Filters are still reachable and usable in the expanded view.
+    await filters.locator(':scope > summary').click();
+    await page.selectOption('#graph-plant', 'UNILAND');
+    await expect(page.locator('#graph-matrix h3')).toContainText('UNILAND');
+    await page.selectOption('#graph-kind', 'nightShift');
+    await expect(page.locator('.graph-matrix-kind')).toHaveText('Night shift');
+    await page.selectOption('#graph-kind', 'daily');
+    await page.selectOption('#graph-plant', 'JRE');
+    await filters.locator(':scope > summary').click();
+    await page.locator('.graph-matrix-scroll').focus();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+    await expect(expand).toHaveAttribute('aria-pressed', 'false');
+    await expect(filters).toHaveAttribute('open');
+    await expect(expand).toBeFocused();
+    expect(await cells.allTextContents()).toEqual(savedValues);
+  }
+  // Restore the operator's prior collapsed-filter choice on leaving full screen.
+  await filters.locator(':scope > summary').click();
+  await expand.click();
+  await expand.click();
+  await expect(filters).not.toHaveAttribute('open');
+  await expand.click();
+  await page.click('[data-close-dialog="graphs-dialog"]');
+  await expect(dialog).not.toBeVisible();
+  await expect(expand).toHaveAttribute('aria-pressed', 'false');
+  await page.click('#open-graphs');
+  await expect(filters).not.toHaveAttribute('open');
+  await expand.click();
+  changeUser();
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: 'midea_account_changed',
+        newValue: String(Date.now()),
+      }),
+    ),
+  );
+  await expect(dialog).not.toBeVisible();
+  await expect(expand).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#graph-matrix')).toBeEmpty();
+  expect(errors).toEqual([]);
+});
+
+test('monitoring window controls follow the selected language without exposing the closed dialog', async ({
+  page,
+}) => {
+  await setup(page);
+  const labels = [
+    ['en', 'Full screen', 'Restore view', 'Filters'],
+    ['zh-CN', '全屏', '还原视图', '筛选'],
+    ['id', 'Layar Penuh', 'Kembali ke Tampilan Biasa', 'Filter'],
+  ];
+  for (const [language, full, restore, filter] of labels) {
+    await page.selectOption('#language-select', language);
+    await expect(page.locator('#graphs-dialog')).not.toBeVisible();
+    await page.click('#open-graphs');
+    await expect(page.locator('#graph-expand')).toHaveAccessibleName(full);
+    await expect(page.locator('#graph-filters > summary')).toHaveText(filter);
+    await page.click('#graph-expand');
+    await expect(page.locator('#graph-expand')).toHaveAccessibleName(restore);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#graphs-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#graphs-dialog')).not.toBeVisible();
+  }
 });

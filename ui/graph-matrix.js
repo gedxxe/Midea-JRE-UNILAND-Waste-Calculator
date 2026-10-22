@@ -6,7 +6,14 @@ import { metricLabel, departmentLabel, graphPeriodLabel } from '../graph-present
 import { shiftDate, formatNumber } from '../numbers.js';
 import { periodLabel } from '../graph-axis.js';
 
-export function renderMonthlyTable({ plant, month, records, department = 'all', search = '' }) {
+export function renderMonthlyTable({
+  plant,
+  kind = 'daily',
+  month,
+  records,
+  department = 'all',
+  search = '',
+}) {
   const model = monthlyPeriods(month, records);
   const root = node('section', undefined, 'graph-matrix');
   if (!model) {
@@ -23,10 +30,22 @@ export function renderMonthlyTable({ plant, month, records, department = 'all', 
   const heading = node('div', undefined, 'graph-matrix-heading');
   const title =
     plant + ' · ' + dateFormat({ month: 'long', year: 'numeric' }).format(date(model.start));
-  heading.append(
+  const titleGroup = node('div', undefined, 'graph-matrix-title');
+  titleGroup.append(
     node('h3', title),
-    node('span', t('graphReady', { count: model.count }), 'graph-count'),
+    node(
+      'span',
+      t(
+        kind === 'workingHours'
+          ? 'graphAfter'
+          : kind === 'nightShift'
+            ? 'graphNight'
+            : 'graphDaily',
+      ),
+      'graph-matrix-kind',
+    ),
   );
+  heading.append(titleGroup, node('span', t('graphReady', { count: model.count }), 'graph-count'));
   root.append(heading, node('p', t('graphMatrixHint'), 'graph-help'));
   const metrics = GRAPH_METRICS[plant].filter(
     (metric) =>
