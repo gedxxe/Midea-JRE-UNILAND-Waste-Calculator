@@ -1,3 +1,4 @@
+import { smoothPath } from '../graph-curve.js';
 import { getLanguage, t } from '../i18n/index.js';
 import { graphTitleField, metricLabel, graphPeriodLabel } from '../graph-presentation.js';
 import { pngResolution } from '../png.js';
@@ -88,6 +89,7 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
     'aria-label': title,
     lang: language,
     'font-family': FONT,
+    'data-plot-bounds': [left, top, right, bottom].join(','),
   });
   svg.append(svgNode('title', {}, title), svgNode('desc', {}, t('graphPlotDesc')));
   svg.append(svgNode('rect', { width: chartWidth, height, fill: '#ffffff' }));
@@ -107,7 +109,7 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
       ),
     ),
   );
-  svg.style.minWidth = chartWidth + 'px';
+  svg.style.minWidth = Math.max(680, periods.length * 32 + 180) + 'px';
   const multi = periods.some((r) => r.days > 1);
   svg.append(
     svgNode(
@@ -125,7 +127,9 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
         (multi ? ' · ' + t('graphMultiNote') : ''),
     ),
   );
-  const segments = metrics.map((metric) => ({ metric, parts: graphSegments(records, metric.key) }));
+  const segments = metrics
+    .filter((metric) => !config.hiddenSeries?.includes(metric.key))
+    .map((metric) => ({ metric, parts: graphSegments(records, metric.key) }));
   const axis = graphYAxis(
     segments.flatMap((s) => s.parts.flatMap((p) => p.map((v) => v.value))),
     config.yAxis,
@@ -246,18 +250,20 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
           (axis.clipped ? ' · ' + t('graphOutside') : ''),
       ),
     );
-  segments.forEach(({ metric, parts }, index) => {
+  segments.forEach(({ metric, parts }) => {
+    const index = metrics.findIndex((m) => m.key === metric.key);
     const color = COLORS[index % COLORS.length],
       dash = ['none', '5 3', '2 3', '8 3 2 3', '10 4'][Math.floor(index / COLORS.length) % 5];
     for (const part of parts) {
       plot.append(
         svgNode('path', {
-          d: part.map((p, i) => (i ? 'L' : 'M') + x(p) + ' ' + y(p.value)).join(' '),
+          d: smoothPath(part.map((p) => [x(p), y(p.value)])),
           fill: 'none',
           stroke: color,
           'stroke-width': 1.4,
           'stroke-dasharray': dash,
           'stroke-linejoin': 'round',
+          'data-series': metric.key,
         }),
       );
       for (const p of part) {
@@ -267,6 +273,7 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
           r: 2.4,
           fill: color,
           'data-series': metric.key,
+          'data-period-index': positions.get(p.startDate + '/' + p.endDate),
         });
         mark.append(
           svgNode(
@@ -288,8 +295,29 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
         plot.append(mark);
       }
     }
-    const item = legend[index];
-    svg.append(
+  });
+  metrics.forEach((metric, index) => {
+    const item = legend[index],
+      hidden = config.hiddenSeries?.includes(metric.key);
+    const color = COLORS[index % COLORS.length],
+      dash = ['none', '5 3', '2 3', '8 3 2 3', '10 4'][Math.floor(index / COLORS.length) % 5];
+    const group = svgNode('g', {
+      'data-graph-toggle': metric.key,
+      role: 'button',
+      tabindex: 0,
+      'aria-pressed': !hidden,
+      'aria-label': t('graphToggleSeries', { name: metric.label }),
+      opacity: hidden ? 0.35 : 1,
+    });
+    group.append(
+      svgNode('rect', {
+        x: item.x - 6,
+        y: item.y - 21,
+        width: Math.max(...item.lines.map((line) => width(line, 13))) + 48,
+        height: Math.max(32, item.lines.length * 16 + 12),
+        rx: 7,
+        fill: '#ffffff',
+      }),
       svgNode('line', {
         x1: item.x,
         y1: item.y - 4,
@@ -301,14 +329,21 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
       }),
     );
     item.lines.forEach((line, i) =>
-      svg.append(
+      group.append(
         svgNode(
           'text',
-          { x: item.x + 32, y: item.y + i * 16, 'font-size': 13, fill: '#222222' },
+          {
+            x: item.x + 32,
+            y: item.y + i * 16,
+            'font-size': 13,
+            fill: '#222222',
+            'text-decoration': hidden ? 'line-through' : 'none',
+          },
           line,
         ),
       ),
     );
+    svg.append(group);
   });
   const count = segments.reduce((n, s) => n + s.parts.reduce((a, p) => a + p.length, 0), 0);
   if (!count)
@@ -335,7 +370,13 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
   return svg;
 }
 function svgBlob(svg) {
-  return new Blob([new XMLSerializer().serializeToString(svg)], {
+  const copy = svg.cloneNode(true);
+  for (const active of copy.querySelectorAll('.graph-point-active'))
+    active.classList.remove('graph-point-active');
+  for (const legend of copy.querySelectorAll('[data-graph-toggle]'))
+    for (const attribute of ['data-graph-toggle', 'role', 'tabindex', 'aria-pressed', 'aria-label'])
+      legend.removeAttribute(attribute);
+  return new Blob([new XMLSerializer().serializeToString(copy)], {
     type: 'image/svg+xml;charset=utf-8',
   });
 }

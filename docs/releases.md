@@ -74,3 +74,7 @@ JRE layout 5 adds one raw pair. No database migration is required. Existing layo
 ## Graph presentation (v0.11.14-alpha)
 
 No database, account or report-format migration is required. This release reads legacy v1 graph layouts without overwriting them; new preferences use browser-local v2 keys. A code rollback restores the earlier graph interface and its v1 settings. New v2 titles, variables and bounds remain in the same browser for a compatible release to recover. Saved reports, utility layout 1, JRE layout 5 and backup v4 remain unchanged. Viewer accounts and shared dashboards are outside this release.
+
+## Monitoring views (v0.11.15-alpha)
+
+No database or report-format migration is required. Monthly tables and smooth/interactive graphs are views of existing saved graph values, without new persisted account or workspace fields. Layout preferences remain v2; legend visibility is temporary. A code rollback removes the new views and retains saved reports, JRE layout 5, utility layout 1 and backup v4. Use the existing release branch/tag workflow without replacing earlier milestones.

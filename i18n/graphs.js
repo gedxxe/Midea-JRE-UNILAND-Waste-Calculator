@@ -1,4 +1,45 @@
 export const graphMessages = {
+  graphMonitor: ['Energy monitoring', '能耗监测', 'Monitoring Energi'],
+  graphCharts: ['Charts', '图表', 'Grafik'],
+  graphMonthlyTable: ['Monthly table', '月度表格', 'Tabel Bulanan'],
+  graphMonth: ['Month & year', '月份与年份', 'Bulan & Tahun'],
+  graphPreviousMonth: ['Previous month', '上个月', 'Bulan Sebelumnya'],
+  graphNextMonth: ['Next month', '下个月', 'Bulan Berikutnya'],
+  graphEquipment: ['Equipment / department', '设备 / 部门', 'Equipment / Departemen'],
+  graphConsumption: ['Saved consumption', '已保存用量', 'Konsumsi Tersimpan'],
+  graphSearchRows: ['Find equipment', '查找设备', 'Cari Equipment'],
+  graphMissing: ['No saved value', '无已保存数值', 'Belum ada nilai tersimpan'],
+  graphNoRows: ['No matching equipment.', '未找到匹配设备。', 'Equipment tidak ditemukan.'],
+  graphMatrixHint: [
+    'Report-start dates. Combined cells keep the full period total. Missing: - · Recorded zero: 0.',
+    '按报告起始日期。合并单元格保留完整时段用量。- 为缺失，0 为实际零值。',
+    'Tanggal awal laporan. Sel gabungan tetap satu total periode utuh. Belum ada data: - · Tercatat nol: 0.',
+  ],
+  graphExcludedCount: [
+    '{count} excluded records',
+    '{count} 条未显示记录',
+    '{count} record tidak ditampilkan',
+  ],
+  graphExplore: [
+    'Explore saved readings: hover or tap a date, or use Left/Right, Home and End. Click a legend to hide or show its line.',
+    '查看已保存读数：悬停或点按日期，或使用左右方向键、Home 和 End。点击图例显示或隐藏曲线。',
+    'Lihat data tersimpan: arahkan kursor atau ketuk tanggal, atau gunakan tombol panah, Home dan End. Klik legend untuk menampilkan atau menyembunyikan garis.',
+  ],
+  graphToggleSeries: [
+    'Show or hide {name}',
+    '显示或隐藏{name}',
+    'Tampilkan atau sembunyikan {name}',
+  ],
+  graphSmoothHint: [
+    'Curves connect saved observations without overshoot. Points and tooltips show saved values; no readings are estimated. Legend visibility is temporary and is included in the copied view.',
+    '曲线连接已保存观测点，不产生超调。点与提示显示原始保存数值，不估算读数。图例显示状态为临时设置，复制图片保留当前视图。',
+    'Kurva menghubungkan observasi tersimpan tanpa melampaui nilai di kedua ujung. Titik dan tooltip memakai nilai tersimpan, tanpa mengestimasi reading. Tampilan legend bersifat sementara dan ikut dalam gambar yang disalin.',
+  ],
+  graphAllHidden: [
+    'All lines hidden. Click a legend to show one.',
+    '所有曲线已隐藏，请点击图例显示。',
+    'Semua garis disembunyikan. Klik legend untuk menampilkannya.',
+  ],
   graphTitle: ['Title', '标题', 'Judul'],
   graphPeriodHint: [
     '24 hours: morning to next morning. After production: morning to evening. Night shift: evening to next morning. Each period retains its own saved consumption.',

@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.14-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.15-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -49,6 +49,8 @@ Only observations with the same factory, date and time are shared. Unknown readi
 | Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                                                                                                    |
 | Calculate gas and Water            | Both plants use raw LPG %, O2 mmWC, N2 mmH2O and R32 mm/temperature with their reference tables. Convert observations to kg before stock/refill subtraction. Water is cumulative m³ end minus start. Both support all three periods.                                                                                                                                                    |
 | Review trends                      | **Graphs** reads saved reports and approved consumption imports. White background, thin lines and one selected language for chart text and exports. Filter departments; 9 JRE / 7 UNILAND presets and every period label remain. Copy high-resolution PNG directly; PNG/SVG downloads and custom series/scales remain available in compact controls. Unsaved edits do not enter graphs. |
+
+**Monthly table** adds a month/year heading, full date columns and frozen equipment rows for JRE and UNILAND. Combined periods keep one full total. Charts support smooth paths, shared tooltips and clickable legends; saved values and gaps remain unchanged.
 
 The interface supports English, Simplified Chinese and Indonesian. Equipment, units and copied templates retain factory wording. Combined dates remain a period total, not an invented daily average.
 
@@ -123,7 +125,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.14-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.15-alpha**，数据用于决策前仍需人工复核。
 
 ### 操作流程与功能
 
@@ -147,6 +149,8 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 - **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 30 秒或连续编辑 120 秒后同步；关闭前查看账户保存时间。冲突需手动选择。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
 - **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，三个时段均可记录。
 - **图表：** 使用已保存报表及审核过的历史导入。白底细线，图表与导出图片仅显示当前所选语言。支持部门筛选，保留完整日期标签及 JRE 9 组、UNILAND 7 组预设。一键复制高清 PNG；下载菜单提供 PNG/SVG，变量和 Y 轴设置收起显示。未保存数据不进入图表。
+
+**月度表格**显示月份、年份、完整日期列和固定设备名称；合并时段保留完整用量。图表支持平滑曲线、共享提示及可点击图例，保存数值与缺失间隔保持不变。
 
 燃气换算库存增加时显示 **+数值（测得库存增加）**，并提示检查读数、温度及是否漏记补充，仍可保存和复制。正常用量格式不变；无效读数或补充量下降仍需修正。库存增加不作为正用量绘图，不推断物理原因，也不重算旧报表。
 
@@ -172,7 +176,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.14-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.15-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 ### Alur dan fitur operator
 
@@ -196,6 +200,8 @@ Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOU
 - **Draft/backup:** satu workspace per akun untuk dua pabrik dan tiga mode. Salinan tab langsung, sinkron setelah 30 detik idle atau 120 detik mengedit terus. Perhatikan waktu simpan akun sebelum menutup. Konflik dipilih manual. Backup JSON mencakup input belum lengkap, divalidasi utuh dan mendukung Undo. File tidak terenkripsi, simpan privat.
 - **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Berlaku di ketiga periode.
 - **Grafik:** laporan tersimpan dan impor histori yang ditinjau, latar putih, garis tipis, serta teks grafik dan ekspor mengikuti satu bahasa pilihan. Filter departemen tersedia; preset 9 JRE / 7 UNILAND dan seluruh label periode tetap ada. Copy PNG resolusi tinggi langsung; unduhan PNG/SVG, variabel dan skala Y tersedia lewat kontrol ringkas. Input belum tersimpan tidak masuk grafik.
+
+**Tabel bulanan** menampilkan bulan/tahun, kolom tanggal lengkap dan nama equipment yang tetap terlihat saat digeser. Rekap gabungan tetap satu total. Grafik memakai kurva halus, tooltip bersama dan legend interaktif; nilai tersimpan serta celah data tetap sama.
 
 Kenaikan stok gas hasil konversi tetap tampil sebagai **+angka (kenaikan stok terukur)**, dengan notice untuk memeriksa reading, suhu dan refill yang mungkin belum dicatat. Laporan tetap bisa disimpan/disalin; konsumsi biasa memakai format semula. Input tidak valid atau stok yang turun saat refill tetap perlu dikoreksi. Kenaikan stok tidak diplot sebagai konsumsi positif, penyebab fisiknya tidak ditebak, dan histori tidak dihitung ulang.
 

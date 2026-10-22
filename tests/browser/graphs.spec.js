@@ -624,3 +624,175 @@ test('an in-flight graph copy cannot deliver an outdated title after configurati
   await expect.poll(() => page.evaluate(() => window.graphWrites)).toEqual(['cancelled', 'copied']);
   expect(state.errors).toEqual([]);
 });
+
+test('monthly matrix shows month/year, full date columns, combined totals, missing and zero in all languages', async ({
+  page,
+}, info) => {
+  const state = await setup(page);
+  const data = records('JRE');
+  data[1].values.w0 = 0;
+  data.push({
+    id: 'combined',
+    startDate: '2026-09-18',
+    endDate: '2026-09-21',
+    days: 3,
+    source: 'report',
+    revision: 1,
+    values: { w0: 321.5 },
+  });
+  data.push({
+    id: 'cross-month',
+    startDate: '2026-09-30',
+    endDate: '2026-10-03',
+    days: 3,
+    source: 'report',
+    revision: 1,
+    values: { w0: 90 },
+  });
+  let requests = 0;
+  await page.route('**/api/graphs?**', (r) => {
+    requests++;
+    const params = Object.fromEntries(new URL(r.request().url()).searchParams);
+    return r.fulfill({ json: { ...params, records: data } });
+  });
+  const report = await page.locator('#report-preview').inputValue();
+  await page.locator('#open-graphs').click();
+  await expect(page.locator('.graph-card').first().locator('svg')).toBeAttached();
+  const before = requests;
+  await page.locator('#graph-view-table').click();
+  expect(requests).toBe(before);
+  const matrix = page.locator('#graph-matrix');
+  await expect(matrix.locator('h3')).toHaveText('JRE · September 2026');
+  await expect(matrix.locator('thead th[data-date]')).toHaveCount(30);
+  await expect(matrix.locator('thead th[data-date="2026-09-01"]')).toContainText('01 Sep');
+  const row = matrix.locator('tr[data-metric="w0"]');
+  await expect(row.locator('td[data-date="2026-09-02"] .matrix-value')).toHaveText('0');
+  await expect(row.locator('td[data-date="2026-09-04"]')).toHaveText('-');
+  await expect(row.locator('td[data-date="2026-09-18"]')).toHaveAttribute('colspan', '3');
+  await expect(row.locator('td[data-date="2026-09-18"] .matrix-value')).toHaveText('321.5');
+  await expect(row.locator('td[data-date="2026-09-30"]')).toContainText('30/09–02/10');
+  await page.locator('#graph-search').fill('Indoor');
+  await expect(matrix.locator('tbody tr[data-metric]')).toHaveCount(1);
+  expect(requests).toBe(before);
+  await page.locator('#graph-search').fill('');
+  for (const language of ['zh-CN', 'id', 'en']) {
+    await page.locator('#language-select').selectOption(language);
+    await expect(matrix.locator('h3')).toContainText(
+      language === 'zh-CN' ? '2026年9月' : 'September 2026',
+    );
+    const text = await matrix.textContent();
+    if (language !== 'zh-CN') expect(text).not.toMatch(/[\u3400-\u9fff]/);
+  }
+  const scroller = matrix.locator('.graph-matrix-scroll'),
+    name = row.locator('th');
+  const original = (await name.boundingBox()).x;
+  await scroller.evaluate((el) => {
+    el.scrollLeft = 650;
+    el.scrollTop = 100;
+  });
+  expect(Math.abs((await name.boundingBox()).x - original)).toBeLessThan(2);
+  await scroller.evaluate((el) => {
+    el.scrollLeft = 0;
+    el.scrollTop = 0;
+  });
+  await matrix.screenshot({ path: info.outputPath('monthly-matrix.png') });
+  await page.locator('#graph-month').fill('2024-02');
+  await expect(matrix.locator('thead th[data-date]')).toHaveCount(29);
+  await page.locator('#graph-month').fill('2026-02');
+  await expect(matrix.locator('thead th[data-date]')).toHaveCount(28);
+  await page.locator('#graph-month-prev').click();
+  await expect(matrix.locator('h3')).toHaveText('JRE · January 2026');
+  await page.locator('#graph-month-next').click();
+  await expect(matrix.locator('h3')).toHaveText('JRE · February 2026');
+  await page.locator('#graph-plant').selectOption('UNILAND');
+  await expect(matrix.locator('h3')).toHaveText('UNILAND · February 2026');
+  await page.locator('[data-close-dialog="graphs-dialog"]').click();
+  await expect(matrix).toBeEmpty();
+  await expect(page.locator('#report-preview')).toHaveValue(report);
+  expect(state.errors).toEqual([]);
+});
+
+test('smooth graphs share exact tooltips, keep gaps, toggle legends and export without hover controls', async ({
+  page,
+}, info) => {
+  const state = await setup(page);
+  await page.locator('#open-graphs').click();
+  const first = page.locator('.graph-card').first(),
+    frame = first.locator('.graph-frame');
+  await expect(first.locator('svg [data-plot] path').first()).toHaveAttribute('d', /C/);
+  const original = await first
+    .locator('circle[data-series="w1"]')
+    .first()
+    .locator('title')
+    .textContent();
+  const color = await first.locator('circle[data-series="w2"]').first().getAttribute('fill');
+  await frame.focus();
+  await page.keyboard.press('Home');
+  await expect(first.locator('.graph-hover')).toBeVisible();
+  await expect(first.locator('.graph-hover-row')).toHaveCount(4);
+  await expect(first.locator('.graph-crosshair')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expect(first.locator('.graph-hover > strong')).toContainText('2026-09-02');
+  await page.keyboard.press('Escape');
+  await expect(first.locator('.graph-hover')).toBeHidden();
+  await first.locator('[data-graph-toggle="w1"]').click();
+  await expect(first.locator('circle[data-series="w1"]')).toHaveCount(0);
+  await expect(first.locator('[data-graph-toggle="w1"]')).toHaveAttribute('aria-pressed', 'false');
+  await expect(first.locator('circle[data-series="w2"]').first()).toHaveAttribute('fill', color);
+  await page.keyboard.press('Enter');
+  await expect(first.locator('circle[data-series="w1"]').first().locator('title')).toHaveText(
+    original,
+  );
+  await frame.focus();
+  await page.keyboard.press('End');
+  const download = page.waitForEvent('download');
+  await first.locator('.graph-download summary').click();
+  await first.locator('[data-graph-export="svg"]').click();
+  const file = info.outputPath('interactive.svg');
+  await (await download).saveAs(file);
+  const svg = await readFile(file, 'utf8');
+  expect(svg).not.toContain('graph-hover');
+  expect(svg).not.toContain('graph-crosshair');
+  expect(svg).not.toContain('tabindex');
+  expect(svg).not.toContain('graph-point-active');
+  expect(svg).toContain('stroke-width="1.4"');
+  for (const key of ['w1', 'w2', 'w3', 'w4'])
+    await first.locator('[data-graph-toggle="' + key + '"]').click();
+  await expect(first.locator('[data-graph-copy]')).toBeDisabled();
+  await expect(first.locator('.graph-prompt')).toContainText('All lines hidden');
+  await page.locator('[data-close-dialog="graphs-dialog"]').click();
+  await page.locator('#open-graphs').click();
+  await expect(first.locator('circle[data-series="w1"]').first()).toBeAttached();
+  expect(state.errors).toEqual([]);
+});
+
+test('monthly view drops delayed data on account changes and keeps period filters read-only', async ({
+  page,
+}) => {
+  const state = await setup(page, { pending: true });
+  await page.locator('#open-graphs').click();
+  await page.locator('#graph-view-table').click();
+  await expect.poll(state.started).toBe(true);
+  state.changeUser();
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'midea_account_changed', newValue: 'changed' }),
+    ),
+  );
+  await expect(page.locator('#account-name')).toHaveText('other-operator');
+  state.release();
+  await expect(page.locator('#graphs-dialog')).not.toBeVisible();
+  await expect(page.locator('#graph-matrix')).toBeEmpty();
+  await page.locator('#load-example').click();
+  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graph-view-charts')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#graph-view-table').click();
+  for (const plant of ['JRE', 'UNILAND'])
+    for (const kind of ['daily', 'workingHours', 'nightShift']) {
+      await page.locator('#graph-plant').selectOption(plant);
+      await page.locator('#graph-kind').selectOption(kind);
+      await expect(page.locator('#graph-matrix h3')).toContainText(plant);
+      await expect(page.locator('#graph-matrix thead th[data-date]')).toHaveCount(30);
+    }
+  expect(state.errors).toEqual([]);
+});

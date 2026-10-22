@@ -818,12 +818,26 @@
     ></p>
     <dialog id="graphs-dialog" aria-labelledby="graphs-title">
       <div class="dialog-heading">
-        <h2 id="graphs-title" data-i18n="graphs">Graphs</h2>
+        <h2 id="graphs-title" data-i18n="graphMonitor">Graphs</h2>
+        <div class="graph-view-switch" role="group" data-i18n-aria-label="graphMonitor">
+          <button
+            type="button"
+            id="graph-view-charts"
+            aria-pressed="true"
+            data-i18n="graphCharts"
+          ></button>
+          <button
+            type="button"
+            id="graph-view-table"
+            aria-pressed="false"
+            data-i18n="graphMonthlyTable"
+          ></button>
+        </div>
         <button class="text-button" data-close-dialog="graphs-dialog" data-i18n="close">
           Close
         </button>
       </div>
-      <p class="graph-help" data-i18n="graphHint"></p>
+
       <div class="graph-filter-bar">
         <label
           ><span data-i18n="graphFactory">Factory</span
@@ -840,15 +854,48 @@
             <option value="nightShift" data-i18n="graphNight">Night shift</option>
           </select></label
         >
-        <label><span data-i18n="graphStart"></span><input type="date" id="graph-start" /></label>
-        <label><span data-i18n="graphEnd"></span><input type="date" id="graph-end" /></label>
+        <label data-graph-date
+          ><span data-i18n="graphStart"></span><input type="date" id="graph-start"
+        /></label>
+        <label data-graph-date
+          ><span data-i18n="graphEnd"></span><input type="date" id="graph-end"
+        /></label>
+        <div id="graph-month-controls" class="graph-month-controls" hidden>
+          <button
+            type="button"
+            id="graph-month-prev"
+            class="button secondary"
+            data-i18n-aria-label="graphPreviousMonth"
+            data-i18n-title="graphPreviousMonth"
+          >
+            ‹
+          </button>
+          <label
+            ><span data-i18n="graphMonth"></span
+            ><input type="month" id="graph-month" min="2000-01" max="2099-12"
+          /></label>
+          <button
+            type="button"
+            id="graph-month-next"
+            class="button secondary"
+            data-i18n-aria-label="graphNextMonth"
+            data-i18n-title="graphNextMonth"
+          >
+            ›
+          </button>
+        </div>
         <button id="graph-refresh" class="button secondary" data-i18n="graphLoad"></button>
       </div>
+
       <div class="graph-view-bar">
         <label
           ><span data-i18n="graphDepartment"></span
           ><select id="graph-department"></select
         ></label>
+        <label id="graph-search-label" hidden
+          ><span data-i18n="graphSearchRows"></span
+          ><input type="search" id="graph-search" maxlength="80"
+        /></label>
         <p id="graph-status" role="status"></p>
         <details id="graph-layout-tools">
           <summary data-i18n="graphManage"></summary>
@@ -860,11 +907,15 @@
       </div>
       <div id="graph-warnings"></div>
       <div id="graph-cards"></div>
+      <div id="graph-matrix" hidden></div>
       <details id="graph-about" class="graph-help">
         <summary data-i18n="graphAbout"></summary>
         <p id="graph-mode-note" hidden></p>
+        <p data-i18n="graphHint"></p>
         <p data-i18n="graphLayoutNote"></p>
         <p data-i18n="graphImageNote"></p>
+        <p data-i18n="graphExplore"></p>
+        <p data-i18n="graphSmoothHint"></p>
       </details>
     </dialog>
     <dialog id="raw-template-dialog" aria-labelledby="raw-template-title">
