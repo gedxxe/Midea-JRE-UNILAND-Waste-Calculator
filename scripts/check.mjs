@@ -73,6 +73,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.6 adds an optional guide; its illustrations, styles and long translations load on demand.
 // v0.11.8 adds stock-increase notices and signed report presentation (~2 kB), without dependencies.
 // v0.11.11 adds the Structural zero rule and translated guidance (~0.5 kB), without dependencies.
-assert.ok(size < 485000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.12 adds shared shift utilities, compatibility guards and translations (~10.5 kB), without dependencies.
+assert.ok(size < 495500, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

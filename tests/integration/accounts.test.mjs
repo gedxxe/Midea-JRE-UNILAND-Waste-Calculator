@@ -1,3 +1,4 @@
+import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
 import { layout2Draft, layout3JreDraft } from '../fixtures/legacy-layout.mjs';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { selectReport } from '../../report-options.js';
@@ -88,7 +89,7 @@ test('work reports persist times and private revisions separately from daily rep
         .filter((k) => k.startsWith('u') || k.startsWith('kg'))
         .every((k) => workGraph.value.records[0].values[k] === null),
     );
-    d.utilities[0].value = '1';
+    d.utilities[0].value = 'invalid';
     assert.equal(
       (
         await call('/api/reports', {
@@ -1343,4 +1344,101 @@ test('Structural zero rule is enforced by the server in every period without rep
     assert.equal(kept.revision, 1);
     assert.deepEqual(kept.snapshot, saved);
   }
+});
+
+test('each plant saves shift gas, refill observations, Water and manual totals with server-owned calculations and immutable revisions', async () => {
+  const actor = await login(await seed());
+  for (const plant of ['JRE', 'UNILAND'])
+    for (const draft of utilityPeriods(plant).slice(1)) {
+      draft.gas.entries[0].refills = [
+        { before: { reading: '60', temperature: '' }, after: { reading: '75', temperature: '' } },
+      ];
+      const raw = structuredClone(draft),
+        expected = calculateDraft(draft);
+      const response = await call('/api/reports', {
+        actor,
+        body: { draft, totalEnergy: 999999, gas: { kg: 999999 } },
+      });
+      assert.equal(response.status, 201);
+      const url = '/api/reports?id=' + response.value.id + '&kind=' + draft.periodKind;
+      const first = (await call(url, { actor })).value.snapshot;
+      assert.deepEqual(first.draft.gas, raw.gas);
+      assert.deepEqual(first.draft.water, raw.water);
+      assert.deepEqual(first.draft.utilities, raw.utilities);
+      assert.equal(first.draft.utilityLayout, 1);
+      assert.equal(first.output.reportText, expected.reportSectionText);
+      assert.equal(first.output.gas[0].kg, expected.gasResults[0].kg);
+      const graph = await call(
+        '/api/graphs?plant=' + plant + '&start=2026-09-01&end=2026-09-30&kind=' + draft.periodKind,
+        { actor },
+      );
+      assert.equal(graph.status, 200);
+      assert.equal(graph.value.records[0].values.u4, Number(expected.waterResult.value));
+      draft.water.end = String(Number(draft.water.end) + 1);
+      const revised = await call('/api/reports', {
+        actor,
+        body: { id: response.value.id, baseRevision: 1, draft },
+      });
+      assert.equal(revised.status, 200);
+      assert.equal(revised.value.revision, 2);
+      const original = (await call(url + '&revision=1', { actor })).value.snapshot;
+      assert.deepEqual(original, first);
+      draft.gas.entries[3].end.temperature = '';
+      const invalid = await call('/api/reports', {
+        actor,
+        body: { id: response.value.id, baseRevision: 2, draft },
+      });
+      assert.equal(invalid.status, 422);
+      assert.equal((await call(url, { actor })).value.revision, 2);
+    }
+});
+
+test('shift utility markers and migration guards prevent stale clients and rollback writers from discarding new records', async () => {
+  const actor = await login(await seed()),
+    j = utilityPeriods(),
+    u = utilityPeriods('UNILAND');
+  const workspace = {
+    version: 4,
+    drafts: { JRE: j[0], UNILAND: u[0] },
+    workingHours: { JRE: j[1], UNILAND: u[1] },
+    nightShifts: { JRE: j[2], UNILAND: u[2] },
+  };
+  const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(saved.status, 200);
+  for (const collection of ['workingHours', 'nightShifts']) {
+    const old = structuredClone(workspace);
+    delete old[collection].JRE.utilityLayout;
+    old[collection].JRE.gas.entries[0].refills = [];
+    const rejected = await call('/api/drafts', {
+      actor,
+      body: { workspace: old, baseVersion: saved.value.version },
+    });
+    assert.equal(rejected.status, 409);
+    assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+    await assert.rejects(
+      runtime.query('UPDATE meter_app.working_drafts SET workspace=$2::jsonb WHERE owner_id=$1', [
+        actor.id,
+        JSON.stringify(old),
+      ]),
+      (e) => e.code === '23514',
+    );
+  }
+  const raw = structuredClone(j[1]);
+  delete raw.utilityLayout;
+  assert.equal((await call('/api/reports', { actor, body: { draft: raw } })).status, 409);
+  const report = await call('/api/reports', { actor, body: { draft: j[1] } });
+  assert.equal(report.status, 201);
+  const oldSnapshot = structuredClone(report.value.snapshot);
+  delete oldSnapshot.draft.utilityLayout;
+  await assert.rejects(
+    runtime.query(
+      'INSERT INTO meter_app.report_revisions(report_id,revision,actor_id,snapshot) VALUES($1,2,$2,$3::jsonb)',
+      [report.value.id, actor.id, JSON.stringify(oldSnapshot)],
+    ),
+    (e) => e.code === '23514',
+  );
+  const kept = await call('/api/reports?id=' + report.value.id + '&kind=workingHours', { actor });
+  assert.equal(kept.value.revision, 1);
+  assert.deepEqual(kept.value.snapshot, report.value.snapshot);
+  assert.equal((await call('/api/drafts', { actor })).value.version, saved.value.version);
 });

@@ -57,19 +57,19 @@ export const guideMessages = {
     'Import text dekat judul tabel; template kosong di samping ekspor raw.',
   ],
   guideUtilitiesTitle: [
-    'Keep gas and Water daily',
-    '燃气与水仍按日记录',
-    'Gas dan Water tetap harian',
+    'Record gas and Water per period',
+    '按时段记录燃气和水',
+    'Catat gas dan Water per periode',
   ],
   guideUtilitiesBody: [
-    'In 24 HOURS mode, record raw gas observations and any Before/After Refill pairs. Tank mode converts each observation to kg before calculating usage; R32 also needs temperature. Water uses cumulative m³ End minus Start. These sections stay daily, even when electricity is recorded per shift.',
-    '在 24 HOURS 模式记录燃气原始读数及加注前后读数。储罐模式先将每次观测换算为 kg，再计算用量；R32 还需温度。水用量为累计 m³ 结束减开始。即使电力按班次记录，燃气和水仍按日记录。',
-    'Di mode 24 HOURS, isi observasi gas mentah dan pasangan Before/After Refill jika ada. Mode tangki mengonversi setiap observasi ke kg dahulu; R32 juga perlu suhu. Water memakai m³ kumulatif End dikurangi Start. Keduanya tetap harian meski listrik dicatat per shift.',
+    'Choose the period, then enter raw stock and refill observations. Each observation is converted to kg first; R32 needs temperature. Water uses cumulative m³ End minus Start. Matching endpoints are shared; refill lists and manual totals stay with their period.',
+    '选择时段，填写库存原始读数及补充前后读数，逐次换算为 kg；R32 需温度。水用量为累计 m³ 结束减开始。相同时间的端点读数共用；补充列表和手填用量属于本时段。',
+    'Pilih periode, lalu isi stok mentah dan reading sebelum/sesudah refill. Konversi tiap observasi ke kg dahulu; R32 perlu suhu. Water memakai m³ kumulatif End dikurangi Start. Endpoint yang sama dipakai bersama; refill dan total manual tetap per periode.',
   ],
   guideUtilitiesPlace: [
-    'Gas consumption, then Water below the electricity table in 24 HOURS.',
-    '24 HOURS 模式电表下方的 Gas consumption 和 Water。',
-    'Gas consumption, lalu Water di bawah tabel listrik pada 24 HOURS.',
+    'Gas consumption, then Water below the electricity table in every period.',
+    '每个时段的电表表格下方依次为气体用量和水。',
+    'Gas consumption lalu Water di bawah tabel listrik pada setiap periode.',
   ],
   guideSaveTitle: [
     'Know where your draft is saved',

@@ -60,7 +60,8 @@ test('Day and Night subtract real cumulative readings and retain the start date,
     ])
       assert.equal(calculateDraft({ ...night, ...changes }).success, false);
     night.water = { start: '1', end: '2' };
-    assert.equal(calculateDraft(night).success, false);
+    assert.equal(calculateDraft(night).success, true);
+    assert.match(calculateDraft(night).mainText, /Water: 1 m³/);
   }
 });
 test('shared evening and JRE additional readings update in both directions without copying period confirmations', () => {

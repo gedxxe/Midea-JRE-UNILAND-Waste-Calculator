@@ -23,8 +23,7 @@ export function createGraphs({ current, request, toast }) {
   const key = (mode = kind()) =>
     'midea_graph_layout_v1_' + user.id + (mode !== 'daily' ? '_' + mode : '');
   const activeLayouts = () => layouts[kind()];
-  const availableMetrics = (plant) =>
-    GRAPH_METRICS[plant].filter((m) => kind() === 'daily' || /^[rw]\d+$/.test(m.key));
+  const availableMetrics = (plant) => GRAPH_METRICS[plant];
   const factory = () => $('graph-plant').value;
   function defaults() {
     return { JRE: defaultGraphs('JRE'), UNILAND: defaultGraphs('UNILAND') };

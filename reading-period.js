@@ -3,7 +3,7 @@ export const WORKING_HOURS = 'workingHours';
 export const NIGHT_SHIFT = 'nightShift';
 export const periodKind = (draft) => draft?.periodKind || draft?.kind || 'daily';
 export const isNightShift = (draft) => periodKind(draft) === NIGHT_SHIFT;
-// Shared predicate for electricity-only periods; the persisted Day kind remains compatible.
+// Shared predicate for timed shifts; the persisted Day kind remains compatible.
 export const isWorkingHours = (draft) => [WORKING_HOURS, NIGHT_SHIFT].includes(periodKind(draft));
 export const validTime = (value) =>
   typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);

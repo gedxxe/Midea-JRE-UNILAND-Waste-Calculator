@@ -52,7 +52,7 @@ test('both work modes use unchanged electricity factors, Structural, worksheet a
   }
 });
 
-test('work periods reject overnight, mismatched dates, unknown modes, malformed times and daily utilities', () => {
+test('work periods reject overnight, mismatched dates, unknown modes, malformed times and invalid gas observations', () => {
   for (const changes of [
     { endTime: '' },
     { endTime: '25:00' },
@@ -65,10 +65,11 @@ test('work periods reject overnight, mismatched dates, unknown modes, malformed 
     assert.equal(calculateDraft({ ...work(), ...changes }).success, false);
   const d = work();
   d.utilities[0].value = '5';
-  assert.throws(() => reportSnapshot(d), /INCOMPLETE_REPORT/);
+  assert.match(reportSnapshot(d).output.reportText, /LPG: 5/);
   d.utilities[0].value = '';
   d.water = { start: '10', end: '20' };
-  assert.equal(calculateDraft(d).success, false);
+  assert.equal(calculateDraft(d).success, true);
+  assert.match(calculateDraft(d).mainText, /Water: 10 m³/);
   delete d.water;
   d.gas.entries[0].enabled = true;
   assert.equal(calculateDraft(d).success, false);

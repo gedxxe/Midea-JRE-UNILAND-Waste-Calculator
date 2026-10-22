@@ -103,8 +103,8 @@ test('work drafts reuse matching daily readings through plant/language switching
   const daily = await page.locator('#report-preview').inputValue();
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(page.locator('#work-period')).toBeVisible();
-  await expect(page.locator('#gas-section')).toBeHidden();
-  await expect(page.locator('#water-section')).toBeHidden();
+  await expect(page.locator('#gas-section')).toBeVisible();
+  await expect(page.locator('#water-section')).toBeVisible();
   await expect(page.locator('#combined-period')).toBeHidden();
   await expect(page.locator('#work-start-time')).toHaveValue('08:00');
   await expect(page.locator('#work-end-time')).toHaveValue('17:00');
@@ -212,7 +212,7 @@ test('legacy backup retains work data and workspace Undo restores both modes', a
   expect(errors).toEqual([]);
 });
 
-test('graphs isolate work mode, preserve actual times, and exclude utility selections', async ({
+test('graphs isolate work mode, preserve actual times, and include period utility selections', async ({
   page,
 }) => {
   const { errors } = await setup(page);
@@ -245,7 +245,7 @@ test('graphs isolate work mode, preserve actual times, and exclude utility selec
   await page.locator('.graph-settings').first().locator('summary').click();
   expect(
     await page.locator('[data-graph-unit]').first().locator('option').allTextContents(),
-  ).toEqual(['kWh']);
+  ).toContain('kWh');
   await page.locator('#graph-kind').selectOption('daily');
   await expect(page.locator('#graph-status')).toContainText('No');
   expect(requests.at(-1).kind).toBe('daily');
@@ -353,8 +353,8 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   await expect(cell(page)).toHaveValue(evening);
   await expect(page.locator('#start-reading-label')).toHaveText('After-work reading');
   await expect(page.locator('#period-note')).toContainText('2026-09-17 08:00');
-  await expect(page.locator('#gas-section')).toBeHidden();
-  await expect(page.locator('#water-section')).toBeHidden();
+  await expect(page.locator('#gas-section')).toBeVisible();
+  await expect(page.locator('#water-section')).toBeVisible();
   await cell(page).fill('103010');
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 'end')).toHaveValue('103010');
