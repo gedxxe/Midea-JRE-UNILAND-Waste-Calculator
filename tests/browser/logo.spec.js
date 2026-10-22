@@ -58,6 +58,10 @@ test('logo loops with a five-second hold, exits, pauses and replays without chan
         .every((a) => a.effect.getTiming().iterations === Infinity),
     ),
   ).toBe(true);
+  // Measure the settled form; the finite welcome entrance runs independently of the logo.
+  await page.locator('.account-card').evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
+  });
   const before = await page.locator('#login-submit').boundingBox();
   await page.locator('#replay-logo').click();
   expect(
