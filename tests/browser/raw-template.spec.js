@@ -24,8 +24,8 @@ test('blank templates copy and download before login even when the account servi
   await expect(page.locator('[data-open-raw-template]:visible')).toHaveCount(1);
   await page.screenshot({ path: info.outputPath('login-template.png'), fullPage: true });
   for (const language of ['en', 'zh-CN', 'id']) {
-    await page.locator('#language-select').selectOption(language);
-    await page.locator('#login-raw-template').click();
+    await page.locator('select:visible').selectOption(language);
+    await page.locator('[data-open-raw-template]:visible').click();
     for (const plant of ['JRE', 'UNILAND']) {
       await page.locator('#raw-template-plant').selectOption(plant);
       const expected = formatBlankReadingTemplate(plant);
@@ -131,7 +131,7 @@ test('blank template leaves a filled draft and report unchanged and supports man
   await page.locator('#logout').click();
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('[data-open-raw-template]:visible')).toHaveCount(1);
-  await page.locator('#login-raw-template').click();
+  await page.locator('[data-open-raw-template]:visible').click();
   await page.locator('#raw-template-plant').selectOption('JRE');
   await expect(page.locator('#raw-template-preview')).toHaveValue(
     formatBlankReadingTemplate('JRE'),

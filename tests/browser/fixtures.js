@@ -17,3 +17,9 @@ export const test = base.extend({
     await use(page);
   },
 });
+
+export async function openSignIn(page) {
+  await page.locator('#open-login').click();
+  await expect(page.locator('#login-username')).toBeVisible();
+  await expect(page.locator('#application-surface')).not.toHaveAttribute('inert', '');
+}

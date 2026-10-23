@@ -56,6 +56,7 @@ export function createWelcomeField(scene) {
   function active() {
     return (
       document.body.classList.contains('login-page') &&
+      document.body.dataset.welcome !== 'hero' &&
       !document.hidden &&
       intersecting &&
       scene.dataset.motion === 'on' &&
@@ -105,7 +106,7 @@ export function createWelcomeField(scene) {
     }).observe(scene);
   const changes = new MutationObserver(sync);
   changes.observe(scene, { attributes: true, attributeFilter: ['data-motion', 'data-paused'] });
-  changes.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  changes.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-welcome'] });
   reduced.addEventListener('change', sync);
   document.addEventListener('visibilitychange', sync);
   scene.addEventListener(

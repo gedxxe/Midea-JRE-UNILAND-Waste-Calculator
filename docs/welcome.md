@@ -1,19 +1,25 @@
-# Welcome screen
+# Energy Record welcome
 
-v0.11.17-alpha changes only the signed-out presentation: white space, large type, a short localized slogan, the original Midea logo and a clear sign-in form. The reference informs spacing and restrained movement; no Google, Nike or Adidas artwork, fonts or scripts are used.
+v0.11.19-alpha adds a fullscreen dark welcome titled **Energy Record**. It uses the supplied white Midea PNG, a brief localized slogan, the requested rendered-heart credit and one sign-in action. The white form opens only when requested. A circular mask grows from the action into the white login surface; Back returns to the welcome. Existing sessions go straight to their protected destination; a required password change opens its form directly. Logout returns to the welcome after clearing the account workspace.
 
-The slogan describes manual reporting, not remote physical inspection. Operators still read the meters. The requested welcome credit is “Made with ❤️ by gedxxe for Midea JRE Engineering Department”; the established workspace/footer attribution remains intact.
+The slogan concerns manual reporting. The application does not remotely inspect physical meters. The credit remains “Made with ❤️ by gedxxe for Midea JRE Engineering Department”; the established reporting attribution is unchanged. Language selection and the public blank-reading template remain available before sign-in.
+
+## Source and boundaries
+
+Tech Text and Magnet are adapted from the official [React Bits source](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to that commit. This is a DOM/canvas adaptation for this website, not a React framework migration or a standalone port library. No React runtime, external font, WebGL engine or package is downloaded. The full **MIT + Commons Clause License Condition v1.0** is retained in [asset/licenses/react-bits.txt](../asset/licenses/react-bits.txt), with provenance in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). The supplied logo retains separate brand rights.
+
+welcome.css owns the hero and reveal styling. ui/welcome.js coordinates presentation with the existing account gates and loads ui/welcome-tech.js/ui/welcome-magnet.js separately. The effects have no account, meter, storage or API access. The original blue-logo reconstruction remains on the white login view, with its five-second hold and pause/replay controls.
 
 ## Motion and fallback
 
-logo.css owns the welcome layout, a brief entrance and the existing 10-second reconstruction loop: assemble, hold the logo for five seconds, exit and repeat. ui/logo.js retains pause/replay and visibility controls. ui/welcome-field.js is dynamically loaded with an error catch; unsupported/blocked canvas or a failed decoration module never prevents the login form from working.
+Text painting is capped at 30 fps and DPR 1.5. The CTA moves at most 10 pixels while its native button hit area stays fixed. Touch scrolling is not intercepted. Hidden tabs, offscreen text, manual pause and leaving the hero stop drawing; listeners and canvas resources are released when the hero closes. The white-login decoration pauses behind the hero and after authentication.
 
-The decorative canvas uses no network, storage, account or readings. It draws at most 520 points (240 in narrow scenes), caps animation painting at 30 fps and caps pixel density at 1.5. Pointer response is confined to the decoration on fine pointers and never prevents touch scrolling. Hidden tabs, offscreen scenes, manual pause and established sessions stop its animation loop. Reduced motion and data-motion="off" show static decoration and an intact logo. No animation is an authentication gate.
+The welcome pause control freezes the optional effects. Reduced motion and data-motion="off" on #welcome-hero show the real HTML title and open the form immediately. A failed optional module or unsupported canvas keeps the static title and native button. Resize, preference changes or interruption during the reveal complete the transition safely. No animation completion is required for authentication. Forms retain their labels, autocomplete, focus order and service errors. Small/short screens use normal page scrolling.
 
-All art is decorative except the original logo's accessible name. Forms keep labels, keyboard focus, autocomplete and existing status/error handling. English, Simplified Chinese and Indonesian copy use the existing language switch. The heart is a Unicode emoji with an accessible label and system emoji-font fallbacks. Layout uses normal page scrolling on short screens.
+The source footprint includes the supplied 260 kB PNG and about 50 kB of welcome scripts/styles. Neither changes database workload. These are bounded visual effects, not a guarantee of a particular frame rate on every device.
 
-## Verification and limits
+## Verification and rollback
 
-Browser regressions exercise login/logout and password gates, looping/hold/replay, pause, hidden tabs, reduced motion, motion-off, narrow screens, missing canvas and a failed decoration-module request. Visual checks use synthetic accounts and no operational data. Frame-rate and resolution bounds reduce work; they are not a guarantee for every device/browser or a claim of industrial certification.
+Browser regressions cover click/keyboard entry, hidden and inert forms, circle transition interruption, reduced motion, pause, module/canvas failure, language selection, public templates, session/password gates, logout, protected deep links and desktop/mobile overflow. Visual review uses synthetic accounts. Existing calculation, draft, historian and monitoring suites remain required.
 
-See [release and rollback](releases.md). No database migration or new dependency is required.
+No database, session or saved-data migration is required. Revert through a normal PR to restore the previous welcome. Do not replace existing release tags or branches. See [release and rollback](releases.md).

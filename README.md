@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.18-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.19-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -43,7 +43,7 @@ Use /app for reading entry, /app/monitoring for charts/monthly tables, /app/hist
 
 ### Everyday features
 
-The welcome screen uses a white layout, brief English/Chinese/Indonesian copy and lightweight logo motion. Pause/replay and reduced motion are supported; decoration stops after sign-in and never gates the form. Welcome credit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. See [welcome design and motion](docs/welcome.md).
+The fullscreen dark **Energy Record** welcome uses the supplied white Midea logo and adapted React Bits Tech Text/Magnet effects. Click **Sign in** for a circular transition to the white form; **Back** returns to the welcome. Language selection, blank templates, pause and reduced motion remain available. No React runtime or browser package is added. Welcome credit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. See [welcome design, source and license](docs/welcome.md).
 
 **Quick guide** in the Account panel explains eight essential workflows with animated cursor illustrations. The small invitation can be dismissed; reopen the guide whenever needed. Back/Next, Escape/Close, animation pause and reduced-motion support are included. Illustrations never change your readings or save data. Guide code, styles and longer translations load only when opened; the dismissal preference stays in this browser per account.
 
@@ -131,7 +131,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.18-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.19-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -158,7 +158,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 - **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，三个时段均可记录。
 - **图表：** 使用已保存报表及审核过的历史导入。白底细线，图表与导出图片仅显示当前所选语言。支持部门筛选，保留完整日期标签及 JRE 9 组、UNILAND 7 组预设。一键复制高清 PNG；下载菜单提供 PNG/SVG，变量和 Y 轴设置收起显示。未保存数据不进入图表。
 
-欢迎页采用留白布局、简短的中英印尼文文案与轻量标志动画。支持暂停、重播和减少动态效果；登录后停止装饰动画，动画加载失败不影响登录。署名：Made with ❤️ by gedxxe for Midea JRE Engineering Department。
+全屏深色 **Energy Record** 欢迎页采用提供的白色 Midea 标志，以及适配后的 React Bits Tech Text/Magnet 效果。点击登录后，通过圆形遮罩进入白色登录表单；可返回欢迎页。保留语言切换、空白模板、暂停和减少动态效果，无需引入 React 或浏览器依赖。署名：Made with ❤️ by gedxxe for Midea JRE Engineering Department。详见 [欢迎页与授权说明](docs/welcome.md)。
 
 **月度表格**显示月份、年份、完整日期列和固定设备名称；合并时段保留完整用量。可选择**全屏**或收起**筛选**以增加空间。表格与对话框均可滚动；Escape 先还原视图，再关闭窗口。图表支持平滑曲线、共享提示及可点击图例，保存数值与缺失间隔保持不变。
 
@@ -186,7 +186,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.18-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.19-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -213,7 +213,7 @@ Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOU
 - **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Berlaku di ketiga periode.
 - **Grafik:** laporan tersimpan dan impor histori yang ditinjau, latar putih, garis tipis, serta teks grafik dan ekspor mengikuti satu bahasa pilihan. Filter departemen tersedia; preset 9 JRE / 7 UNILAND dan seluruh label periode tetap ada. Copy PNG resolusi tinggi langsung; unduhan PNG/SVG, variabel dan skala Y tersedia lewat kontrol ringkas. Input belum tersimpan tidak masuk grafik.
 
-Halaman awal memakai latar putih, teks singkat sesuai bahasa pilihan dan animasi logo ringan. Bisa dipause/replay, mengikuti reduced motion, serta berhenti setelah login. Efek visual yang gagal dimuat tetap membiarkan form dipakai. Kredit halaman awal: Made with ❤️ by gedxxe for Midea JRE Engineering Department.
+Halaman awal **Energy Record** memakai latar gelap penuh, logo Midea putih yang diberikan, serta adaptasi efek React Bits Tech Text/Magnet. Klik **Masuk** untuk membuka form putih melalui transisi lingkaran; tombol **Kembali** membuka welcome lagi. Pilihan bahasa, template kosong, jeda dan reduced motion tetap tersedia, tanpa runtime React atau package browser. Kredit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. Lihat [welcome dan lisensinya](docs/welcome.md).
 
 **Tabel bulanan** menampilkan bulan/tahun, kolom tanggal lengkap dan nama equipment yang tetap terlihat saat digeser. Rekap gabungan tetap satu total. Pilih **Layar Penuh** atau lipat **Filter** untuk ruang lebih luas. Tabel dan dialog bisa di-scroll; Escape mengembalikan tampilan dahulu sebelum menutupnya. Grafik memakai kurva halus, tooltip bersama dan legend interaktif; nilai tersimpan serta celah data tetap sama.
 

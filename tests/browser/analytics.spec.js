@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, openSignIn } from './fixtures.js';
 import { readFile } from 'node:fs/promises';
 import { PUBLIC_FILES } from '../../scripts/assets.mjs';
 import { analyticsMarkup } from '../../scripts/analytics-config.mjs';
@@ -64,13 +64,16 @@ async function serveApp(page, { enabled = true, blocked = false, off = false } =
         ? 'text/css'
         : file.endsWith('.json')
           ? 'application/json'
-          : 'image/webp';
+          : file.endsWith('.png')
+            ? 'image/png'
+            : 'image/webp';
     return route.fulfill({ contentType: type, headers, body: await readFile('dist/' + file) });
   });
   return { views, scripts, errors };
 }
 
 async function signInAndFill(page) {
+  await openSignIn(page);
   await page.locator('#login-username').fill('PRIVATE_OPERATOR');
   await page.locator('#login-password').fill('Synthetic test password 123');
   await page.locator('#login-submit').click();
@@ -123,7 +126,9 @@ test('preview and HTML opt-out never download or initialize a tracker', async ({
     await page.unrouteAll();
     const state = await serveApp(page, options);
     await page.goto(origin + '/');
-    await expect(page.locator('#login-form')).toBeVisible();
+    await expect(page.locator('#welcome-hero')).toBeVisible();
+    await expect(page.locator('#login-form')).toBeHidden();
+    await openSignIn(page);
     expect(state.scripts).toEqual([]);
     expect(state.views).toEqual([]);
     expect(await page.evaluate(() => typeof window.va)).toBe('undefined');

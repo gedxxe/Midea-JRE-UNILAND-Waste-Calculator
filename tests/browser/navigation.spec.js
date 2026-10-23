@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, openSignIn } from './fixtures.js';
 
 const operator = {
   id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352',
@@ -142,6 +142,7 @@ test('protected initial links wait for sign-in and required password change; log
   await path(page, '/');
   await expect(page.locator('#report-workspace')).toBeHidden();
   expect(state.graphRequests()).toBe(0);
+  await openSignIn(page);
   await page.fill('#login-username', operator.username);
   await page.fill('#login-password', 'Synthetic old password 123');
   await page.click('#login-submit');

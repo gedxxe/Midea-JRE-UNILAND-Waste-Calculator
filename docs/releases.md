@@ -90,3 +90,7 @@ No database, account, reading-layout or persisted-preference migration. The opti
 ## Application routes (v0.11.18-alpha)
 
 Presentation-only History API routing with exact static rewrites. No database, session-format or draft migration. Keep root-relative entry assets for nested direct links. Verify both browser navigation and direct HTTP refresh. The existing API authorization and root-only analytics filter remain intact. A normal revert preserves data, but older versions return 404 for nested bookmarks; reopen /. See docs/navigation.md.
+
+## Dark welcome (v0.11.19-alpha)
+
+Presentation-only change; no database, session, report, draft or preference migration. The React Bits source is adapted into this website with its full MIT + Commons Clause notice. Keep that notice with a distributed build. A normal revert restores the previous welcome while preserving routing and saved data. Reduced motion or data-motion="off" on #welcome-hero disables the new effects; optional animation failure does not block login. Preview account configuration is unchanged.

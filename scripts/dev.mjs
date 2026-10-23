@@ -35,6 +35,8 @@ const mime = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.webp': 'image/webp',
+  '.png': 'image/png',
+  '.txt': 'text/plain; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
 };
 const config = JSON.parse(await readFile(resolve(root, 'vercel.json'), 'utf8'));
