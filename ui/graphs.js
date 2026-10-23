@@ -17,7 +17,7 @@ import { GRAPH_METRICS, DEPARTMENTS, defaultGraphs } from '../graph-schema.js';
 import { dayDiff, validDate, formatNumber } from '../numbers.js';
 import { renderGraph, exportGraph, copyGraph } from './graph-renderer.js';
 import { validYAxis } from '../graph-axis.js';
-export function createGraphs({ current, request, toast }) {
+export function createGraphs({ current, request, toast, opened = () => {} }) {
   let user = null,
     epoch = 0,
     sequence = 0,
@@ -601,7 +601,7 @@ export function createGraphs({ current, request, toast }) {
       draw();
     });
   }
-  $('open-graphs').addEventListener('click', () => {
+  function open() {
     if (!user) return;
     $('graph-plant').value = current().plantKey;
     $('graph-kind').value = periodKind(current());
@@ -624,8 +624,10 @@ export function createGraphs({ current, request, toast }) {
     $('graph-filters').open = view !== 'table';
     $('graph-about').open = false;
     $('graphs-dialog').showModal();
+    opened('monitoring');
     void load();
-  });
+  }
+  $('open-graphs').addEventListener('click', open);
   $('graph-department').addEventListener('change', () =>
     view === 'table' ? renderMatrix() : renderCards(),
   );
@@ -670,6 +672,7 @@ export function createGraphs({ current, request, toast }) {
     $('graph-matrix').replaceChildren();
   });
   return {
+    open,
     reset,
     render,
     saved() {

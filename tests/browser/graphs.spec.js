@@ -179,6 +179,7 @@ test('graphs use saved revisions, show one language and export white SVG and PNG
     await page.locator('[data-close-dialog="graphs-dialog"]').click();
     await expect(page.locator('#report-preview')).toHaveValue(report);
   }
+  await expect(page).toHaveURL(/\/app$/);
   await page.reload();
   await page.locator('#open-graphs').click();
   await expect(first.locator('svg')).toContainText('Custom <title> & consumption');
@@ -406,8 +407,9 @@ test('all period labels survive monthly exports and manual Y limits change only 
   await first.screenshot({ path: info.outputPath('all-periods-card.png') });
   await expect(page.locator('#graphs-dialog')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page).toHaveURL(/\/app\/monitoring$/);
   await page.reload();
-  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graphs-dialog')).toBeVisible();
   await expect(first.locator('[data-axis-note]')).toContainText('100 to 150');
   await first.locator('.graph-settings > summary').click();
   await first.locator('.graph-advanced summary').click();
@@ -544,8 +546,9 @@ test('legacy browser layouts retain custom titles, axes and variables while new 
   expect(stored.next.layouts.JRE[0].titleId).toBeTruthy();
   expect(stored.next.layouts.JRE[0].series).toEqual(['w1', 'w2']);
   expect(stored.next.layouts.JRE[0].yAxis).toEqual({ mode: 'manual', min: 0, max: 250 });
+  await expect(page).toHaveURL(/\/app\/monitoring$/);
   await page.reload();
-  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graphs-dialog')).toBeVisible();
   await expect(first.locator('svg > title')).toHaveText('Updated custom chart');
   expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(raw);
   expect(state.errors).toEqual([]);

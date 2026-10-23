@@ -86,3 +86,7 @@ Presentation-only fix with no database migration, account configuration or persi
 ## Welcome presentation (v0.11.17-alpha)
 
 No database, account, reading-layout or persisted-preference migration. The optional animation module has no account/data access and failure does not block sign-in. A normal revert PR restores the v0.11.16 welcome screen while retaining its monthly-table scrolling fix and all saved data. Keep earlier tags/branches unchanged. The CI job allows 25 minutes because observed browser OS dependency downloads can take over 13 minutes before the full browser suite begins; no audit or test is removed.
+
+## Application routes (v0.11.18-alpha)
+
+Presentation-only History API routing with exact static rewrites. No database, session-format or draft migration. Keep root-relative entry assets for nested direct links. Verify both browser navigation and direct HTTP refresh. The existing API authorization and root-only analytics filter remain intact. A normal revert preserves data, but older versions return 404 for nested bookmarks; reopen /. See docs/navigation.md.

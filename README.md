@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.17-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.18-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -36,6 +36,10 @@ The intended contribution to Midea Business System work is practical: consistent
 | NIGHT SHIFT      | Evening D → morning D+1, normally 17:00–08:00 WIB | D           |
 
 Only observations with the same factory, date and time are shared. Unknown readings stay blank. Final copy offers five choices: 24 HOURS; 24 HOURS + AFTER PRODUCTION; all three; AFTER PRODUCTION only; NIGHT SHIFT only. Gas, Water and existing manual utilities are calculated separately for each period and appear in each selected section. Matching gas/Water observations are shared; refill lists and manual totals belong to their period. Save and Excel row follow the active recording mode. See [periods and shifts](docs/working-hours.md).
+
+### Navigation
+
+Use /app for reading entry, /app/monitoring for charts/monthly tables, /app/history for saved reports, and /app/accounts for admin account management. Back/Forward and direct-link refresh work without reloading on menu changes. Protected links resolve the current session first; unknown paths return 404. Navigation keeps the existing workspace and drafts. See [routing](docs/navigation.md).
 
 ### Everyday features
 
@@ -127,7 +131,9 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.17-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.18-alpha**，数据用于决策前仍需人工复核。
+
+登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
 ### 操作流程与功能
 
@@ -180,7 +186,9 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.17-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.18-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+
+Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
 ### Alur dan fitur operator
 

@@ -24,7 +24,7 @@ export async function showBuildInfo() {
   }
   async function check() {
     try {
-      const response = await fetch('./build-info.json', {
+      const response = await fetch('/build-info.json', {
         cache: 'no-store',
         signal: AbortSignal.timeout(5000),
       });
