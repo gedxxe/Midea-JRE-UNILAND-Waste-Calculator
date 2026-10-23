@@ -55,7 +55,20 @@
       </div>
     </header>
     <main class="workspace">
+      <section class="welcome-copy" aria-labelledby="welcome-title">
+        <p class="eyebrow">JRE / UNILAND</p>
+        <h1 id="welcome-title" data-i18n="welcomeTitle">Daily energy.</h1>
+        <p class="welcome-motto" data-i18n="welcomeMotto">
+          Tired of manual energy reports? Try a simpler way.
+        </p>
+        <p class="welcome-credit">
+          Made with
+          <span role="img" aria-label="love" data-i18n-aria-label="welcomeLove">❤️</span> by gedxxe
+          <span class="credit-department">for Midea JRE Engineering Department</span>
+        </p>
+      </section>
       <div id="logo-intro" class="logo-intro" data-motion="on">
+        <canvas class="welcome-field" aria-hidden="true"></canvas>
         <svg class="logo-scene" viewBox="-240 -240 2400 1220" role="img" aria-label="Midea">
           <defs>
             <clipPath id="logo-piece-0">
@@ -83,14 +96,6 @@
               <polygon points="1730,0 1920,0 1920,370 1920,740 1750,740 1680,370" />
             </clipPath>
           </defs>
-          <g class="logo-guides" fill="none" aria-hidden="true">
-            <ellipse class="logo-orbit" cx="960" cy="370" rx="1070" ry="510" />
-            <path
-              class="logo-registration"
-              d="M-80 120V-80H120 M1800-80H2000V120 M2000 620V820H1800 M120 820H-80V620 M-150 370H-30 M1950 370H2070"
-            />
-            <path class="logo-scan" d="M-110-160V900" />
-          </g>
           <g class="logo-pieces" aria-hidden="true">
             <g class="logo-fragment fragment-0">
               <image
@@ -257,7 +262,14 @@
               required
               maxlength="128"
           /></label>
-          <button id="login-submit" type="submit" class="button primary" data-i18n="signIn">
+          <button
+            id="login-submit"
+            data-i18n-aria-label="signIn"
+            aria-label="Sign in"
+            type="submit"
+            class="button primary"
+            data-i18n="signIn"
+          >
             Sign in
           </button>
         </form>

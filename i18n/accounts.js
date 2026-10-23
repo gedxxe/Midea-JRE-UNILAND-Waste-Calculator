@@ -1,12 +1,19 @@
 export const accountMessages = {
+  welcomeTitle: ['Daily energy.', '每日能耗。', 'Energi harian.'],
+  welcomeMotto: [
+    'Tired of manual energy reports?\nTry a simpler way.',
+    '还在手动整理能耗报表？\n试试更简单的方式。',
+    'Masih rekap laporan energi manual?\nCoba cara yang lebih mudah.',
+  ],
+  welcomeLove: ['love', '爱', 'cinta'],
   accountTitle: ['Sign in', '登录', 'Login'],
   accountChecking: ['Checking your session...', '正在检查登录状态...', 'Memeriksa sesi...'],
   retryAccount: ['Try again', '重试', 'Coba lagi'],
   accountSignedIn: ['Account', '账户', 'Akun'],
   accountHint: [
-    'Sign in to enter readings and open your reports. Ask your admin for an account.',
-    '登录后可填写读数和查看报告。请联系管理员创建账户。',
-    'Login untuk mengisi reading dan membuka laporan. Hubungi admin untuk akun.',
+    'Need an account? Ask your admin.',
+    '需要账户？请联系管理员。',
+    'Butuh akun? Hubungi admin.',
   ],
   accountPrivate: [
     'Drafts autosave to your account. Save stores incomplete entries as a draft and complete entries as a report.',

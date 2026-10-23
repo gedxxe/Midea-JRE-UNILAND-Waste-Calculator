@@ -7,6 +7,7 @@ export const PUBLIC_FILES = [
   'ui/guide.js',
   'i18n/guide.js',
   'ui/logo.js',
+  'ui/welcome-field.js',
   'analytics.js',
   'ui/analytics.js',
   'app.js',

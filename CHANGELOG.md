@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.17-alpha - 2026-10-22
+
+- Retouch the signed-out welcome screen with large type, more space, concise localized copy, a refined sign-in form and short entrance transitions. Add the requested rendered-heart credit for gedxxe and the Midea JRE Engineering Department.
+- Add an optional blue particle field around the original Midea logo. Keep its reconstruction loop and five-second hold, pause/replay, reduced-motion and motion-off support. Stop rendering in hidden tabs, outside the viewport and after sign-in; cap drawing at 30 fps and canvas resolution at 1.5 device pixels.
+- Keep authentication and reporting unchanged. Load decoration separately so a failed canvas/module cannot block sign-in. Retain all CI checks with a 25-minute budget for browser setup plus the full suite.
+
 ## v0.11.16-alpha - 2026-10-22
 
 - Fix the monthly table shrinking to one row on short screens. Keep a readable table viewport and let scrolling continue into the parent dialog at table boundaries.
