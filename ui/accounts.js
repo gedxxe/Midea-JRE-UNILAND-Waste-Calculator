@@ -14,6 +14,7 @@ export function createAccounts({
   canSaveReport = () => true,
   opened = () => {},
   rendered = () => {},
+  authActivity = () => {},
 }) {
   let user = null;
   let available = false;
@@ -184,19 +185,26 @@ export function createAccounts({
   $('login-form').addEventListener('submit', (event) => {
     event.preventDefault();
     void action(async () => {
-      const data = await request('/api/auth', {
-        personal: false,
-        body: {
-          action: 'login',
-          username: $('login-username').value,
-          password: $('login-password').value,
-        },
-      });
-      $('login-password').value = '';
-      $('account-status').textContent = '';
-      applyIdentity(data.user);
-      signalChange();
-      if (data.user.mustChangePassword) pendingFocus = 'current-password';
+      authActivity('working');
+      try {
+        const data = await request('/api/auth', {
+          personal: false,
+          body: {
+            action: 'login',
+            username: $('login-username').value,
+            password: $('login-password').value,
+          },
+        });
+        $('login-password').value = '';
+        $('account-status').textContent = '';
+        authActivity(data.user ? 'done' : 'error');
+        applyIdentity(data.user);
+        signalChange();
+        if (data.user.mustChangePassword) pendingFocus = 'current-password';
+      } catch (error) {
+        authActivity('error');
+        throw error;
+      }
     });
   });
   $('logout').addEventListener(

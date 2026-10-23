@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js';
+import { createSignInTransition } from './signin-transition.js';
 
 // Presentation only. The account controller remains responsible for every session gate.
 export function createWelcome() {
@@ -17,14 +18,16 @@ export function createWelcome() {
     transition;
   let tech,
     magnet,
-    loading = false;
-  const moving = () =>
-    stage === 'hero' &&
-    !hero.hidden &&
+    ascii,
+    loading = false,
+    dialogOpen = !!document.querySelector('dialog[open]');
+  const motionAllowed = () =>
     !document.hidden &&
     hero.dataset.motion !== 'off' &&
     hero.dataset.paused !== 'true' &&
     !reduced.matches;
+  const moving = () => stage === 'hero' && !hero.hidden && !dialogOpen && motionAllowed();
+  const signin = createSignInTransition({ moving: motionAllowed });
 
   function syncMotion() {
     const key = hero.dataset.paused === 'true' ? 'welcomeResume' : 'welcomePause';
@@ -34,20 +37,37 @@ export function createWelcome() {
     pause.firstElementChild.textContent = hero.dataset.paused === 'true' ? '▶' : 'Ⅱ';
     tech?.sync();
     magnet?.sync();
-    if (!moving() || loading || tech || magnet) return;
+    ascii?.sync();
+    signin.sync();
+    if (!moving() || loading || tech || magnet || ascii) return;
     loading = true;
-    void Promise.all([import('./welcome-tech.js'), import('./welcome-magnet.js')])
-      .then(([{ createTechText }, { createWelcomeMagnet }]) => {
+    void Promise.allSettled([
+      import('./welcome-tech.js'),
+      import('./welcome-magnet.js'),
+      import('./welcome-ascii.js'),
+    ])
+      .then((results) => {
         if (stage !== 'hero') return;
-        tech = createTechText(
-          hero.querySelector('.energy-wordmark'),
-          hero.querySelector('canvas'),
-          moving,
+        const initialize = (index, build) => {
+          if (results[index].status === 'fulfilled') {
+            try {
+              return build(results[index].value);
+            } catch {
+              /* Optional decoration. */
+            }
+          }
+        };
+        tech = initialize(0, (module) =>
+          module.createTechText(
+            hero.querySelector('.energy-wordmark'),
+            hero.querySelector('.energy-tech-canvas'),
+            moving,
+          ),
         );
-        magnet = createWelcomeMagnet(enter, moving);
-      })
-      .catch(() => {
-        /* The HTML title and button work without decoration. */
+        magnet = initialize(1, (module) => module.createWelcomeMagnet(enter, moving));
+        ascii = initialize(2, (module) =>
+          module.createGradientAscii(hero, hero.querySelector('.energy-ascii-canvas'), moving),
+        );
       })
       .finally(() => {
         loading = false;
@@ -56,7 +76,8 @@ export function createWelcome() {
   function stopDecoration() {
     tech?.destroy();
     magnet?.destroy();
-    tech = magnet = undefined;
+    ascii?.destroy();
+    tech = magnet = ascii = undefined;
   }
   function show(next, focus = false) {
     sequence++;
@@ -99,6 +120,7 @@ export function createWelcome() {
     const token = ++sequence;
     tech?.sync();
     magnet?.sync();
+    ascii?.sync();
     hero.inert = true;
     surface.hidden = false;
     surface.inert = true;
@@ -123,7 +145,10 @@ export function createWelcome() {
   }
   enter.addEventListener('click', (event) => void reveal(event));
   back.addEventListener('click', () => {
-    if (!user) show('hero', true);
+    if (!user) {
+      signin.reset();
+      show('hero', true);
+    }
   });
   pause.addEventListener('click', () => {
     hero.dataset.paused = String(hero.dataset.paused !== 'true');
@@ -155,8 +180,14 @@ export function createWelcome() {
     heroLanguage.value = language.value;
     syncMotion();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  new MutationObserver((records) => {
+    if (!records.some((record) => record.target.tagName === 'DIALOG')) return;
+    dialogOpen = !!document.querySelector('dialog[open]');
+    syncMotion();
+  }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['open'] });
   syncMotion();
   return {
+    authActivity: (status) => signin.activity(status),
     sync(state) {
       user = state.user;
       heroLanguage.value = language.value;
@@ -166,10 +197,14 @@ export function createWelcome() {
       identity = nextIdentity;
       if (user) {
         show(user.mustChangePassword ? 'login' : 'workspace');
+        signin.finish();
         document
           .getElementById(user.mustChangePassword ? 'current-password' : 'start-date')
           ?.focus({ preventScroll: true });
-      } else if (wasKnown) show('hero', true);
+      } else if (wasKnown) {
+        signin.reset();
+        show('hero', true);
+      }
     },
   };
 }

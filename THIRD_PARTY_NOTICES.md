@@ -17,6 +17,16 @@ README badges are remote Shields.io images with technology logos. They are docum
 
 ## React Bits animation source
 
-The welcome screen adapts Tech Text and Magnet from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz. Source locations: src/content/TextAnimations/TechText/TechText.jsx and src/content/Animations/Magnet/Magnet.jsx. The adaptation replaces React hooks with DOM lifecycle controls, fixes application settings, bounds motion/rendering and preserves static HTML fallbacks. It is used only as part of this reporting website, not distributed as a standalone component library or port.
+The welcome and sign-in screens adapt Tech Text, Split Text, Magnet, Gradient ASCII, Glass Icons and Lattice Loader from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz.
+
+Source locations under src/content/:
+
+- TextAnimations/TechText/TechText.jsx and TextAnimations/SplitText/SplitText.jsx: fixed wordmark sprites, character outline and spring lift, adapted to canvas without React or GSAP.
+- Animations/Magnet/Magnet.jsx: bounded CTA movement.
+- Backgrounds/GradientASCII/GradientASCII.jsx: WebGL2 shader engine with fixed settings, resolution/frame limits and DOM lifecycle cleanup.
+- Components/GlassIcons/GlassIcons.jsx and GlassIcons.css: layered CSS glass fallback/style; the WebGL refraction renderer is not included.
+- Micro/LatticeLoader/LatticeLoader.jsx and LatticeLoader.css: CSS orbit pattern driven by actual sign-in request state.
+
+The adaptations replace React hooks with DOM lifecycle controls, fix application settings, bound motion/rendering and preserve static HTML fallbacks. They are used only as part of this reporting website, not distributed as a standalone component library or port.
 
 These files use **MIT + Commons Clause License Condition v1.0**, not the repository's rights-reserved terms and not unrestricted MIT. Retain the [full upstream license](asset/licenses/react-bits.txt) with copies of this application. The condition permits use in an application, website or product and restricts selling, sublicensing or redistributing the components themselves. React itself is not bundled or required. The supplied white Midea image retains separate brand rights.

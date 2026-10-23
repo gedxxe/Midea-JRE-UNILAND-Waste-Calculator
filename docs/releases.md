@@ -94,3 +94,7 @@ Presentation-only History API routing with exact static rewrites. No database, s
 ## Dark welcome (v0.11.19-alpha)
 
 Presentation-only change; no database, session, report, draft or preference migration. The React Bits source is adapted into this website with its full MIT + Commons Clause notice. Keep that notice with a distributed build. A normal revert restores the previous welcome while preserving routing and saved data. Reduced motion or data-motion="off" on #welcome-hero disables the new effects; optional animation failure does not block login. Preview account configuration is unchanged.
+
+## Welcome and sign-in refinement (v0.11.20-alpha)
+
+Presentation-only change. No database, session, reading, report or preference migration. Strict per-letter hover replaces the autonomous sweep; bounded ASCII replaces the old particle/logo login decoration. Keep the full React Bits notice with builds. WebGL/module failure leaves static HTML/CSS and usable sign-in; authentication never waits for an animation. A normal revert restores v0.11.19 presentation without rewriting saved data. Preserve earlier release branches/tags and keep preview authentication unconfigured.

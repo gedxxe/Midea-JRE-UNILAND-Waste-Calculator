@@ -1,5 +1,4 @@
 export const accountMessages = {
-  welcomeTitle: ['Daily energy.', '每日能耗。', 'Energi harian.'],
   welcomeMotto: [
     'Tired of manual energy reports?\nTry a simpler way.',
     '还在手动整理能耗报表？\n试试更简单的方式。',

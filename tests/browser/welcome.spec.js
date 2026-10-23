@@ -31,10 +31,13 @@ async function countTextFrames(page) {
   });
 }
 async function stopped(page) {
-  await page.waitForTimeout(100);
-  const before = await page.evaluate(() => window.textFrames);
-  await page.waitForTimeout(160);
-  expect(await page.evaluate(() => window.textFrames)).toBe(before);
+  await expect
+    .poll(async () => {
+      const before = await page.evaluate(() => window.textFrames);
+      await page.waitForTimeout(200);
+      return (await page.evaluate(() => window.textFrames)) === before;
+    })
+    .toBe(true);
 }
 async function moving(page) {
   const before = await page.evaluate(() => window.textFrames);
@@ -82,66 +85,170 @@ test('dark welcome hides the form until keyboard entry and preserves its circle 
   expect(errors).toEqual([]);
 });
 
-test('text motion obeys pause, tab visibility, off switch, reduced motion and session boundaries', async ({
+test('only the hovered letter changes and leaving restores every filled glyph', async ({
   page,
-}) => {
+}, info) => {
   const errors = await setup(page);
   await countTextFrames(page);
   await page.goto('/');
-  await expect.poll(() => page.evaluate(() => window.textFrames)).toBeGreaterThan(2);
-  const canvas = page.locator('.energy-tech-canvas');
-  expect(await canvas.evaluate((el) => el.width <= el.clientWidth * 1.5 + 1)).toBe(true);
-  const before = await page.evaluate(() => window.textFrames);
-  await page.waitForTimeout(600);
-  expect((await page.evaluate(() => window.textFrames)) - before).toBeLessThanOrEqual(21);
-  await page.click('#pause-welcome');
+  const word = page.locator('.energy-wordmark');
+  await expect(word).toHaveAttribute('data-ready', 'true');
+  await page.waitForTimeout(1800);
   await stopped(page);
-  await page.click('#pause-welcome');
+  const sample = () =>
+    page.locator('.energy-tech-canvas').evaluate((el) => {
+      const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+      let hash = 2166136261;
+      for (const value of data) hash = Math.imul(hash ^ value, 16777619);
+      return hash >>> 0;
+    });
+  const baseline = await sample();
+  // Find the first visible glyph from rendered pixels, independently of text layout math.
+  const point = await page.locator('.energy-tech-canvas').evaluate((el) => {
+    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+    const occupied = Array.from({ length: el.width }, (_, x) => {
+      for (let y = 0; y < el.height; y++) if (data[(y * el.width + x) * 4 + 3] > 220) return true;
+      return false;
+    });
+    const first = occupied.indexOf(true);
+    let end = first;
+    while (occupied[end]) end++;
+    const x = Math.floor((first + end) / 2);
+    const rows = [];
+    for (let y = 0; y < el.height; y++) if (data[(y * el.width + x) * 4 + 3] > 220) rows.push(y);
+    const rect = el.getBoundingClientRect();
+    return {
+      right: end + 6,
+      x: rect.left + (x * rect.width) / el.width,
+      y: rect.top + (rows[Math.floor(rows.length / 2)] * rect.height) / el.height,
+    };
+  });
+  const rest = () =>
+    page.locator('.energy-tech-canvas').evaluate((el, right) => {
+      const data = el.getContext('2d').getImageData(right, 0, el.width - right, el.height).data;
+      let hash = 2166136261;
+      for (const value of data) hash = Math.imul(hash ^ value, 16777619);
+      return hash >>> 0;
+    }, point.right);
+  const unchangedLetters = await rest();
+  await page.mouse.move(point.x, point.y);
+  await expect(word).toHaveAttribute('data-active-letter', '0');
   await moving(page);
+  expect(await sample()).not.toBe(baseline);
+  expect(await rest()).toBe(unchangedLetters);
+  await page.screenshot({ path: info.outputPath('hover-first-letter.png') });
+  const box = await word.boundingBox();
+  // Staying inside the wordmark but above the actual letters must not select a nearby glyph.
+  await page.mouse.move(box.x + box.width / 2, box.y + 1);
+  await expect(word).not.toHaveAttribute('data-active-letter');
+  await expect.poll(sample).toBe(baseline);
+  await stopped(page);
+  await page.mouse.move(2, 2);
+  await expect(word).not.toHaveAttribute('data-active-letter');
+  expect(await sample()).toBe(baseline);
+  expect(errors).toEqual([]);
+});
+
+test('ASCII rendering obeys pause, visibility, motion preferences and repeated Back navigation', async ({
+  page,
+}) => {
+  const errors = await setup(page);
+  await page.addInitScript(() => {
+    window.asciiDraws = 0;
+    const draw = WebGL2RenderingContext.prototype.drawArrays;
+    WebGL2RenderingContext.prototype.drawArrays = function (...args) {
+      if (this.canvas.classList.contains('energy-ascii-canvas')) window.asciiDraws++;
+      return draw.apply(this, args);
+    };
+  });
+  await page.goto('/');
+  const ascii = page.locator('.energy-ascii-canvas');
+  await expect(ascii).toHaveAttribute('data-ready', 'true');
+  expect(await ascii.evaluate((el) => el.width <= 1200 && el.height <= 720)).toBe(true);
+  const count = () => page.evaluate(() => window.asciiDraws);
+  const still = async () => {
+    await page.waitForTimeout(100);
+    const before = await count();
+    await page.waitForTimeout(200);
+    expect(await count()).toBe(before);
+  };
+  const active = async () => {
+    const before = await count();
+    await expect.poll(count).toBeGreaterThan(before + 1);
+  };
+  const cadence = await page.evaluate(async () => {
+    const started = performance.now(),
+      before = window.asciiDraws;
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return { draws: window.asciiDraws - before, elapsed: performance.now() - started };
+  });
+  // Two draws per frame; allow two one-time resize/font paints, measured in the browser clock.
+  expect(cadence.draws).toBeLessThanOrEqual(Math.ceil(cadence.elapsed / 50) * 2 + 4);
+  await page.click('#pause-welcome');
+  await still();
+  await page.click('#pause-welcome');
+  await active();
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await stopped(page);
+  await still();
   await page.evaluate(() => {
     delete document.hidden;
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await moving(page);
+  await active();
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await stopped(page);
+  await still();
   await expect(page.locator('#energy-title')).toHaveCSS('opacity', '1');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await moving(page);
+  await active();
+  await page.locator('[data-open-raw-template]:visible').click();
+  await still();
+  await page.locator('[data-close-dialog="raw-template-dialog"]').click();
+  await active();
   await page.locator('#welcome-hero').evaluate((el) => {
     el.dataset.motion = 'off';
   });
-  await stopped(page);
-  await expect(page.locator('#energy-title')).toHaveCSS('opacity', '1');
+  await still();
   await page.locator('#welcome-hero').evaluate((el) => {
     el.dataset.motion = 'on';
   });
-  await moving(page);
+  await active();
+  for (let i = 0; i < 2; i++) {
+    await openSignIn(page);
+    await still();
+    await page.click('#back-welcome');
+    await expect(ascii).toHaveAttribute('data-ready', 'true');
+    await active();
+  }
   await openSignIn(page);
-  await stopped(page);
   await page.fill('#login-username', account.username);
   await page.fill('#login-password', 'Synthetic password for welcome');
   await page.click('#login-submit');
   await expect(page.locator('#report-workspace')).toBeVisible();
-  await stopped(page);
+  await still();
   page.once('dialog', (dialog) => dialog.accept());
   await page.click('#logout');
   await expect(page.locator('#open-login')).toBeFocused();
-  await moving(page);
+  await expect(ascii).toHaveAttribute('data-ready', 'true');
+  await active();
   await expect(page.locator('.meter-input').first()).toHaveValue('');
   expect(errors).toEqual([]);
 });
 
-for (const failure of ['module', 'canvas'])
+for (const failure of ['module', 'canvas', 'webgl'])
   test(`${failure} failure retains the HTML title and functional sign-in`, async ({ page }) => {
     const errors = await setup(page);
     if (failure === 'module')
       await page.route('**/ui/welcome-tech.js', (route) => route.abort('failed'));
+    else if (failure === 'webgl')
+      await page.addInitScript(() => {
+        const get = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+          return type === 'webgl2' ? null : get.call(this, type, ...args);
+        };
+      });
     else
       await page.addInitScript(() => {
         HTMLCanvasElement.prototype.getContext = () => {
@@ -149,7 +256,10 @@ for (const failure of ['module', 'canvas'])
         };
       });
     await page.goto('/');
-    await expect(page.locator('#energy-title')).toHaveCSS('opacity', '1');
+    if (failure === 'webgl') {
+      await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
+      await expect(page.locator('.energy-ascii-canvas')).toHaveCSS('opacity', '0');
+    } else await expect(page.locator('#energy-title')).toHaveCSS('opacity', '1');
     await expect(page.locator('#login-form')).toBeHidden();
     await openSignIn(page);
     await page.fill('#login-username', account.username);
@@ -228,7 +338,8 @@ test('HTML motion-off leaves visible controls and offscreen text does not keep d
     .toBeLessThan(0);
   await stopped(page);
   await page.locator('.energy-wordmark').scrollIntoViewIfNeeded();
-  await moving(page);
+  await page.waitForTimeout(1800);
+  await stopped(page);
   await page.locator('#welcome-hero').evaluate((el) => {
     el.dataset.motion = 'off';
   });
@@ -238,5 +349,59 @@ test('HTML motion-off leaves visible controls and offscreen text does not keep d
   await expect(page.locator('#pause-welcome')).toBeHidden();
   await openSignIn(page);
   await expect(page.locator('#application-surface')).not.toHaveClass('welcome-revealing');
+  expect(errors).toEqual([]);
+});
+
+test('pausing before decoration finishes loading keeps the complete title visible', async ({
+  page,
+}) => {
+  await setup(page);
+  let release;
+  const hold = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/ui/welcome-tech.js', async (route) => {
+    await hold;
+    await route.continue();
+  });
+  await page.goto('/');
+  await page.click('#pause-welcome');
+  release();
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
+  expect(
+    await page.locator('.energy-tech-canvas').evaluate((el) => {
+      const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+      return data.some((value, index) => index % 4 === 3 && value > 220);
+    }),
+  ).toBe(true);
+  await expect(page.locator('#pause-welcome')).toHaveAttribute('aria-pressed', 'true');
+  await openSignIn(page);
+});
+
+test('ASCII remains a single controller when both text and magnet modules fail', async ({
+  page,
+}) => {
+  const errors = await setup(page);
+  await page.addInitScript(() => {
+    window.asciiContexts = 0;
+    const get = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+      if (type === 'webgl2' && this.classList.contains('energy-ascii-canvas'))
+        window.asciiContexts++;
+      return get.call(this, type, ...args);
+    };
+  });
+  await page.route('**/ui/welcome-tech.js', (route) => route.abort('failed'));
+  await page.route('**/ui/welcome-magnet.js', (route) => route.abort('failed'));
+  await page.goto('/');
+  await expect(page.locator('.energy-ascii-canvas')).toHaveAttribute('data-ready', 'true');
+  await page.selectOption('#welcome-language', 'zh-CN');
+  await page.click('#pause-welcome');
+  await page.click('#pause-welcome');
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.asciiContexts)).toBe(1);
+  await expect(page.locator('#energy-title')).toHaveCSS('opacity', '1');
+  await openSignIn(page);
   expect(errors).toEqual([]);
 });
