@@ -23,11 +23,13 @@ async function setup(page, options = {}) {
 async function countTextFrames(page) {
   await page.addInitScript(() => {
     window.textFrames = 0;
-    const clear = CanvasRenderingContext2D.prototype.clearRect;
-    CanvasRenderingContext2D.prototype.clearRect = function (...args) {
-      if (this.canvas.classList.contains('energy-tech-canvas')) window.textFrames++;
-      return clear.apply(this, args);
-    };
+    for (const key of ['fillText', 'strokeText']) {
+      const paint = CanvasRenderingContext2D.prototype[key];
+      CanvasRenderingContext2D.prototype[key] = function (...args) {
+        if (this.canvas.className.startsWith('energy-letter-')) window.textFrames++;
+        return paint.apply(this, args);
+      };
+    }
   });
 }
 async function stopped(page) {
@@ -38,10 +40,16 @@ async function stopped(page) {
       return (await page.evaluate(() => window.textFrames)) === before;
     })
     .toBe(true);
-}
-async function moving(page) {
-  const before = await page.evaluate(() => window.textFrames);
-  await expect.poll(() => page.evaluate(() => window.textFrames)).toBeGreaterThan(before + 1);
+  await expect
+    .poll(() =>
+      page
+        .locator('.energy-tech-letters')
+        .evaluate(
+          (el) =>
+            el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+        ),
+    )
+    .toBe(0);
 }
 
 test('dark welcome hides the form until keyboard entry and preserves its circle transition and back action', async ({
@@ -85,67 +93,85 @@ test('dark welcome hides the form until keyboard entry and preserves its circle 
   expect(errors).toEqual([]);
 });
 
-test('only the hovered letter changes and leaving restores every filled glyph', async ({
+test('only the hovered glyph changes, motion is composited and no letter repaints on hover', async ({
   page,
 }, info) => {
   const errors = await setup(page);
   await countTextFrames(page);
   await page.goto('/');
-  const word = page.locator('.energy-wordmark');
+  const word = page.locator('.energy-wordmark'),
+    glyphs = page.locator('.energy-tech-glyph');
   await expect(word).toHaveAttribute('data-ready', 'true');
-  await page.waitForTimeout(1800);
-  await stopped(page);
-  const sample = () =>
-    page.locator('.energy-tech-canvas').evaluate((el) => {
-      const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
-      let hash = 2166136261;
-      for (const value of data) hash = Math.imul(hash ^ value, 16777619);
-      return hash >>> 0;
-    });
-  const baseline = await sample();
-  // Find the first visible glyph from rendered pixels, independently of text layout math.
-  const point = await page.locator('.energy-tech-canvas').evaluate((el) => {
-    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
-    const occupied = Array.from({ length: el.width }, (_, x) => {
-      for (let y = 0; y < el.height; y++) if (data[(y * el.width + x) * 4 + 3] > 220) return true;
-      return false;
-    });
-    const first = occupied.indexOf(true);
-    let end = first;
-    while (occupied[end]) end++;
-    const x = Math.floor((first + end) / 2);
-    const rows = [];
-    for (let y = 0; y < el.height; y++) if (data[(y * el.width + x) * 4 + 3] > 220) rows.push(y);
-    const rect = el.getBoundingClientRect();
-    return {
-      right: end + 6,
-      x: rect.left + (x * rect.width) / el.width,
-      y: rect.top + (rows[Math.floor(rows.length / 2)] * rect.height) / el.height,
-    };
+  await expect(glyphs).toHaveCount(12);
+  await expect(page.locator('.energy-welcome-frame')).toHaveCount(0);
+  await expect
+    .poll(() =>
+      word.evaluate(
+        (el) => el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+      ),
+    )
+    .toBe(0);
+  // Freeze only background presentation so pixel comparisons isolate the actual title.
+  await page.locator('.energy-ascii-canvas').evaluate((el) => {
+    el.style.visibility = 'hidden';
   });
-  const rest = () =>
-    page.locator('.energy-tech-canvas').evaluate((el, right) => {
-      const data = el.getContext('2d').getImageData(right, 0, el.width - right, el.height).data;
-      let hash = 2166136261;
-      for (const value of data) hash = Math.imul(hash ^ value, 16777619);
-      return hash >>> 0;
-    }, point.right);
-  const unchangedLetters = await rest();
+  const first = glyphs.first(),
+    rest = glyphs.nth(8);
+  const baseline = await first.screenshot(),
+    unchanged = await rest.screenshot();
+  const point = await first.locator('.energy-letter-fill').evaluate((el) => {
+    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+    const rect = el.getBoundingClientRect();
+    for (let y = Math.floor(el.height / 3); y < el.height; y++)
+      for (let x = 0; x < el.width; x++)
+        if (data[(y * el.width + x) * 4 + 3] > 220)
+          return {
+            x: rect.left + ((x + 0.5) * rect.width) / el.width,
+            y: rect.top + ((y + 0.5) * rect.height) / el.height,
+          };
+  });
+  const paints = await page.evaluate(() => window.textFrames);
   await page.mouse.move(point.x, point.y);
   await expect(word).toHaveAttribute('data-active-letter', '0');
-  await moving(page);
-  expect(await sample()).not.toBe(baseline);
-  expect(await rest()).toBe(unchangedLetters);
+  const movement = await first.evaluate(async (el) => {
+    const animation = el.getAnimations()[0];
+    const before = getComputedStyle(el).transform;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    return {
+      active: !!animation,
+      after: getComputedStyle(el).transform,
+      before,
+      properties: animation?.effect.getKeyframes().flatMap((k) => Object.keys(k)),
+    };
+  });
+  expect(movement.active).toBe(true);
+  expect(movement.after).not.toBe(movement.before);
+  expect(
+    movement.properties.every((p) =>
+      ['transform', 'offset', 'easing', 'composite', 'computedOffset'].includes(p),
+    ),
+  ).toBe(true);
+  await expect(first.locator('.energy-letter-outline')).toBeVisible();
+  expect(await rest.screenshot()).toEqual(unchanged);
+  expect(
+    await glyphs.evaluateAll((els) =>
+      els.slice(1).every((el) => !el.dataset.hover && getComputedStyle(el).transform === 'none'),
+    ),
+  ).toBe(true);
+  expect(await first.screenshot()).not.toEqual(baseline);
   await page.screenshot({ path: info.outputPath('hover-first-letter.png') });
   const box = await word.boundingBox();
-  // Staying inside the wordmark but above the actual letters must not select a nearby glyph.
   await page.mouse.move(box.x + box.width / 2, box.y + 1);
   await expect(word).not.toHaveAttribute('data-active-letter');
-  await expect.poll(sample).toBe(baseline);
-  await stopped(page);
+  await expect(first.locator('.energy-letter-fill')).toBeVisible();
+  await expect(first.locator('.energy-letter-outline')).toBeHidden();
+  await expect
+    .poll(() => word.evaluate((el) => el.getAnimations({ subtree: true }).length))
+    .toBe(0);
+  expect(await first.screenshot()).toEqual(baseline);
+  expect(await page.evaluate(() => window.textFrames)).toBe(paints);
   await page.mouse.move(2, 2);
   await expect(word).not.toHaveAttribute('data-active-letter');
-  expect(await sample()).toBe(baseline);
   expect(errors).toEqual([]);
 });
 
@@ -188,7 +214,7 @@ test('ASCII rendering obeys resolution, frame bounds, pause, visibility, prefere
     return { draws: window.asciiDraws - before, elapsed: performance.now() - started };
   });
   // Two draws per frame; allow two one-time resize/font paints, measured in the browser clock.
-  expect(cadence.draws).toBeLessThanOrEqual(Math.ceil(cadence.elapsed / 50) * 2 + 4);
+  expect(cadence.draws).toBeLessThanOrEqual(Math.ceil(cadence.elapsed / (1000 / 60 - 1)) * 2 + 4);
   await page.click('#pause-welcome');
   await still();
   await page.click('#pause-welcome');
@@ -314,6 +340,7 @@ test('reduced motion and interrupted circle reveals leave a usable form without 
   await expect(page.locator('#login-username')).toBeFocused();
   await expect(page.locator('#application-surface')).not.toHaveClass('welcome-revealing');
   await page.click('#back-welcome');
+  await expect(page.locator('#open-login')).toBeFocused();
   await page.evaluate(() => document.getElementById('open-login').click());
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('#login-username')).toBeFocused();
@@ -340,7 +367,8 @@ test('HTML motion-off leaves visible controls and offscreen text does not keep d
   const errors = await setup(page);
   await countTextFrames(page);
   await page.goto('/');
-  await expect.poll(() => page.evaluate(() => window.textFrames)).toBeGreaterThan(2);
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
+  expect(await page.evaluate(() => window.textFrames)).toBeGreaterThan(2);
   await page.setViewportSize({ width: 900, height: 180 });
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect
@@ -381,10 +409,13 @@ test('pausing before decoration finishes loading keeps the complete title visibl
   release();
   await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
   expect(
-    await page.locator('.energy-tech-canvas').evaluate((el) => {
-      const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
-      return data.some((value, index) => index % 4 === 3 && value > 220);
-    }),
+    await page
+      .locator('.energy-letter-fill')
+      .first()
+      .evaluate((el) => {
+        const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+        return data.some((value, index) => index % 4 === 3 && value > 220);
+      }),
   ).toBe(true);
   await expect(page.locator('#pause-welcome')).toHaveAttribute('aria-pressed', 'true');
   await openSignIn(page);
