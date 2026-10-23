@@ -149,9 +149,7 @@ test('only the hovered letter changes and leaving restores every filled glyph', 
   expect(errors).toEqual([]);
 });
 
-test('ASCII rendering obeys pause, visibility, motion preferences and repeated Back navigation', async ({
-  page,
-}) => {
+async function asciiScene(page) {
   const errors = await setup(page);
   await page.addInitScript(() => {
     window.asciiDraws = 0;
@@ -164,7 +162,6 @@ test('ASCII rendering obeys pause, visibility, motion preferences and repeated B
   await page.goto('/');
   const ascii = page.locator('.energy-ascii-canvas');
   await expect(ascii).toHaveAttribute('data-ready', 'true');
-  expect(await ascii.evaluate((el) => el.width <= 1200 && el.height <= 720)).toBe(true);
   const count = () => page.evaluate(() => window.asciiDraws);
   const still = async () => {
     await page.waitForTimeout(100);
@@ -176,6 +173,14 @@ test('ASCII rendering obeys pause, visibility, motion preferences and repeated B
     const before = await count();
     await expect.poll(count).toBeGreaterThan(before + 1);
   };
+  return { errors, ascii, still, active };
+}
+
+test('ASCII rendering obeys resolution, frame bounds, pause, visibility, preferences and modal suspension', async ({
+  page,
+}) => {
+  const { errors, ascii, still, active } = await asciiScene(page);
+  expect(await ascii.evaluate((el) => el.width <= 1200 && el.height <= 720)).toBe(true);
   const cadence = await page.evaluate(async () => {
     const started = performance.now(),
       before = window.asciiDraws;
@@ -215,6 +220,13 @@ test('ASCII rendering obeys pause, visibility, motion preferences and repeated B
     el.dataset.motion = 'on';
   });
   await active();
+  expect(errors).toEqual([]);
+});
+
+test('ASCII lifecycle recreates Back views and stops behind login and authenticated accounts', async ({
+  page,
+}) => {
+  const { errors, ascii, still, active } = await asciiScene(page);
   for (let i = 0; i < 2; i++) {
     await openSignIn(page);
     await still();
