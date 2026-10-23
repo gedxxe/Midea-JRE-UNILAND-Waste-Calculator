@@ -1,0 +1,165 @@
+/* Application adaptation of React Bits Glass Icons / Lattice Loader.
+ * Copyright (c) 2026 David Haz; MIT + Commons Clause License Condition v1.0.
+ * https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696
+ * Full notice: /asset/licenses/react-bits.txt. CSS glass fallback; no icon WebGL renderer.
+ */
+.energy-enter-circle.glass-icon {
+  position: relative;
+  border: 0;
+  border-radius: 22px;
+  isolation: isolate;
+  background: transparent;
+}
+.glass-icon-plate,
+.glass-icon-glass,
+.glass-icon-face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.glass-icon-plate {
+  z-index: -1;
+  transform: rotate(-12deg) translate(3px, -3px);
+  background: linear-gradient(135deg, #78cde6, #245372);
+  box-shadow: 0 12px 28px #0005;
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glass-icon-glass {
+  background: linear-gradient(135deg, #ffffff40, #ffffff0c);
+  border: 1px solid #ffffff70;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 1px #ffffff73,
+    0 12px 24px -14px #0009;
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glass-icon-face {
+  display: grid;
+  place-items: center;
+  color: white;
+  filter: drop-shadow(0 1px 3px #0004);
+  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.energy-enter:hover .glass-icon {
+  background: transparent;
+  color: #fff;
+}
+.energy-enter:is(:hover, :focus-visible) .glass-icon-plate {
+  transform: rotate(-18deg) translate(5px, -5px);
+}
+.energy-enter:is(:hover, :focus-visible) .glass-icon-glass,
+.energy-enter:is(:hover, :focus-visible) .glass-icon-face {
+  transform: translateY(-4px);
+}
+.signin-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #edf3f8ed;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: #173a4c;
+}
+.signin-transition-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding: 32px;
+}
+.signin-transition-content p {
+  font:
+    500 14px Arial,
+    Helvetica,
+    sans-serif;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.lattice-loader__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 9px);
+  gap: 4px;
+}
+.lattice-loader__cell {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.15;
+  animation: lattice-on 864ms cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+.lattice-cell-1 {
+  animation-delay: 108ms;
+}
+.lattice-cell-2 {
+  animation-delay: 216ms;
+}
+.lattice-cell-3 {
+  animation-delay: 756ms;
+}
+.lattice-cell-5 {
+  animation-delay: 324ms;
+}
+.lattice-cell-6 {
+  animation-delay: 648ms;
+}
+.lattice-cell-7 {
+  animation-delay: 540ms;
+}
+.lattice-cell-8 {
+  animation-delay: 432ms;
+}
+.lattice-loader__cell[data-hole] {
+  animation: none;
+  opacity: 0.07;
+}
+.lattice-loader[data-status='done'] .lattice-loader__cell {
+  animation: none;
+  opacity: 0.18;
+  transition: opacity 160ms;
+}
+.lattice-loader[data-status='done']
+  :is(.lattice-cell-2, .lattice-cell-3, .lattice-cell-5, .lattice-cell-7) {
+  opacity: 1;
+}
+.signin-transition[data-paused='true'] .lattice-loader__cell {
+  animation-play-state: paused;
+}
+@keyframes lattice-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  18%,
+  42% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 0.15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-icon * {
+    transition: none !important;
+    transform: none !important;
+  }
+  .lattice-loader__cell {
+    animation: none;
+    opacity: 0.65;
+  }
+  .signin-transition {
+    backdrop-filter: none;
+  }
+}
+body:has(#welcome-hero[data-motion='off']) .glass-icon * {
+  transition: none !important;
+  transform: none !important;
+}
+body:has(#welcome-hero[data-motion='off']) .lattice-loader__cell {
+  animation: none;
+  opacity: 0.65;
+}

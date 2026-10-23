@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.20-alpha - 2026-10-23
+
+- Restrict title outlines and spring hover movement to the character under the pointer. Restore filled text immediately on leaving, and stop text painting once the entrance or hover settles.
+- Add a bounded React Bits Gradient ASCII background and layered Glass Icons sign-in action. Retain static fallbacks, pause, reduced motion and independent failure handling; reuse the existing frontend without browser dependencies.
+- Replace the duplicated welcome content on the white login screen with one centered glass card. Connect the Lattice Loader to actual sign-in success/failure and fade into the existing authenticated or required-password view without delaying authentication.
+- Pause welcome rendering under open modal dialogs, release WebGL resources on exit and recreate them safely on Back. No calculation, report, database or analytics change.
+
 ## v0.11.19-alpha - 2026-10-23
 
 - Add a fullscreen dark Energy Record welcome with the supplied white Midea logo, React Bits Tech Text and a bounded magnetic sign-in button. Adapt the pinned upstream source for the existing frontend, retain its MIT + Commons Clause notice, and add no browser package or framework.

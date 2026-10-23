@@ -24,7 +24,6 @@ import { initRawTemplate } from './ui/raw-template.js';
 import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
 import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
-import { initLogoIntro } from './ui/logo.js';
 import { createWelcome } from './ui/welcome.js';
 import { createGuideLauncher } from './ui/guide-launcher.js';
 import { createAccounts } from './ui/accounts.js';
@@ -60,7 +59,6 @@ import {
 import { NetworkClock, wibDate } from './clock.js';
 import { exampleDraft } from './examples.js';
 
-initLogoIntro();
 const guide = createGuideLauncher({ toast });
 
 const table = createMeterTable({
@@ -348,6 +346,7 @@ let navigation;
 const welcome = createWelcome();
 const accounts = createAccounts({
   opened: (view) => navigation?.opened(view),
+  authActivity: (status) => welcome.authActivity(status),
   rendered: () => {
     welcome.sync({ ready: accounts.isReady(), user: accounts.getUser() });
     navigation?.sync();

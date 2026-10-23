@@ -342,3 +342,46 @@ body[data-welcome='login'] #back-welcome {
   animation: none;
   transition: none;
 }
+/* Gradient ASCII canvas is isolated behind readable controls. */
+.energy-ascii-canvas,
+.energy-ascii-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.energy-ascii-canvas {
+  opacity: 0;
+}
+.energy-ascii-canvas[data-ready='true'] {
+  opacity: 0.72;
+}
+.energy-ascii-shade {
+  background: linear-gradient(180deg, #08090a85 0%, #08090a8c 33%, #08090ab0 58%, #08090ae6 100%);
+}
+.energy-topline,
+.energy-wordmark,
+.energy-bottomline,
+.energy-footline {
+  position: relative;
+  z-index: 1;
+}
+.energy-welcome {
+  background: radial-gradient(ellipse at 50% 55%, #0d3149 0%, #08141f 35%, #08090a 75%);
+}
+.energy-welcome-frame {
+  z-index: 2;
+}
+.energy-wordmark {
+  user-select: none;
+}
+.energy-welcome[data-motion='off'] .energy-ascii-canvas {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .energy-ascii-canvas {
+    display: none;
+  }
+}

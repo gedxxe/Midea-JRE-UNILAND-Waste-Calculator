@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/style.css" />
     <link rel="stylesheet" href="/logo.css" />
     <link rel="stylesheet" href="/welcome.css" />
+    <link rel="stylesheet" href="/signin-effects.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body class="login-page" data-welcome="hero">
@@ -26,6 +27,8 @@
       data-motion="on"
       aria-labelledby="energy-title"
     >
+      <canvas class="energy-ascii-canvas" aria-hidden="true"></canvas>
+      <div class="energy-ascii-shade" aria-hidden="true"></div>
       <div class="energy-welcome-frame" aria-hidden="true"></div>
       <div class="energy-topline">
         <span class="energy-factories">JRE / UNILAND</span>
@@ -59,8 +62,23 @@
         <button id="open-login" class="energy-enter" type="button">
           <span class="energy-enter-content"
             ><span data-i18n="welcomeEnter">Sign in</span
-            ><span class="energy-enter-circle" aria-hidden="true">↗</span></span
-          >
+            ><span class="energy-enter-circle glass-icon" aria-hidden="true"
+              ><span class="glass-icon-plate"></span><span class="glass-icon-glass"></span
+              ><span class="glass-icon-face"
+                ><svg
+                  viewBox="0 0 24 24"
+                  width="27"
+                  height="27"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    d="M5 12h13M12 5l7 7-7 7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  /></svg></span></span
+          ></span>
         </button>
       </div>
       <div class="energy-footline">
@@ -84,6 +102,23 @@
         </button>
       </div>
     </section>
+    <div id="signin-transition" class="signin-transition" role="status" aria-live="polite" hidden>
+      <div class="signin-transition-content">
+        <span class="lattice-loader" data-status="working" aria-hidden="true"
+          ><span class="lattice-loader__grid"
+            ><span class="lattice-loader__cell lattice-cell-0"></span
+            ><span class="lattice-loader__cell lattice-cell-1"></span
+            ><span class="lattice-loader__cell lattice-cell-2"></span
+            ><span class="lattice-loader__cell lattice-cell-3"></span
+            ><span class="lattice-loader__cell lattice-cell-4" data-hole></span
+            ><span class="lattice-loader__cell lattice-cell-5"></span
+            ><span class="lattice-loader__cell lattice-cell-6"></span
+            ><span class="lattice-loader__cell lattice-cell-7"></span
+            ><span class="lattice-loader__cell lattice-cell-8"></span></span
+        ></span>
+        <p id="signin-transition-label" data-i18n="welcomeSigningIn">Signing in...</p>
+      </div>
+    </div>
     <div id="application-surface" hidden inert>
       <a id="skip-table" class="skip-link" href="#meter-table" data-i18n="skip" hidden
         >Skip to meter table</a
@@ -121,159 +156,6 @@
         </div>
       </header>
       <main class="workspace">
-        <section class="welcome-copy" aria-labelledby="welcome-title">
-          <p class="eyebrow">JRE / UNILAND</p>
-          <h1 id="welcome-title" data-i18n="welcomeTitle">Daily energy.</h1>
-          <p class="welcome-motto" data-i18n="welcomeMotto">
-            Tired of manual energy reports? Try a simpler way.
-          </p>
-          <p class="welcome-credit">
-            Made with
-            <span role="img" aria-label="love" data-i18n-aria-label="welcomeLove">❤️</span> by
-            gedxxe
-            <span class="credit-department">for Midea JRE Engineering Department</span>
-          </p>
-        </section>
-        <div id="logo-intro" class="logo-intro" data-motion="on">
-          <canvas class="welcome-field" aria-hidden="true"></canvas>
-          <svg class="logo-scene" viewBox="-240 -240 2400 1220" role="img" aria-label="Midea">
-            <defs>
-              <clipPath id="logo-piece-0">
-                <polygon points="0,0 250,0 175,370 230,740 0,740 0,370" />
-              </clipPath>
-              <clipPath id="logo-piece-1">
-                <polygon points="250,0 450,0 505,370 480,740 230,740 175,370" />
-              </clipPath>
-              <clipPath id="logo-piece-2">
-                <polygon points="450,0 710,0 660,370 760,740 480,740 505,370" />
-              </clipPath>
-              <clipPath id="logo-piece-3">
-                <polygon points="710,0 970,0 1050,370 940,740 760,740 660,370" />
-              </clipPath>
-              <clipPath id="logo-piece-4">
-                <polygon points="970,0 1250,0 1190,370 1280,740 940,740 1050,370" />
-              </clipPath>
-              <clipPath id="logo-piece-5">
-                <polygon points="1250,0 1490,0 1550,370 1490,740 1280,740 1190,370" />
-              </clipPath>
-              <clipPath id="logo-piece-6">
-                <polygon points="1490,0 1730,0 1680,370 1750,740 1490,740 1550,370" />
-              </clipPath>
-              <clipPath id="logo-piece-7">
-                <polygon points="1730,0 1920,0 1920,370 1920,740 1750,740 1680,370" />
-              </clipPath>
-            </defs>
-            <g class="logo-pieces" aria-hidden="true">
-              <g class="logo-fragment fragment-0">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-0)"
-                />
-              </g>
-              <g class="logo-fragment fragment-1">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-1)"
-                />
-              </g>
-              <g class="logo-fragment fragment-2">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-2)"
-                />
-              </g>
-              <g class="logo-fragment fragment-3">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-3)"
-                />
-              </g>
-              <g class="logo-fragment fragment-4">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-4)"
-                />
-              </g>
-              <g class="logo-fragment fragment-5">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-5)"
-                />
-              </g>
-              <g class="logo-fragment fragment-6">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-6)"
-                />
-              </g>
-              <g class="logo-fragment fragment-7">
-                <image
-                  href="/asset/Midea.webp"
-                  width="1920"
-                  height="740"
-                  clip-path="url(#logo-piece-7)"
-                />
-              </g>
-            </g>
-            <image class="logo-whole" href="/asset/Midea.webp" width="1920" height="740" />
-          </svg>
-          <div class="logo-controls">
-            <button
-              id="replay-logo"
-              class="logo-replay"
-              type="button"
-              data-i18n-aria-label="replayLogo"
-              aria-label="Replay logo animation"
-              data-i18n-title="replayLogo"
-              title="Replay logo animation"
-              hidden
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M4 10a8 8 0 1 1 1 6M4 4v6h6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-            <button
-              id="pause-logo"
-              class="logo-replay"
-              type="button"
-              data-i18n-aria-label="pauseLogo"
-              aria-label="Pause logo animation"
-              data-i18n-title="pauseLogo"
-              title="Pause logo animation"
-              aria-pressed="false"
-              hidden
-            >
-              <span aria-hidden="true">Ⅱ</span>
-            </button>
-          </div>
-        </div>
-
         <div class="page-heading">
           <div>
             <p class="eyebrow">JRE / UNILAND</p>

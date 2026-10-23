@@ -7,6 +7,8 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  welcomeSigningIn: ['Signing in...', '正在登录…', 'Sedang masuk...'],
+  welcomeOpening: ['Opening your workspace...', '正在打开工作区…', 'Membuka halaman pengisian...'],
   welcomeEnter: ['Sign in', '登录', 'Masuk'],
   welcomeBack: ['Back to welcome', '返回欢迎页', 'Kembali ke halaman awal'],
   welcomePause: ['Pause welcome animation', '暂停欢迎动画', 'Jeda animasi halaman awal'],
@@ -50,9 +52,6 @@ export const catalog = {
     '读数下降，请检查是否重置电表。',
     'Reading menurun. Periksa apakah meter di-reset.',
   ],
-  pauseLogo: ['Pause logo animation', '暂停标志动画', 'Jeda animasi logo'],
-  resumeLogo: ['Resume logo animation', '继续标志动画', 'Lanjutkan animasi logo'],
-  replayLogo: ['Replay logo animation', '重播标志动画', 'Putar ulang animasi logo'],
   ...waterMessages,
   netUsageHint: [
     'Enter original readings. Usage excludes {meters}.',
