@@ -27,6 +27,7 @@ import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
 import { initLogoIntro } from './ui/logo.js';
 import { createGuideLauncher } from './ui/guide-launcher.js';
 import { createAccounts } from './ui/accounts.js';
+import { createNavigation } from './ui/navigation.js';
 import { $, node } from './ui/dom.js';
 import { createMeterTable } from './ui/table.js';
 import { t, setLanguage, getLanguage, translatePage, LANGUAGE_KEY } from './i18n/index.js';
@@ -342,7 +343,10 @@ function accountChanged(user) {
   mountPlant();
   autosave?.reset(user);
 }
+let navigation;
 const accounts = createAccounts({
+  opened: (view) => navigation?.opened(view),
+  rendered: () => navigation?.sync(),
   current,
   identityChanged: accountChanged,
   reportSaved: () => {
@@ -385,7 +389,20 @@ autosave = createDraftAutosave({
     dirty = false;
   },
 });
-graphs = createGraphs({ current, request: (...args) => accounts.request(...args), toast });
+graphs = createGraphs({
+  current,
+  request: (...args) => accounts.request(...args),
+  toast,
+  opened: (view) => navigation?.opened(view),
+});
+navigation = createNavigation({
+  getState: () => ({ ready: accounts.isReady(), user: accounts.getUser() }),
+  open(view) {
+    if (view === 'monitoring') graphs.open();
+    else if (view === 'history') accounts.openHistory();
+    else if (view === 'accounts') accounts.openUsers();
+  },
+});
 function toast(message) {
   $('toast').textContent = message;
   $('toast').hidden = false;

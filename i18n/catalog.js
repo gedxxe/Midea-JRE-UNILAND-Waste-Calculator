@@ -7,6 +7,11 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  routeWelcome: ['Sign in', '登录', 'Masuk'],
+  routeReading: ['Meter readings', '仪表读数', 'Pengisian reading'],
+  routeMonitoring: ['Energy monitoring', '能耗监控', 'Monitoring energi'],
+  routeHistory: ['Report history', '报表历史', 'Histori laporan'],
+  routeAccounts: ['Account management', '账户管理', 'Pengelolaan akun'],
   guideOpen: ['Quick guide', '快速指南', 'Panduan singkat'],
   guideInvitation: [
     'New here? Take a short tour without changing your readings.',

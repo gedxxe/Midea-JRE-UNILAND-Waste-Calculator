@@ -1,6 +1,7 @@
 import drafts from '../api/drafts.js';
 import graphs from '../api/graphs.js';
 import { PUBLIC_FILES } from './assets.mjs';
+import { routeForPath } from '../routes.js';
 import { buildInfo } from './build-info.mjs';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -49,7 +50,7 @@ const server = createServer(async (req, res) => {
     res.end();
     return;
   }
-  const file = pathname === '/' ? 'index.html' : pathname.slice(1);
+  const file = routeForPath(pathname) ? 'index.html' : pathname.slice(1);
   if (!files.has(file)) {
     res.writeHead(404);
     res.end('Not found');

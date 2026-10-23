@@ -29,7 +29,7 @@ export function createGuideLauncher({ toast }) {
     if (!loading) {
       const css = node('link');
       css.rel = 'stylesheet';
-      css.href = './guide.css';
+      css.href = '/guide.css';
       const styled = new Promise((resolve, reject) => {
         css.onload = resolve;
         css.onerror = reject;

@@ -24,6 +24,6 @@ export function analyticsMarkup(config) {
   return (
     '<meta name="app-analytics" content="' +
     content +
-    '" />\n<script type="module" src="./ui/analytics.js"></script>\n'
+    '" />\n<script type="module" src="/ui/analytics.js"></script>\n'
   );
 }

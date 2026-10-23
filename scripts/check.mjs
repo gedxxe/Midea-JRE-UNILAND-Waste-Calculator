@@ -79,6 +79,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.15 adds calendar matrix, bounded curves and accessible graph interactions; no dependencies.
 // v0.11.16 adds a small DOM-only window controller and responsive scroll rules; no dependencies.
 // v0.11.17 adds optional canvas decoration with capped resolution/frame rate and no dependencies.
-assert.ok(size < 565000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.18 adds fixed routes and a small History API controller; no browser dependencies.
+assert.ok(size < 575000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

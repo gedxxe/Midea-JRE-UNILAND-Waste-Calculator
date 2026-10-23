@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.17-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.18-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -106,6 +106,8 @@ New user instructions override older choices here. Update this decision record, 
 - Requested 2026-10-22 welcome retouch: elegant, simple and animated, inspired by the spacious Antigravity reference without a framework migration or copying its assets. Keep text brief and localized. Add a slogan about manual energy reporting and the welcome attribution “Made with ❤️ by gedxxe for Midea JRE Engineering Department”. The app does not remotely inspect physical meters. Preserve the established workspace/footer attribution and all login/password gates.
 - ui/welcome-field.js is optional decoration loaded dynamically by ui/logo.js with failure isolation. It has no account, meter, storage or API access. Cap animation drawing at 30 fps, 520 points (240 on narrow scenes) and DPR 1.5; pause when hidden, out of view, manually paused, reduced motion/motion-off or authenticated. logo.css owns the signed-out composition and entrance motion. Never keep a workspace screenshot visible during account/logout transitions.
 
+- Requested 2026-10-23 routing: add fixed paths / (welcome), /app (entry), /app/monitoring, /app/history and /app/accounts (admin only), without a framework migration. Implementation retains existing dialogs/workspace, draft state and calculation rules. Resolve sessions/password gates before opening protected views; support Back/Forward, direct links, refresh and localized page titles. Server APIs remain authoritative. Unknown paths/private files remain 404; do not add catch-all rewrites or expand analytics collection.
+
 ## Architecture
 
 - Confirmed 2026-10-20 JRE, extended 2026-10-21: Electricity Building 2# net usage equals its direct meter delta minus all four Heat Exchanger consumptions, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, direct Nitrogen and Refrigerant Station electricity, and direct Charging Forklift Building 2 consumption, after each configured factor. The Station remains a separate electricity row and is deducted once from Building 2; gas stock/calculations are unrelated. Exclude all unrelated meter components. Apply to Daily, After production and Night, sub-meter sums, gaps and newly saved graph values; preserve raw pairs, raw exports/templates, worksheet columns and stored historical output. Missing dependencies or negative net remain unavailable, never silently zero. This uses the existing deduction engine with JRE meter layout 5 for the added Forklift row; no SQL migration is required.
@@ -134,6 +136,7 @@ New user instructions override older choices here. Update this decision record, 
 - ui/import.js owns the column-specific import editor. storage.js changeDraftPeriod maps observations by date; app.js retains the original endpoints during consecutive date edits and clears that temporary reference after other edits or identity changes.
 - draft-backup.js validates owner-bound size-limited backup files using storage.js; ui/draft-backup.js owns download, atomic restore confirmation, identity/read guards and account reset. Backup v4 keeps shift utilities; older backups retain omitted collections. Restore clears report links and supports Undo of both factories.
 - storage.js validates version-4 drafts. Preserve existing drafts across UI/language releases.
+- routes.js owns the fixed public route definitions; ui/navigation.js owns session-aware History API synchronization and localized titles. Navigation does not serialize readings, account IDs or credentials into URLs/history. Root-relative document assets and explicit Vercel/local rewrites support deep links; account/graph controllers expose their existing open actions.
 - app.js coordinates events and state. ui/table.js owns table rendering and navigation; ui/dom.js provides DOM helpers; ui/build-info.js displays release metadata.
 - i18n/catalog.js contains English, Simplified Chinese, and Indonesian UI strings. Render translated/user text with textContent or value, never innerHTML.
 - clock.js owns the browser clock. api/time.js and server/ntp.js provide NTP. server/log.js logs only an allowlist of service metadata.

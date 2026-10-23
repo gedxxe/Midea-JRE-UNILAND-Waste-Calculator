@@ -12,6 +12,8 @@ export function createAccounts({
   reportSaved = () => {},
   saveIncomplete = async () => false,
   canSaveReport = () => true,
+  opened = () => {},
+  rendered = () => {},
 }) {
   let user = null;
   let available = false;
@@ -176,6 +178,7 @@ export function createAccounts({
       $(pendingFocus).focus({ preventScroll: true });
       pendingFocus = null;
     }
+    rendered();
   }
   $('retry-account').addEventListener('click', () => void action(refresh));
   $('login-form').addEventListener('submit', (event) => {
@@ -306,18 +309,20 @@ export function createAccounts({
     });
     $('history-snapshot').value = data.snapshot.output.reportText;
   }
-  $('open-history').addEventListener(
-    'click',
-    () =>
-      void action(async () => {
-        page = 0;
-        selected = null;
-        $('history-detail').hidden = true;
-        $('history-kind').value = periodKind(current());
-        $('history-dialog').showModal();
-        await history();
-      }),
-  );
+  function openHistory() {
+    if (busy || !user || user.mustChangePassword) return false;
+    void action(async () => {
+      page = 0;
+      selected = null;
+      $('history-detail').hidden = true;
+      $('history-kind').value = periodKind(current());
+      $('history-dialog').showModal();
+      opened('history');
+      await history();
+    });
+    return true;
+  }
+  $('open-history').addEventListener('click', openHistory);
   $('history-kind').addEventListener(
     'change',
     () =>
@@ -443,16 +448,18 @@ export function createAccounts({
     $('temporary-name').textContent = name;
     $('temporary-password').value = password;
   }
-  $('open-users').addEventListener(
-    'click',
-    () =>
-      void action(async () => {
-        $('temporary-result').hidden = true;
-        $('temporary-password').value = '';
-        $('users-dialog').showModal();
-        await users();
-      }),
-  );
+  function openUsers() {
+    if (busy || !user || user.mustChangePassword || user.role !== 'admin') return false;
+    void action(async () => {
+      $('temporary-result').hidden = true;
+      $('temporary-password').value = '';
+      $('users-dialog').showModal();
+      opened('accounts');
+      await users();
+    });
+    return true;
+  }
+  $('open-users').addEventListener('click', openUsers);
   $('users-dialog').addEventListener('close', () => {
     $('temporary-password').value = '';
     $('temporary-result').hidden = true;
@@ -480,6 +487,9 @@ export function createAccounts({
   });
   return {
     start: refresh,
+    openHistory,
+    openUsers,
+    isReady: () => ready,
     render,
     request,
     getUser: () => user,

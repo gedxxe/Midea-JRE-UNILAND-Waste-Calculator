@@ -97,8 +97,9 @@ test('stored hostile text stays inert in draft inputs, reports, historian and ex
   await expect(page.locator('[src="xss-probe"],[onerror],[onload]')).toHaveCount(0);
   expect(await page.evaluate(() => window.__probe)).toBeUndefined();
   expect(requests).toEqual([]);
+  await expect(page).toHaveURL(/\/app\/monitoring$/);
   await page.reload();
-  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graphs-dialog')).toBeVisible();
   await expect(page.locator('.graph-card').first().locator('svg')).toContainText(payload);
   expect(await page.evaluate(() => window.__probe)).toBeUndefined();
 });

@@ -46,5 +46,39 @@
       ]
     }
   ],
-  "installCommand": "npm ci"
+  "installCommand": "npm ci",
+  "rewrites": [
+    {
+      "source": "/app",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/monitoring",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/monitoring/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/history",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/history/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/accounts",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/accounts/",
+      "destination": "/index.html"
+    }
+  ]
 }

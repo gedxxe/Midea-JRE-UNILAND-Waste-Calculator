@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.18-alpha - 2026-10-23
+
+- Add lightweight presentation routes for reading entry, monitoring, report history and admin accounts. Keep the existing views, with Back/Forward, direct links, refresh and localized browser titles.
+- Resolve sessions before opening protected views; preserve draft state during same-document navigation and return signed-out or password-gated users to login. Keep server authorization and immutable reports unchanged.
+- Use fixed Vercel/local-server rewrites and root-relative assets for nested paths. Unknown paths and private files remain unavailable. No browser dependency, database migration or additional analytics collection.
+
 ## v0.11.17-alpha - 2026-10-22
 
 - Retouch the signed-out welcome screen with large type, more space, concise localized copy, a refined sign-in form and short entrance transitions. Add the requested rendered-heart credit for gedxxe and the Midea JRE Engineering Department.
