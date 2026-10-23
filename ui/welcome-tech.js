@@ -2,43 +2,84 @@
  * copyright (c) 2026 David Haz.
  * https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696
  * MIT + Commons Clause License Condition v1.0: /asset/licenses/react-bits.txt
- * Fixed wordmark, strict character bounds and Canvas spring rendering replace React/GSAP.
+ * Cached glyph art with compositor-only spring/entrance transforms; no frame repaint loop.
  */
 const TEXT = 'Energy Record';
-const clamp = (x) => Math.min(1, Math.max(0, x));
-export function createTechText(container, canvas, allowed) {
-  if (typeof ResizeObserver !== 'function' || typeof IntersectionObserver !== 'function') return;
-  let ctx, probe;
+// Sample the same damped spring once. Browser compositing interpolates between samples.
+const spring = Array.from({ length: 61 }, (_, index) => {
+  const time = index / 60,
+    decay = Math.exp(-9.5 * time),
+    frequency = Math.sqrt(180 - 9.5 ** 2);
+  return index === 60
+    ? 1
+    : 1 - decay * (Math.cos(frequency * time) + (9.5 / frequency) * Math.sin(frequency * time));
+});
+export function createTechText(container, host, allowed) {
+  if (
+    typeof ResizeObserver !== 'function' ||
+    typeof IntersectionObserver !== 'function' ||
+    !host.animate
+  )
+    return;
+  let probe;
   try {
-    ctx = canvas.getContext('2d');
     probe = document.createElement('canvas').getContext('2d');
   } catch {
     return;
   }
-  if (!ctx || !probe) return;
-  let width = 0,
-    height = 0,
-    ratio = 1,
-    glyphs = [],
+  if (!probe) return;
+  let glyphs = [],
     hover = -1,
-    raf = 0,
-    last = 0,
-    clock = 0;
-  let visible = true,
-    alive = true;
+    alive = true,
+    visible = true,
+    entered = false,
+    layoutKey = '';
   const font = (context, size) => {
     context.font = `700 ${size}px Arial, Helvetica, sans-serif`;
     context.textBaseline = 'alphabetic';
     context.textAlign = 'left';
     if ('letterSpacing' in context) context.letterSpacing = `${size * -0.055}px`;
   };
+  function cancel(g) {
+    g.animation?.cancel();
+    g.animation = undefined;
+    g.element.style.willChange = '';
+  }
+  function animate(g, frames, options) {
+    cancel(g);
+    g.element.style.willChange = 'transform, opacity';
+    const animation = g.element.animate(frames, options);
+    g.animation = animation;
+    void animation.finished
+      .catch(() => {})
+      .then(() => {
+        if (g.animation === animation) {
+          cancel(g);
+          if (g.target === 0) g.element.style.transform = '';
+        }
+      });
+  }
+  function lift(g, target) {
+    g.target = target;
+    // Read only the active glyph on a pointer boundary, never on every animation frame.
+    const transform = getComputedStyle(g.element).transform;
+    const y = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42;
+    g.element.style.transform = `translate3d(0, ${target}px, 0)`;
+    g.element.style.opacity = '1';
+    animate(
+      g,
+      spring.map((value) => ({ transform: `translate3d(0, ${y + (target - y) * value}px, 0)` })),
+      { duration: 1000, easing: 'linear' },
+    );
+  }
   function layout() {
-    width = container.clientWidth;
-    height = container.clientHeight;
+    const width = container.clientWidth,
+      height = container.clientHeight;
     if (!width || !height || !alive) return;
-    ratio = Math.min(devicePixelRatio || 1, 1.5);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
+    const ratio = Math.min(devicePixelRatio || 1, 1.5);
+    const key = [width, height, ratio, getComputedStyle(container).fontSize].join(':');
+    if (key === layoutKey) return;
+    layoutKey = key;
     let size = parseFloat(getComputedStyle(container).fontSize) || 150;
     font(probe, size);
     let m = probe.measureText(TEXT);
@@ -54,148 +95,124 @@ export function createTechText(container, canvas, allowed) {
     const baseline =
       (height - m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2 +
       m.actualBoundingBoxAscent;
+    const next = [],
+      fragment = document.createDocumentFragment();
     let prefix = '';
-    glyphs = Array.from(TEXT).flatMap((char, index) => {
+    for (const [index, char] of Array.from(TEXT).entries()) {
       prefix += char;
-      if (!char.trim()) return [];
-      const own = probe.measureText(char);
-      const gx = x + probe.measureText(prefix).width - own.width;
+      if (!char.trim()) continue;
+      const own = probe.measureText(char),
+        gx = x + probe.measureText(prefix).width - own.width;
       const box = {
         x1: gx - own.actualBoundingBoxLeft,
         x2: gx + own.actualBoundingBoxRight,
         y1: baseline - own.actualBoundingBoxAscent,
         y2: baseline + own.actualBoundingBoxDescent,
       };
-      const art = (outline) => {
-        const image = document.createElement('canvas'),
-          pad = 4;
-        image.width = Math.ceil((box.x2 - box.x1 + pad * 2) * ratio);
-        image.height = Math.ceil((box.y2 - box.y1 + pad * 2) * ratio);
-        const c = image.getContext('2d');
-        if (!c) throw Error('Canvas unavailable');
-        c.scale(ratio, ratio);
-        font(c, size);
-        c.fillStyle = c.strokeStyle = '#f5f5f3';
-        c.lineWidth = 1.1;
-        c.setLineDash([3, 2]);
-        c[outline ? 'strokeText' : 'fillText'](
+      const element = document.createElement('span');
+      element.className = 'energy-tech-glyph';
+      element.dataset.letter = String(index);
+      Object.assign(element.style, {
+        left: `${box.x1 - 4}px`,
+        top: `${box.y1 - 4}px`,
+        width: `${box.x2 - box.x1 + 8}px`,
+        height: `${box.y2 - box.y1 + 8}px`,
+      });
+      for (const outline of [false, true]) {
+        const art = document.createElement('canvas');
+        art.className = outline ? 'energy-letter-outline' : 'energy-letter-fill';
+        art.width = Math.ceil((box.x2 - box.x1 + 8) * ratio);
+        art.height = Math.ceil((box.y2 - box.y1 + 8) * ratio);
+        const ctx = art.getContext('2d');
+        if (!ctx) throw Error('Canvas unavailable');
+        ctx.scale(ratio, ratio);
+        font(ctx, size);
+        ctx.fillStyle = ctx.strokeStyle = '#f5f5f3';
+        ctx.lineWidth = 1.1;
+        ctx.setLineDash([3, 2]);
+        ctx[outline ? 'strokeText' : 'fillText'](
           char,
-          pad + own.actualBoundingBoxLeft,
-          pad + own.actualBoundingBoxAscent,
+          4 + own.actualBoundingBoxLeft,
+          4 + own.actualBoundingBoxAscent,
         );
-        return image;
-      };
-      return [
-        {
-          index,
-          box,
-          left: box.x1 - 4,
-          top: box.y1 - 4,
-          fill: art(false),
-          outline: art(true),
-          y: 0,
-          v: 0,
-          lift: Math.min(14, size * 0.075),
-        },
-      ];
-    });
+        element.append(art);
+      }
+      fragment.append(element);
+      next.push({ index, box, element, lift: Math.min(14, size * 0.075) });
+    }
+    glyphs.forEach(cancel);
+    glyphs = next;
+    host.replaceChildren(fragment);
     hover = -1;
-    if (!allowed()) clock = 1.1;
     delete container.dataset.activeLetter;
-    draw();
-    wake();
-  }
-  function draw() {
-    if (!alive || !width || !height) return;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const [order, g] of glyphs.entries()) {
-      const progress = clamp((clock - order * 0.032) / 0.65),
-        eased = 1 - Math.pow(1 - progress, 3);
-      ctx.globalAlpha = progress;
-      ctx.drawImage(
-        g.index === hover ? g.outline : g.fill,
-        Math.round(g.left * ratio),
-        Math.round((g.top + g.y + (1 - eased) * 24) * ratio),
+    container.dataset.ready = 'true';
+    if (!entered && allowed() && visible) {
+      glyphs.forEach((g, order) =>
+        animate(
+          g,
+          [
+            { opacity: 0, transform: 'translate3d(0, 24px, 0)' },
+            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+          ],
+          {
+            duration: 650,
+            delay: order * 32,
+            easing: 'cubic-bezier(.16,1,.3,1)',
+            fill: 'backwards',
+          },
+        ),
       );
     }
-    ctx.globalAlpha = 1;
-    container.dataset.ready = 'true';
-  }
-  function step(now) {
-    raf = 0;
-    if (!alive || !visible || !allowed()) return;
-    if (last && now - last < 1000 / 30) {
-      raf = requestAnimationFrame(step);
-      return;
-    }
-    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 30;
-    last = now;
-    clock += dt;
-    let moving = clock < 1.1;
-    const steps = Math.ceil(dt / (1 / 120)),
-      h = dt / steps;
-    for (const g of glyphs) {
-      const target = g.index === hover ? -g.lift : 0;
-      for (let i = 0; i < steps; i++) {
-        g.v += (180 * (target - g.y) - 19 * g.v) * h;
-        g.y += g.v * h;
-      }
-      if (Math.abs(g.y - target) < 0.02 && Math.abs(g.v) < 0.05) {
-        g.y = target;
-        g.v = 0;
-      } else moving = true;
-    }
-    try {
-      draw();
-    } catch {
-      destroy();
-      return;
-    }
-    if (moving) raf = requestAnimationFrame(step);
-  }
-  function wake() {
-    if (!raf && alive && visible && allowed()) {
-      last = 0;
-      raf = requestAnimationFrame(step);
-    }
+    entered = true;
   }
   function setHover(next) {
     if (next === hover) return;
+    const previous = glyphs.find((g) => g.index === hover);
+    if (previous) {
+      delete previous.element.dataset.hover;
+      lift(previous, 0);
+    }
     hover = next;
     if (next < 0) delete container.dataset.activeLetter;
-    else container.dataset.activeLetter = String(next);
-    draw();
-    wake();
+    else {
+      container.dataset.activeLetter = String(next);
+      const g = glyphs.find((item) => item.index === next);
+      g.element.dataset.hover = 'true';
+      lift(g, -g.lift);
+    }
   }
   function move(event) {
-    if (!allowed() || event.pointerType === 'touch') {
-      setHover(-1);
-      return;
-    }
+    if (!alive || !allowed() || !visible || event.pointerType === 'touch') return leave();
     const rect = container.getBoundingClientRect(),
       x = event.clientX - rect.left,
       y = event.clientY - rect.top;
-    const candidates = glyphs.filter(
-      (g) => x >= g.box.x1 && x <= g.box.x2 && y >= g.box.y1 && y <= g.box.y2,
-    );
-    candidates.sort(
-      (a, b) => Math.abs((a.box.x1 + a.box.x2) / 2 - x) - Math.abs((b.box.x1 + b.box.x2) / 2 - x),
-    );
-    setHover(candidates[0]?.index ?? -1);
-  }
-  const leave = () => setHover(-1);
-  function sync() {
-    cancelAnimationFrame(raf);
-    raf = 0;
-    last = 0;
-    if (!allowed()) {
-      clock = 1.1;
-      for (const g of glyphs) g.y = g.v = 0;
+    let closest,
+      distance = Infinity;
+    for (const g of glyphs) {
+      if (x < g.box.x1 || x > g.box.x2 || y < g.box.y1 || y > g.box.y2) continue;
+      const delta = Math.abs((g.box.x1 + g.box.x2) / 2 - x);
+      if (delta < distance) {
+        closest = g;
+        distance = delta;
+      }
     }
-    leave();
-    draw();
-    if (allowed() && visible) wake();
+    setHover(closest?.index ?? -1);
+  }
+  function leave() {
+    setHover(-1);
+  }
+  function sync() {
+    if (!alive) return;
+    if (!allowed() || !visible) {
+      hover = -1;
+      delete container.dataset.activeLetter;
+      glyphs.forEach((g) => {
+        cancel(g);
+        delete g.element.dataset.hover;
+        g.element.style.transform = '';
+        g.element.style.opacity = '1';
+      });
+    }
   }
   const resize = new ResizeObserver(() => {
     try {
@@ -204,11 +221,11 @@ export function createTechText(container, canvas, allowed) {
       destroy();
     }
   });
-  resize.observe(container);
   const intersection = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
     sync();
   });
+  resize.observe(container);
   intersection.observe(container);
   container.addEventListener('pointermove', move, { passive: true });
   container.addEventListener('pointerleave', leave);
@@ -216,7 +233,9 @@ export function createTechText(container, canvas, allowed) {
   function destroy() {
     if (!alive) return;
     alive = false;
-    cancelAnimationFrame(raf);
+    glyphs.forEach(cancel);
+    glyphs = [];
+    host.replaceChildren();
     resize.disconnect();
     intersection.disconnect();
     container.removeEventListener('pointermove', move);
@@ -224,7 +243,12 @@ export function createTechText(container, canvas, allowed) {
     window.removeEventListener('blur', leave);
     delete container.dataset.ready;
     delete container.dataset.activeLetter;
-    glyphs = [];
+  }
+  try {
+    layout();
+  } catch {
+    destroy();
+    return;
   }
   if (document.fonts)
     void document.fonts.ready.then(() => {

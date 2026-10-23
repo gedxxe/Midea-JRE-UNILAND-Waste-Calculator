@@ -137,7 +137,7 @@ test('lost WebGL context leaves a dark static fallback, and Back creates a fresh
   await openSignIn(page);
   await page.click('#back-welcome');
   await expect(canvas).toHaveAttribute('data-ready', 'true');
-  await expect(canvas).toHaveCSS('opacity', '0.72');
+  await expect(canvas).toHaveCSS('opacity', '1');
   expect(errors).toEqual([]);
 });
 

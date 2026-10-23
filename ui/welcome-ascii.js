@@ -49,6 +49,7 @@ uniform float uSoftness;
 uniform float uFlow;
 uniform vec2 uSeed;
 uniform vec4 uTrail[24];
+uniform int uTrailCount;
 uniform float uRadius;
 uniform vec4 uClicks[4];
 uniform int uClickEffect;
@@ -170,6 +171,7 @@ void main() {
 
   float scramble = 0.0;
   for (int i = 0; i < 24; i++) {
+    if (i >= uTrailCount) break;
     vec4 point = uTrail[i];
     if (point.z <= 0.0) continue;
     vec2 d = p - point.xy;
@@ -454,24 +456,24 @@ export function createGradientAscii(container, canvas, allowed) {
 function mountGradient(container, canvas, gl, allowed) {
   const settingsRef = {
     current: {
-      colors: ['#061018', '#075477', '#47afd1', '#09202b'],
+      colors: DEFAULT_COLORS,
       shape: 0,
       characters: ' =+xX0S8#@',
       cellSize: 18,
-      density: 0.65,
-      glyphOpacity: 0.55,
+      density: 0.8,
+      glyphOpacity: 0.85,
       glow: 0,
       depthOfField: 0,
-      flicker: 0,
-      softness: 0.7,
+      flicker: 0.2,
+      softness: 0.5,
       scale: 1,
-      flow: 0.4,
-      speed: 0.5,
-      gradientOpacity: 0.6,
-      grain: 0,
+      flow: 0.5,
+      speed: 1,
+      gradientOpacity: 0.9,
+      grain: 0.03,
       variation: 0,
-      mouseInteraction: false,
-      scrambleRadius: 0.08,
+      mouseInteraction: true,
+      scrambleRadius: 0.12,
       clickEffect: 0,
       intro: true,
       lightMode: false,
@@ -616,6 +618,7 @@ function mountGradient(container, canvas, gl, allowed) {
     gl.uniform1f(fu.uFlow, s.flow);
     gl.uniform2f(fu.uSeed, s.variation * 3.17, s.variation * 1.91);
     gl.uniform4fv(fu.uTrail, trailData);
+    gl.uniform1i(fu.uTrailCount, trail.length);
     gl.uniform1f(fu.uRadius, s.scrambleRadius);
     gl.uniform4fv(fu.uClicks, clickData);
     gl.uniform1i(fu.uClickEffect, s.clickEffect);
@@ -671,8 +674,8 @@ function mountGradient(container, canvas, gl, allowed) {
     sizeTarget(
       gl,
       fieldTarget,
-      Math.max(1, Math.round(canvas.width / 2)),
-      Math.max(1, Math.round(canvas.height / 2)),
+      Math.max(1, Math.round(canvas.width / 4)),
+      Math.max(1, Math.round(canvas.height / 4)),
     );
     const haloWidth = Math.max(1, Math.round(canvas.width / 4));
     const haloHeight = Math.max(1, Math.round(canvas.height / 4));
@@ -715,7 +718,8 @@ function mountGradient(container, canvas, gl, allowed) {
   const renderFrame = (now) => {
     raf = 0;
     if (disposed || !visible || !allowed()) return;
-    if (last && now - last < 50) {
+    const interval = 1000 / (trail.length ? 60 : 30) - 1;
+    if (last && now - last < interval) {
       raf = requestAnimationFrame(frame);
       return;
     }
@@ -752,6 +756,12 @@ function mountGradient(container, canvas, gl, allowed) {
     raf = 0;
     last = 0;
     if (allowed() && visible) wake();
+    else {
+      trail.length = 0;
+      trailData.fill(0);
+      clicks.length = 0;
+      clickData.fill(0);
+    }
   }
   function wake() {
     if (!raf && !disposed && visible && allowed()) raf = requestAnimationFrame(frame);
@@ -768,6 +778,7 @@ function mountGradient(container, canvas, gl, allowed) {
   };
 
   const onPointerMove = (event) => {
+    if (!allowed() || !visible || event.pointerType === 'touch') return;
     locate(event);
     const s = settingsRef.current;
     if (!pointer.inside || !s.mouseInteraction || reduce) return;

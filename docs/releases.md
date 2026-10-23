@@ -98,3 +98,7 @@ Presentation-only change; no database, session, report, draft or preference migr
 ## Welcome and sign-in refinement (v0.11.20-alpha)
 
 Presentation-only change. No database, session, reading, report or preference migration. Strict per-letter hover replaces the autonomous sweep; bounded ASCII replaces the old particle/logo login decoration. Keep the full React Bits notice with builds. WebGL/module failure leaves static HTML/CSS and usable sign-in; authentication never waits for an animation. A normal revert restores v0.11.19 presentation without rewriting saved data. Preserve earlier release branches/tags and keep preview authentication unconfigured.
+
+## Welcome motion correction (v0.11.21-alpha)
+
+Presentation-only fix, with no schema, database, session or preference migration. A normal revert restores the v0.11.20 presentation without changing saved data. Keep React Bits notices and existing immutable milestones. Preview account setup stays unchanged. Publish only one intended feature PR; create the release branch/tag at the final tested commit, after any test fixes, so a checkpoint PR cannot accidentally omit them.

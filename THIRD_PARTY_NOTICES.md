@@ -21,7 +21,7 @@ The welcome and sign-in screens adapt Tech Text, Split Text, Magnet, Gradient AS
 
 Source locations under src/content/:
 
-- TextAnimations/TechText/TechText.jsx and TextAnimations/SplitText/SplitText.jsx: fixed wordmark sprites, character outline and spring lift, adapted to canvas without React or GSAP.
+- TextAnimations/TechText/TechText.jsx and TextAnimations/SplitText/SplitText.jsx: fixed wordmark sprites, character outline and spring lift, adapted to cached canvas glyph art with native compositor transforms, without React or GSAP.
 - Animations/Magnet/Magnet.jsx: bounded CTA movement.
 - Backgrounds/GradientASCII/GradientASCII.jsx: WebGL2 shader engine with fixed settings, resolution/frame limits and DOM lifecycle cleanup.
 - Components/GlassIcons/GlassIcons.jsx and GlassIcons.css: layered CSS glass fallback/style; the WebGL refraction renderer is not included.

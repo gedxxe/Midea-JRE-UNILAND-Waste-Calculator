@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.21-alpha - 2026-10-23
+
+- Remove the welcome frame and replace full-title canvas repainting with cached letter art and browser-composited spring movement. Hover remains limited to the character under the pointer.
+- Restore a visible blue/white ASCII horizon and cursor scrambling from the supplied React Bits reference. Bound GPU resolution, input history and render work; preserve static fallback, pause, reduced motion and modal suspension.
+- Reverse the circular mask when returning from sign-in to welcome. Preserve form values, keyboard focus and session/password gates when motion is interrupted. No report, calculation, database or analytics change.
+
 ## v0.11.20-alpha - 2026-10-23
 
 - Restrict title outlines and spring hover movement to the character under the pointer. Restore filled text immediately on leaving, and stop text painting once the entrance or hover settles.
