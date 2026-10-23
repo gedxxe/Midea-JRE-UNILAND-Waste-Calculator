@@ -25,6 +25,7 @@ import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
 import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
 import { initLogoIntro } from './ui/logo.js';
+import { createWelcome } from './ui/welcome.js';
 import { createGuideLauncher } from './ui/guide-launcher.js';
 import { createAccounts } from './ui/accounts.js';
 import { createNavigation } from './ui/navigation.js';
@@ -344,9 +345,13 @@ function accountChanged(user) {
   autosave?.reset(user);
 }
 let navigation;
+const welcome = createWelcome();
 const accounts = createAccounts({
   opened: (view) => navigation?.opened(view),
-  rendered: () => navigation?.sync(),
+  rendered: () => {
+    welcome.sync({ ready: accounts.isReady(), user: accounts.getUser() });
+    navigation?.sync();
+  },
   current,
   identityChanged: accountChanged,
   reportSaved: () => {

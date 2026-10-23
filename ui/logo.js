@@ -18,7 +18,12 @@ export function initLogoIntro() {
   function syncPlayback() {
     field?.sync();
     for (const animation of scene.getAnimations({ subtree: true })) {
-      if (document.hidden || scene.dataset.paused === 'true') animation.pause();
+      if (
+        document.hidden ||
+        document.body.dataset.welcome === 'hero' ||
+        scene.dataset.paused === 'true'
+      )
+        animation.pause();
       else animation.play();
     }
   }
@@ -39,6 +44,10 @@ export function initLogoIntro() {
     syncPlayback();
   };
   document.addEventListener('visibilitychange', visibility);
+  new MutationObserver(syncPlayback).observe(document.body, {
+    attributes: true,
+    attributeFilter: ['data-welcome'],
+  });
   visibility();
   replay.addEventListener('click', () => {
     if (scene.dataset.motion !== 'on' || matchMedia('(prefers-reduced-motion: reduce)').matches)

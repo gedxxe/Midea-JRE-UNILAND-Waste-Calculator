@@ -196,7 +196,7 @@ test('logout/account changes close the guide and cancel a delayed open', async (
   );
   await expect(page.locator('#guide-dialog')).toBeHidden();
   await expect(page.locator('#report-workspace')).toBeHidden();
-  await expect(page.locator('#login-username')).toBeFocused();
+  await expect(page.locator('#open-login')).toBeFocused();
   expect(
     await page
       .locator('#guide-dialog')

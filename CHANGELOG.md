@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.19-alpha - 2026-10-23
+
+- Add a fullscreen dark Energy Record welcome with the supplied white Midea logo, React Bits Tech Text and a bounded magnetic sign-in button. Adapt the pinned upstream source for the existing frontend, retain its MIT + Commons Clause notice, and add no browser package or framework.
+- Open the white sign-in screen only on request, with a circular mask transition and a Back control. Keep session/password gates, deep links, public blank templates and immutable reports.
+- Honor animation pause, reduced motion and motion-off; cap text painting at 30 fps and DPR 1.5, stop hidden/offscreen rendering, and retain HTML text/form fallbacks if decoration fails. No database migration or additional analytics collection.
+
 ## v0.11.18-alpha - 2026-10-23
 
 - Add lightweight presentation routes for reading entry, monitoring, report history and admin accounts. Keep the existing views, with Back/Forward, direct links, refresh and localized browser titles.

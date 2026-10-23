@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, openSignIn } from './fixtures.js';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/time', (route) =>
@@ -20,6 +20,7 @@ test('logo loops with a five-second hold, exits, pauses and replays without chan
     await route.fulfill({ json: { available: true, user: null } });
   });
   await page.goto('/');
+  await openSignIn(page);
   const intro = page.locator('#logo-intro');
   await expect(intro).toBeVisible();
   await expect(page.locator('#report-workspace')).toBeHidden();
@@ -124,6 +125,7 @@ test('reduced motion and the off switch show a complete static logo even without
     route.fulfill({ json: { available: false, user: null } }),
   );
   await page.goto('/');
+  await openSignIn(page);
   const intro = page.locator('#logo-intro');
   await expect(intro).toBeVisible();
   await expect(page.locator('.logo-whole')).toHaveCSS('opacity', '1');
@@ -163,6 +165,8 @@ test('an established session removes the intro and logout restores it without ex
   await page.locator('#load-example').click();
   page.once('dialog', (dialog) => dialog.accept());
   await page.locator('#logout').click();
+  await expect(page.locator('#welcome-hero')).toBeVisible();
+  await openSignIn(page);
   await expect(page.locator('#logo-intro')).toBeVisible();
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('.meter-input').first()).toHaveValue('');
@@ -196,6 +200,7 @@ test('welcome motion pauses and resumes without running behind the authenticated
     return route.fulfill({ json: { available: true, user } });
   });
   await page.goto('/');
+  await openSignIn(page);
   await expect.poll(() => page.evaluate(() => window.welcomeDrawCount)).toBeGreaterThan(2);
   const isStill = async () => {
     await page.waitForTimeout(80);
@@ -254,6 +259,8 @@ test('welcome motion pauses and resumes without running behind the authenticated
   await isStill();
   page.once('dialog', (dialog) => dialog.accept());
   await page.click('#logout');
+  await expect(page.locator('#welcome-hero')).toBeVisible();
+  await openSignIn(page);
   await expect(page.locator('.welcome-copy')).toBeVisible();
   await page.locator('#logo-intro').scrollIntoViewIfNeeded();
   await moving();
@@ -270,6 +277,7 @@ test('welcome copy and heart credit remain readable on narrow screens without ca
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
+  await openSignIn(page);
   for (const size of [
     { width: 320, height: 568 },
     { width: 844, height: 390 },
@@ -316,6 +324,7 @@ test('a failed welcome decoration module never blocks sign-in or exposes the wor
     return route.fulfill({ json: { available: true, user } });
   });
   await page.goto('/');
+  await openSignIn(page);
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#login-submit')).toBeEnabled();
   await page.fill('#login-username', 'test-operator');

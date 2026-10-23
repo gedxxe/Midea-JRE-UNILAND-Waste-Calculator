@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, openSignIn } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { reportSnapshot } from '../../server/report-data.js';
 
@@ -82,6 +82,8 @@ test('account drafts, required password change, historian revisions, and logout 
       localStorage.setItem('midea_energy_draft_v4', value);
   }, guest);
   await page.goto('/');
+  await expect(page.locator('#login-form')).toBeHidden();
+  await openSignIn(page);
   await expect(page.locator('#login-form')).toBeVisible();
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#save-draft')).toBeHidden();
@@ -143,8 +145,9 @@ test('account drafts, required password change, historian revisions, and logout 
   await expect(page.locator('#toast')).toContainText('revision 2');
   await page.locator('#logout').click();
   await expect(page.locator('#report-workspace')).toBeHidden();
-  await expect(page.locator('#login-username')).toBeFocused();
-  await expect(page.locator('#login-form')).toBeVisible();
+  await expect(page.locator('#open-login')).toBeFocused();
+  await expect(page.locator('#login-form')).toBeHidden();
+  await expect(page.locator('#welcome-hero')).toBeVisible();
   await expect(page.locator('.meter-input').first()).toHaveValue('');
   expect(
     await page.evaluate((id) => sessionStorage.getItem('midea_energy_draft_v4_' + id), account.id),
@@ -241,6 +244,7 @@ test('session loading and service failure never reveal the table, retry restores
     await route.fulfill({ json: { available: false, user: null } });
   });
   await page.goto('/');
+  await openSignIn(page);
   await expect(page.locator('#account-status')).toHaveText('Checking your session...');
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#login-submit')).toBeDisabled();
@@ -276,7 +280,8 @@ test('an expired session closes the historian and returns to the login screen', 
   await page.locator('#load-example').click();
   await page.locator('#save-draft').click();
   await page.locator('#open-history').click();
-  await expect(page.locator('#login-form')).toBeVisible();
+  await expect(page.locator('#welcome-hero')).toBeVisible();
+  await expect(page.locator('#login-form')).toBeHidden();
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#history-dialog')).not.toBeVisible();
   await expect(page.locator('.meter-input').first()).toHaveValue('');

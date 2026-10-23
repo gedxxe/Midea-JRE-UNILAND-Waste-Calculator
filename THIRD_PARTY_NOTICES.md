@@ -14,3 +14,9 @@ This lists direct packages only. Transitive packages, optional native binaries a
 The existing Midea image identifies the intended reporting workflow. This repository does not claim ownership of the mark or grant rights to reuse it. Reference calibration data and workbooks are not relicensed by the repository notice. Operational records and private exports are not public repository assets.
 
 README badges are remote Shields.io images with technology logos. They are documentation links only, excluded from the website build. The local workflow illustration contains no operating data.
+
+## React Bits animation source
+
+The welcome screen adapts Tech Text and Magnet from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz. Source locations: src/content/TextAnimations/TechText/TechText.jsx and src/content/Animations/Magnet/Magnet.jsx. The adaptation replaces React hooks with DOM lifecycle controls, fixes application settings, bounds motion/rendering and preserves static HTML fallbacks. It is used only as part of this reporting website, not distributed as a standalone component library or port.
+
+These files use **MIT + Commons Clause License Condition v1.0**, not the repository's rights-reserved terms and not unrestricted MIT. Retain the [full upstream license](asset/licenses/react-bits.txt) with copies of this application. The condition permits use in an application, website or product and restricts selling, sublicensing or redistributing the components themselves. React itself is not bundled or required. The supplied white Midea image retains separate brand rights.
