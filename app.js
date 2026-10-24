@@ -448,7 +448,7 @@ function changed(periodOnly = false, edits = [], utilityEdits = []) {
   saveStatus = 'changed';
   $('save-status').textContent = t(saveStatus);
   renderResults();
-  autosave?.changed();
+  autosave?.changed({ periodOnly });
 }
 function changePeriod(start, end) {
   if (current().startDate === start && current().endDate === end) return;

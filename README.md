@@ -27,7 +27,7 @@ The intended contribution to Midea Business System work is practical: consistent
 2. Choose **JRE / UNILAND**, recording mode, and actual reading dates/times.
 3. Enter cumulative readings. Decimal comma or dot is accepted, without thousands separators. Text import is optional. Use `-` for explicitly unavailable readings; blank means unfinished.
 4. Review individual usage, equipment totals and check notes. Complete required fields before copying a finished report.
-5. Choose the final report sections, copy the report or Excel row, and **Save report** for historian and graphs. A correction creates a revision; old saved output is retained.
+5. Choose the final report sections and copy the report or Excel row. Entries autosave into Historian and monitoring; use **Save version** for an immutable manual checkpoint.
 
 | Mode             | Reading interval, editable times                  | Report date |
 | ---------------- | ------------------------------------------------- | ----------- |

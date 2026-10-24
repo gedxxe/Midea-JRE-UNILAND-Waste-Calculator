@@ -20,6 +20,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     recoveryBroken = false;
   let periods = [],
     previous = null,
+    periodSequence = null,
     references = new Map();
   const updateReferences = (records) => {
     for (const record of records || []) references.set(record.key, record);
@@ -217,7 +218,10 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         dirty = !sameRaw(raw(), sent) || periods.length > 0;
         firstDirty = dirty ? performance.now() : 0;
         retry = 30000;
-        if (!dirty) localSaved();
+        if (!dirty) {
+          periodSequence = null;
+          localSaved();
+        }
         backup();
         status(dirty ? 'draftPending' : 'draftSynced');
         if (result.recordsChanged) synced();
@@ -249,10 +253,12 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     schedule(retry);
     retry = Math.min(300000, retry * 2);
   }
-  function changed() {
+  function changed({ periodOnly = false } = {}) {
     if (!user) return;
     const workspace = read();
-    periods = queueDepartedPeriods(periods, previous, workspace);
+    if (periodOnly) periodSequence ||= previous;
+    periods = queueDepartedPeriods(periods, periodOnly ? periodSequence : previous, workspace);
+    if (!periodOnly) periodSequence = null;
     previous = structuredClone(workspace);
     if (!pending && !periods.length && sameRaw(raw(), lastSynced)) {
       dirty = false;
@@ -274,6 +280,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     periods = [];
     references = new Map();
     previous = null;
+    periodSequence = null;
     user = next?.mustChangePassword ? null : next;
     dirty = ready = conflict = false;
     localOk = true;
@@ -358,6 +365,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       }
       updateReferences(saved.records);
       previous = structuredClone(read());
+      periodSequence = null;
       version = saved.version;
       accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
       ready = true;
@@ -521,6 +529,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     workspace: () => ({ ...read(), pendingPeriods: structuredClone(periods) }),
     restorePeriods(value) {
       periods = restorePeriodQueue(value);
+      periodSequence = null;
       previous = structuredClone(read());
     },
     pending: () => dirty || periods.length > 0,
