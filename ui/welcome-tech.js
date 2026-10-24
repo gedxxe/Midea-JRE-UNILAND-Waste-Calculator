@@ -521,7 +521,8 @@ export function createTechText(container, canvas, allowed) {
     if (!alive) return;
     const s = settingsRef.current;
     if (!s) return;
-    const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
+    const elapsed = Math.max(0, (now - last) / 1000);
+    const dt = Math.min(0.05, Math.max(0.001, elapsed));
     last = now;
     const { ink, accent } = palette(s);
     const view = ensureLayout(s, ink);
@@ -532,7 +533,8 @@ export function createTechText(container, canvas, allowed) {
       introClock = 0;
     }
     const introOn = introKind !== 'none' && !reducedMotion && glyphs.length > 0;
-    if (introOn && fontsReady) introClock += dt;
+    // Presentation duration follows real time; only spring integration is frame-clamped.
+    if (introOn && fontsReady) introClock += elapsed;
     const progress = introOn
       ? clamp01((introClock - INTRO_DELAY) / Math.max(0.3, s.introDuration))
       : 1;

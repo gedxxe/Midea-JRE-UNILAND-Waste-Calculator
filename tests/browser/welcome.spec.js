@@ -119,6 +119,50 @@ test('dark welcome hides the form until keyboard entry and preserves its circle 
   expect(errors).toEqual([]);
 });
 
+test('TechText intro follows elapsed time when animation frames are sparse', async ({ page }) => {
+  await setup(page);
+  await page.addInitScript(() => {
+    const native = requestAnimationFrame,
+      cancel = cancelAnimationFrame;
+    const frames = new Map();
+    let sequence = 0;
+    window.requestAnimationFrame = (callback) => {
+      const id = ++sequence,
+        entry = { timer: 0, frame: 0 };
+      entry.timer = setTimeout(() => {
+        entry.frame = native((time) => {
+          frames.delete(id);
+          callback(time);
+        });
+      }, 150);
+      frames.set(id, entry);
+      return id;
+    };
+    window.cancelAnimationFrame = (id) => {
+      const entry = frames.get(id);
+      if (entry) {
+        clearTimeout(entry.timer);
+        cancel(entry.frame);
+        frames.delete(id);
+      }
+    };
+  });
+  await page.goto('/');
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-tech-intro', 'complete', {
+    timeout: 3500,
+  });
+  expect(
+    await page.locator('.energy-tech-canvas').evaluate((el) =>
+      el
+        .getContext('2d')
+        .getImageData(0, 0, el.width, el.height)
+        .data.some((v, i) => i % 4 === 3 && v > 220),
+    ),
+  ).toBe(true);
+  await openSignIn(page);
+});
+
 test('supplied TechText shows metrics intro, a selected glyph with specks and restores solid text on exit', async ({
   page,
 }, info) => {
