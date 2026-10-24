@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.22-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.23-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -188,3 +188,7 @@ Use npm run format for formatting. Add tests for changed business behavior and d
 Branch: codex/vX.Y.Z-alpha. Open a PR to main and require Quality gate. Read docs/releases.md before GitHub mutations. Do not merge a PR, deploy production manually, rewrite main, replace tags, or delete release branches without the user's applicable authorization. Existing authorization to push covers a normal branch push and PR; it does not mean force push. Preserve rollback history. Attach created PRs to the current task.
 
 Do not claim branch protection, CI success, or deployment success without reading the actual GitHub/Vercel result. Configuration files alone are not proof. If an external permission or platform setting prevents a control from being applied, report that specific limitation.
+
+- Confirmed 2026-10-24 autosave: incomplete data persists without manual Save and available saved values feed charts/monthly tables. First dated working copy is shown as Revision 1. Manual Save freezes an immutable checkpoint; later autosaves update the working copy only, and another manual Save increments the checkpoint only when draft/output content differs. Identical saves retain the number. Preserve all existing checkpoint output. Invalid or absent dates stay in the active workspace without fabricated graph periods. Debounce 3 seconds, minimum 5 seconds between background attempts, maximum 15 seconds during continuous editing; retries back off. Keep pending departed periods in atomic owner-bound tab recovery and private backup v5. Migration 007 adds period_autosaves and rollback writer guards; production needs a fresh private backup and explicit migration approval. Preview login stays unconfigured. Remain alpha.
+
+- Autosave recovery invariant (2026-10-24): matching active drafts do not acknowledge pending archived periods. Retain their original concurrency token until the server validates the complete retry. Recovery/deletion guards include queue edits made during a request; an unchanged checkpoint response cannot advance newly queued work past another device. Preserve explicit conflict choices and the local queue.

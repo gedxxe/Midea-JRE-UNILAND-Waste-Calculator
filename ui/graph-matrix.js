@@ -2,7 +2,12 @@ import { node } from './dom.js';
 import { getLanguage, t } from '../i18n/index.js';
 import { GRAPH_METRICS, DEPARTMENTS } from '../graph-schema.js';
 import { monthlyPeriods } from '../graph-month.js';
-import { metricLabel, departmentLabel, graphPeriodLabel } from '../graph-presentation.js';
+import {
+  metricLabel,
+  departmentLabel,
+  graphPeriodLabel,
+  graphSourceLabel,
+} from '../graph-presentation.js';
 import { shiftDate, formatNumber } from '../numbers.js';
 import { periodLabel } from '../graph-axis.js';
 
@@ -132,7 +137,10 @@ export function renderMonthlyTable({
           ' · ' +
           (slot.record ? graphPeriodLabel(slot.record, language) : slot.date) +
           ' · ' +
-          (Number.isFinite(value) ? formatNumber(value, 8) + ' ' + metric.unit : t('graphMissing'));
+          (Number.isFinite(value)
+            ? formatNumber(value, 8) + ' ' + metric.unit
+            : t('graphMissing')) +
+          (slot.record ? ' · ' + graphSourceLabel(slot.record, t) : '');
         for (let offset = 0; offset < slot.span; offset++) {
           const key = shiftDate(slot.date, offset);
           if (!byDate.has(key)) byDate.set(key, []);

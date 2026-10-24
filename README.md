@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.22-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.23-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -27,7 +27,7 @@ The intended contribution to Midea Business System work is practical: consistent
 2. Choose **JRE / UNILAND**, recording mode, and actual reading dates/times.
 3. Enter cumulative readings. Decimal comma or dot is accepted, without thousands separators. Text import is optional. Use `-` for explicitly unavailable readings; blank means unfinished.
 4. Review individual usage, equipment totals and check notes. Complete required fields before copying a finished report.
-5. Choose the final report sections, copy the report or Excel row, and **Save report** for historian and graphs. A correction creates a revision; old saved output is retained.
+5. Choose the final report sections and copy the report or Excel row. Entries autosave into Historian and monitoring; use **Save version** for an immutable manual checkpoint.
 
 | Mode             | Reading interval, editable times                  | Report date |
 | ---------------- | ------------------------------------------------- | ----------- |
@@ -47,14 +47,14 @@ The fullscreen dark **Energy Record** welcome uses the supplied white Midea logo
 
 **Quick guide** in the Account panel explains eight essential workflows with animated cursor illustrations. The small invitation can be dismissed; reopen the guide whenever needed. Back/Next, Escape/Close, animation pause and reduced-motion support are included. Illustrations never change your readings or save data. Guide code, styles and longer translations load only when opened; the dismissal preference stays in this browser per account.
 
-| Need                               | Where and how                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Send readings without calculations | **Export Raw Table Data**, beside the electricity table. Choose Start or End; only that column must be complete. Excludes gas, Water and JRE T1–T4.                                                                                                                                                                                                                                     |
-| Prepare for an outage              | **Blank reading template**, beside raw export after login or on the sign-in card before login. Copy/download a schema-only `.txt` with `____` and `DD/MM/YYYY`, then keep it outside the website. Contains no saved readings; no duplicate in the footer.                                                                                                                               |
-| Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery; server sync after 30 seconds idle or 120 seconds continuous editing. Check the account save time before closing. Conflicts require an explicit choice.                                                                                                                         |
-| Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                                                                                                    |
-| Calculate gas and Water            | Both plants use raw LPG %, O2 mmWC, N2 mmH2O and R32 mm/temperature with their reference tables. Convert observations to kg before stock/refill subtraction. Water is cumulative m³ end minus start. Both support all three periods.                                                                                                                                                    |
-| Review trends                      | **Graphs** reads saved reports and approved consumption imports. White background, thin lines and one selected language for chart text and exports. Filter departments; 9 JRE / 7 UNILAND presets and every period label remain. Copy high-resolution PNG directly; PNG/SVG downloads and custom series/scales remain available in compact controls. Unsaved edits do not enter graphs. |
+| Need                               | Where and how                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Send readings without calculations | **Export Raw Table Data**, beside the electricity table. Choose Start or End; only that column must be complete. Excludes gas, Water and JRE T1–T4.                                                                                                                                                                                                                                                                                                                |
+| Prepare for an outage              | **Blank reading template**, beside raw export after login or on the sign-in card before login. Copy/download a schema-only `.txt` with `____` and `DD/MM/YYYY`, then keep it outside the website. Contains no saved readings; no duplicate in the footer.                                                                                                                                                                                                          |
+| Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery; server sync after 3 seconds idle or within 15 seconds of continuous editing, with at least 5 seconds between background attempts. Check the account save time before closing. Conflicts require an explicit choice.                                                                                                                                       |
+| Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                                                                                                                                                                               |
+| Calculate gas and Water            | Both plants use raw LPG %, O2 mmWC, N2 mmH2O and R32 mm/temperature with their reference tables. Convert observations to kg before stock/refill subtraction. Water is cumulative m³ end minus start. Both support all three periods.                                                                                                                                                                                                                               |
+| Review trends                      | **Graphs** reads latest account autosaves, manual-only reports and approved consumption imports. White background, thin lines and one selected language for chart text and exports. Filter departments; 9 JRE / 7 UNILAND presets and every period label remain. Copy high-resolution PNG directly; PNG/SVG downloads and custom series/scales remain available in compact controls. Latest account autosaves enter graphs; missing or invalid values remain gaps. |
 
 **Monthly table** adds a month/year heading, full date columns and frozen equipment rows for JRE and UNILAND. Combined periods keep one full total. Use **Full screen** for more space or collapse **Filters**. The table and dialog scroll independently; Escape restores the window before closing it. Charts support smooth paths, shared tooltips and clickable legends; saved values and gaps remain unchanged.
 
@@ -63,6 +63,12 @@ The interface supports English, Simplified Chinese and Indonesian. Equipment, un
 Gas stock increases stay visible as **+amount (measured stock increase)**, with a nonblocking notice to check readings, temperatures and omitted refills. Ordinary consumption keeps its usual format. Invalid observations or decreasing refill events still block final reports; stock gains are not plotted as positive consumption. The application does not infer a physical cause or rewrite saved history.
 
 Current electricity layouts: **JRE 31 equipment rows / 61 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 retains its defined deductions. Structural is max(0, its direct usage minus Piping 1 meter 1 usage x40), only when both readings are valid. The main Total stays independent. JRE T1–T4 are optional notes outside totals and raw exports. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
+
+### Autosave and checkpoints
+
+Incomplete electricity, gas, Water and notes save automatically for both plants and all modes. The first dated working copy appears as **Revision 1** in Historian. Charts and Monthly table use its available values without manual Save. **Save version** freezes a checkpoint; later autosaves keep it intact. Another manual save creates the next revision only when content changed. Identical saves show **Already saved**.
+
+Tab recovery updates immediately; account sync follows after 3 seconds idle or within 15 seconds of continuous editing, at least 5 seconds between background attempts. Check **All changes saved to your account** before closing. Offline failures retry with backoff; device conflicts require a choice. A crash can lose changes not acknowledged by the server. Invalid dates stay in the active draft without invented graph points. Private backup format 5 includes pending departed periods. See [autosave behavior and deployment](docs/autosave.md).
 
 ### Architecture
 
@@ -76,7 +82,7 @@ flowchart LR
   UI -->|HTTPS and session cookie| API[Vercel Node.js APIs]
   API --> Guard[Session / ownership / validation / limits]
   Guard -->|Parameterized SQL and verified TLS| DB[(Neon PostgreSQL)]
-  DB --> Saved[Draft workspace / immutable revisions]
+  DB --> Saved[Workspace / period autosaves / immutable checkpoints]
   Saved -->|Owner-scoped API response| UI
   API -->|Fixed time servers| NTP[Asynchronous NTP]
   UI --> Outputs[Reports / raw exports / saved-data graphs]
@@ -131,7 +137,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.22-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.23-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -142,7 +148,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 1. 使用管理员提供的账户登录，首次登录修改临时密码。
 2. 选择工厂、模式及实际日期和时间，填写累计读数。可选文字导入；支持小数点或小数逗号，不支持千位分隔符。
 3. 检查各电表用量、设备合计及提示。空白表示未完成；无法读取时用 `-`，不自动当作零。
-4. 选择最终报表内容并复制，完成后保存。修正生成新修订，原输出保留。
+4. 选择最终报表内容并复制。输入自动保存；需要固定版本时点击保存版本，原检查点保持不变。
 
 | 模式             | 时间范围，可调整                            | 报表日期 |
 | ---------------- | ------------------------------------------- | -------- |
@@ -154,9 +160,9 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 
 - **原始导出：** 电表下方选择 Start 或 End，只需所选列完整；不含燃气、水和 JRE T1–T4。
 - **空白模板：** 登录后在原始导出旁，登录前在登录卡片内。页脚不再重复。复制/下载带 `____` 和 `DD/MM/YYYY` 的 `.txt`，停机前自行保存，不含实际读数。
-- **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 30 秒或连续编辑 120 秒后同步；关闭前查看账户保存时间。冲突需手动选择。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
+- **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 3 秒或连续编辑 15 秒后同步；关闭前查看账户保存时间。冲突需手动选择。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
 - **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，三个时段均可记录。
-- **图表：** 使用已保存报表及审核过的历史导入。白底细线，图表与导出图片仅显示当前所选语言。支持部门筛选，保留完整日期标签及 JRE 9 组、UNILAND 7 组预设。一键复制高清 PNG；下载菜单提供 PNG/SVG，变量和 Y 轴设置收起显示。未保存数据不进入图表。
+- **图表：** 使用账户最新自动保存的工作副本、仅有手动版本的旧报表及审核过的历史导入。白底细线，图表与导出图片仅显示当前所选语言。支持部门筛选，保留完整日期标签及 JRE 9 组、UNILAND 7 组预设。一键复制高清 PNG；下载菜单提供 PNG/SVG，变量和 Y 轴设置收起显示。账户自动保存的最新工作副本直接进入图表，缺失或无效值保留为空。
 
 全屏深色 **Energy Record** 欢迎页采用提供的白色 Midea 标志，以及适配后的 React Bits Tech Text/Split Text、Gradient ASCII 与 Glass Icons 效果。无边框背景显示蓝白色 ASCII 光线，并响应鼠标移动。采用提供的 TechText 引擎，显示尺寸入场动画、字符选择与弹簧交互；缓存字符在静止后停止绘制。中文标题为“能源记录”。点击登录后，通过圆形遮罩进入居中的玻璃风格登录卡片；返回时反向播放圆形过渡。Lattice Loader 随实际登录请求显示，并平滑过渡到工作区。空白模板和登录卡片采用 GlassSurface 玻璃效果；模板窗口支持进出动画及带无障碍标签的 X 关闭按钮。保留语言切换、暂停和减少动态效果，无需引入 React 或浏览器依赖。署名：Made with ❤️ by gedxxe for Midea JRE Engineering Department。详见 [欢迎页与授权说明](docs/welcome.md)。
 
@@ -184,11 +190,23 @@ Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、
 
 made in <3 by gede
 
+### 自动保存与手动版本
+
+两厂所有模式的未完成电表、气体、用水及备注都会自动保存。有有效日期的首个工作副本在历史中显示为**版本 1**，图表和月表直接使用可用值。**保存版本**固定一个检查点；后续自动保存不会改写它。只有内容改变后再次手动保存才增加版本号，重复保存相同内容不会增加。
+
+标签页立即保留恢复副本；停止输入 3 秒或持续编辑不超过 15 秒后同步到账户，后台尝试间隔至少 5 秒。关闭前请确认“所有修改已保存到账户”。离线时退避重试，设备冲突需要明确选择。无效日期仍保存在当前草稿中，不会虚构图表日期或把缺失值设为零。私密备份格式 5 包含待同步的旧期间。
+
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.22-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.23-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
+
+### Autosave dan checkpoint manual
+
+Isian belum lengkap tetap tersimpan otomatis, termasuk listrik, gas, Water dan catatan kedua pabrik pada semua mode. Salinan pertama dengan periode valid muncul sebagai **Revisi 1** di Historian. Grafik dan tabel bulanan memakai nilai yang tersedia. **Simpan revisi** mengunci checkpoint; autosave berikutnya tidak mengubahnya. Revisi baru dibuat hanya bila isi berbeda dari checkpoint terakhir. Save berulang dengan data sama tidak menambah nomor revisi.
+
+Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berhenti mengetik atau dalam 15 detik saat terus mengedit, dengan jarak percobaan latar minimal 5 detik. Periksa “Semua perubahan tersimpan di akun” sebelum menutup. Gangguan koneksi dicoba ulang dengan jeda bertahap; konflik perangkat memerlukan pilihan. Tanggal belum valid tetap tersimpan sebagai draft aktif tanpa membuat titik grafik. Nilai kosong tidak menjadi nol. Backup privat format 5 juga menyimpan antrean periode sebelumnya.
 
 ### Alur dan fitur operator
 
@@ -197,7 +215,7 @@ Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan,
 1. Login memakai akun dari admin, ganti password sementara saat diminta.
 2. Pilih pabrik, mode dan tanggal/jam sebenarnya. Isi angka kumulatif; import teks opsional. Koma atau titik desimal boleh, tanpa pemisah ribuan.
 3. Periksa konsumsi individual, total equipment dan catatan. Kosong berarti belum selesai; gunakan `-` untuk data tidak tersedia. Kosong tidak dianggap nol.
-4. Pilih isi laporan, salin, lalu simpan laporan lengkap. Koreksi menjadi revisi baru, tanpa mengubah output lama.
+4. Pilih isi laporan lalu salin. Isian tersimpan otomatis; klik Simpan revisi bila membutuhkan checkpoint tetap. Checkpoint lama tetap utuh.
 
 | Mode             | Periode reading, jam fleksibel             | Tanggal laporan |
 | ---------------- | ------------------------------------------ | --------------- |
@@ -209,9 +227,9 @@ Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOU
 
 - **Export Raw Table Data:** pilih Start/End di bawah tabel. Cukup kolom itu lengkap; tanpa gas, Water atau T1–T4 JRE.
 - **Blank reading template:** di samping raw export setelah login, atau dalam kartu login sebelum masuk. Duplikat footer dihapus. Salin/unduh `.txt` dengan `____` dan `DD/MM/YYYY`, lalu simpan sebelum gangguan. Tanpa reading terisi.
-- **Draft/backup:** satu workspace per akun untuk dua pabrik dan tiga mode. Salinan tab langsung, sinkron setelah 30 detik idle atau 120 detik mengedit terus. Perhatikan waktu simpan akun sebelum menutup. Konflik dipilih manual. Backup JSON mencakup input belum lengkap, divalidasi utuh dan mendukung Undo. File tidak terenkripsi, simpan privat.
+- **Draft/backup:** satu workspace per akun untuk dua pabrik dan tiga mode. Salinan tab langsung, sinkron setelah 3 detik idle atau 15 detik mengedit terus. Perhatikan waktu simpan akun sebelum menutup. Konflik dipilih manual. Backup JSON mencakup input belum lengkap, divalidasi utuh dan mendukung Undo. File tidak terenkripsi, simpan privat.
 - **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Berlaku di ketiga periode.
-- **Grafik:** laporan tersimpan dan impor histori yang ditinjau, latar putih, garis tipis, serta teks grafik dan ekspor mengikuti satu bahasa pilihan. Filter departemen tersedia; preset 9 JRE / 7 UNILAND dan seluruh label periode tetap ada. Copy PNG resolusi tinggi langsung; unduhan PNG/SVG, variabel dan skala Y tersedia lewat kontrol ringkas. Input belum tersimpan tidak masuk grafik.
+- **Grafik:** autosave akun terbaru, laporan lama yang hanya memiliki checkpoint manual, dan impor histori yang ditinjau, latar putih, garis tipis, serta teks grafik dan ekspor mengikuti satu bahasa pilihan. Filter departemen tersedia; preset 9 JRE / 7 UNILAND dan seluruh label periode tetap ada. Copy PNG resolusi tinggi langsung; unduhan PNG/SVG, variabel dan skala Y tersedia lewat kontrol ringkas. Autosave akun terbaru langsung masuk grafik; nilai kosong atau tidak valid tetap berupa gap.
 
 Halaman awal **Energy Record** memakai latar gelap penuh, logo Midea putih yang diberikan, serta adaptasi React Bits Tech Text/Split Text, Gradient ASCII dan Glass Icons. Latar tanpa bingkai menampilkan horizon ASCII biru/putih yang bereaksi pada kursor. Engine TechText yang diberikan menampilkan animasi dimensi, seleksi karakter dan gerak spring; gambar huruf disimpan dan berhenti digambar saat diam. Judul mengikuti bahasa, termasuk 能源记录. Klik **Masuk** untuk membuka satu kartu glass di tengah melalui transisi lingkaran; tombol **Kembali** membalik transisi lingkaran ke welcome. Lattice Loader mengikuti permintaan login yang sebenarnya, lalu memudar ke halaman pengisian. Template kosong dan kartu login memakai adaptasi GlassSurface; modal template memiliki animasi buka/tutup serta tombol X dengan label aksesibel. Pilihan bahasa, jeda dan reduced motion tetap tersedia, tanpa runtime React atau package browser. Kredit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. Lihat [welcome dan lisensinya](docs/welcome.md).
 

@@ -1,6 +1,11 @@
 import { smoothPath } from '../graph-curve.js';
 import { getLanguage, t } from '../i18n/index.js';
-import { graphTitleField, metricLabel, graphPeriodLabel } from '../graph-presentation.js';
+import {
+  graphTitleField,
+  metricLabel,
+  graphPeriodLabel,
+  graphSourceLabel,
+} from '../graph-presentation.js';
 import { pngResolution } from '../png.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
 import { graphSegments } from '../graph-data.js';
@@ -287,9 +292,7 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
               ' | ' +
               graphPeriodLabel(p, language) +
               ' | ' +
-              (p.source === 'excel'
-                ? t('graphImported')
-                : t('graphRevision').toLowerCase() + ' ' + p.revision),
+              graphSourceLabel(p, t),
           ),
         );
         plot.append(mark);

@@ -52,10 +52,13 @@ export async function requireUser(
   return user;
 }
 // Call inside the write transaction. A reset/disable cannot race a report or user mutation.
-export async function lockUser(client, user) {
-  const { rows } = await client.query('SELECT * FROM meter_app.users WHERE id = $1 FOR SHARE', [
-    user.id,
-  ]);
+export async function lockUser(client, user, { exclusive = false } = {}) {
+  const { rows } = await client.query(
+    exclusive
+      ? 'SELECT * FROM meter_app.users WHERE id = $1 FOR UPDATE'
+      : 'SELECT * FROM meter_app.users WHERE id = $1 FOR SHARE',
+    [user.id],
+  );
   const current = rows[0];
   if (!current?.active || current.auth_version !== user.auth_version) fail(401, 'LOGIN_REQUIRED');
   return current;

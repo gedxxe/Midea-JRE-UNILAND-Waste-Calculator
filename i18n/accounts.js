@@ -1,4 +1,42 @@
 export const accountMessages = {
+  reportUnchanged: [
+    'Already saved. No changes since revision {revision}.',
+    '已保存。与修订 {revision} 相比没有变化。',
+    'Sudah tersimpan. Tidak ada perubahan dari revisi {revision}.',
+  ],
+  historyAutosave: ['Autosave', '自动保存', 'Autosave'],
+  historyIncomplete: ['Incomplete', '未完成', 'Belum lengkap'],
+  latestAutosave: ['Latest autosave', '最新自动保存', 'Autosave terbaru'],
+  draftSavedWithoutPeriod: [
+    'Draft saved. Add reading dates to create a revision.',
+    '草稿已保存。请填写抄表日期以创建修订版本。',
+    'Draft tersimpan. Isi tanggal reading untuk membuat revisi.',
+  ],
+  monitoringUnsynced: [
+    'Some changes are not synced yet. Monitoring shows the last account copy.',
+    '部分修改尚未同步。监控显示账户上次保存的数据。',
+    'Sebagian perubahan belum tersinkron. Monitoring memakai data terakhir di akun.',
+  ],
+  logoutUnsyncedConfirm: [
+    'Changes are not synced yet. Download a draft backup before leaving. Sign out anyway?',
+    '修改尚未同步。建议先下载草稿备份。仍要退出登录吗？',
+    'Perubahan belum tersinkron. Unduh backup draft sebelum keluar. Tetap logout?',
+  ],
+  error_DRAFT_CONFLICT: [
+    'Another tab or device changed this draft. Review the sync choices.',
+    '其他标签页或设备修改了草稿。请检查同步选项。',
+    'Tab atau perangkat lain mengubah draft ini. Periksa pilihan sinkronisasi.',
+  ],
+  error_AUTOSAVE_FORMAT_CHANGED: [
+    'Reload this page before saving this period.',
+    '请刷新页面后再保存此期间的数据。',
+    'Muat ulang halaman sebelum menyimpan periode ini.',
+  ],
+  error_PERIOD_REQUIRED: [
+    'Add reading dates to create a revision. Incomplete entries remain in your autosaved draft.',
+    '请填写抄表日期以创建修订版本。未完成的输入仍保留在自动保存草稿中。',
+    'Isi tanggal reading untuk membuat revisi. Isian belum lengkap tetap tersimpan di draft.',
+  ],
   welcomeMotto: [
     'Tired of manual energy reports?\nTry a simpler way.',
     '还在手动整理能耗报表？\n试试更简单的方式。',
@@ -15,9 +53,9 @@ export const accountMessages = {
     'Butuh akun? Hubungi admin.',
   ],
   accountPrivate: [
-    'Drafts autosave to your account. Save stores incomplete entries as a draft and complete entries as a report.',
-    '草稿自动保存至账户。保存按钮将未完成的输入保存为草稿，完整输入保存为报告。',
-    'Draft tersimpan otomatis ke akunmu. Save menyimpan isian belum lengkap sebagai draft dan isian lengkap sebagai laporan.',
+    'Changes autosave to your account, including incomplete readings. Save creates a revision checkpoint.',
+    '即使读数不完整，修改也会自动保存到账户。保存按钮用于创建修订版本。',
+    'Perubahan tersimpan otomatis di akun, termasuk reading belum lengkap. Simpan membuat checkpoint revisi.',
   ],
   accountUnavailable: [
     'Cannot connect to the account service. Try again.',
@@ -29,7 +67,7 @@ export const accountMessages = {
   signIn: ['Sign in', '登录', 'Login'],
   signOut: ['Sign out', '退出登录', 'Logout'],
   history: ['Historian', '历史报告', 'Historian'],
-  saveReport: ['Save', '保存', 'Simpan'],
+  saveReport: ['Save version', '保存版本', 'Simpan revisi'],
   manageUsers: ['Manage accounts', '管理账户', 'Kelola akun'],
   changePassword: ['Change password', '修改密码', 'Ganti password'],
   passwordRequired: [
@@ -50,9 +88,9 @@ export const accountMessages = {
     'Password diganti. Sesi lain sudah keluar.',
   ],
   logoutConfirm: [
-    'Sign out? Unsaved entries and temporary account drafts in this tab will be cleared.',
-    '退出登录？此标签页未保存的内容和临时账户草稿将被清除。',
-    'Logout? Isian yang belum disimpan dan draft akun sementara di tab ini akan dihapus.',
+    'Sign out? Synced entries remain in your account.',
+    '退出登录？已同步的数据将保留在账户中。',
+    'Logout? Data yang sudah tersinkron tetap tersimpan di akun.',
   ],
   loggedOut: [
     'Signed out. Account readings cleared from this tab.',
@@ -60,9 +98,9 @@ export const accountMessages = {
     'Sudah logout. Reading akun dibersihkan dari tab ini.',
   ],
   reportSaved: [
-    'Report saved as revision {revision}.',
-    '报告已保存为修订版 {revision}。',
-    'Laporan disimpan sebagai revisi {revision}.',
+    'Revision {revision} saved.',
+    '已保存修订 {revision}。',
+    'Revisi {revision} tersimpan.',
   ],
   reportLoaded: [
     'Readings loaded. The editor uses the current calculation version.',

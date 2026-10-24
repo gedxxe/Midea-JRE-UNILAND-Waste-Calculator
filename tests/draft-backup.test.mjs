@@ -76,7 +76,7 @@ test('backup rejects other accounts, corrupt files, unsupported versions and ove
   for (const value of [
     '{',
     'null',
-    raw.replace('"version": 4', '"version": 99'),
+    raw.replace('"version": 5', '"version": 99'),
     ' '.repeat(MAX_BACKUP_BYTES + 1),
   ])
     assert.throws(() => restoreDraftBackup(value, owner), /backupInvalid/);

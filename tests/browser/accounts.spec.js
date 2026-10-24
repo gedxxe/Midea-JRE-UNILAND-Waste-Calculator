@@ -1,4 +1,4 @@
-import { test, expect, openSignIn } from './fixtures.js';
+import { test, expect, openSignIn, checkpointReply } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { reportSnapshot } from '../../server/report-data.js';
 
@@ -41,10 +41,15 @@ test('account drafts, required password change, historian revisions, and logout 
     expect(route.request().headers()['x-meter-user']).toBe(account.id);
     if (route.request().method() === 'POST') {
       const body = route.request().postDataJSON();
-      saved = reportSnapshot(body.draft);
-      revision++;
-      await route.fulfill({
-        json: { id: '0d8ed4b6-5c2b-4f18-b91e-c051dfca530e', revision, snapshot: saved },
+      const next = reportSnapshot(body.draft);
+      const unchanged = JSON.stringify(next) === JSON.stringify(saved);
+      saved = next;
+      if (!unchanged) revision++;
+      await checkpointReply(page, route, {
+        id: '0d8ed4b6-5c2b-4f18-b91e-c051dfca530e',
+        revision,
+        snapshot: saved,
+        unchanged,
       });
     } else if (new URL(route.request().url()).searchParams.has('id')) {
       await route.fulfill({
@@ -131,7 +136,7 @@ test('account drafts, required password change, historian revisions, and logout 
     );
   }
   await page.locator('#save-report').click();
-  await expect(page.locator('#toast')).toContainText('revision 1');
+  await expect(page.locator('#toast')).toContainText('Revision 1');
   await page.locator('#clear-plant').click();
   await page.locator('#open-history').click();
   await page.locator('#history-list button').click();
@@ -142,7 +147,7 @@ test('account drafts, required password change, historian revisions, and logout 
   await expect(page.locator('#report-preview')).toHaveValue(original);
   await expect(gas.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
   await page.locator('#save-report').click();
-  await expect(page.locator('#toast')).toContainText('revision 2');
+  await expect(page.locator('#toast')).toContainText('Already saved');
   await page.locator('#logout').click();
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#open-login')).toBeFocused();

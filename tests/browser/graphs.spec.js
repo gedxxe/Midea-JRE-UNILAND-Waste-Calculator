@@ -100,7 +100,7 @@ test('graphs use saved revisions, show one language and export white SVG and PNG
   state.bump();
   await page.locator('#graph-refresh').click();
   await expect(point.locator('title')).not.toHaveText(original);
-  await expect(point.locator('title')).toContainText('revision 2');
+  await expect(point.locator('title')).toContainText('Revision 2');
   // Layout edits only affect chart settings, not stored values or factory output.
   await first.locator('.graph-settings > summary').click();
   await first.locator('[data-graph-series="w3"]').uncheck();
@@ -258,7 +258,7 @@ test('graphs show gaps and period warnings and clear old data after an empty ref
   await expect(first.locator('table')).toContainText('Overlapping period: not plotted');
   failed = true;
   await page.locator('#graph-refresh').click();
-  await expect(page.locator('#graph-status')).toContainText('No saved reports');
+  await expect(page.locator('#graph-status')).toContainText('No account records');
   await expect(first.locator('circle')).toHaveCount(0);
   await expect(first.locator('[data-graph-export="svg"]')).toBeDisabled();
   expect(state.errors).toEqual([]);

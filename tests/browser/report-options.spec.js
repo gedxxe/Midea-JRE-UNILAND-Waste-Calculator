@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, modernWorkspace, checkpointReply } from './fixtures.js';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { calculateDraft } from '../../engine.js';
 const cell = (page, side = 'start', row = 0, meter = 0) =>
@@ -67,7 +67,7 @@ async function setup(
     }
     return r.fulfill({
       json: {
-        workspace: state.workspace,
+        workspace: modernWorkspace(state.workspace),
         version: state.version,
         updated_at: '2026-09-16T10:00:00Z',
       },
@@ -76,10 +76,15 @@ async function setup(
   await page.route('**/api/reports', (r) => {
     const body = r.request().postDataJSON();
     state.saved.push(body);
-    return r.fulfill({ json: { id: '1e61d60e-e4b5-4c91-b7d1-6a56d9465680', revision: 1 } });
+    return checkpointReply(
+      page,
+      r,
+      { id: '1e61d60e-e4b5-4c91-b7d1-6a56d9465680', revision: 1 },
+      state,
+    );
   });
   await page.goto('/');
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   return { state, errors };
 }
 test('both factories offer all five final reports, copy matching bytes and preserve selection across languages', async ({
@@ -193,7 +198,7 @@ test('explicit electricity edits share morning/evening/next morning, keep unrela
   await expect(cell(page)).toHaveValue('1002');
   await expect(cell(page, 'end')).toHaveValue('1013');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.water).toEqual({ start: '100', end: '102' });
   expect(state.workspace.drafts.JRE.utilities[0].value).toBe('3');
   expect(state.workspace.drafts.JRE.gas.entries[3].start).toEqual({
@@ -204,7 +209,7 @@ test('explicit electricity edits share morning/evening/next morning, keep unrela
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('1006');
   expect(state.workspace.nightShifts.JRE.rows[0].end[0]).toBe('1013');
   await page.reload();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.locator('#report-periods').selectOption('all');
   await expect(page.locator('#copy-report')).toBeEnabled();
   expect(errors).toEqual([]);
@@ -216,7 +221,7 @@ test('report contents stay independent of editable time, worksheet and the perio
   await page.locator('#report-periods').selectOption('all');
   await page.locator('#reading-mode').selectOption('workingHours');
   await page.locator('#save-report').click();
-  expect(state.saved[0].draft.periodKind).toBe('workingHours');
+  await expect.poll(() => state.saved[0]?.draft.periodKind).toBe('workingHours');
   expect(state.saved[0].draft.utilities.every((v) => !v.value)).toBe(true);
   await expect(page.locator('#copy-report')).toBeDisabled();
   await expect(page.locator('#result-state')).toHaveText('Incomplete');

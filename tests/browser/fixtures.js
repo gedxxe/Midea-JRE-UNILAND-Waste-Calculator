@@ -1,8 +1,50 @@
+import { createWorkingHoursDraft, createNightShiftDraft } from '../../engine.js';
+import { restoreWorkspace } from '../../storage.js';
+import { reportLinkKey } from '../../reading-period.js';
 import { test as base, expect } from '@playwright/test';
 export { expect };
+const states = new WeakMap();
+export function modernWorkspace(workspace) {
+  if (!workspace) return null;
+  const restored = restoreWorkspace(JSON.stringify(workspace));
+  return {
+    ...restored,
+    autosaveLayout: 1,
+    workingHours:
+      restored.workingHours ||
+      Object.fromEntries(['JRE', 'UNILAND'].map((p) => [p, createWorkingHoursDraft(p)])),
+    nightShifts:
+      restored.nightShifts ||
+      Object.fromEntries(['JRE', 'UNILAND'].map((p) => [p, createNightShiftDraft(p)])),
+  };
+}
+export function checkpointReply(page, route, response, state) {
+  const body = route.request().postDataJSON();
+  state ??= states.get(page).get(route.request().headers()['x-meter-user']);
+  if (!response.unchanged) {
+    state.workspace.reportLinks ??= {};
+    state.workspace.reportLinks[reportLinkKey(body.draft)] = {
+      id: response.id,
+      revision: response.revision,
+      startDate: body.draft.startDate,
+      endDate: body.draft.endDate,
+    };
+    state.version++;
+  }
+  return route.fulfill({
+    json: {
+      ...response,
+      workspace: state.workspace,
+      workspaceVersion: state.version,
+      updated_at: '2026-10-24T01:00:00Z',
+      records: [],
+    },
+  });
+}
 export const test = base.extend({
   page: async ({ page }, use) => {
     const drafts = new Map();
+    states.set(page, drafts);
     await page.route('**/api/drafts', async (route) => {
       const id = route.request().headers()['x-meter-user'];
       const old = drafts.get(id) || { workspace: null, version: 0 };

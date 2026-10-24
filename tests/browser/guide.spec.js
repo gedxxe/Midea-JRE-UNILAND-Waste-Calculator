@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, modernWorkspace } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 
 const user = {
@@ -26,10 +26,10 @@ async function setup(page, identity = user) {
     return r.fulfill({
       json: {
         version: 1,
-        workspace: {
+        workspace: modernWorkspace({
           version: 4,
           drafts: { JRE: exampleDraft('JRE'), UNILAND: exampleDraft('UNILAND') },
-        },
+        }),
       },
     });
   });
@@ -39,7 +39,7 @@ async function setup(page, identity = user) {
   });
   await page.goto('/');
   if (identity && !identity.mustChangePassword)
-    await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+    await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   return state;
 }
 const open = async (page) => {

@@ -92,9 +92,9 @@ export const guideMessages = {
     'Pilih reading raw atau laporan jadi',
   ],
   guideCopyBody: [
-    'Export Raw Table Data copies one cumulative reading column with ratios, without consumption or utilities. Results & report checks calculated usage and offers five report combinations. Complete the required periods before copying a finished report. Copying does not save history; use Save report for that.',
-    'Export Raw Table Data 复制一列累计读数及倍率，不含用量或公用工程。Results & report 检查计算结果，并提供五种报告组合。复制完整报告前需补齐所需时段。复制不会保存历史，请使用 Save report。',
-    'Export Raw Table Data menyalin satu kolom reading kumulatif beserta ratio, tanpa konsumsi atau utilities. Results & report memeriksa hasil dan menyediakan lima kombinasi laporan. Lengkapi periode yang diperlukan sebelum copy laporan jadi. Copy tidak menyimpan histori; gunakan Save report.',
+    'Export Raw Table Data copies one cumulative reading column with ratios, without consumption or utilities. Results & report checks calculated usage and offers five report combinations. Complete the required periods before copying a finished report. Entries autosave to history; Save version keeps a manual checkpoint.',
+    'Export Raw Table Data 复制一列累计读数及倍率，不含用量或公用工程。Results & report 检查计算结果，并提供五种报告组合。复制完整报告前需补齐所需时段。输入会自动保存至历史，保存版本会保留手动检查点。',
+    'Export Raw Table Data menyalin satu kolom reading kumulatif beserta ratio, tanpa konsumsi atau utilities. Results & report memeriksa hasil dan menyediakan lima kombinasi laporan. Lengkapi periode yang diperlukan sebelum copy laporan jadi. Isian otomatis tersimpan ke histori; Simpan revisi membuat checkpoint manual.',
   ],
   guideCopyPlace: [
     'Raw export below the table; Results & report beside it or below on mobile.',
@@ -118,9 +118,9 @@ export const guideMessages = {
     'Buat grafik dari histori tersimpan',
   ],
   guideGraphsBody: [
-    'Graphs uses saved reports and approved imported history, not unsaved edits. Choose factory, period type, dates and series. Split charts as needed; every recorded period keeps its date label. Copy a high-resolution image or download PNG/SVG. Optional Y-axis bounds change the view only, never the saved values.',
-    'Graphs 使用已存报告及已批准导入的历史，不包含未保存修改。选择工厂、时段类型、日期和系列，按需拆分图表；每个记录时段保留日期标签。可复制高清图片或下载 PNG/SVG。自定义 Y 轴只影响显示，不改变已存值。',
-    'Graphs memakai laporan tersimpan dan histori impor yang disetujui, bukan edit yang belum disimpan. Pilih pabrik, jenis periode, tanggal dan seri. Pisahkan grafik sesuai kebutuhan; setiap periode tetap berlabel tanggal. Copy gambar resolusi tinggi atau unduh PNG/SVG. Batas sumbu Y hanya mengubah tampilan, bukan nilai tersimpan.',
+    'Graphs uses latest account autosaves, manual-only reports and approved imported history. Incomplete periods show available values. Choose factory, period type, dates and series. Split charts as needed; every recorded period keeps its date label. Copy a high-resolution image or download PNG/SVG. Optional Y-axis bounds change the view only, never the saved values.',
+    'Graphs 使用账户最新自动保存、仅有手动版本的报告及已批准导入的历史。未完成时段显示可用值。选择工厂、时段类型、日期和系列，按需拆分图表；每个记录时段保留日期标签。可复制高清图片或下载 PNG/SVG。自定义 Y 轴只影响显示，不改变已存值。',
+    'Graphs memakai autosave akun terbaru, laporan yang hanya memiliki checkpoint manual, dan histori impor yang disetujui. Periode belum lengkap tetap menampilkan nilai yang tersedia. Pilih pabrik, jenis periode, tanggal dan seri. Pisahkan grafik sesuai kebutuhan; setiap periode tetap berlabel tanggal. Copy gambar resolusi tinggi atau unduh PNG/SVG. Batas sumbu Y hanya mengubah tampilan, bukan nilai tersimpan.',
   ],
   guideGraphsPlace: [
     'Graphs in the Account panel.',

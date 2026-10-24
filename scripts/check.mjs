@@ -82,6 +82,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.18 adds fixed routes and a small History API controller; no browser dependencies.
 // v0.11.20 adds bounded ASCII shaders but removes duplicate login decoration; retain the 900 kB budget.
 // v0.11.22 adds the supplied TechText metrics/selection/drag engine and SVG glass/modal layers (~35 kB); no browser dependencies.
-assert.ok(size < 925000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.23 adds a period journal, partial monitoring labels and checkpoint coalescing (~17 kB); no dependencies.
+assert.ok(size < 945000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

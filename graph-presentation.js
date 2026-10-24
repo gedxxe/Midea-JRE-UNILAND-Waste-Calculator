@@ -58,3 +58,12 @@ export function graphPeriodLabel(record, language) {
         record.days +
         (i === 0 ? (record.days === 1 ? ' day)' : ' days)') : ['', ' 天)', ' hari)'][i]);
 }
+export function graphSourceLabel(record, translate) {
+  if (record.source === 'excel') return translate('graphImported');
+  if (record.autosaved)
+    return (
+      translate('graphAutosave', { revision: record.revision }) +
+      (record.complete === false ? ' · ' + translate('historyIncomplete') : '')
+    );
+  return translate('graphRevision') + ' ' + record.revision;
+}

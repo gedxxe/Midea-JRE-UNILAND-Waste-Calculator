@@ -95,3 +95,7 @@ The dialog uses normal document flow with its own vertical scroll. The monthly t
 Full screen expands the dialog to the browser viewport using CSS, without the native Fullscreen API or a permission prompt. Monthly table opens with Filters collapsed to give the readings more room. Entering full-window view also collapses Filters; filters remain manually accessible, and leaving restores their previous disclosure state. The selected factory, month/year and recording kind remain visible above the table. Escape restores the normal window first, then closes it on a second press. Closing or switching accounts resets the presentation state. No preference, API, database or report-format change is involved.
 
 Regression checks cover a reproduced 98-pixel table at 1280×600, actual wheel chaining in both directions, full-window geometry, short desktop viewports, portrait/landscape phones, language labels, filter restoration and account cleanup. Reduced CSS viewports exercise limited layout space; these are not a claim of testing every browser's zoom implementation.
+
+## v0.11.23 autosave
+
+Latest account-confirmed partial period snapshots now feed monitoring, with missing values kept as gaps. Manual checkpoints remain immutable and identical saves do not add revisions. See [autosave design, limits and migration 007](autosave.md). Production needs an updated private backup and explicit approval before migration.

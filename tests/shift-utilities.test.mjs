@@ -217,7 +217,7 @@ test('new backups retain incomplete shift utilities, reject foreign/unknown form
   // Restore needs compatible shared observations, including incomplete temperatures.
   j[2].gas.entries[3].start.temperature = '';
   const backup = createDraftBackup(workspace, owner);
-  assert.equal(JSON.parse(backup).version, 4);
+  assert.equal(JSON.parse(backup).version, 5);
   const restored = restoreDraftBackup(backup, owner);
   assert.deepEqual(restored.workingHours.JRE.gas, workspace.workingHours.JRE.gas);
   assert.equal(restored.workingHours.JRE.utilityLayout, 1);

@@ -1,4 +1,14 @@
 export const graphMessages = {
+  graphAutosave: [
+    'Autosave · revision {revision}',
+    '自动保存 · 修订 {revision}',
+    'Autosave · revisi {revision}',
+  ],
+  graphIncompletePeriods: [
+    '{count} autosaved periods are incomplete. Available values are shown; missing values stay blank.',
+    '{count} 个自动保存期间尚未完成。显示已有数值，缺失数值保持空白。',
+    '{count} periode autosave belum lengkap. Nilai yang tersedia ditampilkan; yang belum ada tetap kosong.',
+  ],
   graphMonitor: ['Energy monitoring', '能耗监测', 'Monitoring Energi'],
   graphCharts: ['Charts', '图表', 'Grafik'],
   graphFilters: ['Filters', '筛选', 'Filter'],
@@ -131,9 +141,9 @@ export const graphMessages = {
   graphFactory: ['Factory', '工厂', 'Pabrik'],
   graphs: ['Graphs', '图表', 'Grafik'],
   graphHint: [
-    'From saved reports. Unsaved readings are excluded.',
-    '来自已保存报告，未保存读数不计入。',
-    'Dari laporan tersimpan. Reading yang belum disimpan tidak ditampilkan.',
+    'Uses latest account autosaves, including available values from incomplete periods.',
+    '使用账户最新自动保存数据，包括未完成时段中的可用数值。',
+    'Memakai autosave akun terbaru, termasuk nilai yang tersedia dari periode belum lengkap.',
   ],
   graphStart: ['From', '起始日期', 'Dari'],
   graphEnd: ['To', '结束日期', 'Sampai'],
@@ -153,17 +163,12 @@ export const graphMessages = {
   graphUnit: ['Unit', '单位', 'Satuan'],
   graphVariables: ['Variables / legend', '变量 / 图例', 'Variabel / legend'],
   graphEmpty: [
-    'No saved reports in this date range. Save reports to your historian first, or import historical consumption.',
-    '此日期范围内没有记录。请先保存报告或导入历史用量。',
-    'Belum ada data pada rentang ini. Simpan laporan atau impor histori konsumsi dahulu.',
+    'No account records in this date range. Enter readings and wait for autosave, or choose another range.',
+    '此日期范围内没有账户记录。输入读数并等待自动保存，或选择其他日期范围。',
+    'Belum ada record akun pada rentang ini. Isi reading dan tunggu autosave, atau pilih rentang lain.',
   ],
   graphReady: ['{count} saved periods', '{count} 个已保存时段', '{count} periode tersimpan'],
-  graphLoading: ['Loading saved reports…', '正在加载已保存报告…', 'Memuat laporan tersimpan…'],
-  graphError: [
-    'Could not load records. Refresh to try again.',
-    '无法加载记录，请刷新重试。',
-    'Record belum berhasil dimuat. Klik Refresh untuk mencoba lagi.',
-  ],
+  graphLoading: ['Loading saved records…', '正在加载已保存记录…', 'Memuat record tersimpan…'],
   graphRange: [
     'Choose a valid date range of up to 366 days.',
     '请选择不超过 366 天的有效日期范围。',
