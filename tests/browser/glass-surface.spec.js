@@ -122,3 +122,52 @@ test('missing optional glass keeps native templates and sign-in usable', async (
   await expect(page.locator('.account-card')).not.toHaveClass(/energy-glass/);
   expect(errors).toEqual([]);
 });
+
+test('short-screen template keeps its frame and actions visible while native scrolling chains', async ({
+  page,
+}, info) => {
+  await page.setViewportSize(
+    info.project.name === 'mobile' ? { width: 390, height: 600 } : { width: 1280, height: 540 },
+  );
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.locator('#welcome-hero [data-open-raw-template]').click();
+  const dialog = page.locator('#raw-template-dialog');
+  const body = dialog.locator('.raw-template-body');
+  const preview = page.locator('#raw-template-preview');
+  const heading = dialog.locator('.dialog-heading');
+  const actions = dialog.locator('.raw-export-actions');
+  await expect(dialog).toBeVisible();
+  await expect(heading).toBeInViewport();
+  await expect(page.locator('#copy-raw-template')).toBeInViewport();
+  await expect(page.locator('#download-raw-template')).toBeInViewport();
+  const frame = { heading: await heading.boundingBox(), actions: await actions.boundingBox() };
+  const position = await body.evaluate((el) => {
+    const p = el.querySelector('textarea');
+    el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight - 40);
+    p.scrollTop = 0;
+    return el.scrollTop;
+  });
+  const p = await preview.boundingBox(),
+    b = await body.boundingBox();
+  await page.mouse.move(
+    p.x + p.width / 2,
+    (Math.max(p.y, b.y) + Math.min(p.y + p.height, b.y + b.height)) / 2,
+  );
+  await page.mouse.wheel(0, 300);
+  await expect.poll(() => preview.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await page.mouse.wheel(500, 0);
+  await expect.poll(() => preview.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+  await preview.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(position);
+  expect(await heading.boundingBox()).toEqual(frame.heading);
+  expect(await actions.boundingBox()).toEqual(frame.actions);
+  const bounds = await dialog.boundingBox(),
+    viewport = page.viewportSize();
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
