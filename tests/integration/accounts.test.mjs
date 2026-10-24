@@ -1681,3 +1681,30 @@ test('concurrent identical manual checkpoints create one revision and older writ
     409,
   );
 });
+
+test('manual checkpoints after an active-draft tombstone require recreation instead of failing with a server error', async () => {
+  const actor = await autosaveActor(),
+    draft = partialPeriod();
+  const deleted = await call('/api/drafts', { actor, body: { workspace: null, baseVersion: 0 } });
+  assert.equal(deleted.status, 200);
+  const body = {
+    autosaveLayout: 1,
+    draft,
+    baseRevision: 0,
+    workspaceVersion: deleted.value.version,
+  };
+  const blocked = await call('/api/reports', { actor, body });
+  assert.equal(blocked.status, 409);
+  assert.equal(blocked.value.error, 'DRAFT_CONFLICT');
+  const restored = await call('/api/drafts', {
+    actor,
+    body: { workspace: autosaveWorkspace(draft), baseVersion: deleted.value.version },
+  });
+  assert.equal(restored.status, 200);
+  const report = await call('/api/reports', {
+    actor,
+    body: { ...body, workspaceVersion: restored.value.version },
+  });
+  assert.equal(report.status, 201);
+  assert.equal(report.value.revision, 1);
+});

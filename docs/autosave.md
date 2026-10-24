@@ -8,6 +8,8 @@ A valid dated document with entered data gets a mutable period autosave, display
 
 Save version first synchronizes the workspace and its pending periods, then creates an immutable checkpoint. First manual checkpoint is Revision 1. Further checkpoints increment only when normalized raw draft or calculated output differs from the latest checkpoint. Repeating an identical Save does not write a revision, alter its timestamp, or create an audit event. Engine-version metadata alone does not force a revision. Autosaves after a checkpoint keep its historical bytes intact.
 
+Delete saved draft clears the active workspace only; autosaved period history and manual checkpoints remain. The next edit or manual Save recreates the active workspace with its current concurrency token.
+
 ## Storage and timing
 
 - Immediate owner-scoped sessionStorage recovery is atomic with its sync token and departed-period journal. It survives reload, not guaranteed tab closure. A damaged recovery copy is held for explicit recovery instead of silently overwritten.

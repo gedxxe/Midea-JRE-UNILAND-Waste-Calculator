@@ -15,6 +15,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     version = 0,
     dirty = false,
     ready = false,
+    workspaceSaved = false,
     conflict = false,
     localOk = true,
     recoveryBroken = false;
@@ -130,6 +131,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     try {
       const saved = await remote();
       if (identity !== epoch) return false;
+      workspaceSaved = !!saved.workspace;
       accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
       updateReferences(saved.records);
       const same =
@@ -205,6 +207,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         });
         if (identity !== epoch) return false;
         version = result.version;
+        workspaceSaved = true;
         accountAt = timestamp(result.updated_at);
         lastSynced = sent;
         updateReferences(result.records);
@@ -282,7 +285,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     previous = null;
     periodSequence = null;
     user = next?.mustChangePassword ? null : next;
-    dirty = ready = conflict = false;
+    dirty = ready = conflict = workspaceSaved = false;
     localOk = true;
     recoveryBroken = false;
     lastSynced = '';
@@ -367,6 +370,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       previous = structuredClone(read());
       periodSequence = null;
       version = saved.version;
+      workspaceSaved = !!saved.workspace;
       accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
       ready = true;
       conflict = false;
@@ -396,6 +400,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       const result = await pending;
       if (identity !== epoch) return false;
       version = result.version;
+      workspaceSaved = false;
       localAt = accountAt = null;
       lastSynced = '';
       dirty = raw() !== before;
@@ -425,13 +430,13 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
   async function flushAll({ ensureWorkspace = false } = {}) {
     const identity = epoch;
     for (let attempt = 0; attempt < 20; attempt++) {
-      if (ensureWorkspace && ready && version === 0 && !dirty) {
+      if (ensureWorkspace && ready && !workspaceSaved && !dirty) {
         dirty = true;
         firstDirty = performance.now();
         backup();
       }
       const done = await flush();
-      if (done && ready && (!ensureWorkspace || version > 0)) return identity === epoch;
+      if (done && ready && (!ensureWorkspace || workspaceSaved)) return identity === epoch;
       if (
         identity !== epoch ||
         !ready ||

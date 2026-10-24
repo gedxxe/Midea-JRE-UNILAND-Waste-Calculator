@@ -88,7 +88,7 @@ export async function saveCheckpoint(client, user, body, snapshot) {
     if (!editing && !modern) fail(409, 'ALREADY_EXISTS');
     if (body.baseRevision !== report.revision) fail(409, 'REVISION_CONFLICT');
   } else if (modern && body.baseRevision !== 0) fail(409, 'REVISION_CONFLICT');
-  if (modern && (!workspace || workspace.version !== body.workspaceVersion))
+  if (modern && (!workspace?.workspace || workspace.version !== body.workspaceVersion))
     fail(409, 'DRAFT_CONFLICT');
   const revision = (report?.revision || 0) + 1;
   if (report)

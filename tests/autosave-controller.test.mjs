@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from '../engine.js';
 import { changeDraftPeriod } from '../storage.js';
 import { createDraftAutosave } from '../ui/drafts.js';
-test('two-field period changes preserve the original observation without archiving the intermediate period', async (t) => {
+async function harness(t, { tombstone = false } = {}) {
   const savedGlobals = Object.fromEntries(
     ['document', 'window', 'sessionStorage'].map((k) => [
       k,
@@ -46,13 +46,14 @@ test('two-field period changes preserve the original observation without archivi
   };
   workspace.drafts.JRE.rows[0].start[0] = '100';
   workspace.drafts.JRE.rows[0].end[0] = '110';
-  let cloud = structuredClone(workspace),
-    version = 1;
+  const initial = structuredClone(workspace);
+  let cloud = tombstone ? null : structuredClone(workspace),
+    version = tombstone ? 7 : 1;
   const writes = [];
   const autosave = createDraftAutosave({
     read: () => workspace,
     apply: (w) => {
-      workspace = w;
+      workspace = w || structuredClone(initial);
     },
     localSaved() {},
     request: async (_, options = {}) => {
@@ -73,20 +74,23 @@ test('two-field period changes preserve the original observation without archivi
   });
   autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
   assert.equal(await autosave.flushAll(), true);
-  const origin = structuredClone(workspace.drafts.JRE);
-  workspace.drafts.JRE = changeDraftPeriod(
-    workspace.drafts.JRE,
-    '2026-10-03',
-    '2026-10-05',
-    origin,
-  );
+  return {
+    autosave,
+    writes,
+    read: () => workspace,
+    setDraft: (d) => {
+      workspace.drafts.JRE = d;
+    },
+    cloud: () => cloud,
+  };
+}
+
+test('two-field period changes preserve the original observation without archiving the intermediate period', async (t) => {
+  const { autosave, writes, read, setDraft } = await harness(t);
+  const origin = structuredClone(read().drafts.JRE);
+  setDraft(changeDraftPeriod(read().drafts.JRE, '2026-10-03', '2026-10-05', origin));
   autosave.changed({ periodOnly: true });
-  workspace.drafts.JRE = changeDraftPeriod(
-    workspace.drafts.JRE,
-    '2026-10-04',
-    '2026-10-05',
-    origin,
-  );
+  setDraft(changeDraftPeriod(read().drafts.JRE, '2026-10-04', '2026-10-05', origin));
   autosave.changed({ periodOnly: true });
   assert.equal(await autosave.flushAll(), true);
   assert.equal(writes.length, 1);
@@ -96,4 +100,25 @@ test('two-field period changes preserve the original observation without archivi
   );
   assert.equal(writes[0].workspace.drafts.JRE.rows[0].start[0], '110');
   assert.equal(writes[0].periods[0].rows[0].end[0], '110');
+});
+
+test('manual checkpoint recreates an active workspace after a nonzero-version tombstone', async (t) => {
+  const { autosave, writes, cloud } = await harness(t, { tombstone: true });
+  let calls = 0;
+  await autosave.checkpoint(async ({ workspaceVersion }) => {
+    calls++;
+    assert.ok(cloud());
+    assert.equal(workspaceVersion, 8);
+    return {
+      workspace: cloud(),
+      workspaceVersion,
+      updated_at: '2026-10-24T01:00:00Z',
+      unchanged: true,
+    };
+  });
+  assert.equal(calls, 1);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].baseVersion, 7);
+  assert.equal(writes[0].workspace.autosaveLayout, 1);
+  assert.equal(autosave.pending(), false);
 });
