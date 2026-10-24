@@ -928,36 +928,42 @@
           </svg>
         </button>
       </div>
-      <p data-i18n="rawTemplateHint"></p>
-      <label>
-        <span data-i18n="rawTemplateFactory">Factory</span>
-        <select id="raw-template-plant">
-          <option value="JRE">JRE</option>
-          <option value="UNILAND">UNILAND</option>
-        </select>
-      </label>
-      <label
-        ><span data-i18n="readingMode">Reading mode</span
-        ><select id="raw-template-kind">
-          <option value="daily" data-i18n="dailyMode">24 HOURS · morning to next morning</option>
-          <option value="workingHours" data-i18n="workingMode">
-            AFTER PRODUCTION · morning to evening
-          </option>
-          <option value="nightShift" data-i18n="nightMode">
-            NIGHT SHIFT · evening to next morning
-          </option>
-        </select></label
-      >
-      <p id="raw-template-help" class="hint" data-i18n="rawTemplateHelp"></p>
-      <textarea
-        id="raw-template-preview"
-        rows="12"
-        readonly
-        spellcheck="false"
-        aria-label="Blank reading template"
-        data-i18n-aria-label="rawTemplate"
-        aria-describedby="raw-template-help"
-      ></textarea>
+      <div class="raw-template-body">
+        <p data-i18n="rawTemplateHint"></p>
+        <div class="raw-template-fields">
+          <label>
+            <span data-i18n="rawTemplateFactory">Factory</span>
+            <select id="raw-template-plant">
+              <option value="JRE">JRE</option>
+              <option value="UNILAND">UNILAND</option>
+            </select>
+          </label>
+          <label
+            ><span data-i18n="readingMode">Reading mode</span
+            ><select id="raw-template-kind">
+              <option value="daily" data-i18n="dailyMode">
+                24 HOURS · morning to next morning
+              </option>
+              <option value="workingHours" data-i18n="workingMode">
+                AFTER PRODUCTION · morning to evening
+              </option>
+              <option value="nightShift" data-i18n="nightMode">
+                NIGHT SHIFT · evening to next morning
+              </option>
+            </select></label
+          >
+        </div>
+        <p id="raw-template-help" class="hint" data-i18n="rawTemplateHelp"></p>
+        <textarea
+          id="raw-template-preview"
+          rows="12"
+          readonly
+          spellcheck="false"
+          aria-label="Blank reading template"
+          data-i18n-aria-label="rawTemplate"
+          aria-describedby="raw-template-help"
+        ></textarea>
+      </div>
       <div class="raw-export-actions">
         <button id="copy-raw-template" class="button primary" data-i18n="copyRawTemplate">
           Copy template
