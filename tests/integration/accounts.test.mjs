@@ -18,7 +18,7 @@ import { createServer } from 'node:http';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { createPool, transaction } from '../../server/db.js';
 import { hashPassword } from '../../server/password.js';
-import { rateKey } from '../../server/auth.js';
+import { rateKey, issueSession, sessionCookie } from '../../server/auth.js';
 import { authHandler, usersHandler } from '../../server/auth-handlers.js';
 import { reportsHandler } from '../../server/reports.js';
 import { migrate } from '../../scripts/migrations.mjs';
@@ -315,7 +315,7 @@ test('malformed HTTP bodies, duplicate cookies and browser cross-site metadata c
     ['{', 400],
     ['[]', 400],
     ['null', 400],
-    [JSON.stringify({ padding: 'x'.repeat(256 * 1024) }), 413],
+    [JSON.stringify({ padding: 'x'.repeat(512 * 1024) }), 413],
   ]) {
     const r = await fetch(origin + '/api/drafts', { method: 'POST', headers, body });
     assert.equal(r.status, status);
@@ -781,7 +781,10 @@ test('report ownership comes from the session; server output and raw readings ar
       .status,
     404,
   );
-  assert.equal((await call('/api/reports', { actor: operator, body: { draft } })).status, 409);
+  const duplicate = await call('/api/reports', { actor: operator, body: { draft } });
+  assert.equal(duplicate.status, 200);
+  assert.equal(duplicate.value.unchanged, true);
+  assert.equal(duplicate.value.revision, 1);
   assert.equal((await call('/api/reports', { actor: other, body: { draft } })).status, 201);
   assert.equal((await call('/api/reports', { actor: operator })).value.reports.length, 1);
 });
@@ -789,9 +792,14 @@ test('concurrent edits keep one winner and preserve the old revision', async () 
   const draft = exampleDraft('JRE');
   draft.rows[0].end[0] = '99999';
   const results = await Promise.all(
-    [1, 2].map(() =>
-      call('/api/reports', { actor: operator, body: { id: reportId, baseRevision: 1, draft } }),
-    ),
+    [1, 2].map((value) => {
+      const different = structuredClone(draft);
+      different.rows[0].end[0] = String(99997 + value);
+      return call('/api/reports', {
+        actor: operator,
+        body: { id: reportId, baseRevision: 1, draft: different },
+      });
+    }),
   );
   assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
   const original = await call('/api/reports?id=' + reportId + '&revision=1', { actor: operator });
@@ -1447,4 +1455,229 @@ test('shift utility markers and migration guards prevent stale clients and rollb
   assert.equal(kept.value.revision, 1);
   assert.deepEqual(kept.value.snapshot, report.value.snapshot);
   assert.equal((await call('/api/drafts', { actor })).value.version, saved.value.version);
+});
+async function autosaveActor() {
+  const user = await seed();
+  const token = await issueSession(db, { id: user.id, auth_version: 1 });
+  return { ...user, cookie: sessionCookie(origin, token).split(';')[0] };
+}
+function autosaveWorkspace(draft) {
+  const workspace = {
+    version: 4,
+    autosaveLayout: 1,
+    drafts: { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') },
+    workingHours: emptyWorkingHours(),
+    nightShifts: emptyNightShifts(),
+  };
+  const collection =
+    draft.periodKind === 'workingHours'
+      ? 'workingHours'
+      : draft.periodKind === 'nightShift'
+        ? 'nightShifts'
+        : 'drafts';
+  workspace[collection][draft.plantKey] = structuredClone(draft);
+  return workspace;
+}
+function partialPeriod(date = '2026-11-10') {
+  const draft = createDraft('JRE', date, date === '2026-11-10' ? '2026-11-11' : '2026-11-12');
+  draft.rows[0].start[0] = '100';
+  draft.rows[0].end[0] = '125';
+  return draft;
+}
+test('partial autosaves appear as Revision 1 in history and monitoring before a manual checkpoint', async () => {
+  const actor = await autosaveActor(),
+    draft = partialPeriod(),
+    workspace = autosaveWorkspace(draft);
+  const saved = await call('/api/drafts', {
+    actor,
+    body: { workspace, baseVersion: 0, periods: [] },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.value.records.length, 1);
+  const record = saved.value.records[0];
+  assert.equal(record.revision, 1);
+  assert.equal(record.checkpointRevision, 0);
+  assert.equal(record.complete, false);
+  const list = await call('/api/reports?plant=JRE', { actor });
+  assert.equal(list.value.reports.length, 1);
+  assert.equal(list.value.reports[0].revision, 1);
+  assert.equal(list.value.reports[0].autosaved, true);
+  const detail = await call('/api/reports?id=' + record.id, { actor });
+  assert.equal(detail.value.snapshot.draft.rows[0].end[0], '125');
+  assert.equal(detail.value.checkpointRevision, 0);
+  const graph = await call('/api/graphs?plant=JRE&start=2026-11-01&end=2026-11-30', { actor });
+  assert.equal(graph.value.records[0].values.r0, 25);
+  assert.equal(graph.value.records[0].values.w0, null);
+  assert.equal(graph.value.records[0].autosaved, true);
+  assert.equal(
+    (
+      await db.query('SELECT count(*)::int AS n FROM meter_app.reports WHERE owner_id=$1', [
+        actor.id,
+      ])
+    ).rows[0].n,
+    0,
+  );
+  const other = await autosaveActor();
+  assert.equal((await call('/api/reports?id=' + record.id, { actor: other })).status, 404);
+  assert.equal(
+    (await call('/api/graphs?plant=JRE&start=2026-11-01&end=2026-11-30', { actor: other })).value
+      .records.length,
+    0,
+  );
+});
+test('manual checkpoints deduplicate repeated saves while later autosaves retain immutable revisions', async () => {
+  const actor = await autosaveActor(),
+    draft = partialPeriod(),
+    workspace = autosaveWorkspace(draft);
+  let saved = await call('/api/drafts', {
+    actor,
+    body: { workspace, baseVersion: 0, periods: [] },
+  });
+  let manual = await call('/api/reports', {
+    actor,
+    body: { autosaveLayout: 1, draft, baseRevision: 0, workspaceVersion: saved.value.version },
+  });
+  assert.equal(manual.status, 201);
+  assert.equal(manual.value.revision, 1);
+  assert.equal(manual.value.snapshot.complete, false);
+  const first = structuredClone(manual.value.snapshot),
+    id = manual.value.id;
+  const repeated = await call('/api/reports', {
+    actor,
+    body: {
+      autosaveLayout: 1,
+      draft,
+      id,
+      baseRevision: 1,
+      workspaceVersion: manual.value.workspaceVersion,
+    },
+  });
+  assert.equal(repeated.status, 200);
+  assert.equal(repeated.value.unchanged, true);
+  assert.equal(repeated.value.revision, 1);
+  // A retry after a lost response is content-idempotent even with the original token.
+  const lost = await call('/api/reports', {
+    actor,
+    body: { autosaveLayout: 1, draft, baseRevision: 0, workspaceVersion: saved.value.version },
+  });
+  assert.equal(lost.value.unchanged, true);
+  assert.equal(lost.value.revision, 1);
+  draft.rows[0].end[0] = '135';
+  const next = structuredClone(manual.value.workspace);
+  next.drafts.JRE = draft;
+  saved = await call('/api/drafts', {
+    actor,
+    body: { workspace: next, baseVersion: manual.value.workspaceVersion, periods: [] },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.value.records[0].revision, 1);
+  const current = await call('/api/reports?id=' + id, { actor });
+  assert.equal(current.value.snapshot.draft.rows[0].end[0], '135');
+  const frozen = await call('/api/reports?id=' + id + '&revision=1', { actor });
+  assert.deepEqual(frozen.value.snapshot, first);
+  manual = await call('/api/reports', {
+    actor,
+    body: { autosaveLayout: 1, id, draft, baseRevision: 1, workspaceVersion: saved.value.version },
+  });
+  assert.equal(manual.status, 200);
+  assert.equal(manual.value.revision, 2);
+  assert.equal(
+    (
+      await db.query(
+        'SELECT count(*)::int AS n FROM meter_app.report_revisions WHERE report_id=$1',
+        [id],
+      )
+    ).rows[0].n,
+    2,
+  );
+  assert.deepEqual(
+    (await call('/api/reports?id=' + id + '&revision=1', { actor })).value.snapshot,
+    first,
+  );
+});
+test('period journal commits atomically, retries without rewriting, and rejects stale overwrites', async () => {
+  const actor = await autosaveActor(),
+    old = partialPeriod(),
+    workspace = autosaveWorkspace(old);
+  const initial = await call('/api/drafts', {
+    actor,
+    body: { workspace, baseVersion: 0, periods: [] },
+  });
+  old.rows[0].end[0] = '129';
+  const next = partialPeriod('2026-11-11');
+  next.rows[0].end[0] = '107';
+  const request = {
+    workspace: autosaveWorkspace(next),
+    baseVersion: initial.value.version,
+    periods: [old],
+  };
+  const saved = await call('/api/drafts', { actor, body: request });
+  assert.equal(saved.status, 200);
+  const retried = await call('/api/drafts', { actor, body: request });
+  assert.equal(retried.status, 200);
+  assert.equal(retried.value.unchanged, true);
+  assert.equal(retried.value.updated_at, saved.value.updated_at);
+  const graph = await call('/api/graphs?plant=JRE&start=2026-11-01&end=2026-11-30', { actor });
+  assert.deepEqual(
+    graph.value.records.map((r) => r.values.r0),
+    [29, 7],
+  );
+  const conflicting = structuredClone(request);
+  conflicting.periods[0].rows[0].end[0] = '999';
+  assert.equal((await call('/api/drafts', { actor, body: conflicting })).status, 409);
+  const after = await call('/api/graphs?plant=JRE&start=2026-11-01&end=2026-11-30', { actor });
+  assert.deepEqual(
+    after.value.records.map((r) => r.values.r0),
+    [29, 7],
+  );
+  const malformed = structuredClone(request);
+  malformed.baseVersion = saved.value.version;
+  malformed.periods[0].rows = [];
+  assert.equal((await call('/api/drafts', { actor, body: malformed })).status, 400);
+  assert.equal((await call('/api/drafts', { actor })).value.version, saved.value.version);
+});
+test('concurrent identical manual checkpoints create one revision and older writers cannot erase adopted data', async () => {
+  const actor = await autosaveActor(),
+    draft = partialPeriod(),
+    workspace = autosaveWorkspace(draft);
+  const saved = await call('/api/drafts', {
+    actor,
+    body: { workspace, baseVersion: 0, periods: [] },
+  });
+  const body = { autosaveLayout: 1, draft, baseRevision: 0, workspaceVersion: saved.value.version };
+  const results = await Promise.all([
+    call('/api/reports', { actor, body }),
+    call('/api/reports', { actor, body }),
+  ]);
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 201]);
+  assert.ok(results.some((r) => r.value.unchanged));
+  const id = results[0].value.id;
+  assert.equal(
+    (
+      await db.query(
+        'SELECT count(*)::int AS n FROM meter_app.report_revisions WHERE report_id=$1',
+        [id],
+      )
+    ).rows[0].n,
+    1,
+  );
+  const legacy = structuredClone(workspace);
+  delete legacy.autosaveLayout;
+  assert.equal(
+    (await call('/api/drafts', { actor, body: { workspace: legacy, baseVersion: 2 } })).status,
+    409,
+  );
+  await assert.rejects(
+    db.query('UPDATE meter_app.working_drafts SET workspace=$2 WHERE owner_id=$1', [
+      actor.id,
+      JSON.stringify(legacy),
+    ]),
+    (error) => error.code === '23514',
+  );
+  const changed = structuredClone(draft);
+  changed.rows[0].end[0] = '140';
+  assert.equal(
+    (await call('/api/reports', { actor, body: { id, baseRevision: 1, draft: changed } })).status,
+    409,
+  );
 });

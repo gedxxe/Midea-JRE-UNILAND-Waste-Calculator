@@ -1,6 +1,6 @@
 import { PLANT_SCHEMAS } from '../../schema.js';
 import { unilandInput, layout3Draft } from '../fixtures/uniland-input.mjs';
-import { test, expect } from './fixtures.js';
+import { test, expect, modernWorkspace, checkpointReply } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { createWorkingHoursDraft, calculateDraft } from '../../engine.js';
 import { emptyNightShifts } from '../../shifts.js';
@@ -54,17 +54,26 @@ async function setup(page, { undated = false, legacyUniland = false, undatedNigh
       state.version++;
       state.writes++;
     }
-    return r.fulfill({ json: { ...state, updated_at: '2026-09-16T10:00:00Z' } });
+    return r.fulfill({
+      json: {
+        ...state,
+        workspace: modernWorkspace(state.workspace),
+        updated_at: '2026-09-16T10:00:00Z',
+      },
+    });
   });
   await page.route('**/api/reports', (r) => {
     const body = r.request().postDataJSON();
     state.saved.push(body);
-    return r.fulfill({
-      json: {
+    return checkpointReply(
+      page,
+      r,
+      {
         id: '1e61d60e-e4b5-4c91-b7d1-6a56d9465680',
         revision: body.baseRevision ? body.baseRevision + 1 : 1,
       },
-    });
+      state,
+    );
   });
   if (legacyUniland) {
     state.workspace.drafts.UNILAND = layout3Draft(exampleDraft('UNILAND'));
@@ -76,7 +85,7 @@ async function setup(page, { undated = false, legacyUniland = false, undatedNigh
     state.workspace.nightShifts.JRE.rows[0].end[0] = '123.';
   }
   await page.goto('/');
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   return { state, errors };
 }
 
@@ -90,7 +99,7 @@ test('NTP defaults and mode switching retain undated partial work readings', asy
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 'end')).toHaveValue('123.5');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.workingHours.JRE.startDate).toBe('');
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('123.5');
   expect(errors).toEqual([]);
@@ -114,7 +123,7 @@ test('work drafts reuse matching daily readings through plant/language switching
   await expect(cell(page, 'end')).toHaveValue('');
   await cell(page, 'end').fill('100125.25');
   await page.locator('#save-report').click();
-  expect(state.saved).toHaveLength(0);
+  expect(state.saved).toHaveLength(1);
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('100125.25');
   await page.locator('[data-plant="UNILAND"]').click();
   await expect(cell(page)).toHaveValue('1000');
@@ -133,9 +142,9 @@ test('work drafts reuse matching daily readings through plant/language switching
   expect(await page.locator('#report-preview').inputValue()).toBe(daily);
   await expect(page.locator('#gas-section')).toBeVisible();
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 'end')).toHaveValue('100125.25');
   expect(errors).toEqual([]);
@@ -322,7 +331,7 @@ test('UNILAND expanded drafts retain old readings and flexible imports use the s
   await expect(input('Dryer', 'end')).toHaveValue('31.5');
   await page.locator('#import-dialog [data-i18n="close"]').click();
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.workingHours.UNILAND.meterLayout).toBe(4);
   await page.reload();
   await page.locator('#reading-mode').selectOption('workingHours');
@@ -409,9 +418,9 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   await expect(page.locator('#reading-mode')).toHaveValue('nightShift');
   await expect(cell(page, 'end')).toHaveValue('103100');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page, 'end')).toHaveValue('103100');
   const before = await page.locator('#report-preview').inputValue();
@@ -461,10 +470,10 @@ test('an undated partial Night reading survives NTP defaults, first date assignm
   await page.locator('#work-date').fill('2026-09-16');
   await expect(cell(page, 'end')).toHaveValue('123.');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.nightShifts.JRE.endDate).toBe('2026-09-17');
   await page.reload();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page, 'end')).toHaveValue('123.');
   await page.locator('[data-plant="UNILAND"]').click();

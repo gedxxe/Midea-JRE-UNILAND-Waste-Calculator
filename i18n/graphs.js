@@ -1,4 +1,14 @@
 export const graphMessages = {
+  graphAutosave: [
+    'Autosave · revision {revision}',
+    '自动保存 · 修订 {revision}',
+    'Autosave · revisi {revision}',
+  ],
+  graphIncompletePeriods: [
+    '{count} autosaved periods are incomplete. Available values are shown; missing values stay blank.',
+    '{count} 个自动保存期间尚未完成。显示已有数值，缺失数值保持空白。',
+    '{count} periode autosave belum lengkap. Nilai yang tersedia ditampilkan; yang belum ada tetap kosong.',
+  ],
   graphMonitor: ['Energy monitoring', '能耗监测', 'Monitoring Energi'],
   graphCharts: ['Charts', '图表', 'Grafik'],
   graphFilters: ['Filters', '筛选', 'Filter'],

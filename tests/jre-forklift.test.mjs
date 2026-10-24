@@ -71,7 +71,7 @@ test('layout 4 upgrades add only a blank Forklift pair, retaining incomplete uti
   const restored = restoreWorkspace(JSON.stringify(workspace));
   const owner = 'b89c2b90-bbee-4a90-bd68-a0e9fc761352';
   const backup = createDraftBackup(restored, owner);
-  assert.deepEqual(restoreDraftBackup(backup, owner), restored);
+  assert.deepEqual(restoreDraftBackup(backup, owner), { ...restored, pendingPeriods: [] });
   const malformed = layout4JreDraft(j[0]);
   malformed.rows.pop();
   assert.throws(() => migrateMeterLayout(malformed), /Invalid legacy/);

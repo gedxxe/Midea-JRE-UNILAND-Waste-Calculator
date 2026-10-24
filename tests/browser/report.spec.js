@@ -130,7 +130,7 @@ test('legacy meters move once and show individual usage without hover, with unch
   await page.locator('#apply-import').click();
   await expect(page.locator('#report-preview')).toHaveValue(report);
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await expect(cell(page, 3, 'end', 5)).toHaveValue('33.03');
   await expect(cell(page, 15, 'end', 1)).toHaveValue('22.02');
@@ -192,7 +192,7 @@ for (const plant of ['JRE', 'UNILAND']) {
       await page.locator('#water-start').fill('100,25');
       await expect(page.locator('#copy-report')).toBeDisabled();
       await page.locator('#save-draft').click();
-      await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+      await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
       await page.reload();
       await page.locator(`[data-plant="${plant}"]`).click();
       await expect(page.locator('#water-start')).toHaveValue('100,25');
@@ -304,7 +304,7 @@ test('latest period and manual dates move readings by date in either edit order,
       await expect(page.locator('#report-preview')).toHaveValue(report);
     }
     await page.locator('#save-draft').click();
-    await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+    await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     await page.reload();
     await page.locator(`[data-plant="${plant}"]`).click();
     await expect(cell(page)).toHaveValue('125');
@@ -721,7 +721,7 @@ test('UNILAND tank gas uses separate calibration, preserves manual units and sur
   await lpg.locator('[data-gas-enable]').check();
   await lpg.locator('[data-gas-point="start"]').fill('60');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await page.locator('[data-plant="UNILAND"]').click();
   await expect(lpg.locator('[data-gas-point="start"]')).toHaveValue('60');

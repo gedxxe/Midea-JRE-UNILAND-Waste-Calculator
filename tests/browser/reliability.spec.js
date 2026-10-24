@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, modernWorkspace } from './fixtures.js';
 import { createDraft } from '../../engine.js';
 import { restoreWorkspace } from '../../storage.js';
 
@@ -27,7 +27,7 @@ async function setup(page, saved = false) {
   workspace.drafts.JRE.rows[0].start[0] = '111';
   const state = {
     user: firstUser,
-    workspace: saved ? workspace : null,
+    workspace: saved ? modernWorkspace(workspace) : null,
     version: saved ? 7 : 0,
     writes: [],
   };
@@ -64,7 +64,7 @@ async function setup(page, saved = false) {
   await page.goto('/');
   await expect(page.locator('#report-workspace')).toBeVisible();
   await expect(page.locator('#save-status')).toHaveText(
-    saved ? 'Draft saved to your account.' : 'Draft autosave is ready.',
+    saved ? 'All changes saved to your account.' : 'Draft autosave is ready.',
   );
   return { state, errors };
 }
@@ -126,7 +126,7 @@ test('a partially failed tab-storage update cannot discard newer unsynced readin
   await expect(cell(page)).toHaveValue('222');
   expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('111');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('222');
   expect(state.writes).toHaveLength(1);
   expect(state.writes[0].workspace.tabRecovery).toBeUndefined();
@@ -162,7 +162,7 @@ for (const concurrent of [false, true]) {
       page.once('dialog', (dialog) => dialog.accept());
       await page.locator('#draft-keep-local').click();
     } else await page.locator('#save-draft').click();
-    await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+    await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('222');
     expect(state.writes).toHaveLength(1);
     expect(errors).toEqual([]);
@@ -190,11 +190,11 @@ for (const reorder of [false, true]) {
     );
     await page.reload();
     await expect(cell(page)).toHaveValue('111');
-    await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+    await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     expect(state.writes).toHaveLength(0);
     await cell(page).fill('444');
     await page.locator('#save-draft').click();
-    await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+    await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     expect(state.writes).toHaveLength(1);
     expect(state.writes[0].baseVersion).toBe(8);
     expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('444');

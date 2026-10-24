@@ -38,6 +38,9 @@ export function sameWorkspace(left, right) {
 
 export function restoreWorkspace(raw) {
   const saved = JSON.parse(raw);
+  if (saved.autosaveLayout !== undefined && saved.autosaveLayout !== 1)
+    throw Error('Unknown autosave format.');
+  const autosave = saved.autosaveLayout === 1 ? { autosaveLayout: 1 } : {};
   const drafts = restoreDrafts(raw),
     reportLinks = {};
   if (Object.values(drafts).some(isWorkingHours))
@@ -76,6 +79,7 @@ export function restoreWorkspace(raw) {
     }
     return {
       version: 4,
+      ...autosave,
       drafts,
       workingHours,
       ...(nightShifts ? { nightShifts } : {}),
@@ -83,7 +87,7 @@ export function restoreWorkspace(raw) {
     };
   }
   if (saved.nightShifts !== undefined) throw Error('Day workspace required with Night drafts.');
-  return { version: 4, drafts, reportLinks };
+  return { version: 4, ...autosave, drafts, reportLinks };
 }
 
 export function emptyWorkingHours() {

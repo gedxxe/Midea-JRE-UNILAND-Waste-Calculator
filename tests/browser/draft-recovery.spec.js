@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { test, expect } from './fixtures.js';
+import { test, expect, modernWorkspace } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { createDraftBackup } from '../../draft-backup.js';
 
@@ -49,7 +49,11 @@ async function setup(page) {
       state.updated_at = '2026-10-13T02:34:56.000Z';
     }
     return r.fulfill({
-      json: { workspace: state.workspace, version: state.version, updated_at: state.updated_at },
+      json: {
+        workspace: modernWorkspace(state.workspace),
+        version: state.version,
+        updated_at: state.updated_at,
+      },
     });
   });
   await page.route('**/api/reports', (r) => {
@@ -57,7 +61,7 @@ async function setup(page) {
     return r.fulfill({ json: {} });
   });
   await page.goto('/');
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   return { state, errors };
 }
 
@@ -116,7 +120,7 @@ test('backup round trip restores both factories and partial gas/water, with work
   await page.locator('[data-plant="JRE"]').click();
   await expect(cell(page)).toHaveValue('999');
   await page.locator('#save-draft').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('999');
   expect(state.reports).toBe(0);
   expect(errors).toEqual([]);
@@ -128,7 +132,7 @@ test('invalid, oversized, foreign-account and cancelled restore leave the draft 
   const { errors } = await setup(page);
   const before = await cell(page).inputValue();
   const foreign = createDraftBackup(workspace(), '0d8ed4b6-5c2b-4f18-b91e-c051dfca530e');
-  for (const raw of ['{', ' '.repeat(256 * 1024 + 1), foreign]) {
+  for (const raw of ['{', ' '.repeat(2 * 1024 * 1024 + 1), foreign]) {
     await page.locator('#draft-backup-file').setInputFiles(file(raw));
     await expect(page.locator('#toast')).toBeVisible();
     await expect(cell(page)).toHaveValue(before);
@@ -195,7 +199,7 @@ test('tab-storage failure is distinguished from a confirmed account save', async
   await expect(page.locator('#draft-storage-status')).toContainText('08:23:45');
   state.offline = false;
   await page.locator('#draft-retry').click();
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await expect(page.locator('#draft-storage-status')).toContainText(
     'Tab copy could not be updated',
   );

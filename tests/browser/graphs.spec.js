@@ -100,7 +100,7 @@ test('graphs use saved revisions, show one language and export white SVG and PNG
   state.bump();
   await page.locator('#graph-refresh').click();
   await expect(point.locator('title')).not.toHaveText(original);
-  await expect(point.locator('title')).toContainText('revision 2');
+  await expect(point.locator('title')).toContainText('Revision 2');
   // Layout edits only affect chart settings, not stored values or factory output.
   await first.locator('.graph-settings > summary').click();
   await first.locator('[data-graph-series="w3"]').uncheck();

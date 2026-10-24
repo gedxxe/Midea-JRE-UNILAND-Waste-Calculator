@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, modernWorkspace, checkpointReply } from './fixtures.js';
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
 
 async function setup(page) {
@@ -51,7 +51,7 @@ async function setup(page) {
     }
     return r.fulfill({
       json: {
-        workspace: state.workspace,
+        workspace: modernWorkspace(state.workspace),
         version: state.version,
         updated_at: '2026-09-16T10:00:00Z',
       },
@@ -59,10 +59,15 @@ async function setup(page) {
   });
   await page.route('**/api/reports', (r) => {
     state.saved.push(r.request().postDataJSON());
-    return r.fulfill({ json: { id: '1e61d60e-e4b5-4c91-b7d1-6a56d9465680', revision: 1 } });
+    return checkpointReply(
+      page,
+      r,
+      { id: '1e61d60e-e4b5-4c91-b7d1-6a56d9465680', revision: 1 },
+      state,
+    );
   });
   await page.goto('/');
-  await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   return { state, errors };
 }
 const gas = (page, id, key, temp = false) =>
@@ -114,7 +119,7 @@ for (const plant of ['JRE', 'UNILAND']) {
         )
         .toBe(text);
       await page.locator('#save-report').click();
-      await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+      await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
       expect(state.saved[0].draft.periodKind).toBe('nightShift');
       expect(state.saved[0].draft.water).toEqual({ start: '1012', end: '1030' });
       expect(state.saved[0].draft.gas.entries[3].start.temperature).toBe('33.75');
@@ -176,7 +181,7 @@ for (const plant of ['JRE', 'UNILAND']) {
       await expect(page.locator('#water-end')).toHaveValue('');
       await expect(gas(page, 'LPG', 'before0')).toHaveCount(0);
       await page.locator('#save-draft').click();
-      await expect(page.locator('#save-status')).toHaveText('Draft saved to your account.');
+      await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
       expect(state.workspace.workingHours[plant].gas.entries[0].start.reading).toBe('60');
       expect(state.workspace.nightShifts[plant].gas.entries[0].start.reading).toBe('');
       expect(state.saved).toHaveLength(0);

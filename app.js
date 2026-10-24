@@ -252,8 +252,9 @@ const gasPanel = createGasPanel({
 const waterPanel = createWaterPanel({ current, changed, rememberUndo });
 const additionalPanel = createAdditionalReadingsPanel({ current, changed });
 const backupControls = createBackupControls({
-  read: () => ({ version: 4, drafts, workingHours, nightShifts }),
+  read: () => autosave?.workspace() || { version: 4, drafts, workingHours, nightShifts },
   apply(workspace) {
+    const pendingPeriods = workspace.pendingPeriods ?? autosave.workspace().pendingPeriods;
     // Validate the entire merged workspace before replacing anything. Legacy backups keep Night.
     workspace = restoreWorkspace(
       JSON.stringify({
@@ -270,6 +271,7 @@ const backupControls = createBackupControls({
         workingHours,
         nightShifts,
         reportLinks: accounts.getLinks(),
+        pendingPeriods: autosave?.workspace().pendingPeriods || [],
       }),
     };
     drafts = workspace.drafts;
@@ -278,6 +280,7 @@ const backupControls = createBackupControls({
     nightShifts = workspace.nightShifts || nightShifts;
     periodOrigin = null;
     accounts.setLinks({});
+    autosave.restorePeriods(pendingPeriods);
     rawExport.reset();
     importEditor.reset();
     $('import-dialog').close();
@@ -353,16 +356,13 @@ const accounts = createAccounts({
   },
   current,
   identityChanged: accountChanged,
-  reportSaved: () => {
-    graphs?.saved();
-    autosave?.changed();
-    void autosave?.flush();
-  },
-  canSaveReport: () => calculateDraft(current()).success,
-  saveIncomplete: async () => {
+  saveWorking: async () => {
     autosave.changed();
-    await autosave.flush();
+    return autosave.flushAll({ ensureWorkspace: true });
   },
+  checkpoint: (save) => autosave.checkpoint(save),
+  beforeRead: () => autosave.flushAll(),
+  beforeSignOut: () => autosave.flushAll(),
   toast,
   loadDraft(draft) {
     rememberUndo();
@@ -376,7 +376,14 @@ const accounts = createAccounts({
 });
 autosave = createDraftAutosave({
   request: (...args) => accounts.request(...args),
-  read: () => ({ version: 4, drafts, workingHours, nightShifts, reportLinks: accounts.getLinks() }),
+  read: () => ({
+    version: 4,
+    autosaveLayout: 1,
+    drafts,
+    workingHours,
+    nightShifts,
+    reportLinks: accounts.getLinks(),
+  }),
   apply(workspace) {
     drafts = workspace?.drafts || { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
     workingHours = workspace?.workingHours || emptyWorkingHours();
@@ -392,9 +399,11 @@ autosave = createDraftAutosave({
   localSaved: () => {
     dirty = false;
   },
+  synced: () => graphs?.saved(),
 });
 graphs = createGraphs({
   current,
+  beforeLoad: () => autosave.flushAll(),
   request: (...args) => accounts.request(...args),
   toast,
   opened: (view) => navigation?.opened(view),
@@ -424,6 +433,7 @@ function rememberUndo() {
       workingHours,
       nightShifts,
       reportLinks: accounts.getLinks(),
+      pendingPeriods: autosave?.workspace().pendingPeriods || [],
     }),
   };
   $('undo-change').hidden = false;
@@ -937,6 +947,7 @@ $('undo-change').addEventListener('click', () => {
     workingHours = undo.workspace.workingHours || emptyWorkingHours();
     nightShifts = undo.workspace.nightShifts || emptyNightShifts();
     accounts.setLinks(undo.workspace.reportLinks);
+    autosave.restorePeriods(undo.workspace.pendingPeriods || []);
     rawExport.reset();
     importEditor.reset();
     $('import-dialog').close();

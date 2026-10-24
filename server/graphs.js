@@ -24,7 +24,20 @@ export function graphsHandler(database = getPool, env = process.env) {
     if (!['JRE', 'UNILAND'].includes(plant) || days === null || days < 0 || days > 365)
       fail(400, 'INVALID_GRAPH_RANGE');
     const { rows } = await db.query(
-      `SELECT r.id,r.revision,r.start_date::text,r.end_date::text,jsonb_build_object('period',jsonb_build_object('kind',r.report_kind,'startTime',v.snapshot->'draft'->'startTime','endTime',v.snapshot->'draft'->'endTime'),'output',jsonb_build_object('reportText',v.snapshot->'output'->'reportText','worksheetText',v.snapshot->'output'->'worksheetText')) AS snapshot FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date AND r.report_kind=$5 ORDER BY r.start_date,r.end_date,r.id LIMIT 1001`,
+      `WITH documents AS (
+        SELECT r.id,r.revision,r.start_date,r.end_date,r.report_kind,v.snapshot,false AS autosaved
+        FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision
+        WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date AND r.report_kind=$5
+        AND NOT EXISTS(SELECT 1 FROM meter_app.period_autosaves a WHERE a.owner_id=r.owner_id AND a.plant=r.plant AND a.report_kind=r.report_kind AND a.start_date=r.start_date AND a.end_date=r.end_date)
+        UNION ALL
+        SELECT a.id,GREATEST(COALESCE(r.revision,0),1) AS revision,a.start_date,a.end_date,a.report_kind,a.snapshot,true AS autosaved
+        FROM meter_app.period_autosaves a LEFT JOIN meter_app.reports r ON r.owner_id=a.owner_id AND r.plant=a.plant AND r.report_kind=a.report_kind AND r.start_date=a.start_date AND r.end_date=a.end_date
+        WHERE a.owner_id=$1 AND a.plant=$2 AND a.start_date >= $3::date AND a.start_date <= $4::date AND a.report_kind=$5
+      ) SELECT id,revision,start_date::text,end_date::text,autosaved,
+       jsonb_build_object('period',jsonb_build_object('kind',report_kind,'startTime',snapshot->'draft'->'startTime','endTime',snapshot->'draft'->'endTime'),
+       'complete',snapshot->'complete','periodValid',snapshot->'periodValid',
+       'output',jsonb_build_object('reportText',snapshot->'output'->'reportText','worksheetText',snapshot->'output'->'worksheetText')) AS snapshot
+      FROM documents ORDER BY start_date,end_date,id LIMIT 1001`,
       [user.id, plant, start, end, kind],
     );
     const history =

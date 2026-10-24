@@ -26,9 +26,9 @@ export const draftMessages = {
   backupRestore: ['Restore draft backup', '恢复草稿备份', 'Restore backup draft'],
   backupDownloaded: ['Draft backup downloaded.', '草稿备份已下载。', 'Backup draft diunduh.'],
   backupInvalid: [
-    'Invalid or unsupported draft backup (maximum 256 KB). Entries were not changed.',
-    '备份无效或不支持（最大256 KB），输入未改变。',
-    'Backup draft tidak valid atau tidak didukung (maksimal 256 KB). Isian tetap utuh.',
+    'Invalid or unsupported draft backup (maximum 2 MB). Entries were not changed.',
+    '备份无效或不支持（最大2 MB），输入未改变。',
+    'Backup draft tidak valid atau tidak didukung (maksimal 2 MB). Isian tetap utuh.',
   ],
   backupAccount: [
     'This backup belongs to a different account.',
@@ -50,6 +50,11 @@ export const draftMessages = {
     '备份已恢复为草稿，保存报告前请核对。',
     'Backup dimuat sebagai draft. Periksa isian sebelum menyimpan laporan.',
   ],
+  draftRecoveryInvalid: [
+    'The tab recovery copy is damaged. Autosave is paused; load the account copy only after checking your backup.',
+    '标签页恢复副本已损坏，自动保存已暂停。请检查备份后再载入账户副本。',
+    'Salinan pemulihan tab rusak. Autosave dijeda; periksa backup sebelum memuat salinan akun.',
+  ],
   draftIdle: ['Draft autosave is ready.', '草稿自动保存已就绪。', 'Autosave draft siap.'],
   draftLoading: ['Checking saved draft…', '正在检查已保存草稿…', 'Memeriksa draft tersimpan…'],
   draftPending: [
@@ -58,7 +63,11 @@ export const draftMessages = {
     'Draft tersimpan di tab ini. Menunggu sinkronisasi.',
   ],
   draftSyncing: ['Syncing draft…', '正在同步草稿…', 'Menyinkronkan draft…'],
-  draftSynced: ['Draft saved to your account.', '草稿已保存至账户。', 'Draft tersimpan di akunmu.'],
+  draftSynced: [
+    'All changes saved to your account.',
+    '所有修改已保存到账户。',
+    'Semua perubahan tersimpan di akun.',
+  ],
   draftOffline: [
     'Draft sync failed. This tab keeps your edits; retry before closing it.',
     '草稿同步失败。此标签页保留修改，请在关闭前重试。',

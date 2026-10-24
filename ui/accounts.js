@@ -3,6 +3,7 @@ import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
 import { createDraft } from '../engine.js';
 import { restoreDrafts } from '../storage.js';
+import { periodKey } from '../draft-records.js';
 
 export function createAccounts({
   current,
@@ -10,8 +11,10 @@ export function createAccounts({
   identityChanged,
   toast,
   reportSaved = () => {},
-  saveIncomplete = async () => false,
-  canSaveReport = () => true,
+  saveWorking = async () => false,
+  checkpoint = async () => null,
+  beforeRead = async () => true,
+  beforeSignOut = async () => true,
   opened = () => {},
   rendered = () => {},
   authActivity = () => {},
@@ -58,7 +61,7 @@ export function createAccounts({
       /* Same-tab auth still works. */
     }
   }
-  async function request(path, { body, personal = true, signal } = {}) {
+  async function request(path, { body, personal = true, signal, keepalive = false } = {}) {
     const epoch = generation;
     const headers = {};
     if (body) headers['Content-Type'] = 'application/json';
@@ -66,6 +69,7 @@ export function createAccounts({
     const response = await fetch(path, {
       method: body ? 'POST' : 'GET',
       credentials: 'same-origin',
+      keepalive,
       cache: 'no-store',
       signal,
       headers,
@@ -93,6 +97,9 @@ export function createAccounts({
       'LOGIN_REQUIRED',
       'PASSWORD_CHANGE_REQUIRED',
       'REVISION_CONFLICT',
+      'DRAFT_CONFLICT',
+      'AUTOSAVE_FORMAT_CHANGED',
+      'PERIOD_REQUIRED',
       'ALREADY_EXISTS',
       'INCOMPLETE_REPORT',
       'ACCOUNT_CHANGED',
@@ -145,7 +152,7 @@ export function createAccounts({
     document.body.classList.toggle('login-page', !canEnter);
     $('login-raw-template').hidden = canEnter;
     for (const element of document.querySelectorAll(
-      '#login-form input, #password-form input, #create-user-form input, #create-user-form button, #users-list button, #history-list button, #open-history, #open-users, #load-revision, #use-history, #history-plant, #history-kind, #reading-mode, #change-password',
+      '#login-form input, #password-form input, #create-user-form input, #create-user-form button, #users-list button, #history-list button, #open-history, #open-users, #load-revision, #load-autosave, #use-history, #history-plant, #history-kind, #reading-mode, #change-password',
     ))
       element.disabled = busy;
     $('history-previous').disabled = busy || page === 0;
@@ -167,6 +174,7 @@ export function createAccounts({
     $('password-required').hidden = !user?.mustChangePassword;
     $('cloud-actions').hidden = !user || user.mustChangePassword;
     $('open-users').hidden = user?.role !== 'admin';
+    if (selected?.checkpointRevision === 0) $('load-revision').disabled = true;
     $('save-report').disabled = busy || !available || !user || user.mustChangePassword;
     $('login-submit').disabled = busy || !ready || !available;
     $('password-submit').disabled = busy;
@@ -211,7 +219,8 @@ export function createAccounts({
     'click',
     () =>
       void action(async () => {
-        if (!confirm(t('logoutConfirm'))) return;
+        const synced = await beforeSignOut();
+        if (!confirm(t(synced ? 'logoutConfirm' : 'logoutUnsyncedConfirm'))) return;
         await request('/api/auth', { body: { action: 'logout' } });
         applyIdentity(null);
         $('password-form').dataset.open = '';
@@ -248,30 +257,46 @@ export function createAccounts({
     'click',
     () =>
       void action(async () => {
-        if (!canSaveReport()) {
-          await saveIncomplete();
+        if (!periodKey(current())) {
+          if (await saveWorking()) toast(t('draftSavedWithoutPeriod'));
           return;
         }
-        const draft = structuredClone(current());
-        const previous = links[reportLinkKey(draft)];
-        const samePeriod =
-          previous?.startDate === draft.startDate && previous?.endDate === draft.endDate;
-        const body = {
-          draft,
-          ...(samePeriod ? { id: previous.id, baseRevision: previous.revision } : {}),
-        };
-        const result = await request('/api/reports', { body });
-        links[reportLinkKey(draft)] = {
-          id: result.id,
-          revision: result.revision,
-          startDate: draft.startDate,
-          endDate: draft.endDate,
-        };
+        const result = await checkpoint(async ({ workspaceVersion, reference }) => {
+          const draft = structuredClone(current());
+          const previous = links[reportLinkKey(draft)],
+            known = reference(draft);
+          const samePeriod =
+            previous?.startDate === draft.startDate && previous?.endDate === draft.endDate;
+          const id = known?.id || (samePeriod ? previous.id : null);
+          const saved = await request('/api/reports', {
+            body: {
+              autosaveLayout: 1,
+              draft,
+              workspaceVersion,
+              baseRevision: known?.checkpointRevision ?? (samePeriod ? previous.revision : 0),
+              ...(id ? { id } : {}),
+            },
+          });
+          links[reportLinkKey(draft)] = {
+            id: saved.id,
+            revision: saved.revision,
+            startDate: draft.startDate,
+            endDate: draft.endDate,
+          };
+          return saved;
+        });
+        if (!result) {
+          toast(t('draftPending'));
+          return;
+        }
         reportSaved();
-        toast(t('reportSaved', { revision: result.revision }));
+        toast(
+          t(result.unchanged ? 'reportUnchanged' : 'reportSaved', { revision: result.revision }),
+        );
       }),
   );
   async function history() {
+    if (!(await beforeRead())) toast(t('monitoringUnsynced'));
     const filter = $('history-plant').value;
     const data = await request(
       '/api/reports?page=' +
@@ -286,7 +311,18 @@ export function createAccounts({
       const row = node('li', '', 'history-row');
       const text = node(
         'span',
-        item.plant + ' · ' + item.start_date + ' → ' + item.end_date + ' · v' + item.revision,
+        item.plant +
+          ' · ' +
+          item.start_date +
+          ' → ' +
+          item.end_date +
+          ' · ' +
+          t('revision') +
+          ' ' +
+          item.revision +
+          (item.autosaved
+            ? ' · ' + t(item.complete ? 'historyAutosave' : 'historyIncomplete')
+            : ''),
       );
       const button = node('button', t('openReport'), 'button secondary');
       button.addEventListener('click', () => void action(() => openReport(item.id)));
@@ -311,10 +347,16 @@ export function createAccounts({
     $('history-detail').hidden = false;
     $('history-revision').value = data.revision;
     $('history-revision').max = data.latestRevision;
+    $('load-revision').disabled = data.checkpointRevision === 0;
+    $('history-revision').disabled = data.checkpointRevision === 0;
+    $('load-autosave').hidden = !data.hasAutosave;
     $('history-version').textContent = t('storedVersion', {
       version: data.snapshot.engineVersion,
       latest: data.latestRevision,
     });
+    if (data.autosaved)
+      $('history-version').textContent +=
+        ' · ' + t(data.snapshot.complete ? 'historyAutosave' : 'historyIncomplete');
     $('history-snapshot').value = data.snapshot.output.reportText;
   }
   function openHistory() {
@@ -370,6 +412,13 @@ export function createAccounts({
     () =>
       void action(async () => {
         if (selected) await openReport(selected.id, $('history-revision').value);
+      }),
+  );
+  $('load-autosave').addEventListener(
+    'click',
+    () =>
+      void action(async () => {
+        if (selected) await openReport(selected.id);
       }),
   );
   $('use-history').addEventListener(

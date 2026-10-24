@@ -61,3 +61,7 @@ The selected-pattern scanner checked 804 reachable historical blobs and found no
 No production database changes, credential rotation, firewall policy changes or backup restoration were performed. Keep any broader test evidence private and agree targets/accounts, rates and recovery before live testing.
 
 Local evidence: npm run verify passed 155 unit tests and the build/format/source checks; dependency audit returned zero known vulnerabilities. The 23 integration tests used a separate development database and restricted runtime role. A synthetic browser-to-API-to-database flow verified login, server-calculated report persistence, historian output and confirmed logout/session revocation with no browser errors; its temporary records were removed. The targeted desktop/mobile template and hostile-text/static-exposure checks passed. Full CI remains the required release gate; these results are not a production load or recovery test.
+
+## v0.11.23 autosave
+
+Latest account-confirmed partial period snapshots now feed monitoring, with missing values kept as gaps. Manual checkpoints remain immutable and identical saves do not add revisions. See [autosave design, limits and migration 007](autosave.md). Production needs an updated private backup and explicit approval before migration.

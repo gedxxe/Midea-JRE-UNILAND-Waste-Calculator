@@ -1,7 +1,7 @@
 import { node } from './dom.js';
 import { getLanguage, t } from '../i18n/index.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
-import { metricLabel, graphPeriodLabel } from '../graph-presentation.js';
+import { metricLabel, graphPeriodLabel, graphSourceLabel } from '../graph-presentation.js';
 import { formatNumber } from '../numbers.js';
 
 export function attachGraphInteraction(frame, svg, config, records, onToggle) {
@@ -51,8 +51,7 @@ export function attachGraphInteraction(frame, svg, config, records, onToggle) {
       );
       tip.append(row);
     }
-    const source =
-      record.source === 'excel' ? t('graphImported') : t('graphRevision') + ' ' + record.revision;
+    const source = graphSourceLabel(record, t);
     tip.append(node('small', source));
     tip.setAttribute('aria-live', keyboard ? 'polite' : 'off');
     const scale = svg.getBoundingClientRect().width / svgWidth;

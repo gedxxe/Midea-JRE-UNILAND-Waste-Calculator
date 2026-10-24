@@ -12,12 +12,20 @@ import {
   graphDepartment,
   upgradeGraph,
   graphPeriodLabel,
+  graphSourceLabel,
 } from '../graph-presentation.js';
 import { GRAPH_METRICS, DEPARTMENTS, defaultGraphs } from '../graph-schema.js';
 import { dayDiff, validDate, formatNumber } from '../numbers.js';
 import { renderGraph, exportGraph, copyGraph } from './graph-renderer.js';
 import { validYAxis } from '../graph-axis.js';
-export function createGraphs({ current, request, toast, opened = () => {} }) {
+export function createGraphs({
+  current,
+  request,
+  toast,
+  opened = () => {},
+  beforeLoad = async () => true,
+}) {
+  let contentVersion = 0;
   let user = null,
     epoch = 0,
     sequence = 0,
@@ -60,6 +68,7 @@ export function createGraphs({ current, request, toast, opened = () => {} }) {
   function reset(next) {
     windowView.reset();
     epoch++;
+    contentVersion = 0;
     sequence++;
     user = next;
     data = null;
@@ -129,12 +138,20 @@ export function createGraphs({ current, request, toast, opened = () => {} }) {
     if (data)
       for (const [key, count] of [
         ['graphMulti', data.records.filter((r) => r.days > 1).length],
+        [
+          'graphIncompletePeriods',
+          data.records.filter((r) => r.autosaved && r.complete === false).length,
+        ],
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
         ['graphSuperseded', data.records.filter((r) => r.superseded).length],
       ])
         if (count && !(view === 'table' && key === 'graphMulti'))
           $('graph-warnings').append(
-            node('p', t(key, { count }), key === 'graphMulti' ? 'notice' : 'notice warning'),
+            node(
+              'p',
+              t(key, { count }),
+              ['graphMulti', 'graphIncompletePeriods'].includes(key) ? 'notice' : 'notice warning',
+            ),
           );
     const department = $('graph-department').value || 'all';
     const available = new Set(
@@ -256,7 +273,11 @@ export function createGraphs({ current, request, toast, opened = () => {} }) {
     }
     loading = true;
     render();
+    let fetchedVersion;
     try {
+      if (!(await beforeLoad())) status = 'monitoringUnsynced';
+      if (ticket !== sequence || identity !== epoch) return;
+      fetchedVersion = contentVersion;
       const result = await request(
         '/api/graphs?' + new URLSearchParams({ plant, start, end, kind: kind() }),
       );
@@ -274,6 +295,7 @@ export function createGraphs({ current, request, toast, opened = () => {} }) {
       if (ticket === sequence && identity === epoch) {
         loading = false;
         render();
+        if (fetchedVersion !== undefined && fetchedVersion !== contentVersion) void load();
       }
     }
   }
@@ -586,9 +608,8 @@ export function createGraphs({ current, request, toast, opened = () => {} }) {
             ),
             node(
               'td',
-              record.source === 'excel'
-                ? t('graphImported') + ' · ' + record.sourceLabel
-                : t('graphRevision') + ' ' + record.revision,
+              graphSourceLabel(record, t) +
+                (record.source === 'excel' ? ' · ' + record.sourceLabel : ''),
             ),
           );
           for (const metric of chosen)
@@ -676,8 +697,9 @@ export function createGraphs({ current, request, toast, opened = () => {} }) {
     reset,
     render,
     saved() {
+      contentVersion++;
       data = null;
-      if ($('graphs-dialog').open) {
+      if ($('graphs-dialog').open && !loading) {
         status = 'graphStale';
         void load();
       }

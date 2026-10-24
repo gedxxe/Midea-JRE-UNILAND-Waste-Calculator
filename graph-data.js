@@ -83,7 +83,11 @@ export function graphRecords(rows, plant, history = []) {
             minutes: workMinutes({ ...period, startDate: row.start_date, endDate: row.end_date }),
           }
         : {}),
-      values: graphValues(row.snapshot, plant),
+      values:
+        row.snapshot?.periodValid === false
+          ? Object.fromEntries(GRAPH_METRICS[plant].map((metric) => [metric.key, null]))
+          : graphValues(row.snapshot, plant),
+      ...(row.autosaved ? { autosaved: true, complete: row.snapshot?.complete === true } : {}),
       source: 'report',
     };
   });
