@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.js';
+import { createLazyGlassSurface } from './dialog-motion.js';
 import { createSignInTransition } from './signin-transition.js';
 
 // Presentation only. The account controller remains responsible for every session gate.
@@ -17,7 +18,8 @@ export function createWelcome() {
     sequence = 0,
     transition,
     transitionTarget,
-    circleOrigin;
+    circleOrigin,
+    loginGlass;
   let tech,
     magnet,
     ascii,
@@ -64,7 +66,7 @@ export function createWelcome() {
         tech ||= initialize(0, (module) =>
           module.createTechText(
             hero.querySelector('.energy-wordmark'),
-            hero.querySelector('.energy-tech-letters'),
+            hero.querySelector('.energy-tech-canvas'),
             moving,
           ),
         );
@@ -96,6 +98,12 @@ export function createWelcome() {
     surface.hidden = next === 'hero';
     surface.inert = next === 'hero';
     surface.classList.remove('welcome-revealing');
+    if (next === 'login')
+      loginGlass ||= createLazyGlassSurface(document.querySelector('.account-card'));
+    else {
+      loginGlass?.destroy();
+      loginGlass = undefined;
+    }
     back.hidden = next !== 'login' || !!user;
     if (next !== 'hero') {
       ascii?.destroy();
@@ -144,6 +152,7 @@ export function createWelcome() {
     surface.hidden = false;
     surface.inert = true;
     surface.classList.add('welcome-revealing');
+    loginGlass ||= createLazyGlassSurface(document.querySelector('.account-card'));
     // Back reveals a complete static hero below the shrinking white surface.
     // Effects resume only after both presentation and focus have settled.
     syncMotion();

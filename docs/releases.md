@@ -102,3 +102,7 @@ Presentation-only change. No database, session, reading, report or preference mi
 ## Welcome motion correction (v0.11.21-alpha)
 
 Presentation-only fix, with no schema, database, session or preference migration. A normal revert restores the v0.11.20 presentation without changing saved data. Keep React Bits notices and existing immutable milestones. Preview account setup stays unchanged. Publish only one intended feature PR; create the release branch/tag at the final tested commit, after any test fixes, so a checkpoint PR cannot accidentally omit them.
+
+## Supplied TechText and glass (v0.11.22-alpha)
+
+Presentation-only revision with no database, session, draft, account or analytics migration. The supplied TechText engine supersedes the earlier compositor-only lift; GlassSurface is optional and falls back to CSS. Retain the full upstream notice with distributed builds. A normal revert PR restores v0.11.21 presentation without modifying saved data. Preserve earlier tags and release branches. Preview login remains unconfigured.

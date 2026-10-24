@@ -7,6 +7,7 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  welcomeEnergyTitle: ['Energy Record', '能源记录', 'Catatan Energi'],
   welcomeSigningIn: ['Signing in...', '正在登录…', 'Sedang masuk...'],
   welcomeOpening: ['Opening your workspace...', '正在打开工作区…', 'Membuka halaman pengisian...'],
   welcomeEnter: ['Sign in', '登录', 'Masuk'],

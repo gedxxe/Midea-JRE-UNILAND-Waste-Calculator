@@ -1,9 +1,11 @@
 import { formatBlankReadingTemplate } from '../raw-export.js';
 import { t } from '../i18n/index.js';
 import { $ } from './dom.js';
+import { createLazyGlassSurface, createDialogMotion } from './dialog-motion.js';
 
 export function initRawTemplate({ getPlant, toast }) {
   const dialog = $('raw-template-dialog');
+  const motion = createDialogMotion(dialog, { enter: () => createLazyGlassSurface(dialog) });
   const factory = $('raw-template-plant');
   const preview = $('raw-template-preview');
   const render = () => {
@@ -17,7 +19,7 @@ export function initRawTemplate({ getPlant, toast }) {
     button.addEventListener('click', () => {
       factory.value = getPlant();
       render();
-      dialog.showModal();
+      motion.open();
     });
   }
   factory.addEventListener('change', render);

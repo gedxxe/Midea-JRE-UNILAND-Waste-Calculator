@@ -482,7 +482,9 @@ export function createAccounts({
       await users();
     });
   });
-  for (const button of document.querySelectorAll('[data-close-dialog]'))
+  for (const button of document.querySelectorAll(
+    '[data-close-dialog]:not([data-close-dialog="raw-template-dialog"])',
+  ))
     button.addEventListener('click', () => $(button.dataset.closeDialog).close());
   window.addEventListener('storage', (event) => {
     if (event.key === eventKey) {

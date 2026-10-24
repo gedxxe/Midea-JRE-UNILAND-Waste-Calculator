@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="/logo.css" />
     <link rel="stylesheet" href="/welcome.css" />
     <link rel="stylesheet" href="/signin-effects.css" />
+    <link rel="stylesheet" href="/glass.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body class="login-page" data-welcome="hero">
@@ -44,8 +45,8 @@
         >
       </div>
       <div class="energy-wordmark">
-        <h1 id="energy-title">Energy Record</h1>
-        <div class="energy-tech-letters" aria-hidden="true"></div>
+        <h1 id="energy-title" data-i18n="welcomeEnergyTitle">Energy Record</h1>
+        <canvas class="energy-tech-canvas" aria-hidden="true"></canvas>
       </div>
       <div class="energy-bottomline">
         <div class="energy-description">
@@ -906,8 +907,25 @@
     <dialog id="raw-template-dialog" aria-labelledby="raw-template-title">
       <div class="dialog-heading">
         <h2 id="raw-template-title" data-i18n="rawTemplate">Blank reading template</h2>
-        <button class="text-button" data-close-dialog="raw-template-dialog" data-i18n="close">
-          Close
+        <button
+          type="button"
+          class="dialog-icon-close"
+          data-close-dialog="raw-template-dialog"
+          data-i18n-aria-label="close"
+          aria-label="Close"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </div>
       <p data-i18n="rawTemplateHint"></p>

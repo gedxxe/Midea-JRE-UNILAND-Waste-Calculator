@@ -23,11 +23,17 @@ async function setup(page, options = {}) {
 async function countTextFrames(page) {
   await page.addInitScript(() => {
     window.textFrames = 0;
-    for (const key of ['fillText', 'strokeText']) {
-      const paint = CanvasRenderingContext2D.prototype[key];
-      CanvasRenderingContext2D.prototype[key] = function (...args) {
-        if (this.canvas.className.startsWith('energy-letter-')) window.textFrames++;
-        return paint.apply(this, args);
+    window.glyphRasters = 0;
+    const clear = CanvasRenderingContext2D.prototype.clearRect;
+    CanvasRenderingContext2D.prototype.clearRect = function (...args) {
+      if (this.canvas.className === 'energy-tech-canvas') window.textFrames++;
+      return clear.apply(this, args);
+    };
+    for (const name of ['strokeText', 'fillText']) {
+      const draw = CanvasRenderingContext2D.prototype[name];
+      CanvasRenderingContext2D.prototype[name] = function (...args) {
+        if (this.canvas.className === 'energy-tech-sprite') window.glyphRasters++;
+        return draw.apply(this, args);
       };
     }
   });
@@ -40,17 +46,35 @@ async function stopped(page) {
       return (await page.evaluate(() => window.textFrames)) === before;
     })
     .toBe(true);
-  await expect
-    .poll(() =>
-      page
-        .locator('.energy-tech-letters')
-        .evaluate(
-          (el) =>
-            el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
-        ),
-    )
-    .toBe(0);
 }
+async function firstGlyph(page) {
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-tech-intro', 'complete');
+  return page.locator('.energy-tech-canvas').evaluate((el) => {
+    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+    const occupied = Array.from({ length: el.width }, (_, x) => {
+      for (let y = 0; y < el.height; y++) if (data[(y * el.width + x) * 4 + 3] > 220) return true;
+      return false;
+    });
+    const left = occupied.indexOf(true);
+    let right = left;
+    while (occupied[right]) right++;
+    const x = Math.floor((left + right) / 2),
+      rows = [];
+    for (let y = 0; y < el.height; y++) if (data[(y * el.width + x) * 4 + 3] > 220) rows.push(y);
+    const rect = el.getBoundingClientRect();
+    return {
+      x: rect.left + (x * rect.width) / el.width,
+      y: rect.top + (rows[Math.floor(rows.length / 2)] * rect.height) / el.height,
+    };
+  });
+}
+const titlePixels = (page) =>
+  page.locator('.energy-tech-canvas').evaluate((el) => {
+    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+    let hash = 2166136261;
+    for (const x of data) hash = Math.imul(hash ^ x, 16777619);
+    return hash >>> 0;
+  });
 
 test('dark welcome hides the form until keyboard entry and preserves its circle transition and back action', async ({
   page,
@@ -68,7 +92,9 @@ test('dark welcome hides the form until keyboard entry and preserves its circle 
   for (const language of ['zh-CN', 'id', 'en']) {
     await page.locator('#welcome-language').selectOption(language);
     await expect(page.locator('html')).toHaveAttribute('lang', language);
-    await expect(page.locator('#energy-title')).toHaveText('Energy Record');
+    await expect(page.locator('#energy-title')).toHaveText(
+      { en: 'Energy Record', 'zh-CN': '能源记录', id: 'Catatan Energi' }[language],
+    );
     await expect(page.locator('#login-form')).toBeHidden();
   }
   await page.screenshot({ path: info.outputPath('energy-welcome.png'), fullPage: true });
@@ -93,85 +119,114 @@ test('dark welcome hides the form until keyboard entry and preserves its circle 
   expect(errors).toEqual([]);
 });
 
-test('only the hovered glyph changes, motion is composited and no letter repaints on hover', async ({
+test('TechText intro follows elapsed time when animation frames are sparse', async ({ page }) => {
+  await setup(page);
+  await page.addInitScript(() => {
+    const native = requestAnimationFrame,
+      cancel = cancelAnimationFrame;
+    const frames = new Map();
+    let sequence = 0;
+    window.requestAnimationFrame = (callback) => {
+      const id = ++sequence,
+        entry = { timer: 0, frame: 0 };
+      entry.timer = setTimeout(() => {
+        entry.frame = native((time) => {
+          frames.delete(id);
+          callback(time);
+        });
+      }, 150);
+      frames.set(id, entry);
+      return id;
+    };
+    window.cancelAnimationFrame = (id) => {
+      const entry = frames.get(id);
+      if (entry) {
+        clearTimeout(entry.timer);
+        cancel(entry.frame);
+        frames.delete(id);
+      }
+    };
+  });
+  await page.goto('/');
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-tech-intro', 'complete', {
+    timeout: 3500,
+  });
+  expect(
+    await page.locator('.energy-tech-canvas').evaluate((el) =>
+      el
+        .getContext('2d')
+        .getImageData(0, 0, el.width, el.height)
+        .data.some((v, i) => i % 4 === 3 && v > 220),
+    ),
+  ).toBe(true);
+  await openSignIn(page);
+});
+
+test('supplied TechText shows metrics intro, a selected glyph with specks and restores solid text on exit', async ({
   page,
 }, info) => {
   const errors = await setup(page);
   await countTextFrames(page);
   await page.goto('/');
-  const word = page.locator('.energy-wordmark'),
-    glyphs = page.locator('.energy-tech-glyph');
+  const word = page.locator('.energy-wordmark');
   await expect(word).toHaveAttribute('data-ready', 'true');
-  await expect(glyphs).toHaveCount(12);
   await expect(page.locator('.energy-welcome-frame')).toHaveCount(0);
-  await expect
-    .poll(() =>
-      word.evaluate(
-        (el) => el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
-      ),
-    )
-    .toBe(0);
-  // Freeze only background presentation so pixel comparisons isolate the actual title.
-  await page.locator('.energy-ascii-canvas').evaluate((el) => {
-    el.style.visibility = 'hidden';
-  });
-  const first = glyphs.first(),
-    rest = glyphs.nth(8);
-  const baseline = await first.screenshot(),
-    unchanged = await rest.screenshot();
-  const point = await first.locator('.energy-letter-fill').evaluate((el) => {
-    const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
-    const rect = el.getBoundingClientRect();
-    for (let y = Math.floor(el.height / 3); y < el.height; y++)
-      for (let x = 0; x < el.width; x++)
-        if (data[(y * el.width + x) * 4 + 3] > 220)
-          return {
-            x: rect.left + ((x + 0.5) * rect.width) / el.width,
-            y: rect.top + ((y + 0.5) * rect.height) / el.height,
-          };
-  });
-  const paints = await page.evaluate(() => window.textFrames);
+  const point = await firstGlyph(page);
+  await stopped(page);
+  const baseline = await titlePixels(page);
+  const rasters = await page.evaluate(() => window.glyphRasters);
+  expect(rasters).toBeGreaterThan(12);
   await page.mouse.move(point.x, point.y);
   await expect(word).toHaveAttribute('data-active-letter', '0');
-  const movement = await first.evaluate(async (el) => {
-    const animation = el.getAnimations()[0];
-    const before = getComputedStyle(el).transform;
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    return {
-      active: !!animation,
-      after: getComputedStyle(el).transform,
-      before,
-      properties: animation?.effect.getKeyframes().flatMap((k) => Object.keys(k)),
-    };
-  });
-  expect(movement.active).toBe(true);
-  expect(movement.after).not.toBe(movement.before);
-  expect(
-    movement.properties.every((p) =>
-      ['transform', 'offset', 'easing', 'composite', 'computedOffset'].includes(p),
-    ),
-  ).toBe(true);
-  await expect(first.locator('.energy-letter-outline')).toBeVisible();
-  expect(await rest.screenshot()).toEqual(unchanged);
-  expect(
-    await glyphs.evaluateAll((els) =>
-      els.slice(1).every((el) => !el.dataset.hover && getComputedStyle(el).transform === 'none'),
-    ),
-  ).toBe(true);
-  expect(await first.screenshot()).not.toEqual(baseline);
-  await page.screenshot({ path: info.outputPath('hover-first-letter.png') });
+  await expect.poll(() => titlePixels(page)).not.toBe(baseline);
+  const before = await page.evaluate(() => window.textFrames);
+  await expect.poll(() => page.evaluate(() => window.textFrames)).toBeGreaterThan(before + 2);
+  expect(await page.evaluate(() => window.glyphRasters)).toBe(rasters);
+  await page.screenshot({ path: info.outputPath('tech-selection.png') });
   const box = await word.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + 1);
   await expect(word).not.toHaveAttribute('data-active-letter');
-  await expect(first.locator('.energy-letter-fill')).toBeVisible();
-  await expect(first.locator('.energy-letter-outline')).toBeHidden();
-  await expect
-    .poll(() => word.evaluate((el) => el.getAnimations({ subtree: true }).length))
-    .toBe(0);
-  expect(await first.screenshot()).toEqual(baseline);
-  expect(await page.evaluate(() => window.textFrames)).toBe(paints);
+  await stopped(page);
+  expect(await titlePixels(page)).toBe(baseline);
   await page.mouse.move(2, 2);
-  await expect(word).not.toHaveAttribute('data-active-letter');
+  await stopped(page);
+  expect(await titlePixels(page)).toBe(baseline);
+  expect(errors).toEqual([]);
+});
+test('TechText click kick and mouse drag spring home while pause cancels a captured drag', async ({
+  page,
+}) => {
+  const errors = await setup(page);
+  await countTextFrames(page);
+  await page.goto('/');
+  const word = page.locator('.energy-wordmark');
+  const point = await firstGlyph(page);
+  await stopped(page);
+  const baseline = await titlePixels(page);
+  await page.mouse.click(point.x, point.y);
+  await page.mouse.move(2, 2);
+  await expect.poll(() => titlePixels(page)).not.toBe(baseline);
+  await stopped(page);
+  expect(await titlePixels(page)).toBe(baseline);
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await expect(word).toHaveAttribute('data-dragging-letter', '0');
+  await page.mouse.move(point.x + 40, point.y + 20, { steps: 5 });
+  expect(await titlePixels(page)).not.toBe(baseline);
+  await page.mouse.up();
+  await page.mouse.move(2, 2);
+  await expect(word).not.toHaveAttribute('data-dragging-letter');
+  await stopped(page);
+  expect(await titlePixels(page)).toBe(baseline);
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x + 20, point.y + 10);
+  await page.locator('#pause-welcome').evaluate((el) => el.click());
+  await expect(word).not.toHaveAttribute('data-dragging-letter');
+  await page.mouse.up();
+  await stopped(page);
+  expect(await titlePixels(page)).toBe(baseline);
   expect(errors).toEqual([]);
 });
 
@@ -409,13 +464,10 @@ test('pausing before decoration finishes loading keeps the complete title visibl
   release();
   await expect(page.locator('.energy-wordmark')).toHaveAttribute('data-ready', 'true');
   expect(
-    await page
-      .locator('.energy-letter-fill')
-      .first()
-      .evaluate((el) => {
-        const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
-        return data.some((value, index) => index % 4 === 3 && value > 220);
-      }),
+    await page.locator('.energy-tech-canvas').evaluate((el) => {
+      const data = el.getContext('2d').getImageData(0, 0, el.width, el.height).data;
+      return data.some((value, index) => index % 4 === 3 && value > 220);
+    }),
   ).toBe(true);
   await expect(page.locator('#pause-welcome')).toHaveAttribute('aria-pressed', 'true');
   await openSignIn(page);
