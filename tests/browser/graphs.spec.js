@@ -258,7 +258,7 @@ test('graphs show gaps and period warnings and clear old data after an empty ref
   await expect(first.locator('table')).toContainText('Overlapping period: not plotted');
   failed = true;
   await page.locator('#graph-refresh').click();
-  await expect(page.locator('#graph-status')).toContainText('No saved reports');
+  await expect(page.locator('#graph-status')).toContainText('No account records');
   await expect(first.locator('circle')).toHaveCount(0);
   await expect(first.locator('[data-graph-export="svg"]')).toBeDisabled();
   expect(state.errors).toEqual([]);
