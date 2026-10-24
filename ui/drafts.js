@@ -53,6 +53,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     }).format(new Date(value)) + ' WIB';
   const key = () => STORAGE_KEY + '_' + user.id;
   const raw = () => JSON.stringify(read());
+  const recoveryRaw = () => JSON.stringify({ workspace: read(), periods });
   function render() {
     if (!user) return;
     $('save-status').textContent = t(state);
@@ -143,7 +144,9 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       }
       if (!dirty && saved.workspace) apply(restoreWorkspace(JSON.stringify(saved.workspace)));
       if (!dirty && !saved.workspace && saved.version !== version) apply(null);
-      version = saved.version;
+      // Matching active data does not acknowledge queued periods. Retry their original
+      // token so the server verifies the whole batch before advancing it.
+      if (!dirty || !periods.length) version = saved.version;
       ready = true;
       if (same && !periods.length) dirty = false;
       if (
@@ -351,12 +354,12 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     )
       return;
     const identity = epoch;
-    const before = raw();
+    const before = recoveryRaw();
     try {
       if (pending) await pending;
       const saved = await remote();
       if (identity !== epoch) return;
-      if (useRemote && raw() !== before) {
+      if (useRemote && recoveryRaw() !== before) {
         status('draftConflict');
         return;
       }
@@ -403,7 +406,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       workspaceSaved = false;
       localAt = accountAt = null;
       lastSynced = '';
-      dirty = raw() !== before;
+      dirty = raw() !== before || periods.length > 0;
       clearTimeout(timer);
       sessionStorage.removeItem(key());
       sessionStorage.removeItem(key() + '_sync');
@@ -472,7 +475,9 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
           status('draftConflict');
           return result;
         }
-        version = result.workspaceVersion;
+        // An idempotent response may include another device's token. Newly queued
+        // periods still need their original token checked by the draft endpoint.
+        if (!result.unchanged || !periods.length) version = result.workspaceVersion;
         accountAt = timestamp(result.updated_at);
         updateReferences(result.records);
         lastSynced = JSON.stringify({ ...before, reportLinks: result.workspace.reportLinks });

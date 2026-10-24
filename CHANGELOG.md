@@ -6,7 +6,7 @@ Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versio
 
 - Autosave incomplete electricity, gas, Water and notes for both plants and all three recording modes. Persist dated working copies as Revision 1 and use their available values in charts and monthly tables without manual Save; missing or invalid values remain gaps.
 - Keep mutable autosaves separate from immutable manual checkpoints. Save version creates a checkpoint only when content differs; repeated identical saves retain the revision number.
-- Journal departed periods before the sync delay, coalesce background writes, preserve queued periods in private backup format 5, and keep cross-device conflicts explicit. Separate tab recovery from server-confirmed save status, and recreate a deleted active workspace before a manual checkpoint.
+- Journal departed periods before the sync delay, coalesce background writes, preserve queued periods in private backup format 5, and keep cross-device conflicts explicit, including pending period recovery after a lost response. Separate tab recovery from server-confirmed save status, and recreate a deleted active workspace before a manual checkpoint.
 - Migration 007 adds owner-scoped period autosaves and rollback guards. Apply only after a private backup and explicit production approval; no calculation formula, account role, browser dependency or analytics change.
 
 ## v0.11.22-alpha - 2026-10-24
