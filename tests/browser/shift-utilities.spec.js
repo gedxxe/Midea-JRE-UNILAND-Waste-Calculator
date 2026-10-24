@@ -120,7 +120,7 @@ for (const plant of ['JRE', 'UNILAND']) {
         .toBe(text);
       await page.locator('#save-report').click();
       await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-      expect(state.saved[0].draft.periodKind).toBe('nightShift');
+      await expect.poll(() => state.saved[0]?.draft.periodKind).toBe('nightShift');
       expect(state.saved[0].draft.water).toEqual({ start: '1012', end: '1030' });
       expect(state.saved[0].draft.gas.entries[3].start.temperature).toBe('33.75');
       expect(state.workspace.workingHours[plant].water.end).toBe('1012');

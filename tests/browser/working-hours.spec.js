@@ -123,7 +123,7 @@ test('work drafts reuse matching daily readings through plant/language switching
   await expect(cell(page, 'end')).toHaveValue('');
   await cell(page, 'end').fill('100125.25');
   await page.locator('#save-report').click();
-  expect(state.saved).toHaveLength(1);
+  await expect.poll(() => state.saved.length).toBe(1);
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('100125.25');
   await page.locator('[data-plant="UNILAND"]').click();
   await expect(cell(page)).toHaveValue('1000');
@@ -178,9 +178,9 @@ test('work reports, timed raw imports, next-morning reuse and Undo keep date/tim
   await page.locator('#apply-import').click();
   await expect(page.locator('#import-dialog')).toBeHidden();
   await page.locator('#save-report').click();
-  expect(state.saved[0].draft.periodKind).toBe('workingHours');
+  await expect.poll(() => state.saved[0]?.draft.periodKind).toBe('workingHours');
   await page.locator('#save-report').click();
-  expect(state.saved[1].baseRevision).toBe(1);
+  await expect.poll(() => state.saved[1]?.baseRevision).toBe(1);
   expect(state.saved[1].id).toBe('1e61d60e-e4b5-4c91-b7d1-6a56d9465680');
   expect(state.saved[0].draft.startDate).toBe(state.saved[0].draft.endDate);
   await page.locator('#work-end-time').fill('17:15');
@@ -405,7 +405,7 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   const combined = await page.evaluate(() => navigator.clipboard.readText());
   expect(combined).not.toMatch(/^\* Water:|^\* LPG:/m);
   await page.locator('#save-report').click();
-  expect(state.saved.at(-1).draft.periodKind).toBe('nightShift');
+  await expect.poll(() => state.saved.at(-1)?.draft.periodKind).toBe('nightShift');
   await page.locator('#work-period').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('night-shift.png') });
   await page.locator('#next-day').click();

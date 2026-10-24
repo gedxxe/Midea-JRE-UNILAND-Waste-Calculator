@@ -221,7 +221,7 @@ test('report contents stay independent of editable time, worksheet and the perio
   await page.locator('#report-periods').selectOption('all');
   await page.locator('#reading-mode').selectOption('workingHours');
   await page.locator('#save-report').click();
-  expect(state.saved[0].draft.periodKind).toBe('workingHours');
+  await expect.poll(() => state.saved[0]?.draft.periodKind).toBe('workingHours');
   expect(state.saved[0].draft.utilities.every((v) => !v.value)).toBe(true);
   await expect(page.locator('#copy-report')).toBeDisabled();
   await expect(page.locator('#result-state')).toHaveText('Incomplete');
