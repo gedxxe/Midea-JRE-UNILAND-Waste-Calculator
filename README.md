@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.21-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.22-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -43,7 +43,7 @@ Use /app for reading entry, /app/monitoring for charts/monthly tables, /app/hist
 
 ### Everyday features
 
-The fullscreen dark **Energy Record** welcome uses the supplied white Midea logo and adapted React Bits Tech Text/Split Text, Gradient ASCII and Glass Icons effects. The frameless background has a visible blue/white horizon and responds to cursor movement. Cached letters animate with browser transforms; only the hovered letter changes and leaving restores it. Click **Sign in** for a circular transition to one centered glass sign-in card; **Back** reverses the circular transition to the welcome. A Lattice Loader follows the real sign-in request and fades into the workspace. Language selection, blank templates, pause and reduced motion remain available. No React runtime or browser package is added. Welcome credit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. See [welcome design, source and license](docs/welcome.md).
+The fullscreen dark **Energy Record** welcome uses the supplied white Midea logo and adapted React Bits Tech Text/Split Text, Gradient ASCII and Glass Icons effects. The frameless background has a visible blue/white horizon and responds to cursor movement. The supplied TechText engine adds a metrics entrance, character selection, labels and spring interactions; cached glyphs stop drawing when settled. The title follows the selected language, including 能源记录. Click **Sign in** for a circular transition to one centered glass sign-in card; **Back** reverses the circular transition to the welcome. A Lattice Loader follows the real sign-in request and fades into the workspace. Blank templates and the sign-in card use adapted GlassSurface styling, with an animated template dialog and an accessible X close control. Language selection, pause and reduced motion remain available. No React runtime or browser package is added. Welcome credit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. See [welcome design, source and license](docs/welcome.md).
 
 **Quick guide** in the Account panel explains eight essential workflows with animated cursor illustrations. The small invitation can be dismissed; reopen the guide whenever needed. Back/Next, Escape/Close, animation pause and reduced-motion support are included. Illustrations never change your readings or save data. Guide code, styles and longer translations load only when opened; the dismissal preference stays in this browser per account.
 
@@ -131,7 +131,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.21-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.22-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -158,7 +158,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 - **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，三个时段均可记录。
 - **图表：** 使用已保存报表及审核过的历史导入。白底细线，图表与导出图片仅显示当前所选语言。支持部门筛选，保留完整日期标签及 JRE 9 组、UNILAND 7 组预设。一键复制高清 PNG；下载菜单提供 PNG/SVG，变量和 Y 轴设置收起显示。未保存数据不进入图表。
 
-全屏深色 **Energy Record** 欢迎页采用提供的白色 Midea 标志，以及适配后的 React Bits Tech Text/Split Text、Gradient ASCII 与 Glass Icons 效果。无边框背景显示蓝白色 ASCII 光线，并响应鼠标移动。缓存字符通过浏览器变换动画移动；悬停只影响指针下的字符，移开即恢复。点击登录后，通过圆形遮罩进入居中的玻璃风格登录卡片；返回时反向播放圆形过渡。Lattice Loader 随实际登录请求显示，并平滑过渡到工作区。保留语言切换、空白模板、暂停和减少动态效果，无需引入 React 或浏览器依赖。署名：Made with ❤️ by gedxxe for Midea JRE Engineering Department。详见 [欢迎页与授权说明](docs/welcome.md)。
+全屏深色 **Energy Record** 欢迎页采用提供的白色 Midea 标志，以及适配后的 React Bits Tech Text/Split Text、Gradient ASCII 与 Glass Icons 效果。无边框背景显示蓝白色 ASCII 光线，并响应鼠标移动。采用提供的 TechText 引擎，显示尺寸入场动画、字符选择与弹簧交互；缓存字符在静止后停止绘制。中文标题为“能源记录”。点击登录后，通过圆形遮罩进入居中的玻璃风格登录卡片；返回时反向播放圆形过渡。Lattice Loader 随实际登录请求显示，并平滑过渡到工作区。空白模板和登录卡片采用 GlassSurface 玻璃效果；模板窗口支持进出动画及带无障碍标签的 X 关闭按钮。保留语言切换、暂停和减少动态效果，无需引入 React 或浏览器依赖。署名：Made with ❤️ by gedxxe for Midea JRE Engineering Department。详见 [欢迎页与授权说明](docs/welcome.md)。
 
 **月度表格**显示月份、年份、完整日期列和固定设备名称；合并时段保留完整用量。可选择**全屏**或收起**筛选**以增加空间。表格与对话框均可滚动；Escape 先还原视图，再关闭窗口。图表支持平滑曲线、共享提示及可点击图例，保存数值与缺失间隔保持不变。
 
@@ -186,7 +186,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.21-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.22-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -213,7 +213,7 @@ Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOU
 - **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Berlaku di ketiga periode.
 - **Grafik:** laporan tersimpan dan impor histori yang ditinjau, latar putih, garis tipis, serta teks grafik dan ekspor mengikuti satu bahasa pilihan. Filter departemen tersedia; preset 9 JRE / 7 UNILAND dan seluruh label periode tetap ada. Copy PNG resolusi tinggi langsung; unduhan PNG/SVG, variabel dan skala Y tersedia lewat kontrol ringkas. Input belum tersimpan tidak masuk grafik.
 
-Halaman awal **Energy Record** memakai latar gelap penuh, logo Midea putih yang diberikan, serta adaptasi React Bits Tech Text/Split Text, Gradient ASCII dan Glass Icons. Latar tanpa bingkai menampilkan horizon ASCII biru/putih yang bereaksi pada kursor. Huruf memakai gambar tersimpan dan animasi transform browser; hover hanya mengubah huruf di bawah kursor, lalu pulih saat kursor pergi. Klik **Masuk** untuk membuka satu kartu glass di tengah melalui transisi lingkaran; tombol **Kembali** membalik transisi lingkaran ke welcome. Lattice Loader mengikuti permintaan login yang sebenarnya, lalu memudar ke halaman pengisian. Pilihan bahasa, template kosong, jeda dan reduced motion tetap tersedia, tanpa runtime React atau package browser. Kredit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. Lihat [welcome dan lisensinya](docs/welcome.md).
+Halaman awal **Energy Record** memakai latar gelap penuh, logo Midea putih yang diberikan, serta adaptasi React Bits Tech Text/Split Text, Gradient ASCII dan Glass Icons. Latar tanpa bingkai menampilkan horizon ASCII biru/putih yang bereaksi pada kursor. Engine TechText yang diberikan menampilkan animasi dimensi, seleksi karakter dan gerak spring; gambar huruf disimpan dan berhenti digambar saat diam. Judul mengikuti bahasa, termasuk 能源记录. Klik **Masuk** untuk membuka satu kartu glass di tengah melalui transisi lingkaran; tombol **Kembali** membalik transisi lingkaran ke welcome. Lattice Loader mengikuti permintaan login yang sebenarnya, lalu memudar ke halaman pengisian. Template kosong dan kartu login memakai adaptasi GlassSurface; modal template memiliki animasi buka/tutup serta tombol X dengan label aksesibel. Pilihan bahasa, jeda dan reduced motion tetap tersedia, tanpa runtime React atau package browser. Kredit: Made with ❤️ by gedxxe for Midea JRE Engineering Department. Lihat [welcome dan lisensinya](docs/welcome.md).
 
 **Tabel bulanan** menampilkan bulan/tahun, kolom tanggal lengkap dan nama equipment yang tetap terlihat saat digeser. Rekap gabungan tetap satu total. Pilih **Layar Penuh** atau lipat **Filter** untuk ruang lebih luas. Tabel dan dialog bisa di-scroll; Escape mengembalikan tampilan dahulu sebelum menutupnya. Grafik memakai kurva halus, tooltip bersama dan legend interaktif; nilai tersimpan serta celah data tetap sama.
 

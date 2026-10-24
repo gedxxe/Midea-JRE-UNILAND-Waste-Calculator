@@ -72,7 +72,7 @@
   white-space: nowrap;
   color: inherit;
 }
-.energy-tech-letters {
+.energy-tech-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -80,7 +80,7 @@
   opacity: 0;
   touch-action: pan-y;
 }
-.energy-wordmark[data-ready='true'] .energy-tech-letters {
+.energy-wordmark[data-ready='true'] .energy-tech-canvas {
   opacity: 1;
 }
 .energy-wordmark[data-ready='true'] h1 {
@@ -208,7 +208,7 @@ body[data-welcome='login'] #back-welcome {
 .energy-welcome[data-motion='off'] * {
   animation-play-state: paused;
 }
-.energy-welcome[data-motion='off'] .energy-tech-letters {
+.energy-welcome[data-motion='off'] .energy-tech-canvas {
   opacity: 0;
 }
 .energy-welcome[data-motion='off'] .energy-wordmark h1 {
@@ -317,7 +317,7 @@ body[data-welcome='login'] #back-welcome {
     animation: none !important;
     transition: none !important;
   }
-  .energy-tech-letters {
+  .energy-tech-canvas {
     opacity: 0 !important;
   }
   .energy-wordmark h1 {
@@ -380,25 +380,6 @@ body[data-welcome='login'] #back-welcome {
   }
 }
 
-.energy-tech-glyph {
-  position: absolute;
-  pointer-events: none;
-}
-.energy-tech-glyph canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.energy-letter-outline {
-  visibility: hidden;
-}
-.energy-tech-glyph[data-hover='true'] .energy-letter-outline {
-  visibility: visible;
-}
-.energy-tech-glyph[data-hover='true'] .energy-letter-fill {
-  visibility: hidden;
-}
 .energy-wordmark::before {
   content: '';
   position: absolute;
@@ -411,4 +392,29 @@ body[data-welcome='login'] #back-welcome {
 .energy-template,
 .energy-motion {
   color: #c1cad3;
+}
+
+.energy-language {
+  position: relative;
+}
+.energy-language select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 8px 40px 8px 16px;
+  min-width: 112px;
+}
+.energy-language::after {
+  content: '';
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid #d4d7d9;
+  border-bottom: 1.5px solid #d4d7d9;
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+:lang(zh-CN) .energy-wordmark {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', Arial, sans-serif;
 }

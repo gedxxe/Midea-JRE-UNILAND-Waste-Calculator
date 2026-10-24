@@ -53,6 +53,7 @@ test('blank templates copy and download before login even when the account servi
     if (language === 'en')
       await page.screenshot({ path: info.outputPath('blank-template.png'), fullPage: true });
     await page.locator('[data-close-dialog="raw-template-dialog"]').click();
+    await expect(page.locator('#raw-template-dialog')).toBeHidden();
     await expect(page.locator('#report-workspace')).toBeHidden();
   }
   expect(errors).toEqual([]);
@@ -108,6 +109,7 @@ test('blank template leaves a filled draft and report unchanged and supports man
         .evaluate((el) => el.value.slice(el.selectionStart, el.selectionEnd)),
     ).toBe(formatBlankReadingTemplate('JRE'));
     await page.locator('[data-close-dialog="raw-template-dialog"]').click();
+    await expect(page.locator('#raw-template-dialog')).toBeHidden();
     await expect(page.locator('#report-preview')).toHaveValue(report);
     expect(
       await page
@@ -122,6 +124,7 @@ test('blank template leaves a filled draft and report unchanged and supports man
     formatBlankReadingTemplate('UNILAND'),
   );
   await page.locator('[data-close-dialog="raw-template-dialog"]').click();
+  await expect(page.locator('#raw-template-dialog')).toBeHidden();
   await page.locator('#report-workspace [data-open-raw-template]').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('workspace-template.png') });
   await page.route('**/api/auth', (route) =>

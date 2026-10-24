@@ -17,14 +17,15 @@ README badges are remote Shields.io images with technology logos. They are docum
 
 ## React Bits animation source
 
-The welcome and sign-in screens adapt Tech Text, Split Text, Magnet, Gradient ASCII, Glass Icons and Lattice Loader from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz.
+The welcome and sign-in screens adapt Tech Text, Split Text, Magnet, Gradient ASCII, Glass Icons, GlassSurface and Lattice Loader from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz.
 
 Source locations under src/content/:
 
-- TextAnimations/TechText/TechText.jsx and TextAnimations/SplitText/SplitText.jsx: fixed wordmark sprites, character outline and spring lift, adapted to cached canvas glyph art with native compositor transforms, without React or GSAP.
+- TextAnimations/TechText/TechText.jsx and TextAnimations/SplitText/SplitText.jsx: the supplied TechText metrics introduction, dashed glyph selection, labels, specks, click-kick and drag springs, adapted with cached canvas sprites and native animation frames, without React or GSAP. Split Text informed the earlier character entrance.
 - Animations/Magnet/Magnet.jsx: bounded CTA movement.
 - Backgrounds/GradientASCII/GradientASCII.jsx: WebGL2 shader engine with fixed settings, resolution/frame limits and DOM lifecycle cleanup.
 - Components/GlassIcons/GlassIcons.jsx and GlassIcons.css: layered CSS glass fallback/style; the WebGL refraction renderer is not included.
+- Components/GlassSurface/GlassSurface.jsx and GlassSurface.css: user-supplied SVG displacement, RGB-channel composition, sheen and frosted fallback. Adapted with owned Blob maps under the existing CSP; no backdrop screenshots or separate refraction render loop.
 - Micro/LatticeLoader/LatticeLoader.jsx and LatticeLoader.css: CSS orbit pattern driven by actual sign-in request state.
 
 The adaptations replace React hooks with DOM lifecycle controls, fix application settings, bound motion/rendering and preserve static HTML fallbacks. They are used only as part of this reporting website, not distributed as a standalone component library or port.

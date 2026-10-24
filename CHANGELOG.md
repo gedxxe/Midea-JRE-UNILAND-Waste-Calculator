@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.22-alpha - 2026-10-24
+
+- Match the supplied TechText engine: metrics entrance, dashed character selection, dimension labels, specks, click response and drag springs. Cache glyph artwork and stop settled or hidden rendering; retain strict hover bounds and motion controls.
+- Localize the main title, including 能源记录 in Mandarin, and inset the language chevron on welcome and sign-in.
+- Add the supplied GlassSurface SVG/frosted treatment to the sign-in card and blank-template dialog, with reversible dialog motion and an accessible X close control. Preserve native forms and templates when optional effects fail.
+- No calculation, account, database, saved-data or analytics change; no React runtime or browser dependency.
+
 ## v0.11.21-alpha - 2026-10-23
 
 - Remove the welcome frame and replace full-title canvas repainting with cached letter art and browser-composited spring movement. Hover remains limited to the character under the pointer.
