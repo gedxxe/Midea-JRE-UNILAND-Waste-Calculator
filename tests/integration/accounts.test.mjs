@@ -1227,7 +1227,7 @@ test('read budgets are shared across handlers, owner-scoped and independent of e
 
 test('stale JRE clients cannot remove new meter fields from any electricity period', async () => {
   const actor = await login(await seed());
-  const [daily, after, night] = reportPeriods('JRE');
+  const [daily, after, night] = reportPeriods('JRE', '2026-10-25');
   const workspace = {
     version: 4,
     drafts: { JRE: daily, UNILAND: createDraft('UNILAND') },
