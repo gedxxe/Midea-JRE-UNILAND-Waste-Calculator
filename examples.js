@@ -29,7 +29,7 @@ export function exampleDraft(plant) {
           );
         }, 0);
         draft.rows[i].end[mi] = String(
-          Number(draft.rows[i].start[mi]) + Math.max(50, included + 10),
+          Number(draft.rows[i].start[mi]) + Math.max(50, included + 10) / row.factors[mi],
         );
       }
     });

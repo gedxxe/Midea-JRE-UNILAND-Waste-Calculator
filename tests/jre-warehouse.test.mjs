@@ -1,3 +1,4 @@
+import { exampleDraft } from '../examples.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -187,4 +188,15 @@ test('saved layout5 graph output remains unchanged with no invented Lighting his
   assert.equal(values.w15, 800);
   assert.equal(values.r31, null);
   assert.deepEqual(old, before);
+});
+
+test('the synthetic example converts deduction usage back into cumulative meter units', () => {
+  const draft = exampleDraft('JRE'),
+    result = calculateDraft(draft);
+  assert.equal(result.success, true);
+  assert.equal(result.calculatedRows[25].grossEnergy, 50);
+  assert.equal(result.calculatedRows[25].totalEnergy, 50);
+  assert.equal(result.calculatedRows[31].totalEnergy, 0);
+  assert.ok(result.gapKWh < 0);
+  assert.deepEqual(draft.rows[31], { start: ['0'], end: ['0'], inactive: false });
 });
