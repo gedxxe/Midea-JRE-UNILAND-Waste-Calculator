@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.24-alpha - 2026-10-24
+
+- Blend blank-template fields, download action and native scrollbars with the light/dark glass surface. Use compact desktop selectors, stacked mobile fields and a larger readable preview without the resize grip. Keep the glass frame, heading and actions in place when the body scrolls.
+- Preserve keyboard focus, native scrolling, modal motion and exact template/copy/download content. No calculation, API, database, authentication or dependency change.
+
 ## v0.11.23-alpha - 2026-10-24
 
 - Autosave incomplete electricity, gas, Water and notes for both plants and all three recording modes. Persist dated working copies as Revision 1 and use their available values in charts and monthly tables without manual Save; missing or invalid values remain gaps.

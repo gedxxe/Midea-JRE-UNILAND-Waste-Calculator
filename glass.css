@@ -52,11 +52,38 @@
     radial-gradient(ellipse at 88% 75%, #c8c7f499, transparent 48%), #edf3f7;
 }
 #raw-template-dialog {
+  --template-field: #ffffff61;
+  --template-field-hover: #ffffff85;
+  --template-line: #718ca14a;
+  --template-ink: #162934;
+  --template-muted: #405c6c;
+  --template-option: #eef4f8;
+  --template-thumb: #466b846b;
+  --template-focus: #007b97;
+  color-scheme: light;
+  width: min(920px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
   border: 1px solid #ffffffa3;
   border-radius: 28px;
-  padding: 26px;
-  color: #162934;
+  padding: 28px;
+  color: var(--template-ink);
   box-shadow: 0 30px 100px #03101d5c;
+}
+#raw-template-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+#raw-template-dialog .dialog-heading,
+#raw-template-dialog .raw-export-actions {
+  flex-shrink: 0;
+}
+#raw-template-dialog .raw-template-body {
+  min-height: 0;
+  overflow: auto;
+  margin: -4px;
+  padding: 4px;
+  overscroll-behavior: contain;
 }
 #raw-template-dialog::backdrop {
   background: #08172870;
@@ -65,44 +92,125 @@
 }
 #raw-template-dialog .dialog-heading {
   gap: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 #raw-template-dialog h2 {
   font-size: 20px;
   letter-spacing: -0.4px;
 }
 #raw-template-dialog p {
-  color: #405c6c;
+  color: var(--template-muted);
 }
-#raw-template-dialog select,
-#raw-template-dialog textarea {
-  background: #ffffffb8;
-  border: 1px solid #ffffff99;
-  border-radius: 12px;
-  color: #14232d;
-  box-shadow: inset 0 1px 2px #1b3f4a08;
+#raw-template-dialog .raw-template-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr);
+  gap: 16px;
+  margin-bottom: 18px;
 }
 #raw-template-dialog label {
+  position: relative;
+  min-width: 0;
+  margin: 0;
   font-size: 13px;
   color: inherit;
 }
+#raw-template-dialog label::after {
+  content: '';
+  position: absolute;
+  right: 18px;
+  bottom: 22px;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+#raw-template-dialog select,
 #raw-template-dialog textarea {
-  padding: 14px;
-  font-size: 13px;
-  height: clamp(130px, 25dvh, 270px);
-  min-height: 130px;
-  max-height: 38dvh;
+  background: var(--template-field);
+  border: 1px solid var(--template-line);
+  border-radius: 14px;
+  color: var(--template-ink);
+  box-shadow: inset 0 1px 0 #ffffff12;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+#raw-template-dialog select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 42px 12px 16px;
+  font-size: 15px;
+  text-overflow: ellipsis;
+}
+#raw-template-dialog option {
+  background: var(--template-option);
+  color: var(--template-ink);
+}
+#raw-template-dialog select:hover {
+  background: var(--template-field-hover);
+}
+#raw-template-dialog select:focus-visible,
+#raw-template-dialog textarea:focus-visible,
+#raw-template-dialog button:focus-visible {
+  outline: 2px solid var(--template-focus);
+  outline-offset: 3px;
+}
+#raw-template-dialog textarea {
+  display: block;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.75;
+  height: clamp(180px, 32dvh, 340px);
+  min-height: 180px;
+  max-height: none;
+  resize: none;
+  overscroll-behavior: auto;
+}
+#raw-template-dialog .raw-template-body,
+#raw-template-dialog textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--template-thumb) transparent;
+}
+#raw-template-dialog .raw-template-body::-webkit-scrollbar,
+#raw-template-dialog textarea::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+#raw-template-dialog .raw-template-body::-webkit-scrollbar-track,
+#raw-template-dialog textarea::-webkit-scrollbar-track,
+#raw-template-dialog .raw-template-body::-webkit-scrollbar-corner,
+#raw-template-dialog textarea::-webkit-scrollbar-corner {
+  background: transparent;
+}
+#raw-template-dialog .raw-template-body::-webkit-scrollbar-thumb,
+#raw-template-dialog textarea::-webkit-scrollbar-thumb {
+  background: var(--template-thumb);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+}
+#raw-template-dialog .raw-template-body::-webkit-scrollbar-button,
+#raw-template-dialog textarea::-webkit-scrollbar-button {
+  display: none;
 }
 #raw-template-dialog .raw-export-actions {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 #raw-template-dialog .button {
-  border-radius: 12px;
-  min-height: 46px;
+  border-radius: 14px;
+  min-height: 48px;
 }
 #raw-template-dialog .secondary {
-  background: #ffffff80;
-  border-color: #ffffffb3;
+  background: var(--template-field);
+  border-color: var(--template-line);
+  color: var(--template-ink);
+}
+#raw-template-dialog .secondary:hover {
+  background: var(--template-field-hover);
 }
 .dialog-icon-close {
   width: 40px;
@@ -128,12 +236,17 @@
   outline-offset: 3px;
 }
 body[data-welcome='hero'] #raw-template-dialog {
-  --glass-tint: #0a233bd9;
-  color: #eff7ff;
+  --glass-tint: #0a233bed;
+  --template-field: #ffffff0a;
+  --template-field-hover: #ffffff14;
+  --template-line: #c7eaff38;
+  --template-ink: #eff7ff;
+  --template-muted: #ccdfeb;
+  --template-option: #162e43;
+  --template-thumb: #c2e1f366;
+  --template-focus: #8fdae5;
+  color-scheme: dark;
   border-color: #b9daed55;
-}
-body[data-welcome='hero'] #raw-template-dialog p {
-  color: #ccdfeb;
 }
 body[data-welcome='hero'] #raw-template-dialog::after {
   background: linear-gradient(135deg, #ffffff26, transparent 45%, #ffffff0d);
@@ -141,10 +254,6 @@ body[data-welcome='hero'] #raw-template-dialog::after {
 body[data-welcome='hero'] #raw-template-dialog .dialog-icon-close {
   border-color: #c7eaff40;
   background: #ffffff12;
-}
-body[data-welcome='hero'] #raw-template-dialog .secondary {
-  background: #ffffffdc;
-  color: #204050;
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .energy-glass::before {
@@ -161,6 +270,13 @@ body[data-welcome='hero'] #raw-template-dialog .secondary {
   }
   #raw-template-dialog h2 {
     font-size: 18px;
+  }
+  #raw-template-dialog .raw-template-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  #raw-template-dialog select {
+    font-size: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -206,5 +322,33 @@ body[data-welcome='hero'] #raw-template-dialog .secondary {
 @media (prefers-reduced-motion: reduce) {
   #raw-template-dialog::backdrop {
     animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #raw-template-dialog select,
+  #raw-template-dialog textarea {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  #raw-template-dialog {
+    color-scheme: light dark;
+    color: CanvasText;
+    background: Canvas !important;
+    border-color: CanvasText;
+  }
+  #raw-template-dialog::before,
+  #raw-template-dialog::after,
+  #raw-template-dialog label::after {
+    display: none;
+  }
+  #raw-template-dialog .raw-template-body,
+  #raw-template-dialog textarea {
+    scrollbar-color: auto;
+  }
+  #raw-template-dialog select {
+    appearance: auto;
+    -webkit-appearance: auto;
   }
 }
