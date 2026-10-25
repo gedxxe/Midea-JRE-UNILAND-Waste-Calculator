@@ -1,6 +1,7 @@
 import { PLANT_SCHEMAS } from './schema.js';
+import { emptyMeterRow } from './meter-activation.js';
 
-export const JRE_METER_LAYOUT = 5;
+export const JRE_METER_LAYOUT = 6;
 export const UNILAND_METER_LAYOUT = 4;
 export const LEGACY_JRE_FACTORS = {
   3: [1, 90, 90, 40, 40],
@@ -99,7 +100,7 @@ export function migrateMeterLayout(input) {
   if (input?.plantKey !== 'JRE') return input;
   if (
     input.meterLayout !== undefined &&
-    ![1, 2, 3, 4, JRE_METER_LAYOUT].includes(input.meterLayout)
+    ![1, 2, 3, 4, 5, JRE_METER_LAYOUT].includes(input.meterLayout)
   )
     throw new Error('Unknown meter layout.');
   if (input.meterLayout === JRE_METER_LAYOUT) return input;
@@ -115,15 +116,17 @@ export function migrateMeterLayout(input) {
     );
   const layout =
     input.meterLayout ||
-    (matches({}, 30)
-      ? 4
-      : matches(JRE_LAYOUT3_FACTORS, 30)
-        ? 3
-        : matches(JRE_LAYOUT2_FACTORS)
-          ? 2
-          : matches(LEGACY_JRE_FACTORS)
-            ? 1
-            : null);
+    (matches({}, 31)
+      ? 5
+      : matches({}, 30)
+        ? 4
+        : matches(JRE_LAYOUT3_FACTORS, 30)
+          ? 3
+          : matches(JRE_LAYOUT2_FACTORS)
+            ? 2
+            : matches(LEGACY_JRE_FACTORS)
+              ? 1
+              : null);
   if (!layout) return input;
   if (
     !matches(
@@ -134,7 +137,7 @@ export function migrateMeterLayout(input) {
           : layout === 3
             ? JRE_LAYOUT3_FACTORS
             : {},
-      layout >= 3 ? 30 : 29,
+      layout >= 5 ? 31 : layout >= 3 ? 30 : 29,
     )
   )
     throw Error('Invalid legacy meter layout.');
@@ -149,7 +152,8 @@ export function migrateMeterLayout(input) {
     if (layout < 4) next.rows[15][side].push('');
   }
   if (layout < 3) next.rows.push({ start: [''], end: [''], inactive: false });
-  next.rows.push({ start: [''], end: [''], inactive: false });
+  if (layout < 5) next.rows.push({ start: [''], end: [''], inactive: false });
+  next.rows.push(emptyMeterRow(PLANT_SCHEMAS.JRE.rows[31], input.startDate, input.endDate));
   next.meterLayout = JRE_METER_LAYOUT;
   if (layout === 1) next.importIssues = moveLegacyIssues(input.importIssues);
   return next;

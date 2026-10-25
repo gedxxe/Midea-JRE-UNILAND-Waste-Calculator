@@ -16,6 +16,7 @@ export const metricLabels = {
   'IQC & OQC': ['IQC & OQC', '进料与出货检验', 'IQC & OQC'],
   'New Laboratory': ['New lab', '新实验室', 'Lab Baru'],
   Warehouse: ['Warehouse', '仓库', 'Warehouse'],
+  'Warehouse Lighting': ['Warehouse lighting', '仓库照明', 'Lampu Warehouse'],
   'Charging Forklift': ['Forklift charging · B3', '叉车充电 · 3号楼', 'Charging forklift · B3'],
   Office: ['Office', '办公室', 'Kantor'],
   Total: ['Main meter', '总电表', 'Meter Utama'],

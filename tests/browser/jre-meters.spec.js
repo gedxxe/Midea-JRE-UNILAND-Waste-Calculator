@@ -236,7 +236,7 @@ test('layout 4 adds a blank direct Forklift meter and shares only exact observat
   await expect(cell(page, 30, 'end')).toHaveValue('225');
   await page.locator('#save-draft').click();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-  expect(state.workspace.drafts.JRE.meterLayout).toBe(5);
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
   expect(state.workspace.nightShifts.JRE.rows[30].start).toEqual(['210']);
   await page.reload();
   await page.locator('#search-meter').fill('Charging Forklift Building 2');
@@ -274,8 +274,8 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await page.locator('#save-draft').click();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   for (const key of ['drafts', 'workingHours', 'nightShifts']) {
-    expect(state.workspace[key].JRE.meterLayout).toBe(5);
-    expect(state.workspace[key].JRE.rows).toHaveLength(31);
+    expect(state.workspace[key].JRE.meterLayout).toBe(6);
+    expect(state.workspace[key].JRE.rows).toHaveLength(32);
   }
   await page.reload();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
@@ -423,7 +423,7 @@ test('layout 3 Piping upgrades with a blank third meter and old imports preserve
   await cell(page, 15, 'end', 2).fill('2000');
   await page.locator('#save-draft').click();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-  expect(state.workspace.drafts.JRE.meterLayout).toBe(5);
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
   await page.reload();
   await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
   const old = layout3JreDraft(reportPeriods()[0]);

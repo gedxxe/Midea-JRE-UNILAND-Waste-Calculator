@@ -99,3 +99,7 @@ Regression checks cover a reproduced 98-pixel table at 1280×600, actual wheel c
 ## v0.11.23 autosave
 
 Latest account-confirmed partial period snapshots now feed monitoring, with missing values kept as gaps. Manual checkpoints remain immutable and identical saves do not add revisions. See [autosave design, limits and migration 007](autosave.md). Production needs an updated private backup and explicit approval before migration.
+
+## JRE Warehouse Lighting (v0.11.26-alpha)
+
+New output keeps Warehouse in worksheet metric w15 as net consumption after Lighting, and adds separate Lighting metric r31 (kWh) under Logistics. Labels follow the selected interface language. Existing nine JRE presets, worksheet width and custom selections stay unchanged; Lighting is selectable and available in the monthly matrix. Extraction uses saved output only: older records without Lighting remain null for r31 and retain their original Warehouse value. Newly calculated pre-cutoff reports contain the confirmed zero; old records are not backfilled.

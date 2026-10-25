@@ -102,7 +102,9 @@ test('date and time changes never relabel readings and Undo origin supports cons
   assert.equal(tomorrow.startDate, '2026-09-17');
   assert.equal(tomorrow.startTime, '08:00');
   assert.equal(tomorrow.endTime, '17:00');
-  assert.ok(tomorrow.rows.every((r) => [...r.start, ...r.end].every((v) => v === '')));
+  assert.ok(
+    tomorrow.rows.every((r, i) => [...r.start, ...r.end].every((v) => v === (i === 31 ? '0' : ''))),
+  );
   assert.deepEqual(changeWorkPeriod(d, '2026-09-17', '08:00', '17:00').rows, tomorrow.rows);
 });
 

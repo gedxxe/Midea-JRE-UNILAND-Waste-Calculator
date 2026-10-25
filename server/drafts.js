@@ -2,6 +2,7 @@ import { endpoint, appOrigin, checkOrigin, readBody, send, fail } from './http.j
 import { getPool, transaction } from './db.js';
 import { requireUser, lockUser, limit } from './auth.js';
 import { restoreWorkspace } from '../storage.js';
+import { JRE_METER_LAYOUT } from '../meter-layout.js';
 import {
   workspaceDrafts,
   restorePeriodDraft,
@@ -73,6 +74,14 @@ export function draftsHandler(database = getPool, env = process.env) {
     if (body.periods !== undefined) {
       if (!modern || !Array.isArray(body.periods) || body.periods.length > PERIOD_BATCH_SIZE)
         fail(400, 'INVALID_DRAFT');
+      // Queued periods may belong to dates outside the active workspace.
+      // Check their original layout before migration can hide an omitted meter.
+      if (
+        body.periods.some(
+          (draft) => draft?.plantKey === 'JRE' && draft.meterLayout !== JRE_METER_LAYOUT,
+        )
+      )
+        fail(409, 'DRAFT_FORMAT_CHANGED');
       try {
         periods = body.periods.map(restorePeriodDraft);
       } catch {

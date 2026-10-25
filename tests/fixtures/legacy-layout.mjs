@@ -31,7 +31,7 @@ export function legacyText(draft, side) {
     draft.rows
       .map((row, i) => {
         const factors =
-          (draft.meterLayout === 4
+          (draft.meterLayout >= 4
             ? {}
             : draft.meterLayout === 3
               ? JRE_LAYOUT3_FACTORS
@@ -84,4 +84,11 @@ export function fillNewJreMeters(input) {
     (Number(scaledReading(next.rows[3].end[5]) - scaledReading(next.rows[3].start[5])) * 40) / 1e6,
   );
   return next;
+}
+
+export function layout5JreDraft(input) {
+  const old = structuredClone(input);
+  old.rows = old.rows.slice(0, 31);
+  old.meterLayout = 5;
+  return old;
 }

@@ -57,7 +57,7 @@ test('layout 4 upgrades add only a blank Forklift pair, retaining incomplete uti
     workspace[collection].JRE = old;
     const original = structuredClone(old),
       next = migrateMeterLayout(old);
-    assert.equal(next.meterLayout, 5);
+    assert.equal(next.meterLayout, 6);
     assert.deepEqual(next.rows.slice(0, 30), old.rows);
     assert.deepEqual(next.rows[30], { start: [''], end: [''], inactive: false });
     assert.deepEqual(next.water, old.water);
@@ -90,19 +90,19 @@ test('old complete JRE raw text may omit Forklift but never any other layout-4 r
     );
     assert.deepEqual(parsed.values[30], ['']);
     assert.deepEqual(parsed.suppliedMeters[30], [false]);
-    assert.deepEqual(parsed.omittedRows, [30]);
+    assert.deepEqual(parsed.omittedRows, [30, 31]);
     assert.equal(
       parseReading(text.replace(/^30\. Area Repair Injection Molding:.*$/m, ''), 'JRE').success,
       false,
     );
     const raw = exportRawReading(draft, side);
-    assert.match(raw.text, /31\. Charging Forklift Building 2: 10\d\d$/);
+    assert.match(raw.text, /31\. Charging Forklift Building 2: 10\d\d\n/);
     assert.deepEqual(
       parseReading(raw.text, 'JRE').values,
       draft.rows.map((row) => row[side]),
     );
   }
-  assert.match(formatBlankReadingTemplate('JRE'), /31\. Charging Forklift Building 2: ____$/);
+  assert.match(formatBlankReadingTemplate('JRE'), /31\. Charging Forklift Building 2: ____\n/);
   const next = changeDraftPeriod(draft, draft.endDate, '2026-09-18');
   assert.deepEqual(next.rows[30].start, draft.rows[30].end);
   assert.deepEqual(next.rows[30].end, ['']);

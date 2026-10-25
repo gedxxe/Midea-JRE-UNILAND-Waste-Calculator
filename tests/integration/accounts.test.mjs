@@ -1,5 +1,10 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
-import { layout2Draft, layout3JreDraft, layout4JreDraft } from '../fixtures/legacy-layout.mjs';
+import {
+  layout2Draft,
+  layout3JreDraft,
+  layout4JreDraft,
+  layout5JreDraft,
+} from '../fixtures/legacy-layout.mjs';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { selectReport } from '../../report-options.js';
 import { shareElectricityEdits } from '../../observations.js';
@@ -1233,7 +1238,7 @@ test('stale JRE clients cannot remove new meter fields from any electricity peri
   const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
   assert.equal(saved.status, 200);
   for (const collection of ['drafts', 'workingHours', 'nightShifts'])
-    for (const legacy of [layout2Draft, layout3JreDraft, layout4JreDraft]) {
+    for (const legacy of [layout2Draft, layout3JreDraft, layout4JreDraft, layout5JreDraft]) {
       const old = structuredClone(workspace);
       old[collection].JRE = legacy(old[collection].JRE);
       const rejected = await call('/api/drafts', {
@@ -1265,7 +1270,7 @@ test('JRE report API stores raw Piping meter 3 while recalculating net Window an
     );
     assert.equal(loaded.status, 200);
     const saved = loaded.value.snapshot;
-    assert.equal(saved.draft.meterLayout, 5);
+    assert.equal(saved.draft.meterLayout, 6);
     assert.deepEqual(saved.draft.rows[15], draft.rows[15]);
     assert.match(
       saved.output.reportText,
@@ -1707,4 +1712,78 @@ test('manual checkpoints after an active-draft tombstone require recreation inst
   });
   assert.equal(report.status, 201);
   assert.equal(report.value.revision, 1);
+});
+
+test('JRE Warehouse Lighting API uses the report-date cutoff, recalculates net usage and preserves raw history', async () => {
+  const actor = await login(await seed());
+  for (const date of ['2026-10-24', '2026-10-25'])
+    for (const [i, draft] of reportPeriods('JRE', date).entries()) {
+      draft.rows[25].start = [['1000', '1000', '1008'][i]];
+      draft.rows[25].end = [['1020', '1008', '1020'][i]];
+      draft.rows[31].start = [date === '2026-10-24' ? '0' : ['10', '10', '11.5'][i]];
+      draft.rows[31].end = [
+        date === '2026-10-24' ? (i === 1 ? '0' : '10') : ['14', '11.5', '14'][i],
+      ];
+      const response = await call('/api/reports', { actor, body: { draft, totalEnergy: 999999 } });
+      assert.equal(response.status, 201);
+      const kind = draft.periodKind || 'daily';
+      const saved = (
+        await call('/api/reports?id=' + response.value.id + '&kind=' + kind, { actor })
+      ).value.snapshot;
+      const light = date === '2026-10-24' ? 0 : [160, 60, 100][i],
+        net = [800, 320, 480][i] - light;
+      assert.deepEqual(saved.draft.rows[31], draft.rows[31]);
+      assert.match(
+        saved.output.reportText,
+        new RegExp('32\\. Warehouse Lighting: ' + (light ? light.toFixed(2) : '0') + ' kWh'),
+      );
+      assert.match(
+        saved.output.reportText,
+        new RegExp('26\\. Warehouse Area: ' + net.toFixed(2) + ' kWh'),
+      );
+      const graphs = await call(
+        '/api/graphs?plant=JRE&start=' + date + '&end=' + date + '&kind=' + kind,
+        { actor },
+      );
+      assert.equal(graphs.status, 200);
+      assert.equal(graphs.value.records[0].values.r31, light);
+      assert.equal(graphs.value.records[0].values.w15, net);
+    }
+});
+
+test('stale queued JRE autosaves cannot erase Warehouse Lighting outside the active period', async () => {
+  const actor = await autosaveActor(),
+    archived = reportPeriods('JRE', '2026-10-25')[0],
+    active = createDraft('JRE', '2026-10-27', '2026-10-28');
+  archived.rows[25].start = ['1000'];
+  archived.rows[25].end = ['1020'];
+  archived.rows[31].start = ['10'];
+  archived.rows[31].end = ['14'];
+  const workspace = autosaveWorkspace(active);
+  const saved = await call('/api/drafts', {
+    actor,
+    body: { workspace, baseVersion: 0, periods: [archived] },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.value.records.length, 1);
+  const record = saved.value.records[0],
+    before = (await call('/api/reports?id=' + record.id, { actor })).value;
+  assert.deepEqual(before.snapshot.draft.rows[31], archived.rows[31]);
+  const blocked = await call('/api/drafts', {
+    actor,
+    body: {
+      workspace,
+      baseVersion: saved.value.version,
+      periods: [layout5JreDraft(archived)],
+    },
+  });
+  assert.equal(blocked.status, 409);
+  assert.equal(blocked.value.error, 'DRAFT_FORMAT_CHANGED');
+  const after = await call('/api/reports?id=' + record.id, { actor });
+  assert.deepEqual(after.value.snapshot, before.snapshot);
+  assert.equal((await call('/api/drafts', { actor })).value.version, saved.value.version);
+  const graph = await call('/api/graphs?plant=JRE&start=2026-10-25&end=2026-10-25', { actor });
+  assert.equal(graph.status, 200);
+  assert.equal(graph.value.records[0].values.r31, 160);
+  assert.equal(graph.value.records[0].values.w15, 640);
 });

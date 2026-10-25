@@ -21,7 +21,7 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
       },
     }),
   ).JRE;
-  assert.equal(current.meterLayout, 5);
+  assert.equal(current.meterLayout, 6);
   for (const side of ['start', 'end']) {
     assert.deepEqual(current.rows[3][side], [...legacy.rows[3][side], legacy.rows[25][side][2]]);
     assert.deepEqual(current.rows[15][side], [
@@ -32,12 +32,13 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
     assert.deepEqual(current.rows[25][side], [legacy.rows[25][side][0]]);
     assert.deepEqual(
       current.rows
+        .slice(0, 31)
         .flatMap((r) => r[side])
         .filter(Boolean)
         .sort(),
       legacy.rows.flatMap((r) => r[side]).sort(),
     );
-    assert.equal(current.rows.flatMap((r) => r[side]).length, 61);
+    assert.equal(current.rows.flatMap((r) => r[side]).length, 62);
   }
   assert.deepEqual(legacy, before);
   assert.deepEqual(migrateMeterLayout(current), current);

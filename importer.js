@@ -1,5 +1,6 @@
 import { validTime } from './reading-period.js';
 import { PLANT_SCHEMAS } from './schema.js';
+import { beforeMeterReporting } from './meter-activation.js';
 import { normalizeName, decimalText, validDate } from './numbers.js';
 import {
   LEGACY_JRE_FACTORS,
@@ -173,6 +174,10 @@ export function parseReading(text, plantKey) {
   });
   const success = !issues.some((i) => i.level === 'ERROR');
   if (success) {
+    schema.rows.forEach((row, ri) => {
+      if (!seen.has(ri) && beforeMeterReporting(row, dates[0]))
+        values[ri] = row.factors.map(() => '0');
+    });
     if (legacy) {
       values = moveLegacyValues(values);
       suppliedMeters = moveLegacyValues(suppliedMeters);

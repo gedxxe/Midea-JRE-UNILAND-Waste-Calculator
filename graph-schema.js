@@ -87,7 +87,7 @@ export const GRAPH_METRICS = Object.fromEntries(
         metrics.push({
           key: 'r' + (row.legacyIndex ?? i),
           label: row.name,
-          department: 'other',
+          department: plant === 'JRE' && row.name === 'Warehouse Lighting' ? 'logistic' : 'other',
           unit: 'kWh',
         });
     });

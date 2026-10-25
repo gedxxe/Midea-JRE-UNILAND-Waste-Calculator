@@ -311,7 +311,9 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
           next.importIssues.push(structuredClone(issue));
       }
       next.rows.forEach((row, i) => {
-        row[side] = [...source.draft.rows[i][source.side]];
+        row[side] = source.draft.rows[i][source.side].map(
+          (value, mi) => value || (!source.draft[source.side + 'Date'] ? row[side][mi] : ''),
+        );
       });
       next.gas?.entries.forEach((entry, i) => {
         const old = source.draft.gas?.entries[i];

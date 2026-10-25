@@ -23,13 +23,17 @@ test('period changes carry only matching dates for both factories, without mutat
     const next = changeDraftPeriod(d, '2026-10-04', '2026-10-05');
     next.rows.forEach((r, i) => {
       assert.deepEqual(r.start, d.rows[i].end);
-      assert.ok(r.end.every((v) => v === ''));
+      assert.ok(r.end.every((v) => v === (plant === 'JRE' && i === 31 ? '0' : '')));
       assert.equal(r.inactive, false);
     });
     assert.ok(next.utilities.every((u) => u.value === '' && u.note === ''));
     assert.deepEqual(d, before);
     const gap = changeDraftPeriod(d, '2026-10-05', '2026-10-06');
-    assert.ok(gap.rows.every((r) => [...r.start, ...r.end].every((v) => v === '')));
+    assert.ok(
+      gap.rows.every((r, i) =>
+        [...r.start, ...r.end].every((v) => v === (plant === 'JRE' && i === 31 ? '0' : '')),
+      ),
+    );
     const drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND'), [plant]: next };
     assert.deepEqual(restoreDrafts(JSON.stringify({ version: 4, drafts }))[plant].rows, next.rows);
   }
@@ -47,7 +51,7 @@ test('either date-edit order retains the matching endpoint, and restoring the or
       next.rows.map((r) => r.start),
       d.rows.map((r) => r.end),
     );
-    assert.ok(next.rows.every((r) => r.end.every((v) => v === '')));
+    assert.ok(next.rows.every((r, i) => r.end.every((v) => v === (i === 31 ? '0' : ''))));
     assert.deepEqual(changeDraftPeriod(next, d.startDate, d.endDate, d), d);
   }
   assert.deepEqual(changeDraftPeriod(d, d.startDate, d.endDate), d);
