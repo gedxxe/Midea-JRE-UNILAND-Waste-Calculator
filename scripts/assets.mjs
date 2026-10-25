@@ -25,6 +25,7 @@ export const PUBLIC_FILES = [
   'ui/navigation.js',
   'schema.js',
   'meter-layout.js',
+  'meter-activation.js',
   'water.js',
   'additional-readings.js',
   'ui/additional-readings.js',

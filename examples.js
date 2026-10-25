@@ -1,10 +1,15 @@
 import { createDraft } from './engine.js';
 import { PLANT_SCHEMAS } from './schema.js';
+import { beforeMeterReporting } from './meter-activation.js';
 
 export function exampleDraft(plant) {
   const draft = createDraft(plant, '2026-09-16', '2026-09-17');
   draft.rows.forEach((input, ri) => {
     PLANT_SCHEMAS[plant].rows[ri].factors.forEach((factor, mi) => {
+      if (beforeMeterReporting(PLANT_SCHEMAS[plant].rows[ri], draft.startDate)) {
+        input.start[mi] = input.end[mi] = '0';
+        return;
+      }
       input.start[mi] = String(1000 + ri * 100 + mi * 10);
       input.end[mi] = String(1000 + ri * 100 + mi * 10 + (factor >= 40 ? 0.5 : 10));
     });
@@ -24,7 +29,7 @@ export function exampleDraft(plant) {
           );
         }, 0);
         draft.rows[i].end[mi] = String(
-          Number(draft.rows[i].start[mi]) + Math.max(50, included + 10),
+          Number(draft.rows[i].start[mi]) + Math.max(50, included + 10) / row.factors[mi],
         );
       }
     });

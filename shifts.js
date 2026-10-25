@@ -12,7 +12,9 @@ const samePoint = (a, side, b, key) =>
   a[side + 'Time'] === b[key + 'Time'];
 function copyPoint(target, side, source, key) {
   target.rows.forEach((row, i) => {
-    row[side] = [...source.rows[i][key]];
+    row[side] = source.rows[i][key].map(
+      (value, mi) => value || (!source[key + 'Date'] ? row[side][mi] : ''),
+    );
   });
   if (source.additionalReadings || target.additionalReadings) {
     target.additionalReadings ??= emptyAdditionalReadings();

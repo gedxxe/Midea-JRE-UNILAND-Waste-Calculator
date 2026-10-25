@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.26-alpha - 2026-10-25
+
+- Add JRE Warehouse Lighting as row 32 with ratio x40. Warehouse Area reports its gross x40 usage minus Lighting usage; keep both separate and counted once in sub-meter totals, all three modes, worksheets and new graphs.
+- Use zero Lighting consumption for report-start dates before 25 October 2026, including 24-to-25 periods. Preserve actual October 25 readings for the following report; no proration or historical output rewrite.
+- Upgrade editable JRE layouts 1–5 to layout 6 (32 rows, 62 meters), preserve raw fields and exact timestamps, and keep old text imports compatible. Only new raw slots dated before the cutoff default to zero; active readings stay blank. Ignore these policy defaults when detecting an empty autosave period. Reject old-layout queued autosaves before they can overwrite newer archived meter fields. Export/template and graph r31 support are included. Correct the report-mode help to match the existing per-period utility workflow. Correct synthetic example generation for deductions on ratio meters. No SQL migration or dependency change.
+
 ## v0.11.25-alpha - 2026-10-25
 
 - Keep the title area blank before TechText starts in all three languages. Load welcome effects independently; retain a bounded static fallback for a failed/stalled title effect and native text for reduced motion or JavaScript disabled.

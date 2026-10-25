@@ -1,6 +1,8 @@
 import { periodKind } from './reading-period.js';
 import { validDate, dayDiff, shiftDate } from './numbers.js';
 import { createDraft } from './engine.js';
+import { PLANT_SCHEMAS } from './schema.js';
+import { beforeMeterReporting } from './meter-activation.js';
 import { restoreDrafts, sameWorkspace } from './storage.js';
 
 export const AUTOSAVE_LAYOUT = 1;
@@ -33,7 +35,20 @@ export function hasEnteredData(draft) {
   const entered = (value) => typeof value === 'string' && value.trim() !== '';
   return Boolean(
     draft &&
-    (draft.rows?.some((row) => row.inactive || [...row.start, ...row.end].some(entered)) ||
+    (draft.rows?.some(
+      (row, ri) =>
+        row.inactive ||
+        ['start', 'end'].some((side) =>
+          row[side].some(
+            (value) =>
+              entered(value) &&
+              !(
+                value === '0' &&
+                beforeMeterReporting(PLANT_SCHEMAS[draft.plantKey]?.rows[ri], draft[side + 'Date'])
+              ),
+          ),
+        ),
+    ) ||
       draft.utilities?.some((item) => entered(item.value) || entered(item.note)) ||
       [draft.water?.start, draft.water?.end].some(entered) ||
       draft.additionalReadings?.some((item) => entered(item.start) || entered(item.end)) ||

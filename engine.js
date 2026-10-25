@@ -2,6 +2,7 @@ import { UTILITY_LAYOUT } from './utility-periods.js';
 import { isWorkingHours, periodKind, workPeriodError, workPeriodTitle } from './reading-period.js';
 import { createGasDraft, calculateGas, gasCalibration, gasUsageText } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
+import { beforeMeterReporting, emptyMeterRow } from './meter-activation.js';
 import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
 import { calculateAdditionalReadings } from './additional-readings.js';
@@ -25,11 +26,7 @@ export function createDraft(plantKey, startDate = '', endDate = '') {
     plantKey,
     startDate,
     endDate,
-    rows: PLANT_SCHEMAS[plantKey].rows.map((row) => ({
-      start: row.factors.map(() => ''),
-      end: row.factors.map(() => ''),
-      inactive: false,
-    })),
+    rows: PLANT_SCHEMAS[plantKey].rows.map((row) => emptyMeterRow(row, startDate, endDate)),
     utilities: UTILITIES[plantKey].map(() => ({ value: '', note: '' })),
   };
 }
@@ -109,6 +106,7 @@ export function calculateDraft(draft) {
     const meters = [];
     let missing = false;
     let energyScaled = 0n;
+    const beforeReporting = beforeMeterReporting(row, draft.startDate);
     if (
       !input ||
       input.start?.length !== row.factors.length ||
@@ -130,6 +128,23 @@ export function calculateDraft(draft) {
       const label = `${row.name}, meter ${mi + 1}`;
       const meter = { index: mi + 1, start, end, factor, energy: null };
       meters.push(meter);
+      if (beforeReporting) {
+        if ([start, end].some((value) => value && value !== '-' && scaledReading(value) === null)) {
+          missing = true;
+          issue(
+            issues,
+            'INVALID_READING',
+            label + ': use valid nonnegative readings.',
+            ri,
+            mi,
+            'ERROR',
+          );
+        } else {
+          meter.energy = 0;
+          scaledMeters.set(row.name + ':' + mi, 0n);
+        }
+        return;
+      }
       if (!start || !end) {
         missing = true;
         issue(
@@ -201,7 +216,12 @@ export function calculateDraft(draft) {
       meter.diff = diff;
     });
     if (!missing) scaledEnergy.set(row.name, energyScaled);
-    return { ...row, meters, missing, totalEnergy: missing ? null : Number(energyScaled) / 1e8 };
+    return {
+      ...row,
+      meters,
+      missing,
+      totalEnergy: missing ? null : Number(energyScaled) / 1e8,
+    };
   });
 
   // Subtract included branch usage before rounding, reporting or adding sub-meter totals.

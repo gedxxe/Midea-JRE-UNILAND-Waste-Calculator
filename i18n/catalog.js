@@ -59,6 +59,11 @@ export const catalog = {
     '填写原始读数。扣除 {meters} 的用量。',
     'Isi reading asli. Pemakaian dikurangi {meters}.',
   ],
+  meterReportFromHint: [
+    'Usage is 0 for report dates before {date}.',
+    '{date}之前的报表用量为0。',
+    'Pemakaian 0 untuk tanggal laporan sebelum {date}.',
+  ],
   netMeterUsage: ['Net usage', '净用量', 'Pemakaian bersih'],
   netMeterUsageHint: [
     'Enter original readings. Meter {meter} usage excludes {meters}.',
@@ -422,7 +427,7 @@ export const catalog = {
     'Reading berhasil diimpor ke tabel.',
   ],
   importedLegacyJre: [
-    'Imported. Check Vacuum Box and Area Repair readings before saving a report.',
+    'Imported. Check missing meter readings before saving a report.',
     '导入完成。保存报告前请检查 Vacuum Box 与 Area Repair 读数。',
     'Impor selesai. Periksa reading Vacuum Box dan Area Repair sebelum menyimpan laporan.',
   ],

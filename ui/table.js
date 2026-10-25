@@ -57,6 +57,8 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
                 }) + (row.floorNetAtZero ? ' ' + t('netZeroFloorHint') : ''),
               ),
             );
+          if (row.reportFrom)
+            equipment.append(node('small', t('meterReportFromHint', { date: row.reportFrom })));
           if (row.allowInactive) {
             const label = node('label', undefined, 'check-label');
             const check = node('input');

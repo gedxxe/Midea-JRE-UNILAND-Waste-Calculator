@@ -112,9 +112,9 @@ export const workingHoursMessages = {
   reportPeriods: ['Report contents', '报告内容', 'Isi laporan'],
   allReportPeriods: ['24 HOURS + both shifts', '24小时 + 两个班次', '24 HOURS + kedua shift'],
   reportOptionsHint: [
-    'Raw readings can be copied independently. Save and Excel row use the period being edited; gas and Water appear once under 24 HOURS.',
-    '原始读数可单独复制。保存和Excel行采用当前编辑时段；燃气与水仅在24小时部分出现一次。',
-    'Data raw bisa disalin terpisah. Save dan baris Excel memakai periode yang sedang diisi; gas dan Water muncul sekali pada bagian 24 HOURS.',
+    'Raw readings can be copied independently. Save and Excel row use the edited period; gas and Water follow each selected period.',
+    '原始读数可单独复制。保存和Excel行采用当前编辑时段；各所选时段均包含燃气和水。',
+    'Data raw bisa disalin terpisah. Save dan baris Excel memakai periode yang diisi; gas dan Water mengikuti setiap periode pilihan.',
   ],
   selectionIncomplete: [
     'Complete the readings and dates for the selected report sections. Raw export needs only its selected column.',
