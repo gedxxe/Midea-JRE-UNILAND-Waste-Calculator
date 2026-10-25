@@ -9,6 +9,7 @@ export function createWelcome() {
   const enter = document.getElementById('open-login');
   const back = document.getElementById('back-welcome');
   const pause = document.getElementById('pause-welcome');
+  const wordmark = hero.querySelector('.energy-wordmark');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const language = document.getElementById('language-select');
   const heroLanguage = document.getElementById('welcome-language');
@@ -19,7 +20,8 @@ export function createWelcome() {
     transition,
     transitionTarget,
     circleOrigin,
-    loginGlass;
+    loginGlass,
+    titleTimer;
   let tech,
     magnet,
     ascii,
@@ -44,42 +46,62 @@ export function createWelcome() {
     magnet?.sync();
     ascii?.sync();
     signin.sync();
+    syncTitleWait();
     if (!moving() || loading || initialized) return;
     loading = true;
     initialized = true;
+    const canInitialize = () =>
+      !user && (stage === 'hero' || (stage === 'transition' && transitionTarget === 'hero'));
+    // Each effect settles independently; a stalled background must not delay the title.
     void Promise.allSettled([
-      import('./welcome-tech.js'),
-      import('./welcome-magnet.js'),
-      import('./welcome-ascii.js'),
-    ])
-      .then((results) => {
-        if (stage !== 'hero' && !(stage === 'transition' && transitionTarget === 'hero')) return;
-        const initialize = (index, build) => {
-          if (results[index].status === 'fulfilled') {
-            try {
-              return build(results[index].value);
-            } catch {
-              /* Optional decoration. */
-            }
-          }
-        };
-        tech ||= initialize(0, (module) =>
-          module.createTechText(
-            hero.querySelector('.energy-wordmark'),
+      import('./welcome-tech.js')
+        .then((module) => {
+          if (!canInitialize() || wordmark.dataset.titleFallback === 'true') return;
+          tech ||= module.createTechText(
+            wordmark,
             hero.querySelector('.energy-tech-canvas'),
             moving,
-          ),
-        );
-        magnet ||= initialize(1, (module) => module.createWelcomeMagnet(enter, moving));
-        ascii ||= initialize(2, (module) =>
-          module.createGradientAscii(hero, hero.querySelector('.energy-ascii-canvas'), moving),
-        );
-      })
-      .finally(() => {
-        loading = false;
-        if (stage === 'hero' && !initialized) syncMotion();
-      });
+          );
+          if (!tech) fallbackTitle();
+        })
+        .catch(() => {
+          if (canInitialize()) fallbackTitle();
+        }),
+      import('./welcome-magnet.js').then((module) => {
+        if (canInitialize()) magnet ||= module.createWelcomeMagnet(enter, moving);
+      }),
+      import('./welcome-ascii.js').then((module) => {
+        if (canInitialize())
+          ascii ||= module.createGradientAscii(
+            hero,
+            hero.querySelector('.energy-ascii-canvas'),
+            moving,
+          );
+      }),
+    ]).finally(() => {
+      loading = false;
+      if (stage === 'hero' && !initialized) syncMotion();
+    });
   }
+  function fallbackTitle() {
+    clearTimeout(titleTimer);
+    titleTimer = undefined;
+    if (wordmark.dataset.ready !== 'true') wordmark.dataset.titleFallback = 'true';
+  }
+  function syncTitleWait() {
+    if (
+      !moving() ||
+      wordmark.dataset.ready === 'true' ||
+      wordmark.dataset.titleFallback === 'true'
+    ) {
+      clearTimeout(titleTimer);
+      titleTimer = undefined;
+    } else if (titleTimer === undefined) {
+      // Optional animation cannot leave a permanently empty title after a stalled import.
+      titleTimer = setTimeout(fallbackTitle, 3000);
+    }
+  }
+
   function stopDecoration() {
     tech?.destroy();
     magnet?.destroy();
@@ -151,6 +173,8 @@ export function createWelcome() {
     hero.inert = true;
     surface.hidden = false;
     surface.inert = true;
+    back.hidden = false;
+    surface.scrollTop = 0;
     surface.classList.add('welcome-revealing');
     loginGlass ||= createLazyGlassSurface(document.querySelector('.account-card'));
     // Back reveals a complete static hero below the shrinking white surface.
@@ -217,6 +241,10 @@ export function createWelcome() {
     dialogOpen = !!document.querySelector('dialog[open]');
     syncMotion();
   }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['open'] });
+  new MutationObserver(syncTitleWait).observe(wordmark, {
+    attributes: true,
+    attributeFilter: ['data-ready'],
+  });
   syncMotion();
   return {
     authActivity: (status) => signin.activity(status),
