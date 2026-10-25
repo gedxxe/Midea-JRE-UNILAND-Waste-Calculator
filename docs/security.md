@@ -65,3 +65,11 @@ Local evidence: npm run verify passed 155 unit tests and the build/format/source
 ## v0.11.23 autosave
 
 Latest account-confirmed partial period snapshots now feed monitoring, with missing values kept as gaps. Manual checkpoints remain immutable and identical saves do not add revisions. See [autosave design, limits and migration 007](autosave.md). Production needs an updated private backup and explicit approval before migration.
+
+## 2026-10-25 welcome timing review
+
+Scope: cold-start title rendering, optional-effect loading, forward/reverse sign-in presentation and late callbacks after authentication. Two UI regressions were reproduced before the fix: visible fallback text before animation readiness, and a Back control whose late layout moved the form. Independent effect completion now avoids holding the title behind a stalled background; a three-second title-import fallback cannot restart the intro after a late response.
+
+Reviewed the unchanged session/auth-version, account-header, password-change and role guards; exact-origin JSON mutations; owner-scoped parameterized draft/graph reads; and private no-store/redacted errors. Presentation callbacks check the current account/stage, do not fetch private records and do not weaken those server checks. The same-origin CSP and public-file allowlist remain unchanged.
+
+Local verification passed the secret/build/format checks and 220 unit tests; 68 welcome/sign-in desktop/mobile cases; and six late-callback, hostile stored-text/SVG and sensitive/encoded static-path cases. Dependency audit returned zero known advisories at review time. The database-backed authorization/injection suite remains a required CI gate using disposable PostgreSQL, never production. No new security issue was reproduced within this scope; this is not an independent penetration test or proof against every attack. Credential rotation, platform-admin MFA and restore readiness still require the owner's operational verification.

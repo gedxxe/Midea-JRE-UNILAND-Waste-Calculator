@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.25-alpha - 2026-10-25
+
+- Keep the title area blank before TechText starts in all three languages. Load welcome effects independently; retain a bounded static fallback for a failed/stalled title effect and native text for reduced motion or JavaScript disabled.
+- Show a pill-shaped Back to welcome button with an arrow from the first circle-reveal frame. Keep its space and the form position stable through forward/reverse transitions; both surfaces remain inert during motion.
+- Add cold-start, delayed-effect and first-frame regressions. Preserve session/password gates, private workspace clearing, CSP and saved data; no dependency or database change.
+
 ## v0.11.24-alpha - 2026-10-24
 
 - Blend blank-template fields, download action and native scrollbars with the light/dark glass surface. Use compact desktop selectors, stacked mobile fields and a larger readable preview without the resize grip. Keep the glass frame, heading and actions in place when the body scrolls.
