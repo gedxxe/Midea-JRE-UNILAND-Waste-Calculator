@@ -266,7 +266,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     periods = queueDepartedPeriods(periods, periodOnly ? periodSequence : previous, workspace);
     if (!periodOnly) periodSequence = null;
     previous = structuredClone(workspace);
-    if (!pending && !periods.length && sameRaw(raw(), lastSynced)) {
+    if (!conflict && !pending && !periods.length && sameRaw(raw(), lastSynced)) {
       dirty = false;
       clearTimeout(timer);
       backup();

@@ -230,3 +230,26 @@ test('an unchanged checkpoint response cannot advance a newly queued period past
   assert.equal(writes[0]?.baseVersion, 1);
   assert.equal(autosave.workspace().pendingPeriods[0]?.rows[0].start[0], '777');
 });
+
+test('reverting to the last local snapshot after a server conflict must not claim it is saved', async (t) => {
+  const { autosave, read, cloud, advanceVersion, recovery } = await harness(t);
+  const original = structuredClone(read());
+  cloud().drafts.JRE.rows[0].end[0] = '999';
+  advanceVersion(2);
+  read().drafts.JRE.rows[0].end[0] = '120';
+  autosave.changed();
+  assert.equal(await autosave.flushAll(), false);
+  read().drafts.JRE.rows[0].end[0] = original.drafts.JRE.rows[0].end[0];
+  autosave.changed();
+  assert.equal(autosave.pending(), true);
+  assert.equal(recovery().tabRecovery.pending, true);
+  assert.notEqual(
+    document.getElementById('save-status').textContent,
+    'All changes saved to your account.',
+  );
+  assert.equal(cloud().drafts.JRE.rows[0].end[0], '999');
+  autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+  assert.equal(await autosave.flushAll(), false);
+  assert.equal(read().drafts.JRE.rows[0].end[0], original.drafts.JRE.rows[0].end[0]);
+  assert.equal(autosave.pending(), true);
+});
