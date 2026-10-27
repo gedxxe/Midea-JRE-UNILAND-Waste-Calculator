@@ -82,8 +82,8 @@ export const PLANT_SCHEMAS = {
       { name: 'Server Room', unit: 'kWh', factors: [1, 1] },
       { name: 'Utility Area', unit: 'kWh', factors: [1000, 40] },
       { name: 'Heater LPG', unit: 'kWh', factors: [40] },
-      { name: 'Area Repair Injection Molding', unit: 'kWh' },
-      { name: 'Charging Forklift Building 2', unit: 'kWh' },
+      { name: 'Area Repair Injection Molding', unit: 'kWh', optionalImport: true },
+      { name: 'Charging Forklift Building 2', unit: 'kWh', optionalImport: true },
       {
         name: 'Warehouse Lighting',
         unit: 'kWh',
@@ -202,7 +202,12 @@ for (const [name, before, legacyIndex] of [
   ['Dryer', 'Machine Stamping', 33],
 ]) {
   const index = PLANT_SCHEMAS.UNILAND.rows.findIndex((row) => row.name === before);
-  PLANT_SCHEMAS.UNILAND.rows.splice(index, 0, { name, unit: 'kWh', legacyIndex });
+  PLANT_SCHEMAS.UNILAND.rows.splice(index, 0, {
+    name,
+    unit: 'kWh',
+    legacyIndex,
+    optionalImport: true,
+  });
 }
 for (const schema of Object.values(PLANT_SCHEMAS)) {
   schema.rows.forEach((row, i) => {

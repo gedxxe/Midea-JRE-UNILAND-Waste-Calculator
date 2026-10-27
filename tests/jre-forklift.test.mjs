@@ -77,7 +77,7 @@ test('layout 4 upgrades add only a blank Forklift pair, retaining incomplete uti
   assert.throws(() => migrateMeterLayout(malformed), /Invalid legacy/);
 });
 
-test('old complete JRE raw text may omit Forklift but never any other layout-4 row', () => {
+test('older JRE text may omit added meters while required original rows stay mandatory', () => {
   const draft = reportPeriods()[0],
     old = layout4JreDraft(draft);
   for (const side of ['start', 'end']) {
@@ -93,7 +93,7 @@ test('old complete JRE raw text may omit Forklift but never any other layout-4 r
     assert.deepEqual(parsed.omittedRows, [30, 31]);
     assert.equal(
       parseReading(text.replace(/^30\. Area Repair Injection Molding:.*$/m, ''), 'JRE').success,
-      false,
+      true,
     );
     const raw = exportRawReading(draft, side);
     assert.match(raw.text, /31\. Charging Forklift Building 2: 10\d\d\n/);

@@ -85,7 +85,7 @@ test('gas observations and temperatures follow endpoints but refills never move 
   assert.deepEqual(longer.gas.entries[3].refills, []);
 });
 
-test('import editor can display partial columns without making missing values exportable or importable', () => {
+test('import editor accepts partial columns without making blank cells exportable or supplied', () => {
   for (const plant of ['JRE', 'UNILAND']) {
     const d = filled(plant);
     assert.equal(formatReadingColumn(d, 'start').text, exportRawReading(d, 'start').text);
@@ -94,6 +94,9 @@ test('import editor can display partial columns without making missing values ex
     assert.ok(result.text.includes('04/10/2026\n\n1. Total: '));
     assert.ok(result.issues.some((i) => i.code === 'EMPTY'));
     assert.equal(exportRawReading(d, 'end').text, '');
-    assert.equal(parseReading(result.text, plant).success, false);
+    const parsed = parseReading(result.text, plant);
+    assert.equal(parsed.success, true);
+    assert.equal(parsed.suppliedMeters[0][0], false);
+    assert.equal(parsed.values[0][0], '');
   }
 });

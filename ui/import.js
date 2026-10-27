@@ -1,24 +1,40 @@
 import { isWorkingHours, observationLabel, validTime } from '../reading-period.js';
 import { formatReadingColumn } from '../raw-export.js';
 import { parseReading } from '../importer.js';
+import { PLANT_SCHEMAS } from '../schema.js';
+import { importFeedback, readingText } from '../i18n/reading-feedback.js';
 import { t } from '../i18n/index.js';
 import { $ } from './dom.js';
 
 export function createImportEditor({ current, apply, toast }) {
-  let texts = {};
-  function render() {
+  let texts = {},
+    lastParsed = null;
+  function refreshLabels() {
     const draft = current();
+    const schema = PLANT_SCHEMAS[draft.plantKey];
+    $('import-format').textContent = readingText('format', {
+      plant: schema.name,
+      rows: schema.rows.length,
+      meters: schema.rows.reduce((n, row) => n + row.factors.length, 0),
+    });
     for (const option of $('import-side').options) {
       const side = option.value;
       option.textContent = `${t(side === 'start' ? 'startReading' : 'endReading')} (${observationLabel(draft, side)})`;
     }
+    if (lastParsed) $('import-feedback').textContent = importFeedback(lastParsed, draft.plantKey);
+  }
+  function render() {
+    refreshLabels();
+    const draft = current();
     const side = $('import-side').value;
+    lastParsed = null;
     $('import-text').value = texts[side] ?? formatReadingColumn(draft, side).text;
     $('import-text').scrollTop = 0;
     $('import-feedback').textContent = '';
   }
   function reset() {
     texts = {};
+    lastParsed = null;
     $('import-text').value = '';
     $('import-feedback').textContent = '';
   }
@@ -30,12 +46,14 @@ export function createImportEditor({ current, apply, toast }) {
   $('import-side').addEventListener('change', render);
   $('import-text').addEventListener('input', () => {
     texts[$('import-side').value] = $('import-text').value;
+    lastParsed = null;
     $('import-feedback').textContent = '';
   });
   $('import-dialog').addEventListener('close', reset);
   $('apply-import').addEventListener('click', () => {
     const parsed = parseReading($('import-text').value, current().plantKey);
-    $('import-feedback').textContent = parsed.issues.map((issue) => issue.message).join('\n');
+    lastParsed = parsed;
+    $('import-feedback').textContent = importFeedback(parsed, current().plantKey);
     if (!parsed.success) return;
     const side = $('import-side').value;
     if (isWorkingHours(current()) && !parsed.time) parsed.time = current()[side + 'Time'];
@@ -55,12 +73,10 @@ export function createImportEditor({ current, apply, toast }) {
     }
     $('import-dialog').close();
     toast(
-      parsed.omittedRows?.length
-        ? t(current().plantKey === 'JRE' ? 'importedLegacyJre' : 'importedOmitted')
-        : parsed.issues.length
-          ? t('importedWarnings')
-          : t('imported'),
+      readingText('imported', { count: parsed.valueCount }) +
+        (parsed.emptyCount ? ' ' + readingText('kept') : '') +
+        (parsed.issues.some((i) => i.level === 'WARNING') ? ' ' + t('importedWarnings') : ''),
     );
   });
-  return { reset };
+  return { reset, refreshLabels };
 }

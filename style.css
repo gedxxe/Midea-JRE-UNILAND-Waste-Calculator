@@ -2522,3 +2522,40 @@ html[data-graph-motion='off'] .graph-view-switch button {
     height: max(240px, calc(100dvh - 200px));
   }
 }
+.result-column:has(.meter-comparison) {
+  position: static;
+}
+.validation-panel:has(.meter-comparison) {
+  max-height: min(480px, 60dvh);
+  font-size: 14px;
+}
+.meter-comparison {
+  margin-block: 12px;
+}
+.meter-comparison > button {
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+.meter-comparison .comparison-values {
+  color: #263f49;
+  font-weight: 600;
+  margin-block: 6px;
+}
+.meter-comparison ul {
+  padding-left: 18px;
+}
+.meter-comparison ul li {
+  margin-block: 5px;
+}
+.meter-comparison .comparison-meter {
+  margin-left: 10px;
+  color: #006d76;
+  border: 1px solid #c2d8d8;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin-block: 3px;
+  font-size: inherit;
+  text-decoration: none;
+  background: #f1f7f6;
+}

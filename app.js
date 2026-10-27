@@ -29,6 +29,7 @@ import { createGuideLauncher } from './ui/guide-launcher.js';
 import { createAccounts } from './ui/accounts.js';
 import { createNavigation } from './ui/navigation.js';
 import { $, node } from './ui/dom.js';
+import { renderReadingChecks } from './ui/reading-checks.js';
 import { createMeterTable } from './ui/table.js';
 import { t, setLanguage, getLanguage, translatePage, LANGUAGE_KEY } from './i18n/index.js';
 import { showBuildInfo } from './ui/build-info.js';
@@ -586,29 +587,19 @@ function renderResults() {
     $('validation-summary').textContent = report.issues.filter((i) => i.level !== 'NOTICE').length
       ? t('validation', { count: report.issues.length })
       : t('valid');
-    $('validation-list').replaceChildren(
-      ...report.issues.map((i) => {
-        const li = node('li');
-        if ((i.rowIndex !== null && i.rowIndex !== undefined) || i.target) {
-          const button = node('button', i.message);
-          button.addEventListener('click', () => {
-            $('search-meter').value = '';
-            $('only-incomplete').checked = false;
-            filterTable();
-            if (i.target?.kind === 'gas') gasPanel.focusIssue(i.target);
-            else if (i.target?.kind === 'water') waterPanel.focusIssue();
-            else if (i.target?.kind === 'utility') {
-              const input = document.querySelector('[data-utility="' + i.target.index + '"]');
-              input?.scrollIntoView({ block: 'center' });
-              input?.focus();
-            } else table.focusIssue(i);
-          });
-          li.append(button);
-        } else li.textContent = i.message;
-        return li;
-      }),
-    );
-  }
+    renderReadingChecks($('validation-list'), report.issues, plant, (i) => {
+      $('search-meter').value = '';
+      $('only-incomplete').checked = false;
+      filterTable();
+      if (i.target?.kind === 'gas') gasPanel.focusIssue(i.target);
+      else if (i.target?.kind === 'water') waterPanel.focusIssue();
+      else if (i.target?.kind === 'utility') {
+        const input = document.querySelector('[data-utility="' + i.target.index + '"]');
+        input?.scrollIntoView({ block: 'center' });
+        input?.focus();
+      } else table.focusIssue(i);
+    });
+  } else $('validation-list').replaceChildren();
   const choice = $('report-periods').value;
   finalReports = Object.fromEntries(
     ['JRE', 'UNILAND'].map((key) => [
@@ -797,6 +788,7 @@ $('language-select').addEventListener('change', () => {
   renderClock();
   accounts.render();
   guide.translate();
+  importEditor.refreshLabels();
   graphs.render();
 });
 void showBuildInfo();

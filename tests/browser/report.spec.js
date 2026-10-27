@@ -854,7 +854,8 @@ test('UNILAND raw import accepts triples and two labs, preserves dated Trafo and
   await page.locator('#import-text').fill(text);
   await page.locator('#apply-import').click();
   await expect(page.locator('#import-dialog')).not.toBeVisible();
-  await expect(page.locator('#toast')).toContainText('Trafo');
+  await expect(page.locator('#toast')).toContainText('Imported 45 readings.');
+  await expect(page.locator('#toast')).toContainText('same date and time');
   await expect(cell(page, 4, 'end', 2)).toHaveValue(draft.rows[4].end[2]);
   await expect(cell(page, 24, 'end')).toHaveValue(draft.rows[24].end[0]);
   for (const row of [1, 2, 3])

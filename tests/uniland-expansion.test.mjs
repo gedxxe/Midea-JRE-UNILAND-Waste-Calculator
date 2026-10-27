@@ -123,7 +123,7 @@ test('optional Pagi/Sore labels and repeated row numbers accept one complete obs
   const text = unilandInput(d, 'end');
   assert.equal(parseReading(text + '\n' + d.endDate + ' (Sore)', 'UNILAND').success, false);
   assert.equal(parseReading(text + '\nSV window: 1', 'UNILAND').success, false);
-  assert.equal(parseReading(text.replace(/^.*Painting:.*\n/m, ''), 'UNILAND').success, false);
+  assert.equal(parseReading(text.replace(/^.*Painting:.*\n/m, ''), 'UNILAND').success, true);
 });
 
 test('old report graph keys and new partial backups stay independent of positional row insertion', () => {

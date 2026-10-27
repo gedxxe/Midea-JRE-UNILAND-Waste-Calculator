@@ -38,9 +38,9 @@ export const accountMessages = {
     'Isi tanggal reading untuk membuat revisi. Isian belum lengkap tetap tersimpan di draft.',
   ],
   welcomeMotto: [
-    'Tired of manual energy reports?\nTry a simpler way.',
-    '还在手动整理能耗报表？\n试试更简单的方式。',
-    'Masih rekap laporan energi manual?\nCoba cara yang lebih mudah.',
+    'Fill in meter readings. Copy your daily report.',
+    '填写电表读数，复制每日能耗报告。',
+    'Isi reading meter. Salin laporan harian.',
   ],
   welcomeLove: ['love', '爱', 'cinta'],
   accountTitle: ['Sign in', '登录', 'Login'],
