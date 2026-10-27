@@ -173,6 +173,7 @@ test('parent checks group meters, navigate exactly and clear private details on 
     .locator('#validation-list .meter-comparison')
     .filter({ hasText: 'exceed Electricity Building 2#' });
   await expect(note).toHaveCount(1);
+  await expect(page.locator('#validation-list > li').first()).toHaveClass('meter-comparison');
   await expect(note.locator('strong').filter({ hasText: 'Heat Exchanger' })).toHaveCount(1);
   await expect(note.locator('.comparison-values')).toContainText('Parent meter: 1 kWh');
   await expect(note.locator('[data-related-row="5"]')).toHaveCount(4);
