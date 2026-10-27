@@ -2522,6 +2522,9 @@ html[data-graph-motion='off'] .graph-view-switch button {
     height: max(240px, calc(100dvh - 200px));
   }
 }
+.result-column:has(.meter-comparison) {
+  position: static;
+}
 .validation-panel:has(.meter-comparison) {
   max-height: min(480px, 60dvh);
   font-size: 14px;

@@ -176,6 +176,7 @@ test('parent checks group meters, navigate exactly and clear private details on 
   await expect(page.locator('#validation-list > li').first()).toHaveClass('meter-comparison');
   await expect(note.locator('strong').filter({ hasText: 'Heat Exchanger' })).toHaveCount(1);
   await expect(note.locator('.comparison-values')).toContainText('Parent meter: 1 kWh');
+  await expect(note.locator('.comparison-values')).toBeVisible();
   await expect(note.locator('[data-related-row="5"]')).toHaveCount(4);
   const report = await page.locator('#report-preview').inputValue();
   for (const lang of ['zh-CN', 'id', 'en']) {
