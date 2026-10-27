@@ -285,15 +285,20 @@ test('continuous editing syncs within fifteen seconds and late acknowledgments k
   page,
 }) => {
   const state = await setup(page);
+  // Do not add real browser/driver time to the simulated deadline.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  const began = await page.evaluate(() => performance.now());
   await cell(page).fill('1');
   for (let i = 2; i <= 8; i++) {
     await page.clock.runFor(2000);
     await cell(page).fill(String(i));
   }
+  expect((await page.evaluate(() => performance.now())) - began).toBe(14000);
   expect(state.writes).toBe(0);
   await page.clock.runFor(1100);
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.writes).toBe(1);
+  await page.clock.resume();
   let release,
     started = false;
   await page.route(
@@ -342,4 +347,44 @@ test('damaged local journal is not overwritten or sent automatically', async ({ 
   page.once('dialog', (d) => d.accept());
   await page.locator('#draft-load-cloud').click();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+});
+
+test('reverting to an old saved value keeps a newer-device conflict and recovery pending until resolved', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await cell(page).fill('111');
+  await page.clock.runFor(3100);
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  state.workspace = structuredClone(state.workspace);
+  state.workspace.drafts.JRE.rows[0].start[0] = '222';
+  state.version++;
+  await cell(page).fill('120');
+  await page.locator('#save-draft').click();
+  await expect(page.locator('#save-status')).toContainText('Another tab or device');
+  await cell(page).fill('111');
+  await expect(page.locator('#save-status')).toContainText('Another tab or device');
+  const recovery = await page.evaluate(
+    (id) => JSON.parse(sessionStorage.getItem('midea_energy_draft_v4_' + id)),
+    user.id,
+  );
+  expect(recovery.tabRecovery.pending).toBe(true);
+  expect(recovery.drafts.JRE.rows[0].start[0]).toBe('111');
+  const writes = state.writes;
+  await page.clock.runFor(120000);
+  expect(state.writes).toBe(writes);
+  expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('222');
+  await page.reload();
+  await expect(cell(page)).toHaveValue('111');
+  await expect(page.locator('#save-status')).toContainText('Another tab or device');
+  await expect(page.locator('#draft-load-cloud')).toBeVisible();
+  await expect(page.locator('#draft-keep-local')).toBeVisible();
+  for (const language of ['zh-CN', 'id', 'en'])
+    await page.locator('#language-select').selectOption(language);
+  await expect(page.locator('#save-status')).toContainText('Another tab or device');
+  page.once('dialog', (d) => d.accept());
+  await page.locator('#draft-load-cloud').click();
+  await expect(cell(page)).toHaveValue('222');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  expect(state.writes).toBe(writes);
 });

@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.27-alpha - 2026-10-27
+
+- Keep a conflicted autosave pending when input returns to the last locally acknowledged value. Preserve the conflict notice and recovery copy until the operator chooses the account or local copy; do not falsely claim the older value is saved.
+- Add controller and desktop/mobile recovery regressions. Preserve autosave timing, request budgets, report calculations, checkpoints and account isolation. No migration or dependency change.
+
 ## v0.11.26-alpha - 2026-10-25
 
 - Add JRE Warehouse Lighting as row 32 with ratio x40. Warehouse Area reports its gross x40 usage minus Lighting usage; keep both separate and counted once in sub-meter totals, all three modes, worksheets and new graphs.

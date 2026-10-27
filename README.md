@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.26-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.27-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -70,7 +70,7 @@ Current electricity layouts: **JRE 32 equipment rows / 62 meters**, **UNILAND 34
 
 Incomplete electricity, gas, Water and notes save automatically for both plants and all modes. The first dated working copy appears as **Revision 1** in Historian. Charts and Monthly table use its available values without manual Save. **Save version** freezes a checkpoint; later autosaves keep it intact. Another manual save creates the next revision only when content changed. Identical saves show **Already saved**.
 
-Tab recovery updates immediately; account sync follows after 3 seconds idle or within 15 seconds of continuous editing, at least 5 seconds between background attempts. Check **All changes saved to your account** before closing. Offline failures retry with backoff; device conflicts require a choice. A crash can lose changes not acknowledged by the server. Invalid dates stay in the active draft without invented graph points. Private backup format 5 includes pending departed periods. See [autosave behavior and deployment](docs/autosave.md).
+Tab recovery updates immediately; account sync follows after 3 seconds idle or within 15 seconds of continuous editing, at least 5 seconds between background attempts. Check **All changes saved to your account** before closing. Offline failures retry with backoff; device conflicts require a choice, even if input returns to an older local value. A crash can lose changes not acknowledged by the server. Invalid dates stay in the active draft without invented graph points. Private backup format 5 includes pending departed periods. See [autosave behavior and deployment](docs/autosave.md).
 
 ### Architecture
 
@@ -139,7 +139,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.26-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.27-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -164,7 +164,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 
 - **原始导出：** 电表下方选择 Start 或 End，只需所选列完整；不含燃气、水和 JRE T1–T4。
 - **空白模板：** 登录后在原始导出旁，登录前在登录卡片内。页脚不再重复。复制/下载带 `____` 和 `DD/MM/YYYY` 的 `.txt`，停机前自行保存，不含实际读数。
-- **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 3 秒或连续编辑 15 秒后同步；关闭前查看账户保存时间。冲突需手动选择。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
+- **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 3 秒或连续编辑 15 秒后同步；关闭前查看账户保存时间。冲突需手动选择；恢复到旧的本地读数也不会自动解除冲突。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
 - **燃气和水：** LPG %、O2 mmWC、N2 mmH2O、R32 mm/温度按各厂表格先换算 kg，再计算库存及补充量。水为累计 m³ 结束减开始，三个时段均可记录。
 - **图表：** 使用账户最新自动保存的工作副本、仅有手动版本的旧报表及审核过的历史导入。白底细线，图表与导出图片仅显示当前所选语言。支持部门筛选，保留完整日期标签及 JRE 9 组、UNILAND 7 组预设。一键复制高清 PNG；下载菜单提供 PNG/SVG，变量和 Y 轴设置收起显示。账户自动保存的最新工作副本直接进入图表，缺失或无效值保留为空。
 
@@ -202,7 +202,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.26-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.27-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -212,7 +212,7 @@ JRE menambah **Warehouse Lighting** pada poin 32, ratio x40. Warehouse Area diku
 
 Isian belum lengkap tetap tersimpan otomatis, termasuk listrik, gas, Water dan catatan kedua pabrik pada semua mode. Salinan pertama dengan periode valid muncul sebagai **Revisi 1** di Historian. Grafik dan tabel bulanan memakai nilai yang tersedia. **Simpan revisi** mengunci checkpoint; autosave berikutnya tidak mengubahnya. Revisi baru dibuat hanya bila isi berbeda dari checkpoint terakhir. Save berulang dengan data sama tidak menambah nomor revisi.
 
-Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berhenti mengetik atau dalam 15 detik saat terus mengedit, dengan jarak percobaan latar minimal 5 detik. Periksa “Semua perubahan tersimpan di akun” sebelum menutup. Gangguan koneksi dicoba ulang dengan jeda bertahap; konflik perangkat memerlukan pilihan. Tanggal belum valid tetap tersimpan sebagai draft aktif tanpa membuat titik grafik. Nilai kosong tidak menjadi nol. Backup privat format 5 juga menyimpan antrean periode sebelumnya.
+Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berhenti mengetik atau dalam 15 detik saat terus mengedit, dengan jarak percobaan latar minimal 5 detik. Periksa “Semua perubahan tersimpan di akun” sebelum menutup. Gangguan koneksi dicoba ulang dengan jeda bertahap; konflik perangkat memerlukan pilihan, termasuk saat angka dikembalikan ke nilai lokal lama. Tanggal belum valid tetap tersimpan sebagai draft aktif tanpa membuat titik grafik. Nilai kosong tidak menjadi nol. Backup privat format 5 juga menyimpan antrean periode sebelumnya.
 
 ### Alur dan fitur operator
 
