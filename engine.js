@@ -1,3 +1,4 @@
+import { comparisonMessage } from './meter-checks.js';
 import { UTILITY_LAYOUT } from './utility-periods.js';
 import { isWorkingHours, periodKind, workPeriodError, workPeriodTitle } from './reading-period.js';
 import { createGasDraft, calculateGas, gasCalibration, gasUsageText } from './gas.js';
@@ -70,8 +71,17 @@ function issue(
   meterIndex = null,
   level = 'WARNING',
   target = null,
+  comparison = null,
 ) {
-  issues.push({ code, message, rowIndex, meterIndex, level, ...(target ? { target } : {}) });
+  issues.push({
+    code,
+    message,
+    rowIndex,
+    meterIndex,
+    level,
+    ...(target ? { target } : {}),
+    ...(comparison ? { comparison } : {}),
+  });
 }
 
 export function calculateDraft(draft) {
@@ -247,6 +257,23 @@ export function calculateDraft(draft) {
     row.deductedEnergy = included === undefined ? null : Number(included) / 1e8;
     if (mi !== undefined && !target) return;
     if (target ? target.energy === null : row.missing) return;
+    const comparison = {
+      parent: {
+        name: row.name,
+        rowIndex: ri,
+        meterIndex: mi ?? null,
+        energy: target ? target.grossEnergy : row.grossEnergy,
+        unit: row.unit,
+      },
+      children: row.deductions.map((d) => ({
+        name: d.name,
+        rowIndex: schema.rows.findIndex((r) => r.name === d.name),
+        meterIndex: d.meter,
+        energy: d.energy,
+      })),
+      total: row.deductedEnergy,
+      excess: null,
+    };
     if (included === undefined) {
       row.missing = true;
       row.totalEnergy = null;
@@ -254,9 +281,12 @@ export function calculateDraft(draft) {
       issue(
         issues,
         'DEPENDENCY_UNAVAILABLE',
-        `${row.name}: net usage needs valid ${missingSources.map(({ name, meter }) => name + ', meter ' + (meter + 1)).join(' and ')} readings.`,
+        comparisonMessage(comparison, true),
         ri,
         mi ?? null,
+        'WARNING',
+        null,
+        comparison,
       );
       return;
     }
@@ -264,15 +294,19 @@ export function calculateDraft(draft) {
       (target ? scaledMeters.get(`${row.name}:${mi}`) : scaledEnergy.get(row.name)) - included;
     if (net < 0n && row.floorNetAtZero && mi === undefined) net = 0n;
     if (net < 0n) {
+      comparison.excess = Number(-net) / 1e8;
       row.missing = true;
       row.totalEnergy = null;
       if (target) target.energy = null;
       issue(
         issues,
         'NET_USAGE_NEGATIVE',
-        `${row.name}${target ? ', meter ' + (mi + 1) : ''}: included ${row.deductMeters.map(({ name }) => name).join(' and ')} usage exceeds the parent meter usage. Check readings for the same period.`,
+        comparisonMessage(comparison),
         ri,
         mi ?? null,
+        'WARNING',
+        null,
+        comparison,
       );
       return;
     }

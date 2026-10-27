@@ -141,7 +141,7 @@ test('layouts 1 and 2 preserve all old raw strings and new blank slots across al
   assert.equal(next.rows[15].start[1], old.rows[25].start[1]);
   assert.deepEqual(next.rows[4].end, [old.rows[4].end[0], '']);
 });
-test('complete older raw imports identify supplied cells; mixed or incomplete layouts fail atomically', () => {
+test('older imports identify supplied cells and reject incompatible meter counts', () => {
   for (const old of [legacyDraft(), layout2Draft(entered())])
     for (const side of ['start', 'end']) {
       const raw = legacyText(old, side),
@@ -170,7 +170,7 @@ test('complete older raw imports identify supplied cells; mixed or incomplete la
           raw.replace(/^5\. Dehumidifier:.*$/m, '5. Dehumidifier: 1 + 2 (Ratio 40)'),
           'JRE',
         ).success,
-        false,
+        old.meterLayout === 2,
       );
     }
   const template = formatBlankReadingTemplate('JRE');

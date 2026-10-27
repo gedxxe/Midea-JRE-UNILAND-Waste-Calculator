@@ -17,7 +17,7 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 32 equipment rows, 62 meters. Counts in template order:
 
 ```text
-1,2,2,6,2,4,13,1,2,1,1,1,1,1,2,3,1,1,1,1,2,1,1,1,1,1,2,2,1,1,1
+1,2,2,6,2,4,13,1,2,1,1,1,1,1,2,3,1,1,1,1,2,1,1,1,1,1,2,2,1,1,1,1
 ```
 
 - Total is the direct main-meter delta, never a sub-meter sum or x1000.
@@ -74,7 +74,9 @@ T1–T4 are JRE-only optional direct kWh cumulative pairs, separate from the exi
 
 ## Import, utility data, and storage
 
-Text import accepts one date and a complete factory snapshot, including wrapped Injection Molding entries. Meter counts, duplicate/missing equipment, and numeric syntax are validated before replacement. Wrong imported ratios produce a warning and never override the schema. Saved warnings are revalidated against current factors during draft restore and calculation, including legacy warnings stored only as text. Resolved mismatches are removed; remaining messages use the current factor. Equal valid readings produce zero consumption and do not themselves create ratio warnings. Saved report output is never rewritten. One- or two-column Excel pastes are planned atomically; an invalid cell or oversized block changes nothing.
+Text import accepts one date and a factory reading column, including wrapped Injection Molding entries. Generated templates and the importer share schema names, meter slots and factors. ____ or empty terms are unsupplied, not zero; an empty equipment expression leaves all its meters unsupplied. Existing observations survive only at matching factory/date/time. At least one numeric or explicitly unavailable reading is required. Recently added JRE Repair/Forklift/Lighting and UNILAND SV window/Painting/Dryer may be omitted like Trafo inputs, without inventing observations. Required original equipment, meter counts, duplicate rows and nonempty numeric syntax are validated before any replacement. Pure wrong-factory headers stop import directly; full-width colon/plus/parentheses are normalized. The modal bounds feedback to five notes plus the remaining count; parsing still checks the entire input, limited to 131072 characters. Wrong imported ratios produce a warning and never override the schema. Saved warnings are revalidated against current factors during draft restore and calculation, including legacy warnings stored only as text. Resolved mismatches are removed; remaining messages use the current factor. Equal valid readings produce zero consumption and do not themselves create ratio warnings. Saved report output is never rewritten. One- or two-column Excel pastes are planned atomically; an invalid cell or oversized block changes nothing.
+
+Net-usage warnings group included components by equipment, identify exact meter numbers and show gross parent usage, included total and excess in the configured unit. Missing dependencies stay unavailable. Component links clear filters and focus the actual meter. This is diagnostic presentation only; UNILAND has no new inferred parent/submeter topology. Hidden check lists are cleared to avoid retaining account amounts in the signed-out DOM.
 
 Utilities are optional. Manual utilities retain direct values and their original units. Enabled JRE and UNILAND tank gas calculations use converted raw observations and refill events described in [gas rules](gas.md); JRE and UNILAND Water use the cumulative readings described below. A note without a value blocks copying. Water notes are retained. Drafts use an account-scoped sessionStorage backup and synchronize to one replaceable account workspace, including incomplete entries. Legacy guest localStorage drafts stay separate. Language uses a separate key. Clearing a saved draft does not clear the currently open table. Next day carries end readings forward, clears new end readings/utilities/inactive flags, and autosaves the unfinished draft. See docs/accounts.md for synchronization and conflict handling.
 

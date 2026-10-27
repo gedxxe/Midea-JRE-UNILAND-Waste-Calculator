@@ -3,6 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { PUBLIC_FILES, RUNTIME_FILES } from './assets.mjs';
+import { readingMessages } from '../i18n/reading-feedback.js';
 import { catalog } from '../i18n/catalog.js';
 import { guideMessages } from '../i18n/guide.js';
 
@@ -42,7 +43,11 @@ assert.deepEqual(
 for (const version of Object.values(pkg.dependencies)) assert.match(version, /^\d+\.\d+\.\d+$/);
 const changelog = await readFile(resolve(root, 'CHANGELOG.md'), 'utf8');
 assert.ok(changelog.includes(`## v${pkg.version}`), 'Add release notes when bumping the version.');
-for (const [key, messages] of Object.entries({ ...catalog, ...guideMessages })) {
+for (const [key, messages] of Object.entries({
+  ...catalog,
+  ...guideMessages,
+  ...readingMessages,
+})) {
   assert.equal(messages.length, 3, key);
   const placeholders = (text) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
   for (const text of messages) {
@@ -83,6 +88,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.20 adds bounded ASCII shaders but removes duplicate login decoration; retain the 900 kB budget.
 // v0.11.22 adds the supplied TechText metrics/selection/drag engine and SVG glass/modal layers (~35 kB); no browser dependencies.
 // v0.11.23 adds a period journal, partial monitoring labels and checkpoint coalescing (~17 kB); no dependencies.
-assert.ok(size < 945000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.28 adds grouped meter checks and trilingual import diagnostics (~12 kB net); no dependencies.
+assert.ok(size < 965000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

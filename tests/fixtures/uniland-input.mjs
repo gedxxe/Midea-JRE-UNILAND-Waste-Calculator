@@ -2,7 +2,7 @@ import { PLANT_SCHEMAS } from '../../schema.js';
 
 // Synthetic operator format: omit Trafo, repeat the lab name, put a shared ratio last.
 export function unilandInput(draft, side) {
-  const rows = PLANT_SCHEMAS.UNILAND.rows.filter((row) => !row.optionalImport);
+  const rows = PLANT_SCHEMAS.UNILAND.rows.filter((row) => !/^Trafo [123]$/.test(row.name));
   return (
     'UNILAND\n' +
     draft[side + 'Date'] +

@@ -12,6 +12,19 @@ import {
 
 export function parseReading(text, plantKey) {
   const schema = PLANT_SCHEMAS[plantKey];
+  if (!schema?.rows) throw new RangeError('Unknown factory');
+  if (String(text).length > 131072)
+    return {
+      success: false,
+      values: [],
+      issues: [
+        {
+          level: 'ERROR',
+          code: 'IMPORT_SIZE',
+          message: 'Text is too long. Paste one reading column only.',
+        },
+      ],
+    };
   const lookup = new Map();
   schema.rows.forEach((row, i) =>
     [row.name, ...(row.aliases || [])].forEach((name) => lookup.set(normalizeName(name), i)),
@@ -24,9 +37,45 @@ export function parseReading(text, plantKey) {
   let active = null;
   const entries = [];
   let labOccurrence = 0;
-  for (const raw of String(text).split(/\r?\n/)) {
-    const line = raw.trim();
+  for (const [lineIndex, raw] of String(text).split(/\r?\n/).entries()) {
+    const line = raw
+      .trim()
+      .replace(/[：＋（）]/g, (c) => ({ '：': ':', '＋': '+', '（': '(', '）': ')' })[c]);
+    const sourceLine = lineIndex + 1;
     if (!line) continue;
+    if (/^(JRE|UNILAND)$/i.test(line)) {
+      if (line.toUpperCase() !== plantKey)
+        return {
+          values,
+          suppliedMeters: schema.rows.map((row) => row.factors.map(() => false)),
+          suppliedRows: [],
+          omittedRows: schema.rows.map((_, i) => i),
+          valueCount: 0,
+          emptyCount: schema.rows.reduce((n, row) => n + row.factors.length, 0),
+          issues: [
+            {
+              level: 'ERROR',
+              code: 'IMPORT_FACTORY',
+              sourceLine,
+              factory: line.toUpperCase(),
+              message:
+                'These readings are for ' + line.toUpperCase() + '. Select that factory first.',
+            },
+          ],
+          success: false,
+        };
+      active = null;
+      continue;
+    }
+    if (/^DD\/MM\/YYYY$/i.test(line)) {
+      dates.push('');
+      active = null;
+      continue;
+    }
+    if (/^Reading time:\s*HH:MM\s+WIB$/i.test(line)) {
+      active = null;
+      continue;
+    }
     if (/^Reading time:/i.test(line)) {
       const time = /^Reading time:\s*(\d{2}:\d{2})\s+WIB$/i.exec(line)?.[1];
       times.push(time);
@@ -61,12 +110,17 @@ export function parseReading(text, plantKey) {
       if (labOccurrence === 2) ri = lookup.get(normalizeName('10HP Enthalpy Difference Lab (2)'));
     }
     if (ri !== undefined) {
-      active = { ri, expr: match[2] };
+      active = { ri, expr: match[2], sourceLine };
       entries.push(active);
-    } else if (active && /^[\d+.,()\s\-/]+(?:.*)?$/.test(line) && !line.includes(':')) {
+    } else if (active && /^[\d_+.,()\s\-/]+(?:.*)?$/.test(line) && !line.includes(':')) {
       active.expr += ` ${line}`;
     } else if (seen.size || entries.length) {
-      issues.push({ level: 'ERROR', code: 'IMPORT_SYNTAX', message: `Unrecognized line: ${line}` });
+      issues.push({
+        level: 'ERROR',
+        code: 'IMPORT_SYNTAX',
+        sourceLine,
+        message: `Unrecognized line: ${line}`,
+      });
       active = null;
     }
     // Chat names and timestamps before the actual readings are ignored.
@@ -83,6 +137,7 @@ export function parseReading(text, plantKey) {
     plantKey === 'JRE' &&
     !entries.some((entry) => entry.ri >= 29) &&
     entries.filter((entry) => entry.ri === 4).length === 1 &&
+    !!entries.find((entry) => entry.ri === 4).expr.trim() &&
     entries.find((entry) => entry.ri === 4).expr.split('+').length === 1;
   const legacy =
     olderJre &&
@@ -100,7 +155,7 @@ export function parseReading(text, plantKey) {
     entries.filter((entry) => entry.ri === 15).length === 1 &&
     entries.find((entry) => entry.ri === 15).expr.split('+').length === 2;
   let suppliedMeters = schema.rows.map((row) => row.factors.map(() => false));
-  for (const { ri, expr } of entries) {
+  for (const { ri, expr, sourceLine } of entries) {
     const row =
       legacy && LEGACY_JRE_FACTORS[ri]
         ? { ...schema.rows[ri], factors: LEGACY_JRE_FACTORS[ri] }
@@ -115,33 +170,46 @@ export function parseReading(text, plantKey) {
       issues.push({
         level: 'ERROR',
         code: 'IMPORT_DUPLICATE',
+        rowIndex: ri,
+        sourceLine,
         message: `${row.name}: appears more than once.`,
       });
       continue;
     }
     seen.add(ri);
-    const terms =
-      expr.trim() === '-' ? row.factors.map(() => '-') : expr.split('+').map((s) => s.trim());
+    const terms = !expr.trim()
+      ? row.factors.map(() => '')
+      : expr.trim() === '-'
+        ? row.factors.map(() => '-')
+        : expr.split('+').map((s) => s.trim());
     if (terms.length !== row.factors.length) {
       issues.push({
         level: 'ERROR',
         code: 'METER_COUNT',
+        rowIndex: ri,
+        sourceLine,
+        expected: row.factors.length,
+        found: terms.length,
         message: `${row.name}: expected ${row.factors.length} meters, found ${terms.length}.`,
       });
       continue;
     }
     terms.forEach((term, mi) => {
       const m = term.match(
-        /^(-|\d+(?:[.,]\d{1,6})?)(?:\s*\(\s*Ratio\s+(\d+(?:[.,]\d+)?)\s*\)|\s*\(\(\s*Ratio\s+(\d+(?:[.,]\d+)?)\s*\)\s*\/\s*(\d+)\s*\))?$/i,
+        /^(-|\d+(?:[.,]\d{1,6})?|_{2,})?(?:\s*\(\s*Ratio\s+(\d+(?:[.,]\d+)?)\s*\)|\s*\(\(\s*Ratio\s+(\d+(?:[.,]\d+)?)\s*\)\s*\/\s*(\d+)\s*\))?$/i,
       );
-      if (!m || (m[1] !== '-' && decimalText(m[1]) === null)) {
+      if (!m || (m[1] && m[1] !== '-' && !/^_+$/.test(m[1]) && decimalText(m[1]) === null)) {
         issues.push({
           level: 'ERROR',
           code: 'INVALID_READING',
+          rowIndex: ri,
+          meterIndex: mi,
+          sourceLine,
           message: `${row.name}, meter ${mi + 1}: invalid format (${term}).`,
         });
         return;
       }
+      if (!m[1] || /^_+$/.test(m[1])) return;
       values[ri][mi] = m[1];
       suppliedMeters[ri][mi] = true;
       if (m[2] || m[3]) {
@@ -160,18 +228,23 @@ export function parseReading(text, plantKey) {
     });
   }
   schema.rows.forEach((row, ri) => {
-    if (
-      !seen.has(ri) &&
-      !row.optionalImport &&
-      !(olderJre && ri === 29) &&
-      !(plantKey === 'JRE' && ri === 30)
-    )
+    if (!seen.has(ri) && !row.optionalImport)
       issues.push({
         level: 'ERROR',
         code: 'IMPORT_MISSING',
+        rowIndex: ri,
         message: `${row.name}: row not found.`,
       });
   });
+  if (
+    !suppliedMeters.some((row) => row.some(Boolean)) &&
+    !issues.some((i) => ['INVALID_READING', 'METER_COUNT'].includes(i.code))
+  )
+    issues.push({
+      level: 'ERROR',
+      code: 'IMPORT_EMPTY',
+      message: 'Fill in at least one meter reading. Leave unknown readings blank.',
+    });
   const success = !issues.some((i) => i.level === 'ERROR');
   if (success) {
     schema.rows.forEach((row, ri) => {
@@ -193,6 +266,8 @@ export function parseReading(text, plantKey) {
   }
   return {
     values,
+    valueCount: suppliedMeters.flat().filter(Boolean).length,
+    emptyCount: suppliedMeters.flat().filter((value) => !value).length,
     suppliedMeters,
     suppliedRows: [...seen],
     omittedRows: schema.rows.map((_, i) => i).filter((i) => !seen.has(i)),

@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.28-alpha - 2026-10-28
+
+- Import partially filled reading templates without treating blanks as zero or invalid numbers. Preserve existing values only at the same factory/date/time; new dates remain unknown. Keep malformed values, wrong meter counts and required missing equipment atomic and blocking. Accept full-width separators and report a wrong factory directly.
+- Keep older operator lists compatible with recently added JRE and UNILAND rows. Leave omitted observations unknown unless an exact timestamp exists; incomplete reports still need readings. Show current schema counts and short localized import feedback instead of stale equipment-specific hints.
+- Replace repeated parent/submeter names with a grouped check: parent usage, included total, excess and buttons to the exact component meters. Preserve all ratios, subtraction rules, Structural zero handling and saved historical output.
+- Shorten welcome, import and save guidance in all three interface languages. Clear numeric check details when hidden or signed out. Add template-to-table desktop/mobile regressions and hostile-input checks. No migration, dependency, auth or autosave-policy change.
+
 ## v0.11.27-alpha - 2026-10-27
 
 - Keep a conflicted autosave pending when input returns to the last locally acknowledged value. Preserve the conflict notice and recovery copy until the operator chooses the account or local copy; do not falsely claim the older value is saved.

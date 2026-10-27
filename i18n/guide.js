@@ -47,14 +47,14 @@ export const guideMessages = {
     'Import jika sudah punya teks reading',
   ],
   guideImportBody: [
-    'Import text is optional. Choose Start or End to view that column, paste a complete factory template, then Apply. Invalid text does not change the table. Switching columns keeps unapplied text separate while the dialog is open. Blank reading template provides an empty copy for offline recording.',
-    '文字导入为可选功能。选择 Start 或 End 查看对应列，粘贴完整工厂模板后应用。验证失败不会更改表格。弹窗打开时，两列未应用的文字分别保留。Blank reading template 可复制空白模板供离线记录。',
-    'Import text itu opsional. Pilih Start atau End untuk melihat kolomnya, tempel template pabrik yang lengkap, lalu Apply. Teks tidak valid tidak mengubah tabel. Teks yang belum diterapkan disimpan terpisah saat dialog terbuka. Blank reading template menyediakan template kosong untuk pencatatan offline.',
+    'Choose Start or End, paste a dated reading list, then Apply readings. Leave unknown fields as ____ or blank; existing values stay only at the same date and time. Invalid text changes nothing. Each column keeps its pending text while this dialog is open. Use Blank reading template for offline recording.',
+    '选择开始或结束列，粘贴带日期的读数清单后填入。未知项保留 ____ 或空白，仅保留同日期、时间的已有值。验证失败不更改表格。弹窗打开时分别保留两列未应用的文字。空白模板可供离线记录。',
+    'Pilih Awal atau Akhir, tempel daftar reading bertanggal, lalu Terapkan reading. Biarkan ____ atau kosong untuk reading belum diketahui; nilai lama hanya dipertahankan pada tanggal dan jam yang sama. Teks tidak valid tidak mengubah tabel. Teks tiap kolom disimpan terpisah selama dialog terbuka. Template kosong bisa dipakai untuk pencatatan offline.',
   ],
   guideImportPlace: [
-    'Import text near the table title; blank template beside raw export.',
-    '表格标题旁的 Import text；原始导出旁的空白模板。',
-    'Import text dekat judul tabel; template kosong di samping ekspor raw.',
+    'Import readings near the table title; blank template beside raw export.',
+    '表格标题旁的 导入读数；原始导出旁的空白模板。',
+    'Impor reading dekat judul tabel; template kosong di samping ekspor raw.',
   ],
   guideUtilitiesTitle: [
     'Record gas and Water per period',

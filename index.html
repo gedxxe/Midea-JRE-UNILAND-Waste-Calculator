@@ -54,7 +54,7 @@
       <div class="energy-bottomline">
         <div class="energy-description">
           <p class="energy-slogan" data-i18n="welcomeMotto">
-            Tired of manual energy reports? Try a simpler way.
+            Fill in meter readings. Copy your daily report.
           </p>
           <p class="energy-credit">
             Made with
@@ -344,9 +344,9 @@
           <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
             <div class="plant-tabs">
               <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
-                JRE <span id="count-jre">0/30</span></button
+                JRE <span id="count-jre">0/32</span></button
               ><button class="plant-tab" data-plant="UNILAND" aria-pressed="false">
-                UNILAND <span id="count-uniland">0/31</span>
+                UNILAND <span id="count-uniland">0/34</span>
               </button>
             </div>
             <span class="plant-bar-note"
@@ -696,7 +696,7 @@
                 <div class="completion">
                   <div>
                     <span><span data-i18n="filled">Equipment completed</span></span
-                    ><strong id="progress-label">0 of 30</strong>
+                    ><strong id="progress-label">0 of 32</strong>
                   </div>
                   <progress id="completion-progress" value="0" max="30"></progress>
                 </div>
@@ -1043,8 +1043,8 @@
       </form>
       <p>
         <span data-i18n="importHint"
-          >Paste one date and all equipment from the template. Import replaces one reading column
-          for this factory.</span
+          >Paste one reading date and the equipment list. Use ____ for readings not yet taken. Blank
+          fields keep existing readings only at the same date and time.</span
         >
       </p>
       <label
@@ -1057,15 +1057,17 @@
         ><span data-i18n="readingText">Reading text</span
         ><textarea
           id="import-text"
+          maxlength="131072"
           rows="10"
           spellcheck="false"
           placeholder="16/09/2026&#10;1. Total: ..."
         ></textarea>
       </label>
       <p class="hint" data-i18n="workImportHint"></p>
+      <p id="import-format" class="hint"></p>
       <div id="import-feedback" role="status"></div>
       <button id="apply-import" class="button primary" data-i18n="applyImport">
-        Check & fill table
+        Apply readings
       </button>
     </dialog>
     <dialog id="history-dialog">
