@@ -327,7 +327,14 @@ test('UNILAND expanded drafts retain old readings and flexible imports use the s
   await page.locator('#open-import').click();
   await page.locator('#import-text').fill(unilandInput(d, 'end').replace(/^.*Dryer:.*\n/m, ''));
   await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(input('Dryer', 'end')).toHaveValue('31.5');
+  // Original equipment remains required even when recently added rows may be absent.
+  await page.locator('#open-import').click();
+  await page.locator('#import-text').fill(unilandInput(d, 'end').replace(/^.*Indoor:.*\n/m, ''));
+  await page.locator('#apply-import').click();
   await expect(page.locator('#import-dialog')).toBeVisible();
+  await expect(page.locator('#import-feedback')).toContainText('Indoor');
   await expect(input('Dryer', 'end')).toHaveValue('31.5');
   await page.locator('#import-dialog [data-i18n="close"]').click();
   await page.locator('#save-draft').click();
