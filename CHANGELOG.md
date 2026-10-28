@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.30-alpha - 2026-10-28
+
+- Refresh the signed-in workspace with a soft blue gradient, compact glass navigation, clearer factory/mode controls and coordinated cards. Keep reading fields opaque and sharp; use darker numbers with softer, contrast-checked labels, units and help text.
+- Reduce the space before the meter table, group period/backup tools, add small navigation icons and shorten repeated account, gas and shift guidance in all three languages. Clarify that T1-T4 consumption also appears in the current Excel export.
+- Add brief workspace entrance and control transitions, with reduced-motion and a panel-motion off switch. Glass blur stays on two small chrome surfaces; table cells have no filters or animation loops.
+- Preserve reading alignment, keyboard entry, visible save/conflict status, calculation/report bytes, accounts, autosave timing and all saved history. No runtime dependency, API, database, welcome or login animation changes.
+
 ## v0.11.29-alpha - 2026-10-28
 
 - Copy one value-only Excel row to the supplied Daily Monitoring layout: JRE E:AY (47 cells), UNILAND BE:CV (44 cells). Preserve blank AP/CO separators and unknown columns so following values stay aligned. Omit dates, labels and unit suffixes from clipboard data.

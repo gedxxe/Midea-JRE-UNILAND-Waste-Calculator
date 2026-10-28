@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/welcome.css" />
     <link rel="stylesheet" href="/signin-effects.css" />
     <link rel="stylesheet" href="/glass.css" />
+    <link rel="stylesheet" href="/workspace.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body class="login-page" data-welcome="hero">
@@ -122,14 +123,14 @@
         <p id="signin-transition-label" data-i18n="welcomeSigningIn">Signing in...</p>
       </div>
     </div>
-    <div id="application-surface" hidden inert>
+    <div id="application-surface" data-panel-motion="on" hidden inert>
       <a id="skip-table" class="skip-link" href="#meter-table" data-i18n="skip" hidden
         >Skip to meter table</a
       >
       <header class="site-header">
         <a class="brand" href="/" aria-label="Midea Daily Energy Report"
           ><img src="/asset/Midea.webp" alt="Midea" /><span class="brand-divider"></span
-          ><span>Factory Operations</span></a
+          ><span data-i18n="workspaceBrand">Energy workspace</span></a
         >
         <div class="header-tools">
           <label class="language-control"
@@ -195,12 +196,80 @@
             <span data-i18n="welcomeBack">Back to welcome</span>
           </button>
           <div class="account-heading">
-            <div>
+            <div class="account-copy">
               <h2 id="account-label" data-i18n="accountTitle">Sign in</h2>
               <p id="account-hint" class="muted" data-i18n="accountHint">
                 Sign in to enter readings and open your reports. Ask your admin for an account.
               </p>
             </div>
+            <nav
+              id="cloud-actions"
+              class="account-buttons"
+              aria-label="Workspace"
+              data-i18n-aria-label="workspaceActions"
+              hidden
+            >
+              <button
+                id="save-report"
+                class="button primary"
+                data-i18n="saveReport"
+                data-i18n-title="accountPrivate"
+              >
+                Save report
+              </button>
+              <button id="open-graphs" class="button secondary">
+                <svg
+                  class="panel-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 19V5m0 14h16M8 14l4-5 4 3 4-7" /></svg
+                ><span data-i18n="graphs">Graphs</span>
+              </button>
+              <button id="open-history" class="button secondary">
+                <svg
+                  class="panel-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 6h16v14H4zM8 3v6m8-6v6M4 11h16m-12 4h3m3 0h2" /></svg
+                ><span data-i18n="history">Historian</span>
+              </button>
+              <button id="open-guide" class="button secondary" aria-haspopup="dialog">
+                <svg
+                  class="panel-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M9.2 9a3 3 0 015.6 1.5c0 2-2.8 2-2.8 4M12 18h.01" />
+                  <circle cx="12" cy="12" r="10" /></svg
+                ><span data-i18n="guideOpen">Quick guide</span>
+              </button>
+              <button id="open-users" class="text-button" data-i18n="manageUsers" hidden>
+                Manage accounts
+              </button>
+            </nav>
             <div id="account-session" class="account-buttons" hidden>
               <strong id="account-name"></strong
               ><button id="change-password" class="text-button" data-i18n="changePassword">
@@ -283,26 +352,6 @@
               Change password
             </button>
           </form>
-          <div id="cloud-actions" class="account-buttons" hidden>
-            <button id="save-report" class="button primary" data-i18n="saveReport">
-              Save report
-            </button>
-            <button id="open-graphs" class="button secondary" data-i18n="graphs">Graphs</button>
-            <button id="open-history" class="button secondary" data-i18n="history">
-              Historian
-            </button>
-            <button
-              id="open-guide"
-              class="button secondary"
-              data-i18n="guideOpen"
-              aria-haspopup="dialog"
-            >
-              Quick guide
-            </button>
-            <button id="open-users" class="text-button" data-i18n="manageUsers" hidden>
-              Manage accounts
-            </button>
-          </div>
           <p id="account-status" class="small muted" role="status"></p>
           <button
             id="retry-account"
@@ -341,35 +390,37 @@
             </div>
           </aside>
           <p id="guide-load-status" class="small muted" role="status"></p>
-          <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
-            <div class="plant-tabs">
-              <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
-                JRE <span id="count-jre">0/32</span></button
-              ><button class="plant-tab" data-plant="UNILAND" aria-pressed="false">
-                UNILAND <span id="count-uniland">0/34</span>
-              </button>
+          <div class="recording-controls">
+            <div class="plant-bar" aria-label="Select factory" data-i18n-aria-label="selectPlant">
+              <div class="plant-tabs">
+                <button class="plant-tab active" data-plant="JRE" aria-pressed="true">
+                  JRE <span id="count-jre">0/32</span></button
+                ><button class="plant-tab" data-plant="UNILAND" aria-pressed="false">
+                  UNILAND <span id="count-uniland">0/34</span>
+                </button>
+              </div>
+              <span class="plant-bar-note"
+                ><span data-i18n="automatic"
+                  >Cumulative readings · Calculated automatically</span
+                ></span
+              >
             </div>
-            <span class="plant-bar-note"
-              ><span data-i18n="automatic"
-                >Cumulative readings · Calculated automatically</span
-              ></span
-            >
-          </div>
-          <div class="reading-mode-bar">
-            <label
-              ><span data-i18n="readingMode">Reading mode</span
-              ><select id="reading-mode">
-                <option value="daily" data-i18n="dailyMode">
-                  24 HOURS · morning to next morning
-                </option>
-                <option value="workingHours" data-i18n="workingMode">
-                  AFTER PRODUCTION · morning to evening
-                </option>
-                <option value="nightShift" data-i18n="nightMode">
-                  NIGHT SHIFT · evening to next morning
-                </option>
-              </select></label
-            >
+            <div class="reading-mode-bar">
+              <label
+                ><span data-i18n="readingMode">Reading mode</span
+                ><select id="reading-mode">
+                  <option value="daily" data-i18n="dailyMode">
+                    24 HOURS · morning to next morning
+                  </option>
+                  <option value="workingHours" data-i18n="workingMode">
+                    AFTER PRODUCTION · morning to evening
+                  </option>
+                  <option value="nightShift" data-i18n="nightMode">
+                    NIGHT SHIFT · evening to next morning
+                  </option>
+                </select></label
+              >
+            </div>
           </div>
           <section
             class="period-card"
@@ -429,45 +480,51 @@
             </div>
           </section>
           <p class="notice" id="period-note">The report uses the start date.</p>
-          <details class="combined-period" id="combined-period">
-            <summary data-i18n="combinedPeriod">Weekend / combined period</summary>
-            <p data-i18n="combinedHint">
-              Choose the consumption dates covered by one reading. The final meter reading is at
-              08:00 the following morning. This keeps one period total.
-            </p>
-            <div class="graph-toolbar">
-              <label
-                ><span data-i18n="combinedStart">First consumption date</span
-                ><input type="date" id="combined-start" min="2000-01-01" max="2099-12-30"
-              /></label>
-              <label
-                ><span data-i18n="combinedLast">Last consumption date (included)</span
-                ><input type="date" id="combined-last" min="2000-01-01" max="2099-12-30"
-              /></label>
-              <button id="combined-apply" class="button secondary" data-i18n="combinedApply">
-                Use this period
-              </button>
-            </div>
-            <p id="combined-preview" aria-live="polite"></p>
-          </details>
+          <div class="period-tools">
+            <details class="combined-period" id="combined-period">
+              <summary data-i18n="combinedPeriod">Weekend / combined period</summary>
+              <p data-i18n="combinedHint">
+                Choose the consumption dates covered by one reading. The final meter reading is at
+                08:00 the following morning. This keeps one period total.
+              </p>
+              <div class="graph-toolbar">
+                <label
+                  ><span data-i18n="combinedStart">First consumption date</span
+                  ><input type="date" id="combined-start" min="2000-01-01" max="2099-12-30"
+                /></label>
+                <label
+                  ><span data-i18n="combinedLast">Last consumption date (included)</span
+                  ><input type="date" id="combined-last" min="2000-01-01" max="2099-12-30"
+                /></label>
+                <button id="combined-apply" class="button secondary" data-i18n="combinedApply">
+                  Use this period
+                </button>
+              </div>
+              <p id="combined-preview" aria-live="polite"></p>
+            </details>
+            <details class="draft-backup-tools">
+              <summary data-i18n="backupTitle">Draft backup and restore</summary>
+              <p class="small" data-i18n="backupHint"></p>
+              <div class="account-buttons">
+                <button
+                  id="download-draft-backup"
+                  class="button secondary"
+                  data-i18n="backupDownload"
+                >
+                  Download draft backup
+                </button>
+                <button
+                  id="restore-draft-backup"
+                  class="button secondary"
+                  data-i18n="backupRestore"
+                >
+                  Restore draft backup
+                </button>
+                <input id="draft-backup-file" type="file" accept=".json,application/json" hidden />
+              </div>
+            </details>
+          </div>
           <p id="draft-storage-status" class="small" role="status"></p>
-          <details class="draft-backup-tools">
-            <summary data-i18n="backupTitle">Draft backup and restore</summary>
-            <p class="small" data-i18n="backupHint"></p>
-            <div class="account-buttons">
-              <button
-                id="download-draft-backup"
-                class="button secondary"
-                data-i18n="backupDownload"
-              >
-                Download draft backup
-              </button>
-              <button id="restore-draft-backup" class="button secondary" data-i18n="backupRestore">
-                Restore draft backup
-              </button>
-              <input id="draft-backup-file" type="file" accept=".json,application/json" hidden />
-            </div>
-          </details>
           <div id="draft-sync-actions" class="notice" hidden>
             <button id="draft-retry" class="button secondary" data-i18n="draftRetry">
               Retry draft sync
@@ -534,7 +591,7 @@
                     </caption>
                     <thead>
                       <tr>
-                        <th scope="col">Equipment</th>
+                        <th scope="col" data-i18n="equipmentLabel">Equipment</th>
                         <th scope="col"><span data-i18n="ratio">Meter / ratio</span></th>
                         <th scope="col">
                           <span id="start-reading-label" data-i18n="startReading"
@@ -701,7 +758,7 @@
                   <progress id="completion-progress" value="0" max="30"></progress>
                 </div>
                 <div class="total-panel">
-                  <span>Main meter</span>
+                  <span data-i18n="mainMeterLabel">Main meter</span>
                   <div><strong id="main-total">-</strong><span id="main-unit">kWh</span></div>
                   <p><span data-i18n="totalHint">Main meter difference for this period</span></p>
                 </div>

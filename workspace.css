@@ -1,0 +1,623 @@
+/* Signed-in workspace. Decoration stays outside meter rows and never reads account data. */
+body:not(.login-page) {
+  --teal: #2463d5;
+  --dark: #194ba9;
+  --border: #dbe4f0;
+  --muted: #586a81;
+  --soft: #edf3ff;
+  --panel-ink: #1d2e46;
+  --panel-help: #586a81;
+  color: var(--panel-ink);
+  background: #f2f6fc;
+}
+body:not(.login-page) #application-surface {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 75% 560px at 4% 0, #dcecffb8, transparent),
+    radial-gradient(ellipse 65% 500px at 100% 10%, #e0e6ff99, transparent),
+    linear-gradient(160deg, #f3f8ff, #f8faff 55%, #eff5fc);
+}
+body:not(.login-page) .site-header {
+  min-height: 76px;
+  padding: 12px max(24px, calc((100vw - 1520px) / 2));
+  border-color: #ffffffc7;
+  background: #ffffffbf;
+  box-shadow: 0 1px 0 #dbe4f080;
+}
+@supports (backdrop-filter: blur(12px)) {
+  body:not(.login-page) :is(.site-header, .account-card) {
+    backdrop-filter: blur(12px);
+  }
+}
+body:not(.login-page) .brand {
+  color: var(--panel-help);
+}
+body:not(.login-page) .workspace {
+  max-width: 1520px;
+  padding: 28px 24px 0;
+}
+body:not(.login-page) .page-heading {
+  margin-bottom: 22px;
+}
+body:not(.login-page) .intro {
+  line-height: 1.6;
+}
+body:not(.login-page) :is(.button, input, select, textarea, .validation-button) {
+  border-radius: 11px;
+}
+body:not(.login-page) :is(input, select, textarea) {
+  color: var(--panel-ink);
+  border-color: #cfdbea;
+  background: #fff;
+}
+body:not(.login-page) :is(button, input, select, textarea, summary) {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+body:not(.login-page) :is(button, input, select, textarea, summary, a):focus-visible {
+  outline: 3px solid #4f83df;
+  outline-offset: 3px;
+}
+body:not(.login-page) input[aria-invalid='true'] {
+  border-color: #be791e;
+  background: #fff8eb;
+}
+body:not(.login-page) .button {
+  min-height: 42px;
+}
+body:not(.login-page) .button.primary {
+  background: linear-gradient(145deg, #286add, #2455c2);
+  box-shadow:
+    inset 0 1px 0 #ffffff40,
+    0 3px 10px #2455c21c;
+}
+body:not(.login-page) .button.primary:hover {
+  background: #194ba9;
+  box-shadow: 0 4px 14px #2455c22b;
+}
+body:not(.login-page) .button.secondary {
+  background: #ffffffd9;
+  border-color: #cfdbed;
+  color: #34516f;
+}
+body:not(.login-page) .button.secondary:hover {
+  background: #edf4ff;
+  border-color: #a8c3ee;
+}
+body:not(.login-page) .card,
+body:not(.login-page) .period-card {
+  border-radius: 20px;
+  border-color: #dce5f1;
+  background: #ffffffed;
+  box-shadow:
+    0 4px 20px #253e6b05,
+    inset 0 1px 0 #fff;
+}
+body:not(.login-page) .account-card {
+  padding: 14px 18px;
+  margin-bottom: 22px;
+  background: #ffffffb8;
+  border-color: #ffffff;
+  box-shadow:
+    0 6px 24px #23487d09,
+    0 0 0 1px #d5e1f066;
+}
+body:not(.login-page) .account-heading {
+  align-items: center;
+  gap: 12px;
+}
+body:not(.login-page) .account-copy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+body:not(.login-page) #cloud-actions {
+  margin: 0;
+  gap: 8px;
+}
+body:not(.login-page) #cloud-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.panel-icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  pointer-events: none;
+}
+body:not(.login-page) #account-session {
+  gap: 12px;
+  margin-left: auto;
+}
+body:not(.login-page) #account-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+body:not(.login-page) #change-password {
+  color: var(--panel-help);
+  font-size: 13px;
+}
+body:not(.login-page) #save-status {
+  max-width: 260px;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #ffffffa6;
+  border: 1px solid #dce6f1;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+body:not(.login-page) .recording-controls {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+body:not(.login-page) .plant-bar {
+  flex: 1;
+  border: 0;
+  margin: 0;
+  gap: 12px;
+}
+body:not(.login-page) .plant-tabs {
+  gap: 4px;
+  padding: 5px;
+  background: #e6edf8;
+  border: 1px solid #dae4f2;
+  border-radius: 15px;
+}
+body:not(.login-page) .plant-tab {
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 10px;
+  color: #506581;
+}
+body:not(.login-page) .plant-tab.active {
+  color: #2055ae;
+  background: #fff;
+  box-shadow: 0 2px 6px #294e8414;
+}
+body:not(.login-page) .plant-tab span {
+  background: #e1e9f5;
+  color: #536a83;
+  border-radius: 6px;
+}
+body:not(.login-page) .plant-tab.active span {
+  background: #e8f0ff;
+  color: #2055ae;
+}
+body:not(.login-page) .plant-bar-note {
+  color: var(--panel-help);
+  font-size: 12px;
+}
+body:not(.login-page) .reading-mode-bar {
+  margin: 0;
+  flex: 0 1 380px;
+}
+body:not(.login-page) .reading-mode-bar label {
+  max-width: none;
+}
+body:not(.login-page) .reading-mode-bar select {
+  min-height: 44px;
+  background: #ffffffd9;
+}
+body:not(.login-page) .period-card {
+  gap: 22px;
+  padding: 20px 22px;
+}
+body:not(.login-page) .step-number {
+  width: 32px;
+  height: 32px;
+  background: #eaf1ff;
+  color: #285cad;
+  border-radius: 10px;
+}
+body:not(.login-page) .report-date strong {
+  color: #234879;
+}
+body:not(.login-page) label {
+  color: #4e617a;
+}
+body:not(.login-page) #period-note {
+  padding: 10px 2px;
+  font-size: 13px;
+}
+body:not(.login-page) .period-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 2px 0 8px;
+}
+body:not(.login-page) .period-tools > details {
+  flex: 1 1 250px;
+  margin: 0;
+  padding: 11px 15px;
+  border: 1px solid #d6e2f2;
+  border-radius: 12px;
+  background: #ffffff94;
+  color: #425d80;
+}
+body:not(.login-page) .period-tools > details[open] {
+  flex-basis: 100%;
+  background: #fff;
+}
+body:not(.login-page) .period-tools summary {
+  font-size: 13px;
+  font-weight: 550;
+}
+body:not(.login-page) #draft-storage-status {
+  font-size: 12px;
+  color: var(--panel-help);
+  line-height: 1.7;
+  margin: 0 2px 14px;
+}
+body:not(.login-page) #draft-storage-status:empty {
+  display: none;
+}
+body:not(.login-page) .guide-invitation {
+  border-radius: 14px;
+  border-color: #d0e0f6;
+  background: #eaf2ff;
+  color: #365b8c;
+}
+body:not(.login-page) .card-heading {
+  padding: 22px;
+}
+body:not(.login-page) .card-heading p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+body:not(.login-page) .table-toolbar {
+  padding: 0 22px 18px;
+}
+body:not(.login-page) .search-field {
+  background: #f7f9fd;
+  border-color: #dce5f0;
+  border-radius: 10px;
+}
+body:not(.login-page) .table-scroll {
+  scrollbar-color: #a6b9d4 #f4f7fc;
+}
+body:not(.login-page) .meter-card table {
+  color: var(--panel-ink);
+}
+body:not(.login-page) .meter-card th {
+  color: #445a77;
+  background: #edf3fc;
+  font-size: 13px;
+  border-color: #dce5f1;
+}
+body:not(.login-page) .meter-card th small {
+  color: #596e87;
+}
+body:not(.login-page) .meter-card td.equipment {
+  color: #24364e;
+}
+body:not(.login-page) :is(.equipment-number, .equipment > small, .ratio span, .energy small) {
+  color: var(--panel-help);
+}
+body:not(.login-page) .meter-card td.ratio {
+  color: #385271;
+  font-size: 13px;
+}
+body:not(.login-page) .meter-card td.energy:not(.check) {
+  color: #214b86;
+  font-size: 16px;
+}
+body:not(.login-page) .meter-card tr.main-row td {
+  background: #f1f6ff;
+}
+body:not(.login-page) .meter-input {
+  color: #192f4b;
+  font-size: 18px;
+  border-radius: 9px;
+}
+body:not(.login-page) .meter-input::placeholder {
+  color: #64758c;
+}
+body:not(.login-page) .meter-usage {
+  color: var(--panel-help);
+  font-size: 12px;
+}
+body:not(.login-page) .meter-usage strong {
+  color: #334e70;
+  font-size: 13px;
+}
+body:not(.login-page) :is(.table-footer, .entry-hint) {
+  color: var(--panel-help);
+  background: #f8faff;
+  font-size: 12px;
+}
+body:not(.login-page) .equipment > small {
+  font-size: 13px;
+}
+body:not(.login-page) .result-card .card-heading {
+  padding: 22px 0;
+}
+body:not(.login-page) .result-card .step-number {
+  width: 26px;
+  background: #edf3ff;
+}
+body:not(.login-page) .result-card h2 {
+  font-size: 17px;
+}
+body:not(.login-page)
+  :is(.completion, .derived-grid > div, .metric-note, .total-panel p, .total-panel) {
+  color: var(--panel-help);
+}
+body:not(.login-page) .total-panel {
+  border-radius: 15px;
+  border-color: #d4e3fc;
+  background: linear-gradient(135deg, #e8f3ff, #edf0ff);
+  padding: 20px;
+}
+body:not(.login-page) .total-panel strong {
+  color: #2458b8;
+  font-size: 36px;
+}
+body:not(.login-page) .derived-grid strong {
+  color: #274a77;
+}
+body:not(.login-page) .metric-note {
+  font-size: 12px;
+}
+body:not(.login-page) progress::-webkit-progress-value {
+  background: #3c7ee3;
+}
+body:not(.login-page) progress::-moz-progress-bar {
+  background: #3c7ee3;
+}
+body:not(.login-page) .report-preview {
+  background: #f6f9fe;
+  color: #3b506e;
+  border-color: #d8e3f2;
+  font-size: 13px;
+}
+body:not(.login-page) .gas-card {
+  padding: 22px;
+}
+body:not(.login-page)
+  :is(
+    .gas-card > [data-i18n='gasHint'],
+    .gas-card > [data-i18n='waterHint'],
+    #gas-period,
+    #gas-source,
+    #additional-section > p
+  ) {
+  color: var(--panel-help);
+}
+body:not(.login-page) #water-status:not(:empty) {
+  color: var(--amber);
+}
+body:not(.login-page) .gas-entry {
+  border-radius: 16px;
+  border-color: #d4dfef;
+  background: #f9fbff;
+}
+body:not(.login-page) .gas-entry legend {
+  color: #2a4770;
+}
+body:not(.login-page) .gas-observation label {
+  color: #4e617a;
+  font-size: 14px;
+}
+body:not(.login-page) .gas-observation input {
+  color: #192f4b;
+}
+body:not(.login-page) .gas-refill {
+  border-color: #d6e2f3;
+  border-radius: 12px;
+  background: #fff;
+}
+body:not(.login-page) .gas-total {
+  color: #2458b8;
+}
+body:not(.login-page) .utility-note {
+  background: #f7f9fe;
+  color: var(--panel-help);
+}
+body:not(.login-page) .gas-card .utility-fields {
+  padding: 12px 0 0;
+}
+body:not(.login-page) .site-footer {
+  color: var(--panel-help);
+}
+body:not(.login-page) .release-footer {
+  color: #536a86;
+}
+@keyframes workspace-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+body:not(.login-page) #report-workspace {
+  animation: workspace-enter 360ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (max-width: 1150px) {
+  body:not(.login-page) .account-heading {
+    align-items: start;
+  }
+  body:not(.login-page) #account-session {
+    margin-left: 0;
+  }
+  body:not(.login-page) .plant-bar-note {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  body:not(.login-page) .workspace {
+    padding: 24px 14px 0;
+  }
+  body:not(.login-page) .site-header {
+    padding: 12px 16px;
+  }
+  body:not(.login-page) .page-heading {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  body:not(.login-page) .save-controls {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  body:not(.login-page) #save-status {
+    max-width: none;
+    text-align: left;
+    font-size: 12px;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  body:not(.login-page) .account-card {
+    padding: 14px;
+  }
+  body:not(.login-page) #cloud-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  body:not(.login-page) #cloud-actions > button {
+    white-space: normal;
+  }
+  body:not(.login-page) #open-users {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  body:not(.login-page) #account-session {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #dde6f3;
+  }
+  body:not(.login-page) #account-session > button {
+    font-size: 12px;
+  }
+  body:not(.login-page) .recording-controls {
+    display: grid;
+    gap: 16px;
+  }
+  body:not(.login-page) .plant-bar {
+    justify-content: start;
+  }
+  body:not(.login-page) .reading-mode-bar {
+    width: 100%;
+  }
+  body:not(.login-page) .plant-tab {
+    padding: 12px 18px;
+  }
+  body:not(.login-page) .period-card {
+    padding: 18px;
+    gap: 10px;
+  }
+  body:not(.login-page) .period-card input {
+    font-size: 14px;
+  }
+  body:not(.login-page) .period-label {
+    gap: 10px;
+  }
+  body:not(.login-page) .period-tools {
+    gap: 8px;
+  }
+  body:not(.login-page) .period-tools > details {
+    flex-basis: 100%;
+  }
+  body:not(.login-page) :is(.card-heading, .gas-card) {
+    padding: 18px 16px;
+  }
+  body:not(.login-page) .result-card .card-heading {
+    padding: 20px 0;
+  }
+  body:not(.login-page) .table-toolbar {
+    padding: 0 16px 16px;
+  }
+  body:not(.login-page) .result-card {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+  body:not(.login-page) .intro {
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:not(.login-page) #report-workspace {
+    animation: none;
+  }
+  body:not(.login-page) :is(button, input, select, textarea, summary) {
+    transition: none;
+  }
+}
+#application-surface[data-panel-motion='off'] #report-workspace {
+  animation: none;
+}
+#application-surface[data-panel-motion='off'] :is(button, input, select, textarea, summary) {
+  transition: none;
+}
+@media (forced-colors: active) {
+  body:not(.login-page) :is(.account-card, .card, .period-card, .site-header, .total-panel) {
+    background: Canvas;
+    box-shadow: none;
+    backdrop-filter: none;
+    border: 1px solid CanvasText;
+  }
+  body:not(.login-page) :is(.button.primary, .plant-tab.active) {
+    color: HighlightText;
+    background: Highlight;
+  }
+}
+
+body:not(.login-page) .result-badge:not(.ready) {
+  background: #eef2f8;
+  color: #536780;
+}
+body:not(.login-page) .result-badge.ready {
+  background: #e7f5ec;
+  color: #1c6a44;
+}
+body:not(.login-page) .meter-card .check-label {
+  color: #4e617a;
+}
+body:not(.login-page) :is(#history-dialog, #users-dialog, #import-dialog, #raw-export-dialog) {
+  border-radius: 20px;
+  border-color: #d7e3f4;
+  box-shadow: 0 20px 80px #1b376431;
+}
+body:not(.login-page) input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+}
+@media (max-width: 380px) {
+  body:not(.login-page) .site-header {
+    gap: 12px;
+  }
+  body:not(.login-page) .brand img {
+    width: 64px;
+  }
+  body:not(.login-page) .language-control select {
+    min-width: 78px;
+    font-size: 14px;
+  }
+  body:not(.login-page) .clock-block time {
+    font-size: 15px;
+  }
+  body:not(.login-page) .header-tools {
+    gap: 8px;
+  }
+}

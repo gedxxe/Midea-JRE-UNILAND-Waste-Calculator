@@ -6,9 +6,9 @@ export const gasMessages = {
     'Menggunakan tabel massa workbook UNILAND. Setiap reading R32 perlu suhu. LPG mengikuti angka kg tabel yang berbeda dari keterangan densitas dan kapasitas. Batas tabel bukan batas pengisian tangki.',
   ],
   gasHint: [
-    "Enter stock readings at the selected period's start and end. Each observation is converted to kg first. Matching date/time readings are shared; enable each tank calculation in the periods you use.",
-    '填写所选时段期初和期末库存读数，逐次换算为 kg。相同日期和时间的读数共用；请在需要的时段启用各储罐计算。',
-    'Isi stok awal dan akhir periode yang dipilih. Setiap reading dikonversi ke kg. Reading pada tanggal dan jam sama dipakai bersama; aktifkan kalkulasi tangki di periode yang digunakan.',
+    'Enter start and end stock. Add any refills for this period.',
+    '填写本时段期初和期末库存，并记录期间的补充。',
+    'Isi stok awal dan akhir. Tambahkan refill yang terjadi dalam periode ini.',
   ],
   gasSource: [
     'Uses the supplied tank tables. R32 requires temperature for each reading. LPG uses the corrected reference values documented in the workbook.',
@@ -17,9 +17,9 @@ export const gasMessages = {
   ],
   gasEnable: ['Calculate from tank readings', '根据储罐读数计算', 'Hitung dari reading tangki'],
   gasDisabled: [
-    'Not using tank readings. Existing manual utility values are preserved below.',
-    '未使用储罐读数。下方保留已有的手动用量。',
-    'Belum menggunakan reading tangki. Nilai konsumsi manual tetap tersimpan di bagian bawah.',
+    'Use manual consumption below, or enable tank readings.',
+    '可填写下方手动用量，或启用储罐读数。',
+    'Isi konsumsi manual di bawah, atau aktifkan reading tangki.',
   ],
   gasCalculated: [
     ' (calculated from tank readings)',

@@ -1,6 +1,7 @@
 export const PUBLIC_FILES = [
   'index.html',
   'style.css',
+  'workspace.css',
   'logo.css',
   'signin-effects.css',
   'ui/signin-transition.js',
