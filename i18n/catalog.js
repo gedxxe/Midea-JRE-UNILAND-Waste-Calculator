@@ -1,3 +1,4 @@
+import { excelMessages } from './excel.js';
 import { workingHoursMessages } from './working-hours.js';
 import { draftMessages } from './drafts.js';
 import { graphMessages } from './graphs.js';
@@ -7,6 +8,7 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  ...excelMessages,
   welcomeEnergyTitle: ['Energy Record', '能源记录', 'Catatan Energi'],
   welcomeSigningIn: ['Signing in...', '正在登录…', 'Sedang masuk...'],
   welcomeOpening: ['Opening your workspace...', '正在打开工作区…', 'Membuka halaman pengisian...'],
@@ -279,9 +281,9 @@ export const catalog = {
     'tidak terdefinisi (main meter 0)',
   ],
   areaHint: [
-    'Area totals for the worksheet. Individual values stay in the report.',
-    '工作表中的区域总量。报告仍保留各设备的单独数值。',
-    'Penjumlahan area untuk worksheet. Nilai individual tetap ada di laporan.',
+    'Area totals combine related meters. Excel exports each equipment separately.',
+    '区域总量合并相关电表，Excel 按设备单独导出。',
+    'Total area menggabungkan meter terkait. Excel mengekspor tiap equipment secara terpisah.',
   ],
   check: ['Check data', '检查数据', 'Periksa data'],
   emptyCount: ['{count} empty meters', '{count} 个电表未填写', '{count} meter kosong'],
@@ -307,7 +309,7 @@ export const catalog = {
   copyReport: ['Copy report', '复制报告', 'Salin laporan'],
   copyCombined: ['Copy combined', '复制合并报告', 'Salin gabungan'],
   copyExcel: ['Copy Excel row', '复制 Excel 行', 'Salin baris Excel'],
-  copyWorksheet: ['Copy worksheet', '复制工作表', 'Salin worksheet'],
+  copyWorksheet: ['Copy Excel row', '复制 Excel 行', 'Salin baris Excel'],
   copyIncomplete: [
     'Fill all readings or use - for unavailable data.',
     '填写所有读数，无法获取的数据填写 -。',

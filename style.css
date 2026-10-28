@@ -2559,3 +2559,13 @@ html[data-graph-motion='off'] .graph-view-switch button {
   text-decoration: none;
   background: #f1f7f6;
 }
+
+#excel-row-note {
+  text-align: left;
+  font-size: 13px;
+  color: #3e5c62;
+  margin-block: 10px;
+}
+.result-column:has(#report-view option[value='worksheet']:checked) {
+  position: static;
+}

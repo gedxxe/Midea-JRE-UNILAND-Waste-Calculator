@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.28-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.29-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -66,6 +66,12 @@ JRE **Warehouse Lighting** is row 32, ratio x40. Warehouse Area now excludes its
 
 Current electricity layouts: **JRE 32 equipment rows / 62 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 retains its defined deductions. Structural is max(0, its direct usage minus Piping 1 meter 1 usage x40), only when both readings are valid. The main Total stays independent. JRE T1–T4 are optional notes outside totals and raw exports. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
 
+### Copy into Daily Monitoring Excel
+
+Choose 24 HOURS, Day/AFTER PRODUCTION or NIGHT SHIFT, then **Copy Excel row**. Paste from **E for JRE through AY (47 cells)** or **BE for UNILAND through CV (44 cells)** on the matching row. The clipboard contains values only, without a date. AP and CO remain empty separators. The Excel preview lists every destination column; unknown columns stay blank for manual entry. Use an empty, unmerged row because paste replaces values/formulas within the range.
+
+JRE gas exports kg. UNILAND tank gas exports the raw reading balance with refill correction: Nitrogen mmH2O, Oxygen mmWC, LPG %, R32 mm. Existing manual LPG remains Nm3 and other manual utilities keep their recorded units; converted kg reports remain unchanged. Negative gas balances denote measured stock increases. Water follows the active period. See [column map and paste behavior](docs/excel-export.md).
+
 ### Import and reading checks
 
 The blank template and importer use the same equipment schema. Fill the date and known readings; leave ____ or empty cells for unfinished readings. Import preserves an existing value only at the same factory/date/time. On a new date it stays blank. Old lists may omit recently added meters, but incomplete readings still need completion before copying a finished report. Invalid numbers, wrong meter counts or missing original equipment stop the whole import. The modal shows current row/meter counts and the first five issues.
@@ -80,7 +86,7 @@ Tab recovery updates immediately; account sync follows after 3 seconds idle or w
 
 ### Architecture
 
-JRE **Electricity Building 2#** reports its direct consumption minus all four Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, the direct kWh of Nitrogen and Refrigerant Station, and Charging Forklift Building 2 direct consumption, after their ratios. The Station and Forklift remain separate electricity rows; gas quantities are not deducted. Charging Forklift Building 2 is row 31 with one direct Start/End pair. Older drafts add this pair blank; complete older text imports retain it only at matching reading dates/times. This applies to all three electricity modes and the sub-meter/gap check. Raw exports retain original cumulative values; saved history and worksheet columns stay unchanged.
+JRE **Electricity Building 2#** reports its direct consumption minus all four Heat Exchanger meters, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, the direct kWh of Nitrogen and Refrigerant Station, and Charging Forklift Building 2 direct consumption, after their ratios. The Station and Forklift remain separate electricity rows; gas quantities are not deducted. Charging Forklift Building 2 is row 31 with one direct Start/End pair. Older drafts add this pair blank; complete older text imports retain it only at matching reading dates/times. This applies to all three electricity modes and the sub-meter/gap check. Raw exports retain original cumulative values; saved history and legacy worksheet columns stay unchanged.
 
 ```mermaid
 flowchart LR
@@ -145,7 +151,7 @@ made in <3 by gede
 
 ## 简体中文
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.28-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.29-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -168,6 +174,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 
 只共享工厂、日期和时间完全相同的记录。复制可选全天、全天加下班、全部三段、仅下班、仅夜班。燃气、水及现有手填公用工程按时段分别计算，在所选各段显示。共用相同时间的库存及水表读数，补充记录和手填用量属于各自时段；保存和 Excel 行使用当前编辑模式。合并日期保持整段总量，不拆成推测的每日用量。
 
+- **Excel 行：** 选择全天、白班/生产时段或夜班后复制。JRE 从 E 粘贴至 AY，共 47 格；UNILAND 从 BE 至 CV，共 44 格。不含日期，AP/CO 分隔列及无来源列留空。选择未合并的空白目标行，粘贴会覆盖范围内的值/公式。JRE 气体使用 kg；UNILAND 储罐导出含补充修正的原始读数差，单位为 mmH2O、mmWC、%、mm。手填值保留原单位，kg 报表不变。负气体值表示实测库存增加，水按当前时段计算。详见 [Excel 列映射](docs/excel-export.md)。
 - **原始导出：** 电表下方选择 Start 或 End，只需所选列完整；不含燃气、水和 JRE T1–T4。
 - **读数导入：** 空白模板与导入共用设备结构。填写日期和已知读数；____ 或空单元格表示未完成，仅在工厂、日期、时间完全相同时保留已有值。旧清单可省略新加电表，但完整报表仍需补齐。格式错误、数量不符或缺少原设备时整次导入不生效。父子表提示按设备分组，显示上级用量、下级合计及差额，可点击定位具体电表。
 - **空白模板：** 登录后在原始导出旁，登录前在登录卡片内。页脚不再重复。复制/下载带 `____` 和 `DD/MM/YYYY` 的 `.txt`，停机前自行保存，不含实际读数。
@@ -187,7 +194,7 @@ JRE 为 32 项设备 / 62 个电表，UNILAND 为 34 项 / 48 个读数位置。
 
 ### 架构、安全与维护
 
-JRE **Electricity Building 2#** 的净用量为本表用量减去 Heat Exchanger 全部四个电表、Outdoor 电表 2、Window 电表 4 和 5、Indoor 电表 2，Nitrogen and Refrigerant Station 直读电表，以及 Charging Forklift Building 2 直读电表的用量，各分表先应用倍率。Station 与 Forklift 保留为独立电力项目，不扣减气体数量。新增 Forklift 为第 31 行，采用一组直读 Start/End；旧草稿新增空白位置，完整旧文本仅在读数日期和时间一致时保留已有 Forklift 读数。三个电力模式及分表合计/差额均采用净值；原始导出保留累计读数，已存历史与工作表列不变。
+JRE **Electricity Building 2#** 的净用量为本表用量减去 Heat Exchanger 全部四个电表、Outdoor 电表 2、Window 电表 4 和 5、Indoor 电表 2，Nitrogen and Refrigerant Station 直读电表，以及 Charging Forklift Building 2 直读电表的用量，各分表先应用倍率。Station 与 Forklift 保留为独立电力项目，不扣减气体数量。新增 Forklift 为第 31 行，采用一组直读 Start/End；旧草稿新增空白位置，完整旧文本仅在读数日期和时间一致时保留已有 Forklift 读数。三个电力模式及分表合计/差额均采用净值；原始导出保留累计读数，已存历史与旧工作表列不变。
 
 上方架构图：无浏览器运行依赖的 HTML/CSS/JavaScript → Vercel Node API → Neon PostgreSQL。服务端验证会话、归属和输入，重算新报表并保存不可变修订。草稿可替换且检查冲突。详见[架构和模块](docs/architecture.md)。
 
@@ -209,7 +216,7 @@ made in <3 by gede
 
 ## Indonesia
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.28-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.29-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -220,6 +227,12 @@ JRE menambah **Warehouse Lighting** pada poin 32, ratio x40. Warehouse Area diku
 Template kosong dan importer memakai daftar equipment yang sama. Isi tanggal dan reading yang diketahui; ____ atau sel kosong berarti belum diisi. Reading lama dipertahankan hanya pada pabrik, tanggal dan jam yang sama. Tanggal baru tetap kosong. Daftar lama boleh melewati meter yang baru ditambahkan; laporan lengkap tetap memerlukan reading tersebut. Angka tidak valid, jumlah meter salah atau equipment asli yang hilang membatalkan seluruh import. Modal menampilkan jumlah baris/meter terbaru dan lima masalah pertama.
 
 Pemeriksaan induk/submeter menampilkan konsumsi induk, total submeter dan selisih, dikelompokkan per equipment. Klik meter terkait untuk menuju inputnya. Perhitungan dan histori tersimpan tetap sama.
+
+### Salin ke Excel Daily Monitoring
+
+Pilih 24 HOURS, Day/AFTER PRODUCTION atau NIGHT SHIFT, lalu **Salin baris Excel**. Tempel mulai **E sampai AY untuk JRE (47 sel)** atau **BE sampai CV untuk UNILAND (44 sel)** pada baris yang sesuai. Salinan hanya berisi nilai, tanpa tanggal; AP/CO tetap kosong. Kolom yang belum punya sumber juga kosong untuk diisi manual. Gunakan baris kosong tanpa merged cells karena paste mengganti nilai/formula dalam rentang tersebut.
+
+Gas JRE memakai kg. Gas tank UNILAND memakai saldo reading raw dengan koreksi refill: Nitrogen mmH2O, Oxygen mmWC, LPG %, R32 mm. LPG manual tetap Nm3; utility manual lain mengikuti satuan catatannya. Laporan kg tetap sama. Nilai gas negatif berarti stok terukur meningkat. Water memakai periode aktif. Lihat [pemetaan Excel](docs/excel-export.md).
 
 ### Autosave dan checkpoint manual
 

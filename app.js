@@ -48,7 +48,7 @@ import {
   shiftDate,
   dayDiff,
 } from './numbers.js';
-import { worksheetRowToTSV } from './worksheet.js';
+import { buildExcelRow, excelRowToTSV, excelRowPreview } from './excel-row.js';
 import {
   STORAGE_KEY,
   restoreWorkspace,
@@ -623,6 +623,47 @@ function renderResults() {
   $('shared-reading-note').textContent = conflicts.length
     ? t('sharedReadingConflict', { count: conflicts.length })
     : '';
+  const excel = buildExcelRow(current(), report);
+  const periodLabel = t(
+    mode === 'workingHours' ? 'excelDay' : mode === 'nightShift' ? 'excelNight' : 'excelDaily',
+  );
+  const manualColumns = excel.notes
+    .filter((n) => n.code === 'unmapped')
+    .map((n) => n.column)
+    .join(', ');
+  const unitColumns = excel.notes
+    .filter((n) => n.code === 'unit')
+    .map((n) => n.column)
+    .join(', ');
+  const stockColumns = excel.notes
+    .filter((n) => n.code === 'stockIncrease')
+    .map((n) => n.column)
+    .join(', ');
+  const unmappedNames = excel.notes
+    .filter((n) => n.code === 'unmappedRow')
+    .map((n) => n.name)
+    .join(', ');
+  const excelGuide = [
+    t('excelPaste', {
+      start: excel.start,
+      end: excel.end,
+      count: excel.values.length,
+      separator: excel.separator,
+      period: periodLabel,
+    }),
+    manualColumns ? t('excelManual', { columns: manualColumns }) : '',
+    unmappedNames ? t('excelUnmapped', { names: unmappedNames }) : '',
+    unitColumns ? t('excelUnits', { columns: unitColumns }) : '',
+    stockColumns ? t('excelStock', { columns: stockColumns }) : '',
+    t('excelTarget'),
+  ]
+    .filter(Boolean)
+    .join(' ');
+  $('excel-row-note').textContent = t('excelRange', {
+    start: excel.start,
+    end: excel.end,
+    period: periodLabel,
+  });
   const view = $('report-view').value;
   const hasData = current().rows.some((row) => [...row.start, ...row.end].some((v) => v.trim()));
   $('report-preview').value =
@@ -630,7 +671,7 @@ function renderResults() {
       ? combined || combinedError
       : view === 'worksheet'
         ? hasData
-          ? [report.worksheetText, report.checks].filter(Boolean).join('\n\n')
+          ? excelRowPreview(excel)
           : ''
         : selected.success
           ? selected.text
@@ -648,6 +689,7 @@ function renderResults() {
   $('copy-combined').disabled = !combined;
   $('copy-combined').title = combinedError;
   $('copy-worksheet').disabled = !report.success;
+  $('copy-worksheet').hidden = view === 'worksheet';
   const ready =
     view === 'worksheet' ? report.success : view === 'combined' ? !!combined : selected.success;
   const visibleParts =
@@ -672,6 +714,7 @@ function renderResults() {
     : hasChecks
       ? t('copyWarnings')
       : t('copyPeriod');
+  if (view === 'worksheet' && report.success) $('copy-note').textContent = excelGuide;
   filterTable();
   rawExport.render();
   gasPanel.update();
@@ -683,11 +726,24 @@ async function copyText(text) {
   const generation = ++copyGeneration,
     preview = $('report-preview').value,
     factory = plant,
-    period = mode;
+    period = mode,
+    endpoints = JSON.stringify([
+      current().startDate,
+      current().endDate,
+      current().startTime,
+      current().endTime,
+    ]);
   const stillCurrent = () =>
     generation === copyGeneration &&
     factory === plant &&
     period === mode &&
+    endpoints ===
+      JSON.stringify([
+        current().startDate,
+        current().endDate,
+        current().startTime,
+        current().endTime,
+      ]) &&
     preview === $('report-preview').value;
   try {
     await navigator.clipboard.writeText(text);
@@ -853,7 +909,12 @@ $('check-data').addEventListener('click', () => {
   renderResults();
 });
 $('copy-report').addEventListener('click', () => {
-  if (!$('copy-report').disabled) void copyText($('report-preview').value);
+  if (!$('copy-report').disabled)
+    void copyText(
+      $('report-view').value === 'worksheet'
+        ? excelRowToTSV(buildExcelRow(current(), reports[plant]))
+        : $('report-preview').value,
+    );
 });
 $('copy-combined').addEventListener('click', () => {
   try {
@@ -863,7 +924,8 @@ $('copy-combined').addEventListener('click', () => {
   }
 });
 $('copy-worksheet').addEventListener('click', () => {
-  if (reports[plant].success) void copyText(worksheetRowToTSV(reports[plant].worksheet));
+  if (reports[plant].success)
+    void copyText(excelRowToTSV(buildExcelRow(current(), reports[plant])));
 });
 $('save-draft').addEventListener('click', () => {
   autosave.changed();

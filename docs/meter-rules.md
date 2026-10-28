@@ -23,7 +23,7 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 - Total is the direct main-meter delta, never a sub-meter sum or x1000.
 - Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40, x40. Meter 6 is the Window Vacuum Box, previously moved from Warehouse meter 3; preserve its raw cumulative values.
 - Dehumidifier: original direct meter plus Vacuum Box x40. Electricity Building 3# net = its gross direct delta minus Vacuum Box delta x40 and Piping Building 3# delta x40. Deduct only the Vacuum Box component, not all Dehumidifier usage. Each dependency is validated independently; a missing unrelated Dehumidifier meter does not erase a valid Building 3 net. Negative net or unavailable dependencies produce a check note and no numeric result. Raw readings and gross meter detail stay unchanged.
-- Area Repair Injection Molding: direct, appended as row 30. Included in the sub-meter sum and new graph key r29. The worksheet keeps its 19 columns; do not silently add Repair to the existing Injection column.
+- Area Repair Injection Molding: direct, appended as row 30. Included in the sub-meter sum and new graph key r29. The legacy saved worksheet keeps its 19 columns; do not silently add Repair to the existing Injection column.
 - Heat Exchanger: x40, x1, x1, x1. Injection Molding: 13 direct meters.
 - Electricity Building 2# net = its direct delta minus all four Heat Exchanger meter consumptions (x40, direct, direct, direct), Outdoor meter 2 x40, Window meters 4 and 5 x40 each, Indoor meter 2 x40, Nitrogen and Refrigerant Station direct kWh, and Charging Forklift Building 2 direct kWh. Keep the Station as a separate electricity row; do not deduct gas utility amounts. Convert each raw delta at scaled precision, then subtract their sum once before rounding. Other Indoor/Outdoor/Window components are not deducted; missing unrelated components do not erase valid individual dependencies. Missing included components or negative net produce unavailable output and a check note. Preserve the Building 2 gross reading/delta, main Total, raw exports/templates and existing worksheet columns. New saved report and r18 graph output use net; old saved output is immutable. The added Forklift uses JRE layout 5; no SQL migration is needed.
 - Air Compressor 1#: x40. New Air Compressor 1# and New Air Compressor 2#: direct. The confirmed inactive exception remains available for the same two rows.
@@ -38,7 +38,7 @@ Examples: Office `394,850` to `395,250` = `400.00 kWh`. Utility `660,610 + 29,09
 
 Cross-check compares Total to equipment 2 through 32, using net Warehouse Area, net Structural, net Electricity Building 2#, net Electricity Building 3# and corrected Piping Building 1# so their included branch meters are counted once. Gap = sub-meter sum - main Total. Gap percentage = gap / main Total x100, so smaller sub-meter consumption produces a negative gap. The panel and copied reports use the same signed two-decimal format for both kWh and percentage: +20.00, -20.00, or unsigned 0.00. Values rounded to zero never show +0.00 or -0.00. This changes presentation only; stored numeric values and historical output are unchanged. Missing sub-meters make the sub-meter sum and gap unavailable. Coverage may differ, so a gap alone is not an error. A zero main-meter value produces no gap percentage.
 
-Nonzero report values have two decimals; zero is `0 kWh`. The worksheet has an ISO date plus 18 values. Piping All is Piping Building 1# + Piping Building 3# and does not add a report row.
+Nonzero report values have two decimals; zero is `0 kWh`. The legacy saved worksheet has an ISO date plus 18 values. The current Excel clipboard instead follows [JRE E:AY](excel-export.md) without a date. Piping All is Piping Building 1# + Piping Building 3# and does not add a report row.
 
 ## UNILAND
 
@@ -58,7 +58,7 @@ Preserve the template's `Mwh` spelling for Trafo 3 and `KWh` for the refrigerant
 
 Keep relevant decimals up to eight places without thousands separators or exponent notation. Example: Building A `3691.4` to `3695.72` = `0.6912 MWh`.
 
-The worksheet has 16 values without a date:
+The legacy saved worksheet has 16 values without a date. The current Excel clipboard instead follows [UNILAND BE:CV](excel-export.md), with individual equipment in its own destination column. Historical grouped values remain:
 
 ```text
 Indoor Area = Indoor + Vacum box indoor
@@ -66,11 +66,11 @@ Outdoor Area = Outdoor + Vacum box outdoor + Line compressor outdoor
 HE & Piping = Heat Exchanger + Piping
 ```
 
-These sums appear only in the worksheet. Individual equipment remain separate in the main report. A missing component makes its grouped value `-`.
+These sums remain in legacy saved worksheet/graph output. Individual equipment remain separate in the main report. A missing component makes its grouped value `-`.
 
 ## JRE additional T1–T4 readings
 
-T1–T4 are JRE-only optional direct kWh cumulative pairs, separate from the existing UNILAND Trafo 1–3 MWh rows. End minus start belongs to the start date or combined consumption period. Both blank means omitted; partial/invalid pairs block final reports but remain valid drafts. Explicit unavailable or decreasing readings produce - and a check note. No ratios, main/sub-meter aggregation, gaps, worksheet columns or graph series are added. Completed reports append unnumbered T1–T4 consumption notes. Raw exports and blank templates exclude them. Store raw pairs and calculated notes in new snapshots; do not rewrite saved history. Retain legacy UNILAND pairs in drafts without using them for new UNILAND reports or automatically transferring them to JRE.
+T1–T4 are JRE-only optional direct kWh cumulative pairs, separate from the existing UNILAND Trafo 1–3 MWh rows. End minus start belongs to the start date or combined consumption period. Both blank means omitted; partial/invalid pairs block final reports but remain valid drafts. Explicit unavailable or decreasing readings produce - and a check note. No ratios, main/sub-meter aggregation, gaps, legacy saved worksheet columns or graph series are added. Current Excel clipboard columns E:H contain these consumptions. Completed reports append unnumbered T1–T4 consumption notes. Raw exports and blank templates exclude them. Store raw pairs and calculated notes in new snapshots; do not rewrite saved history. Retain legacy UNILAND pairs in drafts without using them for new UNILAND reports or automatically transferring them to JRE.
 
 ## Import, utility data, and storage
 

@@ -23,8 +23,10 @@ The optional [Quick guide](guide.md) is isolated from this data flow. Its decora
 | Recovery and import | storage.js, draft-backup.js, importer.js, ui/drafts.js                                           | Validated restore, atomic import, debounced sync and conflict choices   |
 | Accounts and HTTP   | server/auth.js, auth-handlers.js, password.js, http.js                                           | Sessions, Argon2id, origin/body checks, rate limits, redacted errors    |
 | Persistence         | server/db.js, drafts.js, period-autosaves.js, report-store.js, report-history.js, report-data.js | TLS PostgreSQL, parameterized queries, owner checks and transactions    |
-| Graphs and export   | server/graphs.js, graph-data.js, ui/graph-renderer.js, raw-export.js                             | Immutable history extraction, SVG/PNG/clipboard, blank/filled raw lists |
+| Graphs and export   | server/graphs.js, graph-data.js, ui/graph-renderer.js, raw-export.js, excel-row.js               | Immutable history extraction, SVG/PNG/clipboard, blank/filled raw lists |
 | Time and build      | server/ntp.js, clock.js, scripts/assets.mjs, scripts/build.mjs                                   | Fixed NTP servers, visible failure, static allowlist and build identity |
+
+The current Excel clipboard layout is owned by excel-row.js and reads the active draft/calculation only. It does not rewrite worksheet.js output used by saved snapshots and graph mappings. New numeric exports keep each destination column, including blanks, and omit dates. See [Excel export](excel-export.md).
 
 Business modules have no DOM, storage or network dependencies. Browser modules have no runtime package dependencies. There is no React/Next.js framework or AI service. Server dependencies are pg and @node-rs/argon2; development tools are Playwright and Prettier.
 
