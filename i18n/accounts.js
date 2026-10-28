@@ -53,9 +53,9 @@ export const accountMessages = {
     'Butuh akun? Hubungi admin.',
   ],
   accountPrivate: [
-    'Changes autosave to your account, including incomplete readings. Save creates a revision checkpoint.',
-    '即使读数不完整，修改也会自动保存到账户。保存按钮用于创建修订版本。',
-    'Perubahan tersimpan otomatis di akun, termasuk reading belum lengkap. Simpan membuat checkpoint revisi.',
+    'Readings autosave, even when unfinished. Save version keeps a checkpoint.',
+    '未填完的读数也会自动保存。保存版本可保留当前记录。',
+    'Reading tersimpan otomatis, termasuk yang belum lengkap. Simpan revisi untuk menyimpan versi saat ini.',
   ],
   accountUnavailable: [
     'Cannot connect to the account service. Try again.',

@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.29-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.30-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -190,6 +190,8 @@ Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
 - JRE nonzero output has two decimals; zero is 0. UNILAND trims up to eight decimals without exponential notation.
 - Both reports use start date. Combined reports require matching BOTH endpoints. Combined periods show a neutral notice, inclusive consumption-date range and number of days. Daily report wording stays unchanged.
 - Legacy worksheet/snapshot text retains JRE date plus 18 values and UNILAND 16 values for graph/history compatibility. Current Excel clipboard uses JRE E:AY and UNILAND BE:CV without a date, with individual equipment mapped to the supplied columns.
+
+- Requested 2026-10-28 workspace retouch: soften the signed-in panel with a blue fluid-gradient palette, restrained glass chrome, concise selected-language writing and clear text hierarchy. Preserve dark, readable readings/equipment names; supporting labels/units/help use solid slate with verified contrast. Compact the account navigation and place factory/mode controls together, retaining all controls, save/conflict feedback and keyboard/date behavior. Use CSS-only short entrance/control transitions, honor reduced motion and data-panel-motion="off" on application-surface. Blur only header/account chrome, never table cells; no perpetual panel animation, new browser dependency or framework. Welcome/login, canonical reports, calculations, autosave and data formats remain unchanged. workspace.css owns the signed-in theme and is allowlisted for builds.
 
 ## Verification and release work
 

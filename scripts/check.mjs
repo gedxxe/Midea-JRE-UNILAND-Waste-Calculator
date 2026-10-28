@@ -90,6 +90,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.23 adds a period journal, partial monitoring labels and checkpoint coalescing (~17 kB); no dependencies.
 // v0.11.28 adds grouped meter checks and trilingual import diagnostics (~12 kB net); no dependencies.
 // v0.11.29 adds explicit Excel column mapping and period/unit guidance (~12 kB); no browser packages.
-assert.ok(size < 980000, `Static assets grew to ${size} bytes; review the footprint.`);
+// v0.11.30 adds a scoped blue workspace theme and inline icons; no animation runtime or new dependencies.
+assert.ok(size < 995000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

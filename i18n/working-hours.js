@@ -33,9 +33,9 @@ export const workingHoursMessages = {
     'Laporan energi After production',
   ],
   workHint: [
-    '24 HOURS: morning to next morning. AFTER PRODUCTION: morning to evening. NIGHT SHIFT: evening to next morning. Electricity, gas and Water belong to each period; matching observations are shared.',
-    '24小时：早晨至次日早晨。生产时段：早晨至下班。夜班：晚间至次日早晨。每个时段分别记录电、气和水，并共用相同时间的读数。',
-    '24 HOURS: pagi ke pagi berikutnya. AFTER PRODUCTION: pagi ke sore. NIGHT SHIFT: sore ke pagi berikutnya. Listrik, gas dan Water dicatat per periode; reading yang waktunya sama dipakai bersama.',
+    'Use the actual reading times. Readings with the same date and time are shared across periods.',
+    '填写实际抄表时间。日期和时间相同的读数在各时段共用。',
+    'Gunakan waktu pencatatan sebenarnya. Reading dengan tanggal dan jam sama dipakai bersama antarperiode.',
   ],
   workDate: ['Shift date', '班次日期', 'Tanggal shift'],
   workStart: ['Morning reading time', '早晨抄表时间', 'Waktu reading pagi'],

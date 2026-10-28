@@ -9,6 +9,10 @@ import { waterMessages } from './water.js';
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
   ...excelMessages,
+  equipmentLabel: ['Equipment', '设备', 'Equipment'],
+  workspaceBrand: ['Energy workspace', '能源工作台', 'Panel energi'],
+  workspaceActions: ['Workspace actions', '工作区操作', 'Menu panel'],
+  mainMeterLabel: ['Main meter', '总电表', 'Meter utama'],
   welcomeEnergyTitle: ['Energy Record', '能源记录', 'Catatan Energi'],
   welcomeSigningIn: ['Signing in...', '正在登录…', 'Sedang masuk...'],
   welcomeOpening: ['Opening your workspace...', '正在打开工作区…', 'Membuka halaman pengisian...'],
@@ -39,9 +43,9 @@ export const catalog = {
   additionalTitle: ['Additional readings T1–T4', '附加读数 T1–T4', 'Reading tambahan T1–T4'],
   additionalMeter: ['Meter', '电表', 'Meter'],
   additionalHint: [
-    'Optional direct kWh readings. End minus start appears as report notes only; excluded from totals, gaps and raw exports.',
-    '可选的直读 kWh。结束减开始，仅作为报告附注，不计入合计、差额或原始读数导出。',
-    'Reading direct kWh opsional. Akhir dikurangi awal, hanya sebagai catatan laporan; tidak masuk total, gap, atau ekspor raw.',
+    'Optional direct kWh. Shown in report notes and Excel; excluded from totals, gaps and raw reading exports.',
+    '可选的直读 kWh。显示于报告附注及 Excel，不计入合计、差额或原始读数导出。',
+    'Direct kWh opsional. Muncul di catatan laporan dan Excel; tidak masuk total, gap, atau ekspor reading mentah.',
   ],
   additionalIncomplete: ['Enter both readings.', '请填写起止读数。', 'Isi kedua reading.'],
   additionalInvalid: [
@@ -146,9 +150,9 @@ export const catalog = {
   save: ['Save draft', '保存草稿', 'Simpan draft'],
   selectPlant: ['Select factory', '选择工厂', 'Pilih pabrik'],
   automatic: [
-    'Cumulative readings · Calculated automatically',
-    '累计读数 · 自动计算',
-    'Reading kumulatif · Hasil dihitung otomatis',
+    'Consumption updates as you type.',
+    '填写时自动计算用量。',
+    'Konsumsi dihitung saat mengisi.',
   ],
   combinedNotice: [
     'This reading covers {days} days ({start} 08:00 to {end} 08:00 WIB). Please confirm the dates for this combined period.',
@@ -259,11 +263,7 @@ export const catalog = {
   results: ['Results & report', '结果与报告', 'Hasil & laporan'],
   filled: ['Equipment completed', '已完成的设备', 'Equipment terisi'],
   progress: ['{done} of {total}', '{done} / {total}', '{done} dari {total}'],
-  totalHint: [
-    'Main meter difference for this period',
-    '本周期总表读数差值',
-    'Selisih reading total pada periode ini',
-  ],
+  totalHint: ['Consumption for this period', '本时段用量', 'Konsumsi periode ini'],
   gapLabel: ['Sub-meter - main meter', '分表合计 - 总表', 'Sub-meter - main meter'],
   gapPending: [
     'The gap is calculated when all sub-meters are complete.',
