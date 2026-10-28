@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.29-alpha - 2026-10-28
+
+- Copy one value-only Excel row to the supplied Daily Monitoring layout: JRE E:AY (47 cells), UNILAND BE:CV (44 cells). Preserve blank AP/CO separators and unknown columns so following values stay aligned. Omit dates, labels and unit suffixes from clipboard data.
+- Follow the edited 24-hour, Day/After-production or Night period for electricity, T1–T4, gas and Water. Keep existing net deductions. JRE gas uses kg; UNILAND tank gas uses refill-corrected raw balances in %, mmWC, mmH2O and mm, matching the workbook. Existing manual UNILAND gas/air/R454B totals pass through in their recorded workbook units. Signed stock increases stay negative in numeric consumption cells.
+- Show the destination range and column/value preview. Leave unconfirmed equipment and JRE Helium blank, with guidance to fill in Excel. Both Excel copy buttons produce the same tab-separated row; preserve leading/trailing empty cells and scope delayed clipboard fallback to reading dates/times.
+- Preserve legacy worksheet output used by saved reports and graphs, all calculation rules, auth and autosave formats. Add column/shift/clipboard regressions without spreadsheet runtime packages or SQL migration. Allow 30 minutes for the growing full CI gate; keep all tests, audit and clipboard-isolated workers.
+
 ## v0.11.28-alpha - 2026-10-28
 
 - Import partially filled reading templates without treating blanks as zero or invalid numbers. Preserve existing values only at the same factory/date/time; new dates remain unknown. Keep malformed values, wrong meter counts and required missing equipment atomic and blocking. Accept full-width separators and report a wrong factory directly.

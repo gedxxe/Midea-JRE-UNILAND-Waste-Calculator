@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.28-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.29-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -124,6 +124,8 @@ New user instructions override older choices here. Update this decision record, 
 
 - Requested 2026-10-28 import/UX audit: generated current templates filled fully must round-trip every schema meter. Support partial templates with ____ or empty fields as unsupplied, preserving known observations only at exact factory/date/time; never invent zero. Keep current required equipment, malformed numbers and meter-count validation atomic. Recently added Repair/Forklift/Lighting JRE and SV window/Painting/Dryer UNILAND may be omitted in legacy lists; final reports still need valid observations. Use schema-driven counts and bounded localized feedback. Group parent/submeter checks with exact component indices and converted amounts, including navigation; do not invent new UNILAND parent relationships. Keep ordinary concise interface wording and clear private check details on collapse/logout. Preserve arithmetic, autosave/conflict rules, auth and immutable history. No migration.
 
+- Confirmed 2026-10-28 Excel export: use the supplied Daily Monitoring header layout, JRE E:AY (47 positions, blank AP) and UNILAND BE:CV (44 positions, blank CO). Values only, no date; operator chooses the destination dated Day/Night row. Use the active 24-hour/After-production/Night draft, preserving net electricity rules and JRE T1–T4 consumptions. User chose UNILAND raw gas units, including refill correction and LPG percent when tank entry is enabled; retain current kg factory reports. Manual legacy utilities pass through without invented conversions. User chose blank unconfirmed columns BF/BJ/BO/CJ, not zero; no guessed mapping for 10HP Lab (2). JRE Helium columns also remain blank because no source input exists. JRE gas exports kg, Water exports m3 per period. Stock gains remain negative balances in numeric Excel data, with a notice. Keep legacy worksheet.js/snapshot output for existing graphs/history; excel-row.js owns the new clipboard layout. Do not commit the source workbook/readings or edit its formulas/merged cells. No SQL migration.
+
 ## Architecture
 
 - Confirmed 2026-10-20 JRE, extended 2026-10-21: Electricity Building 2# net usage equals its direct meter delta minus all four Heat Exchanger consumptions, Outdoor meter 2, Window meters 4 and 5, Indoor meter 2, direct Nitrogen and Refrigerant Station electricity, and direct Charging Forklift Building 2 consumption, after each configured factor. The Station remains a separate electricity row and is deducted once from Building 2; gas stock/calculations are unrelated. Exclude all unrelated meter components. Apply to Daily, After production and Night, sub-meter sums, gaps and newly saved graph values; preserve raw pairs, raw exports/templates, worksheet columns and stored historical output. Missing dependencies or negative net remain unavailable, never silently zero. This uses the existing deduction engine with JRE meter layout 5 for the added Forklift row; no SQL migration is required.
@@ -187,7 +189,7 @@ Read docs/meter-rules.md and tests/engine.test.mjs before changing calculations.
 - Decimal comma or dot, no thousands separators/exponents/suffixes. Maximum six decimals and cumulative 1000000000000. Preserve BigInt scaled subtraction.
 - JRE nonzero output has two decimals; zero is 0. UNILAND trims up to eight decimals without exponential notation.
 - Both reports use start date. Combined reports require matching BOTH endpoints. Combined periods show a neutral notice, inclusive consumption-date range and number of days. Daily report wording stays unchanged.
-- JRE worksheet has date plus 18 values; UNILAND has 16 values without a date. UNILAND grouped areas are worksheet-only.
+- Legacy worksheet/snapshot text retains JRE date plus 18 values and UNILAND 16 values for graph/history compatibility. Current Excel clipboard uses JRE E:AY and UNILAND BE:CV without a date, with individual equipment mapped to the supplied columns.
 
 ## Verification and release work
 

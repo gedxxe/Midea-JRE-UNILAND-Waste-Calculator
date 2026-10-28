@@ -532,7 +532,7 @@ test('combined report and Excel output match the factory engine, including date 
     .poll(() =>
       page.evaluate(async () => (await navigator.clipboard.readText()).split('\t').length),
     )
-    .toBe(16);
+    .toBe(44);
   await page.locator('#end-date').fill('2026-09-19');
   await expect(page.locator('#copy-combined')).toBeDisabled();
   await expect(page.locator('#copy-report')).toBeDisabled();

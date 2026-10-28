@@ -67,6 +67,8 @@ export const PUBLIC_FILES = [
   'i18n/gas.js',
   'numbers.js',
   'worksheet.js',
+  'excel-row.js',
+  'i18n/excel.js',
   'raw-export.js',
   'ui/raw-export.js',
   'ui/raw-template.js',
