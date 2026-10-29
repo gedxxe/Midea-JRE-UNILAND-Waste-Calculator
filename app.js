@@ -1,3 +1,4 @@
+import { mountPanelIcons, setPanelIcon } from './ui/panel-icons.js';
 import {
   seedUtilityReadings,
   shareUtilityEdits,
@@ -685,7 +686,7 @@ function renderResults() {
               : '';
   $('copy-report').disabled =
     view === 'worksheet' ? !report.success : view === 'combined' ? !combined : !selected.success;
-  $('copy-report').textContent = view === 'worksheet' ? t('copyWorksheet') : t('copyReport');
+  $('copy-report-label').textContent = view === 'worksheet' ? t('copyWorksheet') : t('copyReport');
   $('copy-combined').disabled = !combined;
   $('copy-combined').title = combinedError;
   $('copy-worksheet').disabled = !report.success;
@@ -705,6 +706,12 @@ function renderResults() {
       ? t('needsCheck')
       : t('ready');
   $('result-state').classList.toggle('ready', ready && !hasChecks);
+  const tone = !ready ? 'pending' : hasChecks ? 'attention' : 'ready';
+  $('result-status').dataset.tone = tone;
+  setPanelIcon(
+    $('result-status').querySelector('[data-panel-icon]'),
+    tone === 'ready' ? 'circle-check' : tone === 'attention' ? 'triangle-alert' : 'clock',
+  );
   $('copy-note').textContent = !ready
     ? view === 'worksheet'
       ? t('copyIncomplete')
@@ -827,6 +834,7 @@ try {
 } catch {
   setLanguage('en');
 }
+mountPanelIcons();
 translatePage();
 $('language-select').value = getLanguage();
 $('save-status').textContent = t(saveStatus);

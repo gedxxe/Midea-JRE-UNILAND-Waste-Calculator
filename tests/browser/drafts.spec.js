@@ -184,11 +184,13 @@ test('partial entries autosave after three seconds, restore on reload and create
   expect(state.writes).toBe(1);
   await cell(page).fill('124');
   await page.locator('#save-report').click();
+  await page.clock.runFor(4100);
   await expect(page.locator('#toast')).toContainText('Revision 1');
   expect(state.reports).toBe(1);
   await page.reload();
   await expect(cell(page)).toHaveValue('124');
   await page.locator('#save-report').click();
+  await page.clock.runFor(4100);
   await expect(page.locator('#toast')).toContainText('Already saved');
   expect([...state.documents.values()][0].checkpoints).toHaveLength(1);
   await cell(page).fill('125');
@@ -198,6 +200,7 @@ test('partial entries autosave after three seconds, restore on reload and create
   expect(doc.checkpoints[0].draft.rows[0].start[0]).toBe('124');
   expect(doc.snapshot.draft.rows[0].start[0]).toBe('125');
   await page.locator('#save-report').click();
+  await page.clock.runFor(4100);
   await expect(page.locator('#toast')).toContainText('Revision 2');
 });
 test('partial autosaves populate monitoring and monthly table without a manual checkpoint', async ({

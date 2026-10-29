@@ -186,7 +186,10 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
       const input = node('input');
       input.dataset.utility = i;
       input.disabled = Boolean(calculated);
-      if (input.disabled) label.append(node('span', t('gasCalculated')));
+      if (input.disabled) {
+        label.classList.add('calculated-utility');
+        label.append(node('span', t('gasCalculated')));
+      }
       input.type = 'text';
       input.inputMode = 'decimal';
       input.maxLength = 50;

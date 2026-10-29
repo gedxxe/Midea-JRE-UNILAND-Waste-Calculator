@@ -621,3 +621,276 @@ body:not(.login-page) input[type='checkbox'] {
     gap: 8px;
   }
 }
+/* Lucide SVG cues and explicit attention states; text remains the accessible label. */
+.panel-svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  vertical-align: middle;
+}
+.panel-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+body:not(.login-page) button:has(> .panel-action-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+body:not(.login-page) .panel-action-icon .panel-svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 160ms ease;
+}
+body:not(.login-page) button:hover > .panel-action-icon .panel-svg {
+  transform: translateY(-1px);
+}
+body:not(.login-page) .utility-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+body:not(.login-page) .utility-section-heading h2 {
+  margin: 0;
+}
+body:not(.login-page) .section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  flex: none;
+}
+body:not(.login-page) .icon-gas {
+  color: #7150ae;
+  background: #efe9fb;
+}
+body:not(.login-page) .icon-water {
+  color: #08768a;
+  background: #e0f4f6;
+}
+body:not(.login-page) .icon-extra {
+  color: #285cad;
+  background: #eaf1ff;
+}
+body:not(.login-page) .gas-entry legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+body:not(.login-page) .gas-entry[data-gas='LPG'] legend > .panel-svg {
+  color: #a75712;
+}
+body:not(.login-page) .gas-entry[data-gas='O2'] legend > .panel-svg {
+  color: #08768a;
+}
+body:not(.login-page) .gas-entry[data-gas='N2'] legend > .panel-svg {
+  color: #7150ae;
+}
+body:not(.login-page) .gas-entry[data-gas='R32'] legend > .panel-svg {
+  color: #285cad;
+}
+body:not(.login-page) .gas-entry .calculated-utility {
+  display: none;
+}
+body:not(.login-page) .panel-help {
+  color: #4e617a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+body:not(.login-page) .panel-help > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+  cursor: pointer;
+  padding: 8px 0;
+  font-weight: 550;
+}
+body:not(.login-page) .panel-help > summary::-webkit-details-marker {
+  display: none;
+}
+body:not(.login-page) .panel-help > summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  margin: -3px 4px 0 auto;
+  transition: transform 160ms ease;
+}
+body:not(.login-page) .panel-help[open] > summary::after {
+  transform: rotate(225deg);
+  margin-top: 3px;
+}
+body:not(.login-page) .panel-help > summary .panel-svg {
+  width: 16px;
+  height: 16px;
+}
+body:not(.login-page) .panel-help p {
+  padding: 4px 0 10px;
+}
+body:not(.login-page) .gas-calculation {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  margin-left: 12px;
+}
+body:not(.login-page) .gas-calculation summary {
+  gap: 8px;
+}
+body:not(.login-page) .gas-calculation[open] {
+  display: block;
+  margin: 8px 0;
+}
+body:not(.login-page) .gas-reference {
+  margin-top: 16px;
+  padding: 4px 12px;
+  border: 1px solid #dce5f1;
+  border-radius: 10px;
+  background: #f6f9fe;
+}
+body:not(.login-page) .gas-total {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+body:not(.login-page) .gas-total > span {
+  min-width: 0;
+}
+body:not(.login-page) .gas-entry[data-state='attention'] {
+  background: #fffcf2;
+  border-color: #d7ab40;
+  box-shadow: inset 3px 0 #e7b849;
+}
+body:not(.login-page) .gas-total[data-tone='attention'] {
+  color: #80500c;
+}
+body:not(.login-page) .gas-entry[data-state='error'] {
+  border-color: #c67070;
+}
+body:not(.login-page) .gas-total[data-tone='error'] {
+  color: #9b2727;
+}
+body:not(.login-page) .gas-feedback {
+  display: flex;
+  gap: 9px;
+  align-items: start;
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 10px;
+}
+body:not(.login-page) .gas-feedback > span {
+  flex: none;
+}
+body:not(.login-page) .gas-feedback .gas-status {
+  margin: 0;
+  color: inherit;
+  line-height: 1.6;
+}
+body:not(.login-page) .gas-feedback[data-tone='attention'] {
+  background: #fff0c5;
+  border: 1px solid #e7c364;
+  color: #754a0b;
+}
+body:not(.login-page) .gas-feedback[data-tone='error'] {
+  background: #fff0f0;
+  border: 1px solid #e6b5b5;
+  color: #9b2727;
+}
+body:not(.login-page) .gas-feedback[data-tone='unavailable'] {
+  background: #edf2f8;
+  color: #50627c;
+}
+body:not(.login-page) .gas-feedback[data-tone='none'] {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+body:not(.login-page) .result-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 5px 7px;
+}
+body:not(.login-page) .result-status .panel-svg {
+  width: 14px;
+  height: 14px;
+}
+body:not(.login-page) .result-status[data-tone='pending'] {
+  color: #536780;
+  background: #eef2f8;
+}
+body:not(.login-page) .result-status[data-tone='attention'] {
+  color: #754a0b;
+  background: #fff0c5;
+}
+body:not(.login-page) .result-status[data-tone='ready'] {
+  color: #1c6a44;
+  background: #e7f5ec;
+}
+body:not(.login-page) .result-status .result-badge {
+  color: inherit;
+  background: inherit;
+  padding: 0;
+}
+@media (max-width: 600px) {
+  body:not(.login-page) .gas-calculation {
+    display: block;
+    margin: 8px 0;
+  }
+  body:not(.login-page) .result-card .card-heading {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:not(.login-page) .panel-action-icon .panel-svg,
+  body:not(.login-page) .panel-help > summary::after {
+    transition: none;
+  }
+  body:not(.login-page) button:hover > .panel-action-icon .panel-svg {
+    transform: none;
+  }
+}
+#application-surface[data-panel-motion='off'] .panel-action-icon .panel-svg,
+#application-surface[data-panel-motion='off'] .panel-help > summary::after {
+  transition: none;
+}
+#application-surface[data-panel-motion='off'] button:hover > .panel-action-icon .panel-svg {
+  transform: none;
+}
+@media (forced-colors: active) {
+  body:not(.login-page)
+    :is(.section-icon, .gas-feedback, .result-status, .gas-entry[data-state='attention']) {
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    border: 1px solid CanvasText;
+  }
+}
+
+body:not(.login-page) .gas-total {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+body:not(.login-page) .gas-total > span:first-child {
+  width: 20px;
+  flex: none;
+}
+body:not(.login-page) .gas-total > span:last-child {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+body:not(.login-page) .gas-entry legend > .gas-mark {
+  width: 36px;
+  height: 36px;
+}

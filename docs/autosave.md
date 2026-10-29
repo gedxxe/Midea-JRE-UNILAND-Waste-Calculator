@@ -10,6 +10,8 @@ Save version first synchronizes the workspace and its pending periods, then crea
 
 Delete saved draft clears the active workspace only; autosaved period history and manual checkpoints remain. The next edit or manual Save recreates the active workspace with its current concurrency token.
 
+Save version now uses a 4-second Fuse window before the manual checkpoint request. Click **Undo save** or press Escape to cancel. The remaining window pauses in a hidden tab or when the mouse re-enters the button after leaving. Autosave runs independently; cancelled versions do not undo readings or remove saved checkpoints. Reading/period/plant/account changes cancel pending saves, and the same context is rechecked after the autosave flush. Only a successful server response produces saved feedback; unchanged saves keep their revision number.
+
 ## Storage and timing
 
 - Immediate owner-scoped sessionStorage recovery is atomic with its sync token and departed-period journal. It survives reload, not guaranteed tab closure. A damaged recovery copy is held for explicit recovery instead of silently overwritten.
@@ -23,6 +25,7 @@ Delete saved draft clears the active workspace only; autosaved period history an
 ## Module boundaries
 
 - draft-records.js owns period identity, entry detection, canonical content comparison and journal restoration.
+- ui/save-fuse.js owns the cancellable manual-save delay. It keeps no persisted timer and cannot delete checkpoints.
 - ui/drafts.js owns the per-account queue, coalescing, retry, recovery, conflict and checkpoint serialization.
 - server/drafts.js atomically persists the account workspace and partial period snapshots; server/period-autosaves.js plans/writes only changed documents in batches.
 - server/report-store.js owns immutable manual checkpoint creation/deduplication; server/report-history.js reads the working copy or an explicit checkpoint.

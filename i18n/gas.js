@@ -75,9 +75,9 @@ export const gasMessages = {
     'Stok hasil konversi turun saat refill. Periksa reading, suhu, dan urutan pencatatan.',
   ],
   gasStockIncrease: [
-    'Converted stock increased outside a recorded refill. Check readings, temperatures and any missing refill; measurement conditions may affect the estimate. You can still save and copy the report.',
-    '换算库存在已记录补充之外增加。请检查读数、温度及是否漏记补充；测量条件可能影响估算。仍可保存和复制报告。',
-    'Stok hasil konversi naik di luar refill yang dicatat. Periksa reading, suhu, dan kemungkinan refill belum dicatat; kondisi pengukuran dapat memengaruhi estimasi. Laporan tetap bisa disimpan dan disalin.',
+    'Stock increase detected. Check readings, temperature and missing refills. You can still save and copy.',
+    '检测到库存增加。请核对读数、温度及漏记的补充；仍可保存和复制。',
+    'Ada kenaikan stok. Periksa reading, suhu, dan refill yang belum dicatat. Tetap bisa disimpan dan disalin.',
   ],
   gasUnavailable: [
     'Consumption unavailable: a reading is marked -.',

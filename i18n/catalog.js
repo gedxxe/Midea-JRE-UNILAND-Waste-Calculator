@@ -9,6 +9,9 @@ import { waterMessages } from './water.js';
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
   ...excelMessages,
+  reportHelp: ['Report options', '报告选项说明', 'Tentang pilihan laporan'],
+  gasReference: ['Tank reference', '储罐参考', 'Referensi tangki'],
+  gasHow: ['Calculation & refill notes', '计算与补充说明', 'Perhitungan & catatan refill'],
   equipmentLabel: ['Equipment', '设备', 'Equipment'],
   workspaceBrand: ['Energy workspace', '能源工作台', 'Panel energi'],
   workspaceActions: ['Workspace actions', '工作区操作', 'Menu panel'],

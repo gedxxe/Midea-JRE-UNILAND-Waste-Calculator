@@ -2,6 +2,17 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.31-alpha - 2026-10-29
+
+- Restore the question-style welcome slogan in English, Mandarin and Indonesian: "Tired of manual meter recording? Try Energy Record." Keep its wording separate from panel copy changes.
+- Give Nitrogen, Oxygen and R32 distinct original vector formula marks (N₂, O₂, R32), with readable shapes and colors instead of generic cylinders.
+- Add a small pinned Lucide SVG set for section headings, common actions and status cues, with full upstream notices. Keep visible button labels, native keyboard controls and reduced/off-motion behavior.
+- Give valid gas stock-increase notices an amber card, arrow/status icons and readable yellow attention panel for both plants and all periods. Clear the attention state when resolved; invalid inputs/refill errors remain distinct and blocking. Signed calculations and canonical report text stay unchanged.
+- Collapse repeated calculation/reference help and redundant report-option explanations. Show the calculated gas result once while retaining note entry, manual values and their recovery when tank mode is disabled. No calibration, autosave, database or account-format changes.
+
+- Add the supplied React Bits Fuse interaction to Save version: 4 seconds to cancel before sending, while autosave continues. Cancel on context changes, preserve checkpoint coalescing and show success only after server confirmation.
+- Add the supplied Specular edge-light shaders to native Sign in, with lazy loading, stopped idle frames, bounded DPR and CSS/no-WebGL/reduced-motion fallbacks. Retain auth gates, upstream license and all data formats.
+
 ## v0.11.30-alpha - 2026-10-28
 
 - Refresh the signed-in workspace with a soft blue gradient, compact glass navigation, clearer factory/mode controls and coordinated cards. Keep reading fields opaque and sharp; use darker numbers with softer, contrast-checked labels, units and help text.
