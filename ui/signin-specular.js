@@ -167,7 +167,9 @@ const link = (gl) => {
 };
 
 // Optional edge light only. Native form submission never depends on this module.
-export function createSpecularButton(button, allowed) {
+export function createSpecularButton(button, allowed, { radius: corner = 32 } = {}) {
+  if (typeof ResizeObserver !== 'function' || typeof IntersectionObserver !== 'function')
+    return null;
   const canvas = document.createElement('canvas');
   canvas.className = 'specular-button__light';
   canvas.setAttribute('aria-hidden', 'true');
@@ -204,7 +206,7 @@ export function createSpecularButton(button, allowed) {
   gl.bindVertexArray(null);
   button.prepend(canvas);
   const s = {
-    radius: 32,
+    radius: corner,
     intensity: 1.1,
     idleIntensity: 0.35,
     shineSize: 12,

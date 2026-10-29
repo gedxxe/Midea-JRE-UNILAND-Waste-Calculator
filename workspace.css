@@ -121,7 +121,7 @@ body:not(.login-page) #cloud-actions {
   margin: 0;
   gap: 8px;
 }
-body:not(.login-page) #cloud-actions > button {
+body:not(.login-page) #cloud-actions > button:not(.fuse-button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -893,4 +893,10 @@ body:not(.login-page) .gas-total > span:last-child {
 body:not(.login-page) .gas-entry legend > .gas-mark {
   width: 36px;
   height: 36px;
+}
+body:not(.login-page) .result-column {
+  position: static;
+}
+body:not(.login-page) .result-column[data-sticky='true'] {
+  position: sticky;
 }

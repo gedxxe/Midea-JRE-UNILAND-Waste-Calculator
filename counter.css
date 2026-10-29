@@ -1,0 +1,86 @@
+/* React Bits Counter digit strips/fade adapted for the existing dashboard.
+   David Haz, MIT + Commons Clause. See asset/licenses/react-bits.txt. */
+.counter-host {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  max-width: 100%;
+}
+.counter-row {
+  position: absolute;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: pre;
+  direction: ltr;
+  unicode-bidi: isolate;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 1;
+}
+.counter-row[hidden] {
+  display: none;
+}
+.counter-host[data-rolling='true'] > .counter-source {
+  opacity: 0;
+}
+.counter-digit {
+  position: relative;
+  display: inline-block;
+  height: var(--counter-step, 1.2em);
+  line-height: var(--counter-step, 1.2em);
+  text-align: center;
+}
+.counter-sizer {
+  visibility: hidden;
+}
+.counter-window {
+  position: absolute;
+  inset: -0.12em 0;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 0.12em,
+    #000 calc(100% - 0.12em),
+    transparent
+  );
+}
+.counter-strip {
+  position: absolute;
+  inset: 0.12em 0;
+}
+.counter-numeral {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.counter-symbol {
+  position: relative;
+  display: inline-block;
+  line-height: var(--counter-step, 1.2em);
+  white-space: pre;
+}
+.counter-blur {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  .counter-host > .counter-source {
+    opacity: 1 !important;
+  }
+  .counter-row {
+    display: none !important;
+  }
+}
+#application-surface[data-panel-motion='off'] .counter-source {
+  opacity: 1 !important;
+}
+#application-surface[data-panel-motion='off'] .counter-row {
+  display: none !important;
+}

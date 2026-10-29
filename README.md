@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.31-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.32-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -38,6 +38,8 @@ The intended contribution to Midea Business System work is practical: consistent
 Only observations with the same factory, date and time are shared. Unknown readings stay blank. Final copy offers five choices: 24 HOURS; 24 HOURS + AFTER PRODUCTION; all three; AFTER PRODUCTION only; NIGHT SHIFT only. Gas, Water and existing manual utilities are calculated separately for each period and appear in each selected section. Matching gas/Water observations are shared; refill lists and manual totals belong to their period. Save and Excel row follow the active recording mode. See [periods and shifts](docs/working-hours.md).
 
 The welcome slogan remains "Tired of manual meter recording? Try Energy Record." in the selected language. SVG section/action icons keep their text labels. Valid gas stock increases use amber attention panels and remain copyable/saveable; invalid readings stay distinct. Calculation/reference help can be expanded when needed.
+
+The WIB clock and three summary values use short digit-roll transitions (a single dashboard entrance, then changed digits only); canonical values, signs, precision and NTP status remain unchanged. Copy report shares the Sign in edge-light effect and still copies immediately. Save version stays compact in every phase. Reduced/off motion and effect failure retain plain readable values.
 
 The signed-in panel uses a soft blue background, compact glass navigation and readable solid reading fields. Numbers take priority; supporting labels and help use softer slate text. Short entrance/focus transitions respect reduced motion; set data-panel-motion="off" on #application-surface to disable panel motion. This presentation does not change calculations, autosave or saved reports.
 
@@ -155,11 +157,13 @@ made in <3 by gede
 
 ## 简体中文
 
+WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示值、正负号、精度和 NTP 状态保持不变。复制报表采用边缘光效，点击后立即复制。保存版本按钮保持紧凑，关闭动画或效果失败时仍显示清晰的静态内容。
+
 欢迎标语保留“还在手动整理抄表记录？试试能源记录。”。分区和操作使用带文字的 SVG 图标；有效的库存增加以黄色提示显示，仍可保存和复制，输入错误单独标明。计算与参考说明可按需展开。
 
 登录后的工作区采用柔和蓝色背景、紧凑玻璃导航和清晰的实色输入框。数字优先，辅助标签与提示使用柔和但对比清楚的灰蓝色。短入场动画遵循减少动态效果设置；可在 #application-surface 设置 data-panel-motion="off"。计算、自动保存及历史报告不变。
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.31-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.32-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -226,11 +230,13 @@ made in <3 by gede
 
 ## Indonesia
 
+Jam WIB dan tiga angka ringkasan memakai animasi digit singkat. Nilai, tanda, presisi, dan status NTP tetap sama. Copy report memakai efek tepi seperti Login dan tetap langsung menyalin. Simpan revisi tetap ringkas; mode tanpa animasi tetap menampilkan angka biasa.
+
 Slogan welcome tetap “Capek mencatat meter secara manual? Coba Catatan Energi.”. Ikon SVG bagian dan tombol tetap disertai label. Kenaikan stok gas diberi perhatian kuning, tetap bisa disimpan/disalin; input invalid dibedakan. Bantuan perhitungan dan referensi bisa dibuka saat diperlukan.
 
 Panel setelah login memakai latar biru lembut, navigasi glass yang ringkas, dan kolom reading dengan latar solid. Angka utama lebih tegas; label, satuan, dan petunjuk memakai warna slate yang tetap terbaca. Transisi singkat mengikuti pengaturan reduced motion; data-panel-motion="off" pada #application-surface mematikan animasi panel. Perhitungan, autosave, dan laporan tersimpan tetap sama.
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.31-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.32-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 

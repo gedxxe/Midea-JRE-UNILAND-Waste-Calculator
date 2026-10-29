@@ -38,6 +38,8 @@ async function setup(page) {
       revision: Math.max(1, d.checkpoints.length),
       checkpointRevision: d.checkpoints.length,
     }));
+  // Persistence tests advance minutes of time; motion has its own browser suite.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install();
   await page.route('**/api/time', (r) =>
     r.fulfill({
