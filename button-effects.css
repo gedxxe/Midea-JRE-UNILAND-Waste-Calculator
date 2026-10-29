@@ -1,0 +1,137 @@
+/* React Bits FuseButton faces/rim and SpecularButton light, adapted for native controls.
+   David Haz, MIT + Commons Clause. See asset/licenses/react-bits.txt. */
+#save-report.fuse-button {
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  grid-template-areas: 'face';
+  align-items: center;
+  justify-items: center;
+  border-radius: 22px;
+  min-height: 44px;
+  overflow: visible;
+}
+.fuse-face {
+  grid-area: face;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    filter 0.18s ease;
+}
+.fuse-undo {
+  opacity: 0;
+  transform: translateY(5px);
+  pointer-events: none;
+}
+.fuse-seconds {
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  font-size: 0.85em;
+}
+.fuse-rim {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  pointer-events: none;
+  overflow: visible;
+  opacity: 0;
+}
+.fuse-rim rect {
+  fill: none;
+  stroke: #ffe085;
+  stroke-width: 2.5;
+  stroke-dasharray: 1;
+}
+#save-report[data-fuse-phase='armed'] .fuse-idle {
+  opacity: 0;
+  transform: translateY(-5px);
+  filter: blur(2px);
+}
+#save-report[data-fuse-phase='armed'] .fuse-undo {
+  opacity: 1;
+  transform: none;
+}
+#save-report[data-fuse-phase='armed'] .fuse-rim {
+  opacity: 1;
+}
+#save-report[data-fuse-phase='saved'] {
+  box-shadow: 0 0 0 2px #4dada778;
+}
+#save-report[data-fuse-instant='true'] .fuse-face {
+  transition: none;
+}
+#login-submit.specular-button {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  border-radius: 32px;
+  color: #fff;
+  background: linear-gradient(140deg, #24586b, #142f3e);
+  border: 1px solid #528696;
+  box-shadow:
+    inset 0 1px 0 #ffffff1f,
+    0 8px 22px -12px #102f46a0;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.22s ease;
+}
+#login-submit.specular-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+#login-submit.specular-button:focus-visible {
+  outline: 3px solid #33899d;
+  outline-offset: 4px;
+}
+.specular-button__light {
+  position: absolute;
+  inset: -24px;
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  z-index: 1;
+  pointer-events: none;
+}
+.specular-button__light[hidden] {
+  display: none;
+}
+.specular-button__label {
+  position: relative;
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  #save-report .fuse-face,
+  #login-submit.specular-button {
+    transition: none;
+  }
+  #save-report .fuse-face,
+  #login-submit.specular-button:active {
+    transform: none;
+    filter: none;
+  }
+  .specular-button__light {
+    display: none;
+  }
+}
+#application-surface[data-panel-motion='off'] .fuse-face {
+  transition: none;
+  transform: none;
+  filter: none;
+}
+@media (forced-colors: active) {
+  #save-report.fuse-button,
+  #login-submit.specular-button {
+    border: 2px solid ButtonText;
+    box-shadow: none;
+  }
+  .specular-button__light {
+    display: none;
+  }
+  .fuse-rim rect {
+    stroke: Highlight;
+  }
+}

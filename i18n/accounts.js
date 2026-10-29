@@ -1,4 +1,22 @@
 export const accountMessages = {
+  undoSave: ['Undo save', '取消保存', 'Batalkan simpan'],
+  saveVersionPending: [
+    'Version saves in 4 seconds. Select Undo save or press Escape to cancel.',
+    '版本将在4秒后保存。点击取消保存或按 Escape 可取消。',
+    'Revisi disimpan dalam 4 detik. Pilih Batalkan simpan atau tekan Escape untuk membatalkan.',
+  ],
+  saveVersionCancelled: [
+    'Version save cancelled. Autosave continues.',
+    '已取消保存版本。自动保存继续。',
+    'Simpan revisi dibatalkan. Autosave tetap berjalan.',
+  ],
+  saveVersionContextChanged: [
+    'Version save cancelled because the readings, period or account changed. Autosave continues.',
+    '读数、期间或账户已更改，已取消保存版本。自动保存继续。',
+    'Simpan revisi dibatalkan karena reading, periode, atau akun berubah. Autosave tetap berjalan.',
+  ],
+  saveVersionSending: ['Saving version...', '正在保存版本...', 'Menyimpan revisi...'],
+  saveVersionConfirmed: ['Version saved.', '版本已保存。', 'Revisi tersimpan.'],
   reportUnchanged: [
     'Already saved. No changes since revision {revision}.',
     '已保存。与修订 {revision} 相比没有变化。',
@@ -38,9 +56,9 @@ export const accountMessages = {
     'Isi tanggal reading untuk membuat revisi. Isian belum lengkap tetap tersimpan di draft.',
   ],
   welcomeMotto: [
-    'Fill in meter readings. Copy your daily report.',
-    '填写电表读数，复制每日能耗报告。',
-    'Isi reading meter. Salin laporan harian.',
+    'Tired of manual meter recording? Try Energy Record.',
+    '还在手动整理抄表记录？试试能源记录。',
+    'Capek mencatat meter secara manual? Coba Catatan Energi.',
   ],
   welcomeLove: ['love', '爱', 'cinta'],
   accountTitle: ['Sign in', '登录', 'Login'],

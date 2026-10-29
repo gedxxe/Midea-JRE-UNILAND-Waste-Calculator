@@ -1,3 +1,4 @@
+import { panelIcon, setPanelIcon, gasMark } from './panel-icons.js';
 import {
   gasCalibration,
   MAX_REFILLS,
@@ -25,7 +26,9 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       const entry = current().gas.entries[index];
       const card = node('fieldset', undefined, 'gas-entry');
       card.dataset.gas = gas.id;
-      card.append(node('legend', gas.name + ' (' + gas.unit + ')'));
+      const legend = node('legend');
+      legend.append(gasMark(gas.id), node('span', gas.name + ' (' + gas.unit + ')'));
+      card.append(legend);
       const toggleLabel = node('label', undefined, 'check-label');
       const toggle = node('input');
       toggle.type = 'checkbox';
@@ -52,7 +55,12 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       if (gas.id === 'R32') card.append(node('p', t('gasTempHint'), 'gas-help'));
       const view = {
         gas,
+        card,
         entry,
+        outputIcon: node('span'),
+        outputText: node('span'),
+        feedback: node('div', undefined, 'gas-feedback'),
+        statusIcon: node('span'),
         points: {},
         output: node('output'),
         status: node('p', undefined, 'gas-status'),
@@ -177,7 +185,14 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       });
       view.output.className = 'gas-total';
       view.status.setAttribute('role', 'status');
-      card.append(add, node('p', t('gasFormula'), 'gas-help'), view.output, view.status);
+      const calculation = node('details', undefined, 'panel-help gas-calculation');
+      const summary = node('summary');
+      summary.append(panelIcon('calculator'), node('span', t('gasHow')));
+      calculation.append(summary, node('p', t('gasFormula'), 'gas-help'));
+      view.output.append(view.outputIcon, view.outputText);
+      view.statusIcon.append(panelIcon('triangle-alert'));
+      view.feedback.append(view.statusIcon, view.status);
+      card.append(add, calculation, view.output, view.feedback);
       card.append(utility);
       $('gas-fields').append(card);
     });
@@ -210,8 +225,21 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         );
       }
       const value = gasUsageText(result.kg);
-      view.output.textContent =
+      view.outputText.textContent =
         t(value.startsWith('+') ? 'gasIncreaseTotal' : 'gasTotal') + ': ' + value + ' kg';
+      const tone = result.errors.length
+        ? 'error'
+        : result.unavailable
+          ? 'unavailable'
+          : result.warnings.length
+            ? 'attention'
+            : 'normal';
+      view.card.dataset.state = tone;
+      view.output.dataset.tone = tone;
+      setPanelIcon(
+        view.outputIcon,
+        tone === 'attention' ? 'arrow-up-right' : tone === 'error' ? 'triangle-alert' : 'gauge',
+      );
       view.status.dataset.notice = String(
         !result.errors.length && !result.unavailable && result.warnings.length > 0,
       );
@@ -224,6 +252,8 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
             : result.warnings.length
               ? t('gasStockIncrease')
               : '';
+      view.feedback.dataset.tone = view.status.textContent ? tone : 'none';
+      view.statusIcon.hidden = !view.status.textContent;
     }
   }
   function focusIssue(target) {

@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/welcome.css" />
     <link rel="stylesheet" href="/signin-effects.css" />
     <link rel="stylesheet" href="/glass.css" />
+    <link rel="stylesheet" href="/button-effects.css" />
     <link rel="stylesheet" href="/workspace.css" />
     <script type="module" src="/app.js"></script>
   </head>
@@ -55,7 +56,7 @@
       <div class="energy-bottomline">
         <div class="energy-description">
           <p class="energy-slogan" data-i18n="welcomeMotto">
-            Fill in meter readings. Copy your daily report.
+            Tired of manual meter recording? Try Energy Record.
           </p>
           <p class="energy-credit">
             Made with
@@ -174,6 +175,7 @@
             <span aria-live="polite" id="save-status" class="muted" role="status"
               ><span data-i18n="unsaved">Draft not saved</span></span
             ><button id="save-draft" class="button secondary">
+              <span class="panel-action-icon" data-panel-icon="save" aria-hidden="true"></span>
               <span data-i18n="save">Save draft</span>
             </button>
           </div>
@@ -209,13 +211,9 @@
               data-i18n-aria-label="workspaceActions"
               hidden
             >
-              <button
-                id="save-report"
-                class="button primary"
-                data-i18n="saveReport"
-                data-i18n-title="accountPrivate"
-              >
-                Save report
+              <button id="save-report" class="button primary" data-i18n-title="accountPrivate">
+                <span class="panel-action-icon" data-panel-icon="save" aria-hidden="true"></span
+                ><span data-i18n="saveReport">Save report</span>
               </button>
               <button id="open-graphs" class="button secondary">
                 <svg
@@ -304,10 +302,9 @@
               data-i18n-aria-label="signIn"
               aria-label="Sign in"
               type="submit"
-              class="button primary"
-              data-i18n="signIn"
+              class="button primary specular-button"
             >
-              Sign in
+              <span class="specular-button__label" data-i18n="signIn">Sign in</span>
             </button>
           </form>
           <p id="password-required" class="notice warning" data-i18n="passwordRequired" hidden>
@@ -429,7 +426,7 @@
             data-i18n-aria-label="period"
           >
             <div class="period-label">
-              <span class="step-number">01</span>
+              <span class="step-number" data-panel-icon="calendar-days" aria-hidden="true"></span>
               <div>
                 <h2><span data-i18n="period">Reading period</span></h2>
                 <p><span data-i18n="readTime">Read around 08:00 WIB</span></p>
@@ -547,7 +544,7 @@
               <section class="card meter-card" aria-labelledby="table-title">
                 <div class="card-heading">
                   <div class="section-label">
-                    <span class="step-number">02</span>
+                    <span class="step-number" data-panel-icon="gauge" aria-hidden="true"></span>
                     <div>
                       <h2 id="table-title">
                         <span data-i18n="readings">Meter readings</span>
@@ -557,6 +554,11 @@
                     </div>
                   </div>
                   <button id="open-import" class="text-button">
+                    <span
+                      class="panel-action-icon"
+                      data-panel-icon="file-input"
+                      aria-hidden="true"
+                    ></span>
                     <span data-i18n="import">Import text</span>
                   </button>
                 </div>
@@ -628,15 +630,32 @@
                 </div>
               </section>
               <div class="raw-export-actions raw-export-button">
-                <button id="open-raw-export" class="button secondary" data-i18n="exportRaw">
-                  Export Raw Table Data
+                <button id="open-raw-export" class="button secondary">
+                  <span
+                    class="panel-action-icon"
+                    data-panel-icon="file-text"
+                    aria-hidden="true"
+                  ></span
+                  ><span data-i18n="exportRaw">Export Raw Table Data</span>
                 </button>
-                <button class="button secondary" data-open-raw-template data-i18n="rawTemplate">
-                  Blank reading template
+                <button class="button secondary" data-open-raw-template>
+                  <span
+                    class="panel-action-icon"
+                    data-panel-icon="file-text"
+                    aria-hidden="true"
+                  ></span
+                  ><span data-i18n="rawTemplate">Blank reading template</span>
                 </button>
               </div>
               <section id="gas-section" class="card gas-card" aria-labelledby="gas-title">
-                <h2 id="gas-title">Gas consumption</h2>
+                <div class="utility-section-heading">
+                  <span
+                    class="section-icon icon-gas"
+                    data-panel-icon="cylinder"
+                    aria-hidden="true"
+                  ></span>
+                  <h2 id="gas-title">Gas consumption</h2>
+                </div>
                 <p data-i18n="gasHint">
                   Enter stock readings for the selected period. Convert each observation to kg
                   before calculating consumption; enter refills for this period only.
@@ -644,13 +663,30 @@
                 <p id="gas-period"></p>
                 <div id="gas-fields"></div>
                 <div id="utility-fields" class="utility-fields"></div>
-                <p id="gas-source" class="gas-source">
-                  Uses the supplied tank reference tables. R32 requires temperature at each
-                  observation. LPG uses the workbook's corrected reference values.
-                </p>
+                <details class="panel-help gas-reference">
+                  <summary>
+                    <span
+                      class="panel-action-icon"
+                      data-panel-icon="file-text"
+                      aria-hidden="true"
+                    ></span
+                    ><span data-i18n="gasReference">Tank reference</span>
+                  </summary>
+                  <p id="gas-source" class="gas-source">
+                    Uses the supplied tank reference tables. R32 requires temperature at each
+                    observation. LPG uses the workbook's corrected reference values.
+                  </p>
+                </details>
               </section>
               <section id="water-section" class="card gas-card" aria-labelledby="water-title">
-                <h2 id="water-title" data-i18n="waterTitle">Water consumption</h2>
+                <div class="utility-section-heading">
+                  <span
+                    class="section-icon icon-water"
+                    data-panel-icon="droplets"
+                    aria-hidden="true"
+                  ></span>
+                  <h2 id="water-title" data-i18n="waterTitle">Water consumption</h2>
+                </div>
                 <p data-i18n="waterHint">
                   Enter cumulative flow-meter readings in m³. End minus start gives consumption for
                   the starting date or combined period.
@@ -694,7 +730,14 @@
                 /></label>
               </section>
               <section id="additional-section" class="card gas-card" hidden>
-                <h2 data-i18n="additionalTitle">Additional readings T1–T4</h2>
+                <div class="utility-section-heading">
+                  <span
+                    class="section-icon icon-extra"
+                    data-panel-icon="gauge"
+                    aria-hidden="true"
+                  ></span>
+                  <h2 data-i18n="additionalTitle">Additional readings T1–T4</h2>
+                </div>
                 <p data-i18n="additionalHint"></p>
                 <div class="additional-scroll">
                   <table class="additional-table">
@@ -743,11 +786,22 @@
               <section class="card result-card">
                 <div class="card-heading">
                   <div class="section-label">
-                    <span class="step-number">03</span>
+                    <span
+                      class="step-number"
+                      data-panel-icon="clipboard-check"
+                      aria-hidden="true"
+                    ></span>
                     <h2 id="result-title"><span data-i18n="results">Results & report</span></h2>
                   </div>
-                  <span class="result-badge" id="result-state"
-                    ><span data-i18n="incomplete">Incomplete</span></span
+                  <span class="result-status" id="result-status" data-tone="pending"
+                    ><span
+                      class="panel-action-icon"
+                      data-panel-icon="clock"
+                      aria-hidden="true"
+                    ></span
+                    ><span class="result-badge" id="result-state"
+                      ><span data-i18n="incomplete">Incomplete</span></span
+                    ></span
                   >
                 </div>
                 <div class="completion">
@@ -760,7 +814,9 @@
                 <div class="total-panel">
                   <span data-i18n="mainMeterLabel">Main meter</span>
                   <div><strong id="main-total">-</strong><span id="main-unit">kWh</span></div>
-                  <p><span data-i18n="totalHint">Main meter difference for this period</span></p>
+                  <p class="sr-only">
+                    <span data-i18n="totalHint">Consumption for this period</span>
+                  </p>
                 </div>
                 <div class="derived-grid">
                   <div>
@@ -800,7 +856,17 @@
                     <option value="after">AFTER PRODUCTION only</option>
                     <option value="night">NIGHT SHIFT only</option>
                   </select>
-                  <p class="small" data-i18n="reportOptionsHint"></p>
+                  <details class="panel-help">
+                    <summary>
+                      <span
+                        class="panel-action-icon"
+                        data-panel-icon="calculator"
+                        aria-hidden="true"
+                      ></span
+                      ><span data-i18n="reportHelp">Report options</span>
+                    </summary>
+                    <p class="small" data-i18n="reportOptionsHint"></p>
+                  </details>
                   <p id="shared-reading-note" class="notice" role="status" hidden></p>
                 </div>
                 <p id="excel-row-note" class="small"></p>
@@ -822,12 +888,26 @@
                   placeholder="The report appears when you start entering readings."
                   data-i18n-placeholder="previewPlaceholder"
                 ></textarea>
-                <button id="copy-report" class="button primary full">Copy report</button>
+                <button id="copy-report" class="button primary full">
+                  <span class="panel-action-icon" data-panel-icon="copy" aria-hidden="true"></span
+                  ><span id="copy-report-label">Copy report</span>
+                </button>
                 <div class="copy-extra">
-                  <button id="copy-combined" class="text-button" data-i18n="copyCombined">
-                    Copy combined</button
-                  ><button id="copy-worksheet" class="text-button" data-i18n="copyExcel">
-                    Copy Excel row
+                  <button id="copy-combined" class="text-button">
+                    <span
+                      class="panel-action-icon"
+                      data-panel-icon="clipboard-check"
+                      aria-hidden="true"
+                    ></span
+                    ><span data-i18n="copyCombined">Copy combined</span>
+                  </button>
+                  <button id="copy-worksheet" class="text-button">
+                    <span
+                      class="panel-action-icon"
+                      data-panel-icon="file-text"
+                      aria-hidden="true"
+                    ></span
+                    ><span data-i18n="copyExcel">Copy Excel row</span>
                   </button>
                 </div>
                 <p class="small muted" id="copy-note">

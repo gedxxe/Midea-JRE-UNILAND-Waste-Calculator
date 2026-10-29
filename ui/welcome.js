@@ -21,7 +21,9 @@ export function createWelcome() {
     transitionTarget,
     circleOrigin,
     loginGlass,
-    titleTimer;
+    titleTimer,
+    specular,
+    specularLoading = false;
   let tech,
     magnet,
     ascii,
@@ -46,6 +48,24 @@ export function createWelcome() {
     magnet?.sync();
     ascii?.sync();
     signin.sync();
+    specular?.sync();
+    if (stage === 'login' && motionAllowed() && !specular && !specularLoading) {
+      specularLoading = true;
+      void import('./signin-specular.js')
+        .then((module) => {
+          if (stage === 'login' && !user)
+            specular = module.createSpecularButton(
+              document.getElementById('login-submit'),
+              () => stage === 'login' && !user && !dialogOpen && motionAllowed(),
+            );
+        })
+        .catch(() => {
+          /* Optional light never gates the form. */
+        })
+        .finally(() => {
+          specularLoading = false;
+        });
+    }
     syncTitleWait();
     if (!moving() || loading || initialized) return;
     loading = true;
@@ -114,6 +134,10 @@ export function createWelcome() {
     transition = undefined;
     transitionTarget = undefined;
     stage = next;
+    if (next !== 'login') {
+      specular?.destroy();
+      specular = undefined;
+    }
     document.body.dataset.welcome = next;
     hero.hidden = next !== 'hero';
     hero.inert = next !== 'hero';

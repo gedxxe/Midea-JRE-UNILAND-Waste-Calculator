@@ -4,6 +4,7 @@ import { t } from '../i18n/index.js';
 import { createDraft } from '../engine.js';
 import { restoreDrafts } from '../storage.js';
 import { periodKey } from '../draft-records.js';
+import { createSaveFuse } from './save-fuse.js';
 
 export function createAccounts({
   current,
@@ -32,6 +33,7 @@ export function createAccounts({
   let lastError = null;
   let pendingFocus = null;
   const eventKey = 'midea_account_changed';
+  let saveFuse;
 
   function applyIdentity(next) {
     refreshSequence++;
@@ -41,6 +43,7 @@ export function createAccounts({
     user = next;
     ready = true;
     if (changed) {
+      saveFuse?.reset();
       generation++;
       links = {};
       selected = null;
@@ -117,7 +120,7 @@ export function createAccounts({
     busy = true;
     render();
     try {
-      await run();
+      return await run();
     } catch (error) {
       toast(errorMessage(error));
       lastError = error;
@@ -176,6 +179,7 @@ export function createAccounts({
     $('open-users').hidden = user?.role !== 'admin';
     if (selected?.checkpointRevision === 0) $('load-revision').disabled = true;
     $('save-report').disabled = busy || !available || !user || user.mustChangePassword;
+    saveFuse?.sync();
     $('login-submit').disabled = busy || !ready || !available;
     $('password-submit').disabled = busy;
     $('logout').disabled = busy;
@@ -253,15 +257,20 @@ export function createAccounts({
       toast(t('passwordChanged'));
     });
   });
-  $('save-report').addEventListener(
-    'click',
-    () =>
-      void action(async () => {
+  saveFuse = createSaveFuse($('save-report'), {
+    context: () =>
+      !user || !available || user.mustChangePassword
+        ? null
+        : { generation, owner: user.id, draft: current() },
+    commit: (isCurrent) =>
+      action(async () => {
+        if (!isCurrent()) return false;
         if (!periodKey(current())) {
           if (await saveWorking()) toast(t('draftSavedWithoutPeriod'));
           return;
         }
         const result = await checkpoint(async ({ workspaceVersion, reference }) => {
+          if (!isCurrent()) throw new Error('PERIOD_CHANGED');
           const draft = structuredClone(current());
           const previous = links[reportLinkKey(draft)],
             known = reference(draft);
@@ -293,8 +302,9 @@ export function createAccounts({
         toast(
           t(result.unchanged ? 'reportUnchanged' : 'reportSaved', { revision: result.revision }),
         );
+        return true;
       }),
-  );
+  });
   async function history() {
     if (!(await beforeRead())) toast(t('monitoringUnsynced'));
     const filter = $('history-plant').value;
