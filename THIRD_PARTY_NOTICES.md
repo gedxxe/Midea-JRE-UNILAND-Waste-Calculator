@@ -17,7 +17,7 @@ README badges are remote Shields.io images with technology logos. They are docum
 
 ## React Bits animation source
 
-The welcome and sign-in screens adapt Tech Text, Split Text, Magnet, Gradient ASCII, Glass Icons, GlassSurface, Lattice Loader, FuseButton and SpecularButton from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz.
+The welcome and sign-in screens adapt Tech Text, Split Text, Magnet, Gradient ASCII, Glass Icons, GlassSurface, Lattice Loader, FuseButton, SpecularButton and Counter from [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits/tree/e12c22192ac7b4b452c5e2feb9b586d74765d696), pinned to commit e12c22192ac7b4b452c5e2feb9b586d74765d696, copyright (c) 2026 David Haz.
 
 Source locations under src/content/:
 
@@ -26,6 +26,7 @@ Source locations under src/content/:
 - Backgrounds/GradientASCII/GradientASCII.jsx: WebGL2 shader engine with fixed settings, resolution/frame limits and DOM lifecycle cleanup.
 - Components/GlassIcons/GlassIcons.jsx and GlassIcons.css: layered CSS glass fallback/style; the WebGL refraction renderer is not included.
 - Components/GlassSurface/GlassSurface.jsx and GlassSurface.css: user-supplied SVG displacement, RGB-channel composition, sheen and frosted fallback. Adapted with owned Blob maps under the existing CSP; no backdrop screenshots or separate refraction render loop.
+- Components/Counter/Counter.jsx and Counter.css: supplied per-digit modulo strips, damped springs, stagger, presence and fade. Adapted to already-formatted dashboard/clock text, with exact canonical siblings, optional main-value motion blur, context resets and bounded native frame cleanup. No numeric report values are reformatted or recalculated.
 - Micro/FuseButton/FuseButton.jsx and FuseButton.css: supplied countdown outline/face interaction, adapted to defer manual checkpoint submission for four seconds and retain native Undo/Escape. Functional timing is independent of WAAPI and server confirmation controls saved feedback. No Hugeicons dependency is bundled.
 - Components/SpecularButton/SpecularButton.jsx and SpecularButton.css: supplied rounded-rim WebGL2 shaders and pointer/press springs on the native login submit, lazy-loaded with capped DPR, idle cleanup and CSS fallback. No form values or backdrop screenshots enter the renderer.
 - Micro/LatticeLoader/LatticeLoader.jsx and LatticeLoader.css: CSS orbit pattern driven by actual sign-in request state.

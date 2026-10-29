@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/signin-effects.css" />
     <link rel="stylesheet" href="/glass.css" />
     <link rel="stylesheet" href="/button-effects.css" />
+    <link rel="stylesheet" href="/counter.css" />
     <link rel="stylesheet" href="/workspace.css" />
     <script type="module" src="/app.js"></script>
   </head>
@@ -888,9 +889,11 @@
                   placeholder="The report appears when you start entering readings."
                   data-i18n-placeholder="previewPlaceholder"
                 ></textarea>
-                <button id="copy-report" class="button primary full">
-                  <span class="panel-action-icon" data-panel-icon="copy" aria-hidden="true"></span
-                  ><span id="copy-report-label">Copy report</span>
+                <button id="copy-report" class="button primary full specular-button">
+                  <span class="specular-button__label">
+                    <span class="panel-action-icon" data-panel-icon="copy" aria-hidden="true"></span
+                    ><span id="copy-report-label">Copy report</span></span
+                  >
                 </button>
                 <div class="copy-extra">
                   <button id="copy-combined" class="text-button">

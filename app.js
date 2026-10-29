@@ -1,3 +1,5 @@
+import { fitResultsColumn } from './ui/result-layout.js';
+import { createPanelEffects } from './ui/panel-effects.js';
 import { mountPanelIcons, setPanelIcon } from './ui/panel-icons.js';
 import {
   seedUtilityReadings,
@@ -73,6 +75,8 @@ const table = createMeterTable({
 });
 const filterTable = () => table.filter();
 const clock = new NetworkClock();
+const panelEffects = createPanelEffects();
+fitResultsColumn(document.querySelector('.result-column'));
 let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
 let workingHours = emptyWorkingHours();
@@ -299,6 +303,7 @@ const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORA
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
   copyGeneration++;
+  panelEffects.reset();
   guide.reset(user);
   graphs?.reset(user);
   backupControls.reset(user);
@@ -355,6 +360,7 @@ const accounts = createAccounts({
   rendered: () => {
     welcome.sync({ ready: accounts.isReady(), user: accounts.getUser() });
     navigation?.sync();
+    panelEffects.sync();
   },
   current,
   identityChanged: accountChanged,
@@ -546,15 +552,34 @@ function renderResults() {
     done: report.completeRows,
     total: report.calculatedRows.length,
   });
-  $('main-total').textContent = formatRowValue(plant, report.calculatedRows[0]);
+  const metricScope = JSON.stringify([
+    accountUser?.id,
+    plant,
+    mode,
+    current().startDate,
+    current().endDate,
+    current().startTime,
+    current().endTime,
+  ]);
+  panelEffects.setText(
+    $('main-total'),
+    formatRowValue(plant, report.calculatedRows[0]),
+    metricScope,
+  );
   $('main-unit').textContent = report.totalDirectUnit;
   if (plant === 'JRE') {
     $('derived-one-label').textContent = 'Sub-meter 2-' + PLANT_SCHEMAS.JRE.rows.length;
     $('derived-two-label').textContent = t('gapLabel');
-    $('derived-one').textContent =
-      report.subAreasSumKWh === null ? '-' : `${report.subAreasSumKWh.toFixed(2)} kWh`;
-    $('derived-two').textContent =
-      report.gapKWh === null ? '-' : `${formatSignedNumber(report.gapKWh)} kWh`;
+    panelEffects.setText(
+      $('derived-one'),
+      report.subAreasSumKWh === null ? '-' : `${report.subAreasSumKWh.toFixed(2)} kWh`,
+      metricScope,
+    );
+    panelEffects.setText(
+      $('derived-two'),
+      report.gapKWh === null ? '-' : `${formatSignedNumber(report.gapKWh)} kWh`,
+      metricScope,
+    );
     $('metric-note').textContent =
       report.gapKWh === null
         ? t('gapPending')
@@ -567,14 +592,20 @@ function renderResults() {
   } else {
     $('derived-one-label').textContent = 'Indoor Area';
     $('derived-two-label').textContent = 'Outdoor Area';
-    $('derived-one').textContent =
+    panelEffects.setText(
+      $('derived-one'),
       report.worksheet.derived.indoorArea === null
         ? '-'
-        : `${formatNumber(report.worksheet.derived.indoorArea)} kWh`;
-    $('derived-two').textContent =
+        : `${formatNumber(report.worksheet.derived.indoorArea)} kWh`,
+      metricScope,
+    );
+    panelEffects.setText(
+      $('derived-two'),
       report.worksheet.derived.outdoorArea === null
         ? '-'
-        : `${formatNumber(report.worksheet.derived.outdoorArea)} kWh`;
+        : `${formatNumber(report.worksheet.derived.outdoorArea)} kWh`,
+      metricScope,
+    );
     $('metric-note').textContent = t('areaHint');
   }
   table.update(report);
@@ -687,6 +718,7 @@ function renderResults() {
   $('copy-report').disabled =
     view === 'worksheet' ? !report.success : view === 'combined' ? !combined : !selected.success;
   $('copy-report-label').textContent = view === 'worksheet' ? t('copyWorksheet') : t('copyReport');
+  panelEffects.sync();
   $('copy-combined').disabled = !combined;
   $('copy-combined').title = combinedError;
   $('copy-worksheet').disabled = !report.success;
@@ -809,13 +841,17 @@ async function syncTime() {
   renderClock();
 }
 function renderClock() {
-  $('clock-time').textContent = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Jakarta',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(new Date(clock.now()));
+  panelEffects.setText(
+    $('clock-time'),
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date(clock.now())),
+    'clock',
+  );
   $('clock-dot').classList.toggle('synced', clock.synchronized);
   if (!clock.pending) {
     $('clock-status').textContent = clock.synchronized

@@ -4,6 +4,8 @@
   position: relative;
   isolation: isolate;
   display: inline-grid;
+  flex: 0 0 auto;
+  width: auto;
   grid-template-areas: 'face';
   align-items: center;
   justify-items: center;
@@ -66,6 +68,11 @@
 #save-report[data-fuse-instant='true'] .fuse-face {
   transition: none;
 }
+button.specular-button {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
 #login-submit.specular-button {
   position: relative;
   isolation: isolate;
@@ -80,6 +87,12 @@
   transition:
     transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.22s ease;
+}
+#copy-report.specular-button {
+  border-radius: 14px;
+}
+#copy-report.specular-button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 #login-submit.specular-button:active:not(:disabled) {
   transform: scale(0.98);
@@ -100,6 +113,10 @@
   display: none;
 }
 .specular-button__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   position: relative;
   z-index: 2;
 }

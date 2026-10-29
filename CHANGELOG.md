@@ -2,6 +2,16 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.32-alpha - 2026-10-29
+
+- Fix the Save version width: preserve the Fuse grid so the normal and Undo faces share one space, with the same four-second cancellation and checkpoint behavior.
+- Let oversized result sidebars scroll with the page so Copy report remains reachable on short screens; retain sticky results when the whole card fits.
+- Reuse the supplied Specular edge-light shader on Copy report, retaining native immediate clipboard actions, disabled states, keyboard focus and a CSS fallback.
+- Adapt the supplied Counter digit strips/springs for the WIB clock and three dashboard metrics. Use one brief dashboard entrance, then animate only changed digits; preserve exact formatted strings, signs, decimals, units and unavailable markers. Large time corrections and account/factory/period changes snap to current values.
+- Keep canonical numbers readable to assistive technology and selectable as text, with optional decorative digits separate from reports/calculations. Stop hidden, covered, reduced/off-motion and settled rendering; no new requests, browser package, NTP logic, database or saved-data change.
+
+- Keep long simulated-time persistence tests static while dedicated tests verify actual motion. Allow 35 minutes for the expanded full CI gate; retain every audit, authorization and browser check.
+
 ## v0.11.31-alpha - 2026-10-29
 
 - Restore the question-style welcome slogan in English, Mandarin and Indonesian: "Tired of manual meter recording? Try Energy Record." Keep its wording separate from panel copy changes.
