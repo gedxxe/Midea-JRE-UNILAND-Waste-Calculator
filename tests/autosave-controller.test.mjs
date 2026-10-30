@@ -67,8 +67,15 @@ async function harness(t, { tombstone = false, journal = false, journalUnchanged
     },
     localSaved() {},
     request: async (_, options = {}) => {
+      if (_.includes('?period=')) {
+        const key = new URL('http://local' + _).searchParams.get('period');
+        return typeof gates.periodDocument === 'function'
+          ? gates.periodDocument(key)
+          : gates.periodDocument || { key, draft: null, version: 0 };
+      }
       if (options.body) {
         writes.push(structuredClone(options.body));
+        if (gates.failWrites) throw Error('OFFLINE');
         if (options.body.workspace === null && gates.holdDelete)
           await new Promise((resolve) => {
             gates.releaseDelete = resolve;
@@ -149,24 +156,12 @@ test('two-field period changes preserve the original observation without archivi
   assert.equal(writes[0].periods[0].rows[0].end[0], '110');
 });
 
-test('manual checkpoint recreates an active workspace after a nonzero-version tombstone', async (t) => {
+test('Save verification recreates an active workspace after a nonzero-version tombstone', async (t) => {
   const { autosave, writes, cloud } = await harness(t, { tombstone: true });
-  let calls = 0;
-  await autosave.checkpoint(async ({ workspaceVersion }) => {
-    calls++;
-    assert.ok(cloud());
-    assert.equal(workspaceVersion, 8);
-    return {
-      workspace: cloud(),
-      workspaceVersion,
-      updated_at: '2026-10-24T01:00:00Z',
-      unchanged: true,
-    };
-  });
-  assert.equal(calls, 1);
+  assert.equal(await autosave.verify(), true);
+  assert.ok(cloud());
   assert.equal(writes.length, 1);
   assert.equal(writes[0].baseVersion, 7);
-  assert.equal(writes[0].workspace.autosaveLayout, 1);
   assert.equal(autosave.pending(), false);
 });
 
@@ -218,14 +213,17 @@ test('deleting the active draft retains queue edits made while deletion is pendi
   assert.equal(recovery()?.tabRecovery.pendingPeriods[0]?.rows[0].start[0], '777');
   assert.equal(autosave.pending(), true);
 });
-test('an unchanged checkpoint response cannot advance a newly queued period past another device', async (t) => {
-  const { autosave, cloud, advanceVersion, writes } = await harness(t);
-  await autosave.checkpoint(async () => {
-    autosave.restorePeriods([queuedReading()]);
-    autosave.changed();
-    advanceVersion(3);
-    return { workspace: cloud(), workspaceVersion: 3, unchanged: true };
-  });
+test('verification cannot acknowledge queue edits or adopt another device token while reading', async (t) => {
+  const { autosave, gates, advanceVersion, writes } = await harness(t);
+  gates.holdRead = true;
+  const checking = autosave.verify();
+  await tick();
+  autosave.restorePeriods([queuedReading()]);
+  autosave.changed();
+  advanceVersion(3);
+  gates.releaseRead();
+  gates.holdRead = false;
+  assert.equal(await checking, false);
   assert.equal(await autosave.flushAll(), false);
   assert.equal(writes[0]?.baseVersion, 1);
   assert.equal(autosave.workspace().pendingPeriods[0]?.rows[0].start[0], '777');
@@ -252,4 +250,105 @@ test('reverting to the last local snapshot after a server conflict must not clai
   assert.equal(await autosave.flushAll(), false);
   assert.equal(read().drafts.JRE.rows[0].end[0], original.drafts.JRE.rows[0].end[0]);
   assert.equal(autosave.pending(), true);
+});
+
+test('Save verifies the current autosave without creating repeated writes or checkpoints', async (t) => {
+  const { autosave, read, writes } = await harness(t);
+  read().drafts.JRE.rows[0].end[0] = '130';
+  autosave.changed();
+  assert.equal(await autosave.verify(), true);
+  assert.equal(writes.length, 1);
+  assert.equal(await autosave.verify(), true);
+  assert.equal(writes.length, 1);
+});
+test('verification detects a different server copy without overwriting it', async (t) => {
+  const { autosave, cloud, advanceVersion, writes, recovery } = await harness(t);
+  cloud().drafts.JRE.rows[0].end[0] = '999';
+  advanceVersion(2);
+  assert.equal(await autosave.verify(), false);
+  assert.equal(writes.length, 0);
+  assert.equal(cloud().drafts.JRE.rows[0].end[0], '999');
+  assert.equal(recovery().tabRecovery.pending, true);
+});
+
+test('verification accepts schema defaults without ignoring raw reading differences', async (t) => {
+  const { autosave, cloud, writes } = await harness(t);
+  cloud().workingHours.JRE.isExample = false;
+  cloud().workingHours.JRE.importIssues = [];
+  assert.equal(await autosave.verify(), true);
+  assert.equal(writes.length, 0);
+  cloud().drafts.JRE.rows[0].start[0] = '777';
+  assert.equal(await autosave.verify(), false);
+});
+
+test('a content conflict without a version change remains explicit after reload', async (t) => {
+  const { autosave, cloud, writes, recovery } = await harness(t);
+  cloud().drafts.JRE.rows[0].start[0] = '999';
+  assert.equal(await autosave.verify(), false);
+  assert.equal(recovery().tabRecovery.conflict, true);
+  autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+  assert.equal(await autosave.flushAll(), false);
+  assert.equal(writes.length, 0);
+  assert.equal(cloud().drafts.JRE.rows[0].start[0], '999');
+});
+
+test('first edit of an unobserved period preserves stored fields absent from the local form', async (t) => {
+  const { autosave, read, gates, writes } = await harness(t);
+  const stored = structuredClone(read().drafts.JRE);
+  stored.rows[1].start[0] = '500';
+  gates.periodDocument = { key: 'JRE:daily:2026-10-03:2026-10-04', draft: stored, version: 8 };
+  read().drafts.JRE.rows[0].end[0] = '130';
+  autosave.changed();
+  assert.equal(await autosave.flushAll(), true);
+  assert.equal(writes[0].workspace.drafts.JRE.rows[1].start[0], '500');
+  assert.equal(writes[0].workspace.drafts.JRE.rows[0].end[0], '130');
+});
+
+test('offline revisiting and reload retain edits to a previously saved period', async (t) => {
+  const { autosave, read, setDraft, gates, writes, cloud } = await harness(t);
+  const key = 'JRE:daily:2026-10-03:2026-10-04',
+    original = structuredClone(read().drafts.JRE);
+  gates.periodDocument = (k) => ({
+    key: k,
+    draft: k === key ? original : null,
+    version: k === key ? 1 : 0,
+  });
+  gates.failWrites = true;
+  read().drafts.JRE.rows[0].end[0] = '120';
+  autosave.changed();
+  const next = createDraft('JRE', '2026-10-04', '2026-10-05');
+  next.rows[0].start[0] = '120';
+  const install = (loaded) => {
+    setDraft(loaded[0]);
+    autosave.changed({ periodOnly: true });
+  };
+  assert.equal(await autosave.navigate([next], install), true);
+  assert.equal(
+    await autosave.navigate([createDraft('JRE', '2026-10-03', '2026-10-04')], install),
+    true,
+  );
+  assert.equal(read().drafts.JRE.rows[0].start[0], '100');
+  assert.equal(read().drafts.JRE.rows[0].end[0], '120');
+  autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+  gates.failWrites = false;
+  assert.equal(await autosave.flushAll(), true);
+  assert.equal(cloud().drafts.JRE.rows[0].start[0], '100');
+  assert.equal(cloud().drafts.JRE.rows[0].end[0], '120');
+  assert.equal(writes.at(-1).workspace.drafts.JRE.rows[0].end[0], '120');
+});
+
+test('malformed baseline recovery is retained instead of silently replaced', async (t) => {
+  const { autosave, read, writes, recovery } = await harness(t);
+  const key = STORAGE_KEY + '_b89c2b90-bbee-4a90-bd68-a0e9fc761352';
+  sessionStorage.setItem(
+    key,
+    JSON.stringify({
+      ...read(),
+      tabRecovery: { version: 1, pending: true, periodBases: 'invalid' },
+    }),
+  );
+  autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+  assert.equal(await autosave.flushAll(), false);
+  assert.equal(writes.length, 0);
+  assert.equal(recovery().tabRecovery.periodBases, 'invalid');
 });

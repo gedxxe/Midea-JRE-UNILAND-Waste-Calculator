@@ -197,7 +197,7 @@ test('explicit electricity edits share morning/evening/next morning, keep unrela
   await page.locator('#reading-mode').selectOption('daily');
   await expect(cell(page)).toHaveValue('1002');
   await expect(cell(page, 'end')).toHaveValue('1013');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.water).toEqual({ start: '100', end: '102' });
   expect(state.workspace.drafts.JRE.utilities[0].value).toBe('3');
@@ -221,8 +221,9 @@ test('report contents stay independent of editable time, worksheet and the perio
   await page.locator('#report-periods').selectOption('all');
   await page.locator('#reading-mode').selectOption('workingHours');
   await page.locator('#save-report').click();
-  await expect.poll(() => state.saved[0]?.draft.periodKind).toBe('workingHours');
-  expect(state.saved[0].draft.utilities.every((v) => !v.value)).toBe(true);
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.saved).toHaveLength(0);
+  expect(state.workspace.workingHours.JRE.utilities.every((v) => !v.value)).toBe(true);
   await expect(page.locator('#copy-report')).toBeDisabled();
   await expect(page.locator('#result-state')).toHaveText('Incomplete');
   await page.locator('#report-view').selectOption('worksheet');

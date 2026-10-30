@@ -106,3 +106,7 @@ Presentation-only fix, with no schema, database, session or preference migration
 ## Supplied TechText and glass (v0.11.22-alpha)
 
 Presentation-only revision with no database, session, draft, account or analytics migration. The supplied TechText engine supersedes the earlier compositor-only lift; GlassSurface is optional and falls back to CSS. Retain the full upstream notice with distributed builds. A normal revert PR restores v0.11.21 presentation without modifying saved data. Preserve earlier tags and release branches. Preview login remains unconfigured.
+
+## Autosave destination protection (v0.11.35-alpha, in development)
+
+No SQL migration. New code adds owner-scoped period reads and checks the observed version before replacing an archived document. Old clients may receive a conflict when revisiting stored periods and should reload. Rollback removes these code-level protections; preserve a private workspace/period/checkpoint backup and do not treat a Git rollback as data recovery. Production incident recovery remains a separate reviewed operation.

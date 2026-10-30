@@ -41,7 +41,10 @@ test('editing End then Start journals the original period, without an intermedia
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.locator('#end-date').fill('2026-10-05');
   await page.locator('#start-date').fill('2026-10-04');
-  await page.locator('#save-draft').click();
+  await expect(
+    page.locator('input.meter-input[data-row="0"][data-side="start"]').first(),
+  ).toHaveValue('110');
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(writes).toHaveLength(1);
   expect(writes[0].periods.map((p) => [p.startDate, p.endDate])).toEqual([
@@ -50,9 +53,15 @@ test('editing End then Start journals the original period, without an intermedia
   expect(writes[0].periods[0].rows[0].end[0]).toBe('110');
   expect(workspace.drafts.JRE.rows[0].start[0]).toBe('110');
   expect(workspace.drafts.JRE.rows[0].end[0]).toBe('');
+  // A pending valid range must not replace a newer, unfinished date edit.
+  await page.locator('#end-date').fill('2026-10-08');
+  await page.locator('#start-date').fill('2026-10-09');
+  await page.clock.runFor(600);
+  await expect(page.locator('#start-date')).toHaveValue('2026-10-09');
+  await expect(page.locator('#end-date')).toHaveValue('2026-10-08');
 });
 
-test('Save version recreates a deleted active draft before storing a partial checkpoint', async ({
+test('Save recreates a deleted active draft and verifies it without a checkpoint', async ({
   page,
 }) => {
   const state = {
@@ -104,8 +113,8 @@ test('Save version recreates a deleted active draft before storing a partial che
   await page.locator('#forget-draft').click();
   await expect.poll(() => state.workspace).toBeNull();
   await page.locator('#save-report').click();
-  await expect(page.locator('#toast')).toContainText('Revision 1');
-  expect(reports).toBe(1);
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(reports).toBe(0);
   expect(writes.some((w) => w.workspace === null)).toBe(true);
   expect(writes.at(-1).workspace.drafts.JRE.rows[0].start[0]).toBe('100');
 });
@@ -171,7 +180,7 @@ for (const conflict of [true, false])
       });
       await page.goto('/');
       await expect(page.locator('#save-status')).toContainText('Sync pending');
-      await page.locator('#save-draft').click();
+      await page.keyboard.press('Control+s');
       await expect(page.locator('#save-status')).toContainText(
         conflict ? 'Another tab or device' : 'All changes saved',
       );
@@ -188,3 +197,70 @@ for (const conflict of [true, false])
       expect(queued).toHaveLength(conflict ? 1 : 0);
     },
   );
+
+test('revisiting a populated date loads stored readings before autosave and preserves edits during loading', async ({
+  page,
+}) => {
+  let workspace = modernWorkspace({
+      version: 4,
+      drafts: {
+        JRE: createDraft('JRE', '2026-10-27', '2026-10-28'),
+        UNILAND: createDraft('UNILAND'),
+      },
+    }),
+    version = 1,
+    release;
+  workspace.drafts.JRE.rows[0].start[0] = '10';
+  workspace.drafts.JRE.rows[0].end[0] = '20';
+  const stored = createDraft('JRE', '2026-10-29', '2026-10-30');
+  stored.rows[0].start[0] = '100';
+  stored.rows[0].end[0] = '125';
+  const writes = [];
+  await page.route('**/api/auth', (r) =>
+    r.fulfill({
+      json: {
+        available: true,
+        user: { id, username: 'navigation-test', role: 'operator', mustChangePassword: false },
+      },
+    }),
+  );
+  await page.route('**/api/time', (r) =>
+    r.fulfill({ status: 503, json: { error: 'TIME_UNAVAILABLE' } }),
+  );
+  await page.route('**/api/drafts', (r) => {
+    if (r.request().method() === 'POST') {
+      const body = r.request().postDataJSON();
+      writes.push(body);
+      workspace = body.workspace;
+      version++;
+    }
+    return r.fulfill({ json: { workspace, version } });
+  });
+  await page.route('**/api/drafts?**', async (r) => {
+    const key = new URL(r.request().url()).searchParams.get('period');
+    await new Promise((resolve) => {
+      release = resolve;
+    });
+    return r.fulfill({ json: { key, draft: stored, version: 8 } });
+  });
+  await page.goto('/');
+  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  await page.locator('#start-date').fill('2026-10-29');
+  await page.locator('#end-date').fill('2026-10-30');
+  await page.keyboard.press('Control+s');
+  await expect.poll(() => !!release).toBe(true);
+  await expect(page.locator('#report-workspace')).toHaveAttribute('inert', '');
+  release();
+  await expect(
+    page.locator('input.meter-input[data-row="0"][data-side="start"]').first(),
+  ).toHaveValue('100');
+  await expect(
+    page.locator('input.meter-input[data-row="0"][data-side="end"]').first(),
+  ).toHaveValue('125');
+  await expect(page.locator('#report-workspace')).not.toHaveAttribute('inert', '');
+  await page.locator('input.meter-input[data-row="1"][data-side="end"]').first().fill('5');
+  await expect.poll(() => writes.at(-1)?.workspace?.drafts?.JRE?.rows[0].start[0]).toBe('100');
+  expect(writes.at(-1).workspace.drafts.JRE.rows[0].start[0]).toBe('100');
+  expect(writes.at(-1).periodVersions['JRE:daily:2026-10-29:2026-10-30']).toBe(8);
+  await expect(page.locator('#save-draft')).toHaveCount(0);
+});

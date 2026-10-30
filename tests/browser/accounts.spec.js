@@ -16,6 +16,7 @@ test('account drafts, required password change, historian revisions, and logout 
   let user = null;
   let saved = null;
   let revision = 0;
+  let checkpointPosts = 0;
   await page.route('**/api/time', (route) =>
     route.fulfill({
       json: {
@@ -40,6 +41,7 @@ test('account drafts, required password change, historian revisions, and logout 
   await page.route('**/api/reports**', async (route) => {
     expect(route.request().headers()['x-meter-user']).toBe(account.id);
     if (route.request().method() === 'POST') {
+      checkpointPosts++;
       const body = route.request().postDataJSON();
       const next = reportSnapshot(body.draft);
       const unchanged = JSON.stringify(next) === JSON.stringify(saved);
@@ -121,7 +123,7 @@ test('account drafts, required password change, historian revisions, and logout 
   await gas.locator('[data-gas-point="end"]').fill('550');
   await gas.locator('[data-gas-temperature="start"]').fill('33.5');
   await gas.locator('[data-gas-temperature="end"]').fill('33.5');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   expect(await page.evaluate(() => localStorage.getItem('midea_energy_draft_v4'))).toBe(guest);
   await page.reload();
   await expect(page.locator('.meter-input').first()).toHaveValue(
@@ -136,7 +138,15 @@ test('account drafts, required password change, historian revisions, and logout 
     );
   }
   await page.locator('#save-report').click();
-  await expect(page.locator('#toast')).toContainText('Revision 1');
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(checkpointPosts).toBe(0);
+  // Seed an existing legacy checkpoint independently of the Save verification action.
+  const recovery = await page.evaluate(
+    (id) => JSON.parse(sessionStorage.getItem('midea_energy_draft_v4_' + id)),
+    account.id,
+  );
+  saved = reportSnapshot(recovery.drafts.JRE);
+  revision = 1;
   await page.locator('#clear-plant').click();
   await page.locator('#open-history').click();
   await page.locator('#history-list button').click();
@@ -147,7 +157,7 @@ test('account drafts, required password change, historian revisions, and logout 
   await expect(page.locator('#report-preview')).toHaveValue(original);
   await expect(gas.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
   await page.locator('#save-report').click();
-  await expect(page.locator('#toast')).toContainText('Already saved');
+  await expect(page.locator('#toast')).toContainText('saved and verified');
   await page.locator('#logout').click();
   await expect(page.locator('#report-workspace')).toBeHidden();
   await expect(page.locator('#open-login')).toBeFocused();
@@ -175,7 +185,7 @@ test('an account change in another tab discards stale report responses and clear
   await page.goto('/');
   await expect(page.locator('#account-name')).toHaveText('first-user');
   await page.locator('#load-example').click();
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await page.locator('#open-raw-export').click();
   await expect(page.locator('#raw-export-preview')).not.toHaveValue('');
   user = { ...user, id: 'eb90c39b-1801-4aa4-98f7-bcb591e68c68', username: 'second-user' };
@@ -283,7 +293,7 @@ test('an expired session closes the historian and returns to the login screen', 
   });
   await page.goto('/');
   await page.locator('#load-example').click();
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await page.locator('#open-history').click();
   await expect(page.locator('#welcome-hero')).toBeVisible();
   await expect(page.locator('#login-form')).toBeHidden();

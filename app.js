@@ -1,3 +1,4 @@
+import { periodKey } from './draft-records.js';
 import { fitResultsColumn } from './ui/result-layout.js';
 import { createPanelEffects } from './ui/panel-effects.js';
 import { mountPanelIcons, setPanelIcon } from './ui/panel-icons.js';
@@ -364,11 +365,7 @@ const accounts = createAccounts({
   },
   current,
   identityChanged: accountChanged,
-  saveWorking: async () => {
-    autosave.changed();
-    return autosave.flushAll({ ensureWorkspace: true });
-  },
-  checkpoint: (save) => autosave.checkpoint(save),
+  verifySave: () => autosave.verify(),
   beforeRead: () => autosave.flushAll(),
   beforeSignOut: () => autosave.flushAll(),
   toast,
@@ -378,6 +375,7 @@ const accounts = createAccounts({
     mode = periodKind(draft);
     reportFollowsMode = true;
     setCurrent(draft);
+    autosave.authorizeRestore(draft);
     changed(false, columnEdits(current()));
     mountPlant();
   },
@@ -458,16 +456,82 @@ function changed(periodOnly = false, edits = [], utilityEdits = []) {
   renderResults();
   autosave?.changed({ periodOnly });
 }
+let periodNavigation = Promise.resolve();
+let navigationTicket = 0;
+let pendingNavigation = null;
+function lockPeriodEntries(locked) {
+  document
+    .querySelectorAll(
+      '.entry-column, .result-column, #work-copy-morning, #save-report, #open-graphs, #open-history, #next-day',
+    )
+    .forEach((node) => {
+      node.inert = locked;
+    });
+}
+function navigatePeriods(targets, install) {
+  const owner = accounts.getUser()?.id,
+    factory = plant,
+    recording = mode;
+  const ticket = ++navigationTicket;
+  lockPeriodEntries(true);
+  $('save-status').textContent = t('draftLoading');
+  let settle;
+  pendingNavigation = new Promise((resolve) => {
+    settle = resolve;
+  });
+  setTimeout(() => {
+    if (ticket !== navigationTicket) {
+      settle();
+      return;
+    }
+    periodNavigation = periodNavigation.then(async () => {
+      if (ticket !== navigationTicket) return;
+      if (!owner || owner !== accounts.getUser()?.id || factory !== plant || recording !== mode) {
+        lockPeriodEntries(false);
+        return;
+      }
+      const surface = $('report-workspace');
+      surface.inert = true;
+      try {
+        const done = await autosave.navigate(targets, (loaded) => {
+          if (owner !== accounts.getUser()?.id || factory !== plant || recording !== mode) return;
+          install(loaded);
+          mountPlant();
+          changed(true);
+        });
+        if (!done && owner === accounts.getUser()?.id) mountPlant();
+      } catch {
+        if (owner === accounts.getUser()?.id) mountPlant();
+        toast(t('draftOffline'));
+      } finally {
+        surface.inert = false;
+        lockPeriodEntries(false);
+      }
+    });
+    void periodNavigation.finally(settle);
+  }, 450);
+  return pendingNavigation;
+}
 function changePeriod(start, end) {
-  if (current().startDate === start && current().endDate === end) return;
+  if (current().startDate === start && current().endDate === end) {
+    navigationTicket++;
+    lockPeriodEntries(false);
+    return;
+  }
   if (!periodOrigin) {
     rememberUndo();
     periodOrigin = structuredClone(current());
   }
-  setCurrent(changeDraftPeriod(current(), start, end, periodOrigin));
-  mountPlant();
-  changed(true);
-  toast(t('periodReadingsMoved'));
+  const next = changeDraftPeriod(current(), start, end, periodOrigin);
+  if (!periodKey(next)) {
+    navigationTicket++;
+    lockPeriodEntries(false);
+    setCurrent(next);
+    mountPlant();
+    changed(true);
+    return;
+  }
+  void navigatePeriods([next], (loaded) => setCurrent(loaded[0]));
 }
 function changeWork(date, startTime, endTime) {
   if (
@@ -480,17 +544,24 @@ function changeWork(date, startTime, endTime) {
     rememberUndo();
     periodOrigin = structuredClone([workingHours[plant], nightShifts[plant]]);
   }
-  putPair(
-    changeShiftPair(
-      workingHours[plant],
-      nightShifts[plant],
-      mode,
-      date,
-      startTime,
-      endTime,
-      periodOrigin,
-    ),
+  const pair = changeShiftPair(
+    workingHours[plant],
+    nightShifts[plant],
+    mode,
+    date,
+    startTime,
+    endTime,
+    periodOrigin,
   );
+  if (date !== current().startDate && periodKey(pair.day) && periodKey(pair.night)) {
+    void navigatePeriods([pair.day, pair.night], (loaded) =>
+      putPair({ day: loaded[0], night: loaded[1] }),
+    );
+    return;
+  }
+  navigationTicket++;
+  lockPeriodEntries(false);
+  putPair(pair);
   mountPlant();
   changed(true);
   toast(t('periodReadingsMoved'));
@@ -910,10 +981,7 @@ for (const [id, field] of [
   ['end-date', 'endDate'],
 ]) {
   $(id).addEventListener('change', () => {
-    changePeriod(
-      field === 'startDate' ? $(id).value : current().startDate,
-      field === 'endDate' ? $(id).value : current().endDate,
-    );
+    changePeriod($('start-date').value, $('end-date').value);
   });
 }
 $('use-today').addEventListener('click', async () => {
@@ -971,10 +1039,6 @@ $('copy-worksheet').addEventListener('click', () => {
   if (reports[plant].success)
     void copyText(excelRowToTSV(buildExcelRow(current(), reports[plant])));
 });
-$('save-draft').addEventListener('click', () => {
-  autosave.changed();
-  void autosave.flush();
-});
 $('forget-draft').addEventListener('click', () => void autosave.forget());
 $('next-day').addEventListener('click', () => {
   try {
@@ -982,10 +1046,10 @@ $('next-day').addEventListener('click', () => {
       ? nextShiftPair(workingHours[plant], nightShifts[plant])
       : nextDayDraft(current());
     rememberUndo();
-    if (isWorkingHours(current())) putPair(next);
-    else setCurrent(next);
-    mountPlant();
-    changed();
+    void navigatePeriods(isWorkingHours(current()) ? [next.day, next.night] : [next], (loaded) => {
+      if (isWorkingHours(current())) putPair({ day: loaded[0], night: loaded[1] });
+      else setCurrent(loaded[0]);
+    });
     toast(t('nextReady'));
   } catch (error) {
     toast(error.message);
@@ -1064,7 +1128,15 @@ window.addEventListener('beforeunload', (event) => {
 document.addEventListener('keydown', (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 's') {
     event.preventDefault();
-    $('save-draft').click();
+    void (async () => {
+      const owner = accounts.getUser()?.id;
+      let observed;
+      do {
+        observed = pendingNavigation;
+        await observed;
+      } while (observed !== pendingNavigation);
+      if (owner === accounts.getUser()?.id) await autosave.flush();
+    })();
   }
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
     event.preventDefault();

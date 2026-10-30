@@ -45,7 +45,7 @@ test('JRE additional readings persist, follow dates and add only report notes ac
   await page.locator('#open-raw-export').click();
   await expect(page.locator('#raw-export-preview')).not.toHaveValue(/T1/);
   await page.locator('[data-close-dialog="raw-export-dialog"]').click();
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await page.reload();
   await page.locator('[data-plant="JRE"]').click();
   await expect(page.locator('#additional-0-end')).toHaveValue('120.5');

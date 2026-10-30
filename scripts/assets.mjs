@@ -32,6 +32,7 @@ export const PUBLIC_FILES = [
   'analytics.js',
   'ui/analytics.js',
   'app.js',
+  'period-document.js',
   'routes.js',
   'ui/navigation.js',
   'schema.js',
