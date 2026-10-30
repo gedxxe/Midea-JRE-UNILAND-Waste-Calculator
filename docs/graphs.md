@@ -103,3 +103,11 @@ Latest account-confirmed partial period snapshots now feed monitoring, with miss
 ## JRE Warehouse Lighting (v0.11.26-alpha)
 
 New output keeps Warehouse in worksheet metric w15 as net consumption after Lighting, and adds separate Lighting metric r31 (kWh) under Logistics. Labels follow the selected interface language. Existing nine JRE presets, worksheet width and custom selections stay unchanged; Lighting is selectable and available in the monthly matrix. Extraction uses saved output only: older records without Lighting remain null for r31 and retain their original Warehouse value. Newly calculated pre-cutoff reports contain the confirmed zero; old records are not backfilled.
+
+## Working copies, checkpoints and period review (v0.11.34)
+
+Latest autosave remains the default. Saved versions uses the latest manual checkpoint for each exact owner/factory/kind/start/end identity; it never restores a working draft or combines values from different snapshots. The selected source is included in checkpoint chart exports and monthly-table hints. Existing imported history retains its labels and precedence. Source selection is temporary and resets on account changes. Both views use the same bounded, parameterized owner-scoped query and read budget.
+
+Review periods shows dates, source/revision, status and related periods above charts and monthly tables. Partial working copies can have no calculable pairs even while their raw inputs remain stored; zeros are never substituted. A button can switch to existing manual checkpoints without changing those inputs.
+
+Only periods containing a finite saved value participate in overlap detection. Empty copies remain in Historian and review but do not hide valid points, merge blank monthly cells or break otherwise contiguous valid series. Recorded zero is finite data. Overlapping numeric periods remain explicit conflicts; no timestamps, completeness or checkpoint priority guesses resolve them.

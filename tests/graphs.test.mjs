@@ -229,3 +229,57 @@ test('chronological segments break on missing dates, null values and overlapping
   assert.equal(records[0].days, 2);
   assert.equal(graphSegments(records, 'w0').flat().length, 1);
 });
+
+function emptyCombinedRows() {
+  return [
+    {
+      id: 'empty',
+      revision: 1,
+      start_date: '2026-09-03',
+      end_date: '2026-09-05',
+      autosaved: true,
+      snapshot: { ...saved(), complete: false, output: { reportText: '', worksheetText: '' } },
+    },
+    {
+      id: 'day-a',
+      revision: 2,
+      start_date: '2026-09-03',
+      end_date: '2026-09-04',
+      snapshot: saved(),
+    },
+    {
+      id: 'day-b',
+      revision: 1,
+      start_date: '2026-09-04',
+      end_date: '2026-09-05',
+      snapshot: saved(),
+    },
+  ];
+}
+test('an empty combined copy cannot hide adjacent saved daily points or split their line', () => {
+  const rows = emptyCombinedRows(),
+    before = structuredClone(rows),
+    records = graphRecords(rows, 'JRE');
+  assert.equal(records.filter((r) => r.overlap).length, 0);
+  assert.equal(records.find((r) => r.id === 'empty').noValues, true);
+  assert.deepEqual(
+    graphSegments(records, 'w0').map((part) => part.map((r) => r.id)),
+    [['day-a', 'day-b']],
+  );
+  assert.deepEqual(rows, before);
+});
+test('numeric combined periods, including recorded zero, retain genuine overlap protection', () => {
+  for (const zero of [false, true]) {
+    const rows = emptyCombinedRows();
+    rows[0].snapshot = saved();
+    if (zero)
+      rows[0].snapshot.output = {
+        reportText: '',
+        worksheetText: 'JRE ELECTRICAL WORKSHEET:\nIndoor: 0',
+      };
+    const records = graphRecords(rows, 'JRE');
+    assert.equal(records.find((r) => r.id === 'empty').noValues, false);
+    assert.equal(records.filter((r) => r.overlap).length, 3);
+    assert.deepEqual(graphSegments(records, 'w0'), []);
+  }
+});

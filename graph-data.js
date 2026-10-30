@@ -1,4 +1,5 @@
 import { GRAPH_METRICS } from './graph-schema.js';
+import { graphHasValues } from './graph-overlap.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { buildWorksheet } from './worksheet.js';
 import { workMinutes, isWorkingHours } from './reading-period.js';
@@ -71,6 +72,10 @@ export function graphRecords(rows, plant, history = []) {
     return {
       id: row.id,
       revision: row.revision,
+      ...(Number.isInteger(row.checkpoint_revision)
+        ? { checkpointRevision: row.checkpoint_revision }
+        : {}),
+      ...(row.snapshot?.periodValid === false ? { periodValid: false } : {}),
       startDate: row.start_date,
       // A daily plotting slot; the true reading timestamps remain explicit below.
       endDate: working ? shiftDate(row.start_date, 1) : row.end_date,
@@ -116,10 +121,12 @@ export function graphRecords(rows, plant, history = []) {
   records.sort(
     (a, b) => a.startDate.localeCompare(b.startDate) || a.endDate.localeCompare(b.endDate),
   );
+  const plottable = records.map(graphHasValues);
   const overlaps = new Set();
   for (let i = 0; i < records.length; i++)
     for (let j = i + 1; j < records.length && records[j].startDate < records[i].endDate; j++) {
-      if (records[i].superseded || records[j].superseded) continue;
+      if (records[i].superseded || records[j].superseded || !plottable[i] || !plottable[j])
+        continue;
       overlaps.add(i);
       overlaps.add(j);
     }
@@ -127,6 +134,7 @@ export function graphRecords(rows, plant, history = []) {
     ...row,
     days: dayDiff(row.startDate, row.endDate),
     overlap: overlaps.has(i),
+    noValues: !plottable[i],
   }));
 }
 export function graphSegments(records, key) {
@@ -135,7 +143,8 @@ export function graphSegments(records, key) {
     previous = null;
   for (const row of records) {
     const value = row.values[key];
-    if (row.overlap || row.superseded || row.days < 1 || !Number.isFinite(value)) {
+    if (row.superseded || row.noValues) continue;
+    if (row.overlap || row.days < 1 || !Number.isFinite(value)) {
       if (segment.length) segments.push(segment);
       segment = [];
       previous = null;

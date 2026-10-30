@@ -250,7 +250,7 @@ test('graphs show gaps and period warnings and clear old data after an empty ref
   });
   await page.locator('#open-graphs').click();
   await expect(page.locator('#graph-warnings')).toContainText('combined periods');
-  await expect(page.locator('#graph-warnings')).toContainText('2 reports overlap');
+  await expect(page.locator('#graph-warnings')).toContainText('2 saved periods overlap');
   const first = page.locator('.graph-card').first();
   await expect(first.locator('circle[data-series="w1"]')).toHaveCount(2);
   await first.locator('.graph-data summary').click();
@@ -941,4 +941,105 @@ test('monitoring window controls follow the selected language without exposing t
     await page.keyboard.press('Escape');
     await expect(page.locator('#graphs-dialog')).not.toBeVisible();
   }
+});
+
+test('overlap details identify exact dates above the charts and empty working values can switch to saved versions', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  const requested = [];
+  await page.route('**/api/graphs?**', (r) => {
+    const params = Object.fromEntries(new URL(r.request().url()).searchParams);
+    requested.push(params);
+    const items = records(params.plant).slice(0, 2);
+    if (params.view !== 'checkpoint') {
+      for (const row of items) {
+        row.autosaved = true;
+        row.complete = false;
+        row.checkpointRevision = 1;
+        row.overlap = true;
+      }
+      items[0].endDate = '2026-09-03';
+      items[0].days = 2;
+      for (const key of Object.keys(items[1].values)) items[1].values[key] = null;
+    }
+    return r.fulfill({ json: { ...params, records: items } });
+  });
+  await page.locator('#open-graphs').click();
+  const review = page.locator('.graph-period-review');
+  await expect(review).toBeVisible();
+  await expect(review).toHaveAttribute('open', '');
+  await expect(review).toContainText('2026-09-01 08:00 → 2026-09-03');
+  await expect(review).toContainText('2026-09-02 08:00 → 2026-09-03');
+  await expect(review.locator('thead')).toContainText('Related periods');
+  await review.locator('[data-graph-checkpoints]').click();
+  await expect(page.locator('#graph-source')).toHaveValue('checkpoint');
+  await expect(page.locator('.graph-period-review')).toHaveCount(0);
+  const first = page.locator('.graph-card').first();
+  await expect(first.locator('circle[data-series="w1"]')).toHaveCount(2);
+  await expect(first.locator('svg')).toContainText('Saved versions');
+  await page.locator('#graph-view-table').click();
+  await expect(page.locator('#graph-matrix')).toContainText('2026');
+  if (!(await page.locator('#graph-source').isVisible()))
+    await page.locator('#graph-filters > summary').click();
+  for (const kind of ['workingHours', 'nightShift', 'daily']) {
+    await page.locator('#graph-kind').selectOption(kind);
+    await expect.poll(() => requested.at(-1)?.kind).toBe(kind);
+    expect(requested.at(-1).view).toBe('checkpoint');
+  }
+  await page.locator('#graph-source').selectOption('working');
+  await expect(page.locator('.graph-period-review')).toBeVisible();
+  expect(state.errors).toEqual([]);
+});
+
+test('empty combined autosave stays reviewable while saved daily points remain in charts and monthly cells', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.route('**/api/graphs?**', (r) => {
+    const params = Object.fromEntries(new URL(r.request().url()).searchParams);
+    const make = (id, start, end, checkpoint, savedAt, complete) => ({
+      id,
+      revision: Math.max(1, checkpoint),
+      checkpoint_revision: checkpoint,
+      saved_at: savedAt,
+      start_date: start,
+      end_date: end,
+      autosaved: true,
+      snapshot: { ...reportSnapshot(exampleDraft(params.plant)), complete, periodValid: true },
+    });
+    const rows = [
+      make('old', '2026-09-01', '2026-09-03', 0, '2026-09-03T00:00:00Z', false),
+      make('first', '2026-09-01', '2026-09-02', 1, '2026-09-03T01:00:00Z', true),
+      make('second', '2026-09-02', '2026-09-03', 1, '2026-09-03T01:00:00Z', true),
+    ];
+    rows[0].snapshot.output = { reportText: '', worksheetText: '' };
+    return r.fulfill({ json: { ...params, records: graphRecords(rows, params.plant) } });
+  });
+  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graph-warnings')).toContainText('autosaved periods are incomplete');
+  await expect(page.locator('#graph-warnings')).not.toContainText('saved periods overlap');
+  const first = page.locator('.graph-card').first();
+  await expect(first.locator('circle[data-series="w1"]')).toHaveCount(2);
+  await page.locator('.graph-period-review > summary').click();
+  await expect(page.locator('.graph-period-review')).toContainText('2026-09-01 08:00 → 2026-09-03');
+  await expect(page.locator('.graph-period-review')).toContainText('No calculated values');
+  await page.locator('#graph-view-table').click();
+  await expect(page.locator('#graph-matrix .graph-count')).toHaveText('2 saved periods');
+  expect(state.errors).toEqual([]);
+});
+
+test('checkpoint view rejects a stale server response instead of labelling working data as a saved version', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.route('**/api/graphs?**', (r) =>
+    r.fulfill({ json: { plant: 'JRE', view: 'working', records: records('JRE') } }),
+  );
+  await page.locator('#open-graphs').click();
+  await expect(page.locator('.graph-card').first().locator('circle')).not.toHaveCount(0);
+  await page.locator('#graph-source').selectOption('checkpoint');
+  await expect(page.locator('.graph-card').first().locator('circle')).toHaveCount(0);
+  await expect(page.locator('#graph-status')).not.toContainText('saved periods');
+  expect(state.errors).toEqual([]);
 });

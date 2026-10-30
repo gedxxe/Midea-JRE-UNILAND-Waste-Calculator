@@ -907,3 +907,35 @@ body:not(.login-page) .result-column {
 body:not(.login-page) .result-column[data-sticky='true'] {
   position: sticky;
 }
+
+/* Dates behind graph exclusions stay visible above charts, without opening every data table. */
+.graph-period-review {
+  margin: 8px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #d4dfef;
+  border-radius: 12px;
+  background: #fff;
+}
+.graph-period-review > summary {
+  color: #254a77;
+  font-weight: 600;
+  cursor: pointer;
+}
+.graph-period-review .graph-data-scroll {
+  max-height: 280px;
+  margin-top: 12px;
+}
+.graph-period-review table {
+  width: 100%;
+  min-width: 660px;
+}
+.graph-period-review td {
+  white-space: normal;
+  vertical-align: top;
+}
+.graph-period-review td p + p {
+  margin-top: 6px;
+}
+.graph-period-review > p {
+  margin-top: 10px;
+}

@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current milestone: v0.11.33-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current milestone: v0.11.34-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -216,3 +216,5 @@ Do not claim branch protection, CI success, or deployment success without readin
 - Found during 2026-10-29 Copy-effect verification: a sticky results column taller than the viewport could leave Copy report below the visible area even after scroll-into-view. ui/result-layout.js measures geometry only; keep stickiness when the entire card fits and use native document flow otherwise. No nested results scroller or data changes.
 
 - Fixed 2026-10-30 clock/hover regressions: preserve the clock source/overlay line box and measured character advances, with one critically damped transition between the actual previous/current glyphs instead of spinning through intermediate clock digits. Unchanged glyphs and the NTP sync control keep their baseline; minute/midnight carries and reduced/off motion remain covered. All signed-in primary buttons retain the same translucent highlight above an opaque blue base throughout hover entry/exit, including Save version and Copy report in Excel view. Link colors ease without turning white. Preserve NTP sampling/status, exact canonical values, native clipboard, four-second Undo and all autosave/checkpoint bytes. No package, schema or deployment configuration change.
+
+- Audited 2026-10-30 graph gaps: show exact date/source/reason/related-period diagnostics above charts and monthly tables, including incomplete working copies. Keep Latest autosave as the default; add explicit Saved versions to read owner-scoped latest manual checkpoints without restoring drafts or changing stored output. Only periods with finite saved values participate in overlap checks. Empty copies remain stored and reviewable but cannot hide valid periods; genuine numeric overlaps remain unresolved and real zeros count as data. Keep gaps for genuinely missing values, never infer readings, merge snapshots or fabricate zeros. Show the checkpoint source in exports/tables, preserve owner/kind filters, request budgets and account reset. No migration or production data repair.

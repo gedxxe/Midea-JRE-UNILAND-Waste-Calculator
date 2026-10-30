@@ -1,4 +1,27 @@
 export const graphMessages = {
+  graphDataSource: ['Values', '数据', 'Data'],
+  graphWorkingSource: ['Latest autosave', '最新自动保存', 'Autosave terbaru'],
+  graphCheckpointSource: ['Saved versions', '已保存版本', 'Versi tersimpan'],
+  graphViewCheckpoints: ['View saved versions', '查看已保存版本', 'Lihat versi tersimpan'],
+  graphEmptyWorking: [
+    'No calculated values; check paired readings',
+    '当前工作副本缺少成对读数，暂无计算值',
+    'Working copy ini belum memiliki hasil; pasangan reading belum lengkap',
+  ],
+  graphPartialValues: [
+    'Incomplete working copy; available values are shown',
+    '工作副本尚未完成，显示已有数值',
+    'Working copy belum lengkap; nilai yang tersedia ditampilkan',
+  ],
+  graphReviewPeriods: ['Review {count} periods', '查看 {count} 个时段', 'Periksa {count} periode'],
+  graphReviewDates: ['Saved period dates', '已保存时段日期', 'Tanggal periode tersimpan'],
+  graphReviewReason: ['Chart status', '图表状态', 'Status grafik'],
+  graphRelatedPeriods: ['Related periods', '相关时段', 'Periode terkait'],
+  graphReviewKept: [
+    'All records remain in Historian. No readings are changed.',
+    '所有记录均保留在历史记录中，读数不变。',
+    'Semua record tetap ada di Historian. Reading tidak berubah.',
+  ],
   graphAutosave: [
     'Autosave · revision {revision}',
     '自动保存 · 修订 {revision}',
@@ -168,6 +191,11 @@ export const graphMessages = {
     'Belum ada record akun pada rentang ini. Isi reading dan tunggu autosave, atau pilih rentang lain.',
   ],
   graphReady: ['{count} saved periods', '{count} 个已保存时段', '{count} periode tersimpan'],
+  graphError: [
+    'Could not load records. Refresh and try again.',
+    '无法加载记录，请刷新后重试。',
+    'Record belum berhasil dimuat. Klik Perbarui untuk mencoba lagi.',
+  ],
   graphLoading: ['Loading saved records…', '正在加载已保存记录…', 'Memuat record tersimpan…'],
   graphRange: [
     'Choose a valid date range of up to 366 days.',
@@ -185,7 +213,7 @@ export const graphMessages = {
     '{count} periode gabungan. Setiap titik menampilkan total untuk tanggal pada label.',
   ],
   graphOverlap: [
-    '{count} reports overlap another period and are excluded from plots. Review their dates in the data table and historian.',
+    '{count} saved periods overlap and are not plotted. The dates and related periods are listed below.',
     '{count} 份报告与其他时段重叠，已从图中排除。请检查数据表和历史记录中的日期。',
     '{count} laporan memiliki periode bertumpang tindih dan tidak diplot. Periksa tanggalnya di tabel data dan historian.',
   ],

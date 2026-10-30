@@ -2,6 +2,15 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.34-alpha - 2026-10-30
+
+- List exact dates, sources and related periods behind graph conflicts above the plots and monthly table. Explain working copies with missing readings instead of leaving only a count.
+- Add an explicit Latest autosave / Saved versions selector for charts and monthly tables. Checkpoint viewing does not restore drafts, change the default autosave view or modify stored reports; copied charts identify saved-version data.
+- Do not let periods with no numeric saved values hide valid periods as overlaps. Keep empty copies in Historian/review, preserve real zeros and leave genuine numeric conflicts explicit.
+- Handle graph-load failures in all three languages and reject mismatched data-source responses without leaving stale plots.
+- Preserve account isolation, recording-kind filters, read budgets, raw readings, saved output and genuine gaps. No database migration, deletion, snapshot merging or inferred readings.
+- Wait for viewport observation before testing a short mobile counter animation; keep offscreen effects stopped and all assertions intact. Includes the clock/hover fixes below.
+
 ## v0.11.33-alpha - 2026-10-30
 
 - Fix the WIB clock baseline jumping during digit changes. Keep the canonical and animated line boxes aligned and use the measured character widths. Carry directly between the two observed digits without scrolling through unrelated numbers or overshooting, including minute and midnight changes.

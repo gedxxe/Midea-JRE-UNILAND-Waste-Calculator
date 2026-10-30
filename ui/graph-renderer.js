@@ -29,14 +29,17 @@ function svgNode(name, attrs = {}, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-export function renderGraph(config, { plant, start, end, records, kind = 'daily' }) {
+export function renderGraph(
+  config,
+  { plant, start, end, records, kind = 'daily', view = 'working' },
+) {
   const language = getLanguage();
   const title = config[graphTitleField(language)] ?? config.titleEn;
   const metrics = config.series
     .map((key) => GRAPH_METRICS[plant].find((m) => m.key === key))
     .filter(Boolean)
     .map((metric) => ({ ...metric, label: metricLabel(metric, language) }));
-  const periods = records.filter((r) => !r.overlap && !r.superseded && r.days > 0);
+  const periods = records.filter((r) => !r.overlap && !r.superseded && !r.noValues && r.days > 0);
   const chartWidth = Math.max(1000, periods.length * 32 + 180);
   const positions = new Map(periods.map((r, i) => [r.startDate + '/' + r.endDate, i]));
   const canvas = document.createElement('canvas'),
@@ -129,7 +132,8 @@ export function renderGraph(config, { plant, start, end, records, kind = 'daily'
               ? 'graphAfter'
               : 'graphDaily',
         ) +
-        (multi ? ' · ' + t('graphMultiNote') : ''),
+        (multi ? ' · ' + t('graphMultiNote') : '') +
+        (view === 'checkpoint' ? ' · ' + t('graphCheckpointSource') : ''),
     ),
   );
   const segments = metrics

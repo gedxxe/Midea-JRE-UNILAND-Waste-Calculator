@@ -86,6 +86,19 @@ test('dashboard rolls digits while canonical precision, gap signs and copied rep
   await end.fill(String(Number(value) + 100));
   await expect(main).not.toHaveText(before);
   await main.scrollIntoViewIfNeeded();
+  // The effect intentionally snaps offscreen updates. Wait for viewport observation,
+  // not just scroll completion, before asserting a transient visible roll.
+  await main.evaluate(
+    (element) =>
+      new Promise((resolve) => {
+        const observer = new IntersectionObserver((entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          observer.disconnect();
+          requestAnimationFrame(resolve);
+        });
+        observer.observe(element);
+      }),
+  );
   await end.evaluate(
     (element, value) => {
       element.value = value;

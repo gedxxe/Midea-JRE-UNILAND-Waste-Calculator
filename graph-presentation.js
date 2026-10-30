@@ -67,3 +67,11 @@ export function graphSourceLabel(record, translate) {
     );
   return translate('graphRevision') + ' ' + record.revision;
 }
+
+export function graphRecordStatus(record, translate) {
+  if (record.overlap) return translate('graphExcluded');
+  if (record.superseded) return translate('graphReplaced');
+  if (record.noValues) return translate('graphEmptyWorking');
+  if (record.autosaved && record.complete === false) return translate('graphPartialValues');
+  return '';
+}

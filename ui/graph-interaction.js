@@ -5,7 +5,7 @@ import { metricLabel, graphPeriodLabel, graphSourceLabel } from '../graph-presen
 import { formatNumber } from '../numbers.js';
 
 export function attachGraphInteraction(frame, svg, config, records, onToggle) {
-  const periods = records.filter((r) => !r.overlap && !r.superseded && r.days > 0);
+  const periods = records.filter((r) => !r.overlap && !r.superseded && !r.noValues && r.days > 0);
   const stage = node('div', undefined, 'graph-stage');
   stage.style.minWidth = svg.style.minWidth;
   const line = node('div', undefined, 'graph-crosshair');

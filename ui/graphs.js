@@ -1,4 +1,5 @@
 import { monthRange, adjacentMonth } from '../graph-month.js';
+import { renderGraphReview } from './graph-review.js';
 import { renderMonthlyTable } from './graph-matrix.js';
 import { createGraphWindow } from './graph-window.js';
 import { attachGraphInteraction } from './graph-interaction.js';
@@ -13,6 +14,7 @@ import {
   upgradeGraph,
   graphPeriodLabel,
   graphSourceLabel,
+  graphRecordStatus,
 } from '../graph-presentation.js';
 import { GRAPH_METRICS, DEPARTMENTS, defaultGraphs } from '../graph-schema.js';
 import { dayDiff, validDate, formatNumber } from '../numbers.js';
@@ -82,6 +84,7 @@ export function createGraphs({
     $('graph-search').value = '';
     $('graph-matrix').replaceChildren();
     $('graph-kind').value = 'daily';
+    $('graph-source').value = 'working';
     $('graph-department').replaceChildren();
     $('graphs-dialog').close();
     $('graph-cards').replaceChildren();
@@ -137,13 +140,19 @@ export function createGraphs({
     $('graph-warnings').replaceChildren();
     if (data)
       for (const [key, count] of [
-        ['graphMulti', data.records.filter((r) => r.days > 1).length],
+        [
+          'graphMulti',
+          data.records.filter((r) => r.days > 1 && !r.noValues && !r.superseded).length,
+        ],
         [
           'graphIncompletePeriods',
           data.records.filter((r) => r.autosaved && r.complete === false).length,
         ],
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
-        ['graphSuperseded', data.records.filter((r) => r.superseded).length],
+        [
+          'graphSuperseded',
+          data.records.filter((r) => r.superseded && r.source === 'excel').length,
+        ],
       ])
         if (count && !(view === 'table' && key === 'graphMulti'))
           $('graph-warnings').append(
@@ -153,6 +162,13 @@ export function createGraphs({
               ['graphMulti', 'graphIncompletePeriods'].includes(key) ? 'notice' : 'notice warning',
             ),
           );
+    if (data) {
+      const review = renderGraphReview(data.records, () => {
+        $('graph-source').value = 'checkpoint';
+        void load();
+      });
+      if (review) $('graph-warnings').append(review);
+    }
     const department = $('graph-department').value || 'all';
     const available = new Set(
       view === 'table'
@@ -193,6 +209,7 @@ export function createGraphs({
           kind: kind(),
           month: $('graph-month').value,
           records: data.records,
+          sourceView: data.view || 'working',
           department: $('graph-department').value || 'all',
           search: $('graph-search').value,
         }),
@@ -257,6 +274,7 @@ export function createGraphs({
   });
   async function load() {
     if (!user) return;
+    const sourceView = $('graph-source').value;
     const plant = factory(),
       start = $('graph-start').value,
       end = $('graph-end').value;
@@ -279,9 +297,10 @@ export function createGraphs({
       if (ticket !== sequence || identity !== epoch) return;
       fetchedVersion = contentVersion;
       const result = await request(
-        '/api/graphs?' + new URLSearchParams({ plant, start, end, kind: kind() }),
+        '/api/graphs?' + new URLSearchParams({ plant, start, end, kind: kind(), view: sourceView }),
       );
       if (ticket !== sequence || identity !== epoch) return;
+      if ((result.view || 'working') !== sourceView) throw Error('GRAPH_SOURCE_MISMATCH');
       data = result;
     } catch (error) {
       if (ticket !== sequence || identity !== epoch) return;
@@ -600,11 +619,7 @@ export function createGraphs({
             node(
               'td',
               graphPeriodLabel(record, getLanguage()) +
-                (record.overlap
-                  ? ' · ' + t('graphExcluded')
-                  : record.superseded
-                    ? ' · ' + t('graphReplaced')
-                    : ''),
+                (graphRecordStatus(record, t) ? ' · ' + graphRecordStatus(record, t) : ''),
             ),
             node(
               'td',
@@ -653,7 +668,7 @@ export function createGraphs({
     view === 'table' ? renderMatrix() : renderCards(),
   );
   $('graph-refresh').addEventListener('click', () => void load());
-  for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end'])
+  for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end', 'graph-source'])
     $(id).addEventListener('change', () => void load());
   $('graph-presets').addEventListener('click', () => {
     if (!confirm(t('graphResetConfirm'))) return;
