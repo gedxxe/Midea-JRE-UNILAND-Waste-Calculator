@@ -53,6 +53,8 @@ export const PUBLIC_FILES = [
   'i18n/working-hours.js',
   'gas.js',
   'graph-data.js',
+  'graph-overlap.js',
+  'ui/graph-review.js',
   'graph-axis.js',
   'graph-schema.js',
   'graph-presentation.js',

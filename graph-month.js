@@ -18,7 +18,7 @@ export function monthlyPeriods(month, records) {
   if (!range) return null;
   const inMonth = records.filter((r) => r.startDate >= range.start && r.startDate <= range.end);
   const valid = inMonth.filter(
-    (r) => !r.overlap && !r.superseded && dayDiff(r.startDate, r.endDate) > 0,
+    (r) => !r.overlap && !r.superseded && !r.noValues && dayDiff(r.startDate, r.endDate) > 0,
   );
   const ambiguous = (r) =>
     valid.some(

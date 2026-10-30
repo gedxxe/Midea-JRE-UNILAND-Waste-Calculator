@@ -19,26 +19,28 @@ export function graphsHandler(database = getPool, env = process.env) {
       start = params.get('start'),
       end = params.get('end');
     const kind = params.get('kind') || 'daily';
+    const view = params.get('view') || 'working';
+    if (!['working', 'checkpoint'].includes(view)) fail(400, 'INVALID_INPUT');
     if (!['daily', 'workingHours', 'nightShift'].includes(kind)) fail(400, 'INVALID_INPUT');
     const days = dayDiff(start, end);
     if (!['JRE', 'UNILAND'].includes(plant) || days === null || days < 0 || days > 365)
       fail(400, 'INVALID_GRAPH_RANGE');
     const { rows } = await db.query(
       `WITH documents AS (
-        SELECT r.id,r.revision,r.start_date,r.end_date,r.report_kind,v.snapshot,false AS autosaved
+        SELECT r.id,r.revision,r.start_date,r.end_date,r.report_kind,v.snapshot,false AS autosaved,r.revision AS checkpoint_revision
         FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision
         WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date AND r.report_kind=$5
-        AND NOT EXISTS(SELECT 1 FROM meter_app.period_autosaves a WHERE a.owner_id=r.owner_id AND a.plant=r.plant AND a.report_kind=r.report_kind AND a.start_date=r.start_date AND a.end_date=r.end_date)
+        AND ($6::boolean OR NOT EXISTS(SELECT 1 FROM meter_app.period_autosaves a WHERE a.owner_id=r.owner_id AND a.plant=r.plant AND a.report_kind=r.report_kind AND a.start_date=r.start_date AND a.end_date=r.end_date))
         UNION ALL
-        SELECT a.id,GREATEST(COALESCE(r.revision,0),1) AS revision,a.start_date,a.end_date,a.report_kind,a.snapshot,true AS autosaved
+        SELECT a.id,GREATEST(COALESCE(r.revision,0),1) AS revision,a.start_date,a.end_date,a.report_kind,a.snapshot,true AS autosaved,COALESCE(r.revision,0) AS checkpoint_revision
         FROM meter_app.period_autosaves a LEFT JOIN meter_app.reports r ON r.owner_id=a.owner_id AND r.plant=a.plant AND r.report_kind=a.report_kind AND r.start_date=a.start_date AND r.end_date=a.end_date
-        WHERE a.owner_id=$1 AND a.plant=$2 AND a.start_date >= $3::date AND a.start_date <= $4::date AND a.report_kind=$5
-      ) SELECT id,revision,start_date::text,end_date::text,autosaved,
+        WHERE a.owner_id=$1 AND a.plant=$2 AND a.start_date >= $3::date AND a.start_date <= $4::date AND a.report_kind=$5 AND NOT $6::boolean
+      ) SELECT id,revision,start_date::text,end_date::text,autosaved,checkpoint_revision,
        jsonb_build_object('period',jsonb_build_object('kind',report_kind,'startTime',snapshot->'draft'->'startTime','endTime',snapshot->'draft'->'endTime'),
        'complete',snapshot->'complete','periodValid',snapshot->'periodValid',
        'output',jsonb_build_object('reportText',snapshot->'output'->'reportText','worksheetText',snapshot->'output'->'worksheetText')) AS snapshot
       FROM documents ORDER BY start_date,end_date,id LIMIT 1001`,
-      [user.id, plant, start, end, kind],
+      [user.id, plant, start, end, kind, view === 'checkpoint'],
     );
     const history =
       kind !== 'daily'
@@ -50,6 +52,6 @@ export function graphsHandler(database = getPool, env = process.env) {
             )
           ).rows;
     if (rows.length + history.length > 1000) fail(422, 'GRAPH_RANGE_TOO_LARGE');
-    send(res, 200, { plant, start, end, kind, records: graphRecords(rows, plant, history) });
+    send(res, 200, { plant, start, end, kind, view, records: graphRecords(rows, plant, history) });
   });
 }

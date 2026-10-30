@@ -1787,3 +1787,59 @@ test('stale queued JRE autosaves cannot erase Warehouse Lighting outside the act
   assert.equal(graph.value.records[0].values.r31, 160);
   assert.equal(graph.value.records[0].values.w15, 640);
 });
+
+test('monitoring can read explicit checkpoints without silently restoring or merging a cleared working copy', async () => {
+  for (const kind of ['daily', 'workingHours', 'nightShift']) {
+    const actor = await autosaveActor(),
+      draft = partialPeriod();
+    if (kind !== 'daily')
+      Object.assign(draft, {
+        periodKind: kind,
+        utilityLayout: 1,
+        startTime: kind === 'nightShift' ? '17:00' : '08:00',
+        endTime: kind === 'nightShift' ? '08:00' : '17:00',
+        endDate: kind === 'nightShift' ? '2026-11-11' : '2026-11-10',
+      });
+    let saved = await call('/api/drafts', {
+      actor,
+      body: { workspace: autosaveWorkspace(draft), baseVersion: 0, periods: [] },
+    });
+    const manual = await call('/api/reports', {
+      actor,
+      body: { autosaveLayout: 1, draft, baseRevision: 0, workspaceVersion: saved.value.version },
+    });
+    assert.equal(manual.status, 201);
+    draft.rows[0].start[0] = '';
+    saved = await call('/api/drafts', {
+      actor,
+      body: {
+        workspace: autosaveWorkspace(draft),
+        baseVersion: manual.value.workspaceVersion,
+        periods: [],
+      },
+    });
+    assert.equal(saved.status, 200);
+    const query = '/api/graphs?plant=JRE&start=2026-11-01&end=2026-11-30&kind=' + kind;
+    const working = await call(query, { actor });
+    assert.equal(working.value.records[0].values.r0, null);
+    assert.equal(working.value.records[0].checkpointRevision, 1);
+    const checkpoint = await call(query + '&view=checkpoint', { actor });
+    assert.equal(checkpoint.status, 200);
+    assert.equal(checkpoint.value.view, 'checkpoint');
+    assert.equal(checkpoint.value.records[0].values.r0, 25);
+    assert.equal(checkpoint.value.records[0].source, 'report');
+    assert.equal(checkpoint.value.records[0].autosaved, undefined);
+    assert.equal((await call(query + '&view=not-a-view', { actor })).status, 400);
+    const peer = await autosaveActor();
+    assert.equal((await call(query + '&view=checkpoint', { actor: peer })).value.records.length, 0);
+    const stillWorking = await call('/api/reports?id=' + manual.value.id + '&kind=' + kind, {
+      actor,
+    });
+    assert.equal(stillWorking.value.snapshot.draft.rows[0].start[0], '');
+    const frozen = await call(
+      '/api/reports?id=' + manual.value.id + '&kind=' + kind + '&revision=1',
+      { actor },
+    );
+    assert.deepEqual(frozen.value.snapshot, manual.value.snapshot);
+  }
+});

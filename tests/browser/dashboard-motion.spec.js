@@ -7,7 +7,7 @@ const owner = {
   role: 'operator',
   mustChangePassword: false,
 };
-async function setup(page) {
+async function setup(page, { unixMs = Date.UTC(2026, 9, 29, 1, 7, 58) } = {}) {
   const state = {
     user: owner,
     workspace: modernWorkspace({
@@ -25,7 +25,7 @@ async function setup(page) {
   await page.route('**/api/time', (r) =>
     r.fulfill({
       json: {
-        unixMs: Date.UTC(2026, 9, 29, 1, 7, 58),
+        unixMs,
         source: 'time.cloudflare.com',
         protocol: 'NTP',
         sampleAgeMs: 0,
@@ -86,6 +86,19 @@ test('dashboard rolls digits while canonical precision, gap signs and copied rep
   await end.fill(String(Number(value) + 100));
   await expect(main).not.toHaveText(before);
   await main.scrollIntoViewIfNeeded();
+  // The effect intentionally snaps offscreen updates. Wait for viewport observation,
+  // not just scroll completion, before asserting a transient visible roll.
+  await main.evaluate(
+    (element) =>
+      new Promise((resolve) => {
+        const observer = new IntersectionObserver((entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          observer.disconnect();
+          requestAnimationFrame(resolve);
+        });
+        observer.observe(element);
+      }),
+  );
   await end.evaluate(
     (element, value) => {
       element.value = value;
@@ -272,5 +285,135 @@ test('copy edge light and counters stop when covered/off and never carry values 
   await expect(main).toHaveText('-');
   await expect(main.locator('..')).toHaveAttribute('data-rolling', 'false');
   await expect(page.locator('#copy-report canvas')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+for (const [before, after, unixMs] of [
+  ['08:07:59', '08:08:00', Date.UTC(2026, 9, 30, 1, 7, 59)],
+  ['23:59:59', '00:00:00', Date.UTC(2026, 9, 30, 16, 59, 59)],
+]) {
+  test(
+    'clock carry ' + before + ' keeps its baseline and rolls only the two observed glyphs',
+    async ({ page }) => {
+      await page.clock.install({ time: new Date(unixMs) });
+      await page.clock.pauseAt(new Date(unixMs));
+      const { errors } = await setup(page, { unixMs });
+      const time = page.locator('#clock-time');
+      await expect(time).toHaveText(before);
+      await expect(time.locator('..')).toHaveAttribute('data-counter', 'clock');
+      const original = await time.boundingBox();
+      const sync = await page.locator('#sync-clock').boundingBox();
+      await page.clock.runFor(1000);
+      await expect(time).toHaveText(after);
+      await expect(time.locator('..')).toHaveAttribute('data-rolling', 'true');
+      for (const duration of [0, 75, 100, 150]) {
+        if (duration) await page.clock.runFor(duration);
+        const frame = await time.evaluate((source, before) => {
+          const row = source.parentElement.querySelector('.counter-row');
+          const bounds = (element) => {
+            const r = element.getBoundingClientRect();
+            return { x: r.x, y: r.y, width: r.width, height: r.height };
+          };
+          const range = document.createRange();
+          const glyphs = [...row.children].map((slot, index) => {
+            range.setStart(source.firstChild, index);
+            range.setEnd(source.firstChild, index + 1);
+            const canonical = bounds(range);
+            const numerals = [...slot.querySelectorAll('.counter-numeral')];
+            const texts = numerals.map((n) => n.textContent);
+            const still = before[index] === source.textContent[index];
+            const nearest = numerals.sort(
+              (a, b) =>
+                Math.abs(a.getBoundingClientRect().y - slot.getBoundingClientRect().y) -
+                Math.abs(b.getBoundingClientRect().y - slot.getBoundingClientRect().y),
+            )[0];
+            const text = nearest || slot;
+            range.selectNodeContents(text);
+            return { canonical, rendered: bounds(range), texts, still, text: text.textContent };
+          });
+          return { source: bounds(source), row: bounds(row), glyphs };
+        }, before);
+        expect(Math.abs(frame.row.y - original.y)).toBeLessThan(0.1);
+        expect(Math.abs(frame.row.height - original.height)).toBeLessThan(0.1);
+        expect(Math.abs(frame.row.width - frame.source.width)).toBeLessThan(0.1);
+        for (const [index, glyph] of frame.glyphs.entries()) {
+          if (glyph.texts.length) expect(glyph.texts).toEqual([before[index], after[index]]);
+          if (glyph.still) {
+            expect(glyph.text).toBe(after[index]);
+            expect(Math.abs(glyph.rendered.y - glyph.canonical.y)).toBeLessThan(0.15);
+            expect(Math.abs(glyph.rendered.x - glyph.canonical.x)).toBeLessThan(0.15);
+          }
+        }
+      }
+      await page.clock.runFor(550);
+      await expect(time.locator('..')).toHaveAttribute('data-rolling', 'false');
+      const settled = await time.boundingBox();
+      expect(Math.abs(settled.y - original.y)).toBeLessThan(0.1);
+      expect(Math.abs(settled.height - original.height)).toBeLessThan(0.1);
+      const settledSync = await page.locator('#sync-clock').boundingBox();
+      expect(Math.abs(settledSync.y - sync.y)).toBeLessThan(0.1);
+      expect(Math.abs(settledSync.height - sync.height)).toBeLessThan(0.1);
+      await expect(time).toHaveCSS('opacity', '1');
+      await expect(page.locator('#clock-status')).toHaveText('NTP synchronized');
+      expect(errors).toEqual([]);
+    },
+  );
+}
+
+test('save and report/Excel hover never expose a white intermediate fill', async ({ page }) => {
+  const { errors } = await setup(page);
+  const sample = async (selector, entering) => {
+    const element = page.locator(selector);
+    await element.scrollIntoViewIfNeeded();
+    const rect = await element.boundingBox();
+    const samples = page.evaluate(
+      (selector) =>
+        new Promise((resolve) => {
+          const element = document.querySelector(selector),
+            frames = [];
+          let began;
+          function frame(now) {
+            began ??= now;
+            const c = getComputedStyle(element);
+            frames.push({
+              background: c.backgroundColor,
+              image: c.backgroundImage,
+              color: c.color,
+            });
+            if (now - began >= 230) resolve(frames);
+            else requestAnimationFrame(frame);
+          }
+          requestAnimationFrame(frame);
+        }),
+      selector,
+    );
+    if (entering) await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    else await page.mouse.move(2, 2);
+    return samples;
+  };
+  for (const view of ['plant', 'worksheet']) {
+    await page.locator('#report-view').selectOption(view);
+    for (const selector of ['#save-report', '#copy-report']) {
+      await page.mouse.move(2, 2);
+      for (const entering of [true, false]) {
+        const frames = await sample(selector, entering);
+        expect(frames.length).toBeGreaterThan(3);
+        expect(new Set(frames.map((f) => f.image)).size).toBe(1);
+        for (const frame of frames) {
+          const rgba = frame.background.match(/[\d.]+/g).map(Number);
+          expect(rgba[3] ?? 1).toBe(1);
+          expect(rgba[2] - rgba[0]).toBeGreaterThan(80);
+          expect(frame.color).toBe('rgb(255, 255, 255)');
+        }
+      }
+    }
+  }
+  await page.locator('#report-view').selectOption('plant');
+  for (const selector of ['#copy-worksheet', '#save-draft']) {
+    for (const entering of [true, false]) {
+      const frames = await sample(selector, entering);
+      for (const frame of frames) expect(frame.color).not.toBe('rgb(255, 255, 255)');
+    }
+  }
   expect(errors).toEqual([]);
 });

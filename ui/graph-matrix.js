@@ -7,6 +7,7 @@ import {
   departmentLabel,
   graphPeriodLabel,
   graphSourceLabel,
+  graphRecordStatus,
 } from '../graph-presentation.js';
 import { shiftDate, formatNumber } from '../numbers.js';
 import { periodLabel } from '../graph-axis.js';
@@ -16,6 +17,7 @@ export function renderMonthlyTable({
   kind = 'daily',
   month,
   records,
+  sourceView = 'working',
   department = 'all',
   search = '',
 }) {
@@ -51,7 +53,15 @@ export function renderMonthlyTable({
     ),
   );
   heading.append(titleGroup, node('span', t('graphReady', { count: model.count }), 'graph-count'));
-  root.append(heading, node('p', t('graphMatrixHint'), 'graph-help'));
+  root.append(
+    heading,
+    node(
+      'p',
+      (sourceView === 'checkpoint' ? t('graphCheckpointSource') + ' · ' : '') +
+        t('graphMatrixHint'),
+      'graph-help',
+    ),
+  );
   const metrics = GRAPH_METRICS[plant].filter(
     (metric) =>
       (department === 'all' || metric.department === department) &&
@@ -174,7 +184,7 @@ export function renderMonthlyTable({
           'p',
           graphPeriodLabel(record, language) +
             ' · ' +
-            t(record.superseded ? 'graphReplaced' : 'graphExcluded'),
+            (graphRecordStatus(record, t) || t('graphExcluded')),
         ),
       );
     root.append(details);
