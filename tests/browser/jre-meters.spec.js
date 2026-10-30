@@ -171,7 +171,7 @@ test('Building 2 shows gross readings and net usage in all periods, preserves la
   await expect(page.locator('#copy-report')).toBeDisabled();
   await page.locator('#search-meter').fill('Electricity Building 2#');
   await expect(row.locator('.energy > span')).toHaveText('-');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.rows[18].end[0]).toBe('4000');
   expect(state.workspace.drafts.JRE.rows[1].end[1]).toBe('');
@@ -234,7 +234,7 @@ test('layout 4 adds a blank direct Forklift meter and shares only exact observat
   await expect(cell(page, 30, 'end')).toHaveValue('');
   await page.locator('#undo-change').click();
   await expect(cell(page, 30, 'end')).toHaveValue('225');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
   expect(state.workspace.nightShifts.JRE.rows[30].start).toEqual(['210']);
@@ -271,7 +271,7 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await expect(cell(page, 29, 'end')).toHaveValue('1010');
   await page.locator('#report-periods').selectOption('all');
   await expect(page.locator('#copy-report')).toBeEnabled();
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   for (const key of ['drafts', 'workingHours', 'nightShifts']) {
     expect(state.workspace[key].JRE.meterLayout).toBe(6);
@@ -401,7 +401,7 @@ test('Structural zero rule applies to every electricity period with original rea
   }
   await cell(page, 19, 'end').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('structural-zero-all-periods.png') });
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.rows[19].end).toEqual(['1010']);
   expect(state.workspace.workingHours.JRE.rows[19].end).toEqual(['1004']);
@@ -421,7 +421,7 @@ test('layout 3 Piping upgrades with a blank third meter and old imports preserve
   await expect(page.locator('#copy-report')).toBeDisabled();
   await cell(page, 15, 'start', 2).fill('1000');
   await cell(page, 15, 'end', 2).fill('2000');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
   await page.reload();

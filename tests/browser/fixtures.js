@@ -56,6 +56,10 @@ export const test = base.extend({
       }
       await route.fulfill({ json: drafts.get(id) || old });
     });
+    await page.route('**/api/drafts?**', (route) => {
+      const key = new URL(route.request().url()).searchParams.get('period');
+      return route.fulfill({ json: { key, draft: null, version: 0 } });
+    });
     await use(page);
   },
 });

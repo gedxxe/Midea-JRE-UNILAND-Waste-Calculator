@@ -1843,3 +1843,65 @@ test('monitoring can read explicit checkpoints without silently restoring or mer
     assert.deepEqual(frozen.value.snapshot, manual.value.snapshot);
   }
 });
+
+test('period navigation reads owner data before replacing an archived document and rejects unloaded blanks', async () => {
+  for (const kind of ['daily', 'workingHours', 'nightShift']) {
+    const actor = await autosaveActor(),
+      draft = partialPeriod();
+    if (kind !== 'daily')
+      Object.assign(draft, {
+        periodKind: kind,
+        utilityLayout: 1,
+        startTime: kind === 'nightShift' ? '17:00' : '08:00',
+        endTime: kind === 'nightShift' ? '08:00' : '17:00',
+        endDate: kind === 'nightShift' ? '2026-11-11' : '2026-11-10',
+      });
+    let saved = await call('/api/drafts', {
+      actor,
+      body: { workspace: autosaveWorkspace(draft), baseVersion: 0, periods: [] },
+    });
+    assert.equal(saved.status, 200);
+    const query =
+      '/api/drafts?period=' +
+      encodeURIComponent(['JRE', kind, draft.startDate, draft.endDate].join(':'));
+    const before = await call(query, { actor });
+    assert.equal(before.status, 200);
+    const elsewhere = structuredClone(draft);
+    elsewhere.startDate = '2026-11-20';
+    elsewhere.endDate = kind === 'workingHours' ? '2026-11-20' : '2026-11-21';
+    saved = await call('/api/drafts', {
+      actor,
+      body: {
+        workspace: autosaveWorkspace(elsewhere),
+        baseVersion: saved.value.version,
+        periods: [],
+      },
+    });
+    assert.equal(saved.status, 200);
+    const blank = structuredClone(draft);
+    blank.rows[0].start[0] = '';
+    const rejected = await call('/api/drafts', {
+      actor,
+      body: { workspace: autosaveWorkspace(blank), baseVersion: saved.value.version, periods: [] },
+    });
+    assert.equal(rejected.status, 409);
+    assert.deepEqual((await call(query, { actor })).value.draft, before.value.draft);
+    const key = ['JRE', kind, draft.startDate, draft.endDate].join(':');
+    const deliberate = await call('/api/drafts', {
+      actor,
+      body: {
+        workspace: autosaveWorkspace(blank),
+        baseVersion: saved.value.version,
+        periods: [],
+        periodVersions: { [key]: before.value.version },
+      },
+    });
+    assert.equal(deliberate.status, 200);
+    const peer = await autosaveActor();
+    assert.equal((await call(query, { actor: peer })).value.draft, null);
+    assert.equal(
+      (await call('/api/drafts?period=JRE%3Adaily%3A2026-02-30%3A2026-03-01', { actor })).status,
+      400,
+    );
+  }
+});

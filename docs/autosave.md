@@ -1,16 +1,16 @@
-# Autosave and checkpoints
+# Autosave and save verification
 
 ## Operator behavior
 
 All six factory/period drafts save incomplete electricity, gas, temperatures, refills, Water and notes. Structural validation still rejects malformed or oversized API payloads; an unfinished or invalid reading string within the documented input shape remains saved. Calculation checks still control report copying. Missing values stay gaps, never invented zeros.
 
-A valid dated document with entered data gets a mutable period autosave, displayed as Revision 1 before its first manual checkpoint. Charts/monthly tables use the latest account-confirmed working snapshot. Invalid/absent dates remain durable in the active workspace and are not plotted. Entirely empty untouched defaults do not create history. Clearing an existing working document updates its available values to gaps. Example data is not automatically published as period history.
+A valid dated document with entered data gets a mutable period autosave, displayed as Revision 1 when first created. Charts/monthly tables use the latest account-confirmed working snapshot. Invalid/absent dates remain durable in the active workspace and are not plotted. Entirely empty untouched defaults do not create history. Clearing an existing working document updates its available values to gaps. Example data is not automatically published as period history.
 
-Save version first synchronizes the workspace and its pending periods, then creates an immutable checkpoint. First manual checkpoint is Revision 1. Further checkpoints increment only when normalized raw draft or calculated output differs from the latest checkpoint. Repeating an identical Save does not write a revision, alter its timestamp, or create an audit event. Engine-version metadata alone does not force a revision. Autosaves after a checkpoint keep its historical bytes intact.
+Save first synchronizes the workspace and pending periods, then reads the server workspace to verify version and content. Repeated checks create no checkpoint, report revision or redundant copy. A changed local copy during verification remains pending; a differing server copy is an explicit conflict. Legacy report/checkpoint APIs remain compatible for historical recovery, but the current Save button does not call them.
 
 Delete saved draft clears the active workspace only; autosaved period history and manual checkpoints remain. The next edit or manual Save recreates the active workspace with its current concurrency token.
 
-Save version now uses a 4-second Fuse window before the manual checkpoint request. Click **Undo save** or press Escape to cancel. The remaining window pauses in a hidden tab or when the mouse re-enters the button after leaving. Autosave runs independently; cancelled versions do not undo readings or remove saved checkpoints. Reading/period/plant/account changes cancel pending saves, and the same context is rechecked after the autosave flush. Only a successful server response produces saved feedback; unchanged saves keep their revision number.
+Save starts verification immediately. The earlier checkpoint delay and Undo faces are removed because this button creates no copy or revision. Its rim animates only while a real request is pending, stopping for hidden/offscreen/reduced-motion states. Edits or account/period changes invalidate the confirmation; autosave continues independently.
 
 ## Storage and timing
 
@@ -25,17 +25,17 @@ Save version now uses a 4-second Fuse window before the manual checkpoint reques
 ## Module boundaries
 
 - draft-records.js owns period identity, entry detection, canonical content comparison and journal restoration.
-- ui/save-fuse.js owns the cancellable manual-save delay. It keeps no persisted timer and cannot delete checkpoints.
-- ui/drafts.js owns the per-account queue, coalescing, retry, recovery, conflict and checkpoint serialization.
+- ui/save-fuse.js owns immediate verification feedback and the optional rim animation. It neither delays persistence nor creates/deletes checkpoints.
+- ui/drafts.js owns the per-account queue, coalescing, retry, recovery, conflict handling, destination loading and save verification.
 - server/drafts.js atomically persists the account workspace and partial period snapshots; server/period-autosaves.js plans/writes only changed documents in batches.
 - server/report-store.js owns immutable manual checkpoint creation/deduplication; server/report-history.js reads the working copy or an explicit checkpoint.
 - server/graphs.js projects saved output text, not raw meter/gas input. Existing graph parsers extract only available values and keep stock gains distinct from consumption.
 
 ## Migration, rollback and limits
 
-Apply checksum-tracked migration 007 with the maintenance connection before deploying this code. It adds period_autosaves and grants the existing runtime role SELECT/INSERT/UPDATE only. No existing readings, revisions or imported history are recalculated. New workspace/report markers reject older writers that would erase newer autosave state. Older code can read historical checkpoints but cannot safely edit adopted documents.
+The original autosave rollout required checksum-tracked migration 007 with the maintenance connection. This v0.11.35 change adds no migration. It adds period_autosaves and grants the existing runtime role SELECT/INSERT/UPDATE only. No existing readings, revisions or imported history are recalculated. New workspace/report markers reject older writers that would erase newer autosave state. Older code can read historical checkpoints but cannot safely edit adopted documents.
 
-Before production migration: passing required CI, an up-to-date encrypted private backup, and explicit owner authorization for 007. Previous permissions for 004/005/006 do not cover it. Do not run migrations from builds, broaden preview authentication, or remove guards for rollback. Preserve the database and use a compatible release to resume editing after rollback; export a full private backup first.
+Any future production migration still requires passing CI, an up-to-date private backup and explicit owner authorization. Do not run migrations from builds, broaden preview authentication, or remove guards for rollback. Preserve the database and use a compatible release to resume editing after rollback; export a full private backup first.
 
 Active draft writes retain the existing 180/account/15-minute budget, allowing at most 12 background attempts/minute per continuously edited tab. Multiple devices share that budget. A write uses rate checking, owner locking, one batch snapshot lookup, one changed-snapshot batch upsert and one workspace update; unchanged snapshots are not rewritten. Monitoring uses existing read budgets. This is a faster cadence with bounded additional database work, not zero workload or a durability guarantee.
 
@@ -44,3 +44,11 @@ The journal supports up to 1,024 period entries and requests up to 512 KB; batch
 Warehouse Lighting defaults before its recording date are excluded from the meaningful-input check. Opening an otherwise empty historical period therefore does not create a Revision 1 document or graph point. An actual zero entered on/after 2026-10-25 remains user data and autosaves normally. Other meter/utility zero handling is unchanged.
 
 Queued JRE period writes must use the current meter layout before server normalization. An older tab receives DRAFT_FORMAT_CHANGED and must reload, even when its active workspace already has the current layout. Client-side backup/tab recovery can upgrade the old queue without discarding saved meter fields.
+
+## Destination-period safety (v0.11.35-alpha)
+
+Dates select the current document. Before installing a known daily destination, flush the departing work and read the destination under the current account. Briefly lock entry fields during navigation. The server rejects replacing an archived document without its observed version; existing workspace concurrency checks remain in force. A lost-response retry with identical content stays idempotent.
+
+Offline navigation keeps partial input and departed periods in owner-bound tab recovery. Deferred loading preserves unedited stored fields; an edit conflicting with unseen stored data stops as an explicit conflict. Navigation metadata is stored atomically with recovery. Historian restoration is an explicit user action, distinct from an unloaded blank field.
+
+Manual Save verifies the same canonical autosaved document without creating an extra checkpoint. The redundant Save draft control and graph source selector are removed. Monitoring reads the current autosaved documents. No production repair is implicit in this release.

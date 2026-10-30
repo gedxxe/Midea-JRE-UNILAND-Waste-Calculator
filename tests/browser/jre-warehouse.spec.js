@@ -94,7 +94,7 @@ test('JRE row32 uses x40 and net Warehouse in every mode with aligned inputs, ra
   await cell(page, 'end').fill('');
   await expect(page.locator('#copy-report')).toBeDisabled();
   await expect(page.locator('tr[data-row="25"] .energy > span')).toHaveText('-');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
   expect(state.workspace.drafts.JRE.rows[31].end).toEqual(['']);
@@ -119,7 +119,7 @@ test('layout5 boundary report remains zero, keeps the real Oct25 reading and car
   await expect(cell(page, 'start')).toHaveValue('10');
   await expect(cell(page, 'end')).toHaveValue('');
   await expect(page.locator('tr[data-row="31"] .energy > span')).toHaveText('-');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await page.locator('#search-meter').fill('Warehouse');

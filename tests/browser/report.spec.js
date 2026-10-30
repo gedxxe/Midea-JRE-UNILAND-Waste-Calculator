@@ -129,7 +129,7 @@ test('legacy meters move once and show individual usage without hover, with unch
   await page.locator('#import-text').fill(legacyText(old, 'end'));
   await page.locator('#apply-import').click();
   await expect(page.locator('#report-preview')).toHaveValue(report);
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await expect(cell(page, 3, 'end', 5)).toHaveValue('33.03');
@@ -191,7 +191,7 @@ for (const plant of ['JRE', 'UNILAND']) {
       await page.locator('#gas-section [data-utility="0"]').fill('12.5');
       await page.locator('#water-start').fill('100,25');
       await expect(page.locator('#copy-report')).toBeDisabled();
-      await page.locator('#save-draft').click();
+      await page.keyboard.press('Control+s');
       await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
       await page.reload();
       await page.locator(`[data-plant="${plant}"]`).click();
@@ -303,7 +303,7 @@ test('latest period and manual dates move readings by date in either edit order,
       await expect(page.locator('#start-reading-date')).toHaveText('2026-10-04');
       await expect(page.locator('#report-preview')).toHaveValue(report);
     }
-    await page.locator('#save-draft').click();
+    await page.keyboard.press('Control+s');
     await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     await page.reload();
     await page.locator(`[data-plant="${plant}"]`).click();
@@ -494,13 +494,13 @@ test('language changes preserve readings, report bytes, and the saved draft', as
   ]) {
     await page.locator('#language-select').selectOption(language);
     await expect(page.locator('html')).toHaveAttribute('lang', language);
-    await expect(page.locator('#save-draft')).toHaveText(label);
+    await expect(page.locator('#save-draft')).toHaveCount(0);
     await expect(page.locator('#meter-body tr[data-row="11"] .ratio strong')).toHaveText('× 40');
     await expect(cell(page)).toHaveValue(reading);
     await expect(page.locator('#report-preview')).toHaveValue(report);
   }
   await page.locator('#language-select').selectOption('zh-CN');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await page.reload();
   await expect(page.locator('#language-select')).toHaveValue('zh-CN');
   await expect(cell(page)).toHaveValue(reading);
@@ -720,7 +720,7 @@ test('UNILAND tank gas uses separate calibration, preserves manual units and sur
   ).toContainText('Nm3');
   await lpg.locator('[data-gas-enable]').check();
   await lpg.locator('[data-gas-point="start"]').fill('60');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await page.locator('[data-plant="UNILAND"]').click();
@@ -813,7 +813,7 @@ test('JRE gas raw readings, decimal temperatures, refills, language and next day
     await expect(page.locator('#report-preview')).toHaveValue(report);
     await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33,5');
   }
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await page.reload();
   await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33,5');
   await expect(lpg.locator('[data-gas-point="after0"]')).toHaveValue('80');

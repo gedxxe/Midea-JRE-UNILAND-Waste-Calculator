@@ -125,7 +125,7 @@ test('a partially failed tab-storage update cannot discard newer unsynced readin
   await page.reload();
   await expect(cell(page)).toHaveValue('222');
   expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('111');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('222');
   expect(state.writes).toHaveLength(1);
@@ -161,7 +161,7 @@ for (const concurrent of [false, true]) {
       expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('333');
       page.once('dialog', (dialog) => dialog.accept());
       await page.locator('#draft-keep-local').click();
-    } else await page.locator('#save-draft').click();
+    } else await page.keyboard.press('Control+s');
     await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('222');
     expect(state.writes).toHaveLength(1);
@@ -193,7 +193,7 @@ for (const reorder of [false, true]) {
     await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     expect(state.writes).toHaveLength(0);
     await cell(page).fill('444');
-    await page.locator('#save-draft').click();
+    await page.keyboard.press('Control+s');
     await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
     expect(state.writes).toHaveLength(1);
     expect(state.writes[0].baseVersion).toBe(8);

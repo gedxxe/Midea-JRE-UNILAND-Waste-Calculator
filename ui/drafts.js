@@ -1,11 +1,15 @@
+import { emptyPeriodBaseline, mergePeriodEdits } from '../period-document.js';
 import { $ } from './dom.js';
 import { t, getLanguage } from '../i18n/index.js';
 import { STORAGE_KEY, restoreWorkspace, sameWorkspace } from '../storage.js';
 import {
   queueDepartedPeriods,
   restorePeriodQueue,
+  restorePeriodDraft,
   periodKey,
+  hasEnteredData,
   PERIOD_BATCH_SIZE,
+  WORKSPACE_COLLECTIONS,
 } from '../draft-records.js';
 
 // One replaceable workspace per account. Local recovery is immediate; remote writes are coalesced.
@@ -19,12 +23,17 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     conflict = false,
     localOk = true,
     recoveryBroken = false;
+  const bases = new Map();
+  const replacements = new Set();
+  const navigationSeeds = new Map(),
+    periodVersions = new Map();
   let periods = [],
     previous = null,
-    periodSequence = null,
-    references = new Map();
+    periodSequence = null;
   const updateReferences = (records) => {
-    for (const record of records || []) references.set(record.key, record);
+    for (const record of records || []) {
+      periodVersions.set(record.key, record.version);
+    }
   };
   const sameRaw = (a, b) => {
     try {
@@ -90,9 +99,14 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
           tabRecovery: {
             version,
             pending: dirty,
+            conflict,
             localAt: now,
             accountAt,
             pendingPeriods: periods,
+            navigationSeeds: [...navigationSeeds],
+            periodBases: [...bases],
+            replacements: [...replacements],
+            periodVersions: [...periodVersions],
           },
         }),
       );
@@ -128,6 +142,10 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
   }
   async function initialize() {
     const identity = epoch;
+    if (conflict) {
+      status('draftConflict');
+      return false;
+    }
     status('draftLoading');
     try {
       const saved = await remote();
@@ -142,6 +160,13 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         status('draftConflict');
         return false;
       }
+      if (saved.workspace)
+        for (const collection of WORKSPACE_COLLECTIONS)
+          for (const plant of ['JRE', 'UNILAND']) {
+            const draft = saved.workspace[collection]?.[plant],
+              key = periodKey(draft);
+            if (key && (!dirty || !bases.has(key))) bases.set(key, structuredClone(draft));
+          }
       if (!dirty && saved.workspace) apply(restoreWorkspace(JSON.stringify(saved.workspace)));
       if (!dirty && !saved.workspace && saved.version !== version) apply(null);
       // Matching active data does not acknowledge queued periods. Retry their original
@@ -190,6 +215,69 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       // Default dates or shared observations may be normalized outside an input event.
       if (!dirty && lastSynced && !sameRaw(raw(), lastSynced)) changed();
       if (!dirty) return true;
+      try {
+        for (const [key, seed] of [...navigationSeeds]) {
+          const live = read();
+          const target =
+            WORKSPACE_COLLECTIONS.some((collection) =>
+              ['JRE', 'UNILAND'].some((plant) => periodKey(live[collection]?.[plant]) === key),
+            ) || periods.some((draft) => periodKey(draft) === key);
+          if (!target) {
+            navigationSeeds.delete(key);
+            continue;
+          }
+          status('draftLoading');
+          const result = await request('/api/drafts?' + new URLSearchParams({ period: key }), {
+            signal: AbortSignal.timeout(20000),
+          });
+          if (identity !== epoch) return false;
+          if (result.key !== key || !Number.isSafeInteger(result.version) || result.version < 0)
+            throw Error('DRAFT_CONFLICT');
+          if (result.draft) {
+            result.draft = restorePeriodDraft(result.draft);
+            if (periodKey(result.draft) !== key) throw Error('DRAFT_CONFLICT');
+          }
+          const latest = structuredClone(read());
+          let matched = false;
+          for (const collection of WORKSPACE_COLLECTIONS)
+            for (const plant of ['JRE', 'UNILAND']) {
+              if (periodKey(latest[collection]?.[plant]) !== key) continue;
+              matched = true;
+              if (result.draft && !replacements.has(key))
+                latest[collection][plant] = mergePeriodEdits(
+                  result.draft,
+                  seed,
+                  latest[collection][plant],
+                );
+            }
+          periods = periods.map((draft) => {
+            if (periodKey(draft) !== key) return draft;
+            matched = true;
+            return result.draft && !replacements.has(key)
+              ? mergePeriodEdits(result.draft, seed, draft)
+              : draft;
+          });
+          if (!matched) {
+            navigationSeeds.delete(key);
+            continue;
+          }
+          bases.set(key, structuredClone(result.draft || emptyPeriodBaseline(seed)));
+          periodVersions.set(key, result.version);
+          navigationSeeds.delete(key);
+          replacements.delete(key);
+          if (result.draft) {
+            apply(latest);
+            previous = structuredClone(read());
+            backup();
+          }
+        }
+      } catch (error) {
+        if (identity !== epoch) return false;
+        conflict = error.message === 'DRAFT_CONFLICT';
+        status(conflict ? 'draftConflict' : 'draftOffline');
+        return false;
+      }
+      if (navigationSeeds.size) return false;
       const workspace = read(),
         sent = JSON.stringify(workspace);
       let batch = periods.slice(0, PERIOD_BATCH_SIZE);
@@ -205,7 +293,12 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       status('draftSyncing');
       try {
         const result = await request('/api/drafts', {
-          body: { workspace, baseVersion: version, periods: batch },
+          body: {
+            workspace,
+            baseVersion: version,
+            periods: batch,
+            periodVersions: Object.fromEntries(periodVersions),
+          },
           signal: AbortSignal.timeout(20000),
         });
         if (identity !== epoch) return false;
@@ -214,6 +307,15 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         accountAt = timestamp(result.updated_at);
         lastSynced = sent;
         updateReferences(result.records);
+        for (const draft of [
+          ...batch,
+          ...WORKSPACE_COLLECTIONS.flatMap((c) =>
+            ['JRE', 'UNILAND'].map((p) => workspace[c]?.[p]),
+          ).filter(Boolean),
+        ]) {
+          const key = periodKey(draft);
+          if (key) bases.set(key, structuredClone(draft));
+        }
         periods = periods.filter(
           (draft) =>
             !batch.some(
@@ -221,6 +323,17 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
                 periodKey(sentDraft) === periodKey(draft) && sameWorkspace(sentDraft, draft),
             ),
         );
+        const live = read();
+        const retained = new Set(
+          [
+            ...periods,
+            ...WORKSPACE_COLLECTIONS.flatMap((c) =>
+              ['JRE', 'UNILAND'].map((p) => live[c]?.[p]),
+            ).filter(Boolean),
+          ].map(periodKey),
+        );
+        for (const key of bases.keys()) if (!retained.has(key)) bases.delete(key);
+        for (const key of periodVersions.keys()) if (!retained.has(key)) periodVersions.delete(key);
         dirty = !sameRaw(raw(), sent) || periods.length > 0;
         firstDirty = dirty ? performance.now() : 0;
         retry = 30000;
@@ -262,7 +375,41 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
   function changed({ periodOnly = false } = {}) {
     if (!user) return;
     const workspace = read();
-    if (periodOnly) periodSequence ||= previous;
+    if (!periodOnly) {
+      for (const collection of WORKSPACE_COLLECTIONS)
+        for (const plant of ['JRE', 'UNILAND']) {
+          const next = workspace[collection]?.[plant],
+            key = periodKey(next);
+          if (
+            key &&
+            !next.isExample &&
+            hasEnteredData(next) &&
+            !periodVersions.has(key) &&
+            !navigationSeeds.has(key)
+          ) {
+            const seed = structuredClone(
+              bases.get(key) || previous?.[collection]?.[plant] || emptyPeriodBaseline(next),
+            );
+            for (const field of ['startDate', 'endDate', 'startTime', 'endTime'])
+              if (field in next) seed[field] = next[field];
+            navigationSeeds.set(key, seed);
+          }
+        }
+    }
+    if (periodOnly) {
+      periodSequence ||= previous;
+      for (const collection of WORKSPACE_COLLECTIONS)
+        for (const plant of ['JRE', 'UNILAND']) {
+          const next = workspace[collection]?.[plant],
+            key = periodKey(next);
+          if (
+            key &&
+            key !== periodKey(previous?.[collection]?.[plant]) &&
+            !navigationSeeds.has(key)
+          )
+            navigationSeeds.set(key, structuredClone(bases.get(key) || emptyPeriodBaseline(next)));
+        }
+    }
     periods = queueDepartedPeriods(periods, periodOnly ? periodSequence : previous, workspace);
     if (!periodOnly) periodSequence = null;
     previous = structuredClone(workspace);
@@ -281,10 +428,13 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
   }
   function reset(next) {
     epoch++;
+    bases.clear();
+    replacements.clear();
+    navigationSeeds.clear();
+    periodVersions.clear();
     clearTimeout(timer);
     pending = null;
     periods = [];
-    references = new Map();
     previous = null;
     periodSequence = null;
     user = next?.mustChangePassword ? null : next;
@@ -318,12 +468,34 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
           }
         }
         periods = restorePeriodQueue(meta?.pendingPeriods);
+        for (const name of ['periodBases', 'navigationSeeds', 'periodVersions', 'replacements']) {
+          if (
+            meta?.[name] !== undefined &&
+            (!Array.isArray(meta[name]) || meta[name].length > 1030)
+          )
+            throw Error('Invalid recovery metadata');
+        }
+        for (const [key, draft] of meta?.periodBases || []) {
+          const base = restorePeriodDraft(draft);
+          if (periodKey(base) !== key) throw Error('Invalid period baseline');
+          bases.set(key, base);
+        }
+        for (const [key, draft] of meta?.navigationSeeds || []) {
+          const restored = restorePeriodQueue([draft])[0];
+          if (periodKey(restored) !== key) throw Error('Invalid period recovery');
+          navigationSeeds.set(key, restored);
+        }
+        for (const key of meta?.replacements || [])
+          if (navigationSeeds.has(key)) replacements.add(key);
+        for (const [key, v] of meta?.periodVersions || [])
+          if (Number.isSafeInteger(v) && v >= 0) periodVersions.set(key, v);
         apply(restored);
         localAt = timestamp(meta?.localAt);
         accountAt = timestamp(meta?.accountAt);
         version = Number.isSafeInteger(meta?.version) && meta.version >= 0 ? meta.version : 0;
         // Legacy split metadata cannot prove the saved flag belongs to this copy.
-        dirty = !atomic || meta.pending || periods.length > 0;
+        conflict = meta?.conflict === true;
+        dirty = conflict || !atomic || meta.pending || periods.length > 0;
         firstDirty = performance.now();
       }
     } catch {
@@ -367,7 +539,28 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         recoveryBroken = false;
         localOk = true;
         periods = [];
+        navigationSeeds.clear();
+        replacements.clear();
+        periodVersions.clear();
         apply(saved.workspace ? restoreWorkspace(JSON.stringify(saved.workspace)) : null);
+      }
+      if (!useRemote) {
+        const local = read();
+        const targets = [
+          ...periods.slice(0, PERIOD_BATCH_SIZE),
+          ...WORKSPACE_COLLECTIONS.flatMap((c) => ['JRE', 'UNILAND'].map((p) => local[c]?.[p])),
+        ];
+        for (const key of new Set(targets.map(periodKey).filter(Boolean))) {
+          const current = await request('/api/drafts?' + new URLSearchParams({ period: key }), {
+            signal: AbortSignal.timeout(20000),
+          });
+          if (identity !== epoch) return;
+          if (current.key !== key || !Number.isSafeInteger(current.version) || current.version < 0)
+            throw Error('DRAFT_CONFLICT');
+          periodVersions.set(key, current.version);
+          navigationSeeds.delete(key);
+          replacements.delete(key);
+        }
       }
       updateReferences(saved.records);
       previous = structuredClone(read());
@@ -450,62 +643,6 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     }
     return false;
   }
-  async function checkpoint(save) {
-    if (!user || !(await flushAll({ ensureWorkspace: true })) || conflict) return null;
-    const identity = epoch,
-      before = structuredClone(read());
-    clearTimeout(timer);
-    const work = async () => {
-      status('draftSyncing');
-      try {
-        const result = await save({
-          workspaceVersion: version,
-          reference: (draft) => references.get(periodKey(draft)),
-        });
-        if (identity !== epoch) return null;
-        const dataOnly = (value) => {
-          const normalized = restoreWorkspace(JSON.stringify(value));
-          delete normalized.reportLinks;
-          return normalized;
-        };
-        if (!result.workspace || !sameWorkspace(dataOnly(before), dataOnly(result.workspace))) {
-          conflict = true;
-          dirty = true;
-          backup();
-          status('draftConflict');
-          return result;
-        }
-        // An idempotent response may include another device's token. Newly queued
-        // periods still need their original token checked by the draft endpoint.
-        if (!result.unchanged || !periods.length) version = result.workspaceVersion;
-        accountAt = timestamp(result.updated_at);
-        updateReferences(result.records);
-        lastSynced = JSON.stringify({ ...before, reportLinks: result.workspace.reportLinks });
-        dirty = !sameRaw(raw(), lastSynced) || periods.length > 0;
-        backup();
-        status(dirty ? 'draftPending' : 'draftSynced');
-        if (!result.unchanged) synced();
-        return result;
-      } catch (error) {
-        if (identity === epoch) {
-          conflict = ['DRAFT_CONFLICT', 'DRAFT_FORMAT_CHANGED'].includes(error.message);
-          dirty = true;
-          backup();
-          status(conflict ? 'draftConflict' : 'draftOffline');
-        }
-        throw error;
-      }
-    };
-    pending = work();
-    try {
-      return await pending;
-    } finally {
-      if (identity === epoch) {
-        pending = null;
-        if (dirty && !conflict) schedule();
-      }
-    }
-  }
   $('draft-retry').addEventListener('click', () => void flush());
   $('draft-load-cloud').addEventListener('click', () => void resolveConflict(true));
   $('draft-keep-local').addEventListener('click', () => void resolveConflict(false));
@@ -515,7 +652,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
   window.addEventListener('pagehide', () => {
     if (!dirty) return;
     backup();
-    if (!user || !ready || pending || conflict) return;
+    if (!user || !ready || pending || conflict || navigationSeeds.size) return;
     const workspace = read();
     let batch = periods.slice(0, PERIOD_BATCH_SIZE);
     while (
@@ -524,7 +661,12 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         .length > 60000
     )
       batch = batch.slice(0, -1);
-    const body = { workspace, baseVersion: version, periods: batch };
+    const body = {
+      workspace,
+      baseVersion: version,
+      periods: batch,
+      periodVersions: Object.fromEntries(periodVersions),
+    };
     if (new TextEncoder().encode(JSON.stringify(body)).length <= 60000)
       void request('/api/drafts', { body, keepalive: true }).catch(() => {});
   });
@@ -535,8 +677,85 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     flushAll,
     forget,
     render,
-    checkpoint,
     workspace: () => ({ ...read(), pendingPeriods: structuredClone(periods) }),
+    async verify() {
+      const identity = epoch;
+      if (!user || !(await flushAll({ ensureWorkspace: true }))) return false;
+      const before = raw(),
+        acknowledged = version;
+      const saved = await remote();
+      if (identity !== epoch || !user) return false;
+      if (raw() !== before || periods.length || dirty) {
+        status('draftPending');
+        return false;
+      }
+      if (
+        !saved.workspace ||
+        saved.version !== acknowledged ||
+        !sameWorkspace(
+          restoreWorkspace(JSON.stringify({ ...saved.workspace, autosaveLayout: 1 })),
+          restoreWorkspace(raw()),
+        )
+      ) {
+        conflict = dirty = true;
+        backup();
+        status('draftConflict');
+        return false;
+      }
+      accountAt = timestamp(saved.updated_at);
+      status('draftSynced');
+      return true;
+    },
+    async navigate(targets, install) {
+      if (!user) return false;
+      const navigationEpoch = epoch;
+      const flushed = await flushAll();
+      if (navigationEpoch !== epoch || !user) return false;
+      if (!flushed) {
+        if (conflict) return false;
+        install(
+          targets.map((target) =>
+            structuredClone(
+              periods.find((draft) => periodKey(draft) === periodKey(target)) || target,
+            ),
+          ),
+        );
+        backup();
+        return true;
+      }
+      const identity = epoch,
+        loaded = [];
+      for (const target of targets) {
+        const key = periodKey(target);
+        if (!key) {
+          loaded.push(target);
+          continue;
+        }
+        const result = await request('/api/drafts?' + new URLSearchParams({ period: key }), {
+          signal: AbortSignal.timeout(20000),
+        });
+        if (identity !== epoch) return false;
+        if (result.key !== key || !Number.isSafeInteger(result.version) || result.version < 0)
+          throw Error('DRAFT_CONFLICT');
+        const draft = result.draft ? restorePeriodDraft(result.draft) : target;
+        if (periodKey(draft) !== key) throw Error('DRAFT_CONFLICT');
+        loaded.push(draft);
+        bases.set(key, structuredClone(result.draft || emptyPeriodBaseline(target)));
+        periodVersions.set(key, result.version);
+      }
+      if (identity !== epoch) return false;
+      install(loaded);
+      for (const draft of loaded) navigationSeeds.delete(periodKey(draft));
+      backup();
+      return true;
+    },
+    authorizeRestore(draft) {
+      const key = periodKey(draft);
+      if (key) {
+        navigationSeeds.set(key, structuredClone(draft));
+        replacements.add(key);
+      }
+    },
     restorePeriods(value) {
       periods = restorePeriodQueue(value);
       periodSequence = null;

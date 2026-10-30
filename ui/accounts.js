@@ -3,7 +3,6 @@ import { $, node } from './dom.js';
 import { t } from '../i18n/index.js';
 import { createDraft } from '../engine.js';
 import { restoreDrafts } from '../storage.js';
-import { periodKey } from '../draft-records.js';
 import { createSaveFuse } from './save-fuse.js';
 
 export function createAccounts({
@@ -11,9 +10,7 @@ export function createAccounts({
   loadDraft,
   identityChanged,
   toast,
-  reportSaved = () => {},
-  saveWorking = async () => false,
-  checkpoint = async () => null,
+  verifySave = async () => false,
   beforeRead = async () => true,
   beforeSignOut = async () => true,
   opened = () => {},
@@ -265,43 +262,13 @@ export function createAccounts({
     commit: (isCurrent) =>
       action(async () => {
         if (!isCurrent()) return false;
-        if (!periodKey(current())) {
-          if (await saveWorking()) toast(t('draftSavedWithoutPeriod'));
-          return;
-        }
-        const result = await checkpoint(async ({ workspaceVersion, reference }) => {
-          if (!isCurrent()) throw new Error('PERIOD_CHANGED');
-          const draft = structuredClone(current());
-          const previous = links[reportLinkKey(draft)],
-            known = reference(draft);
-          const samePeriod =
-            previous?.startDate === draft.startDate && previous?.endDate === draft.endDate;
-          const id = known?.id || (samePeriod ? previous.id : null);
-          const saved = await request('/api/reports', {
-            body: {
-              autosaveLayout: 1,
-              draft,
-              workspaceVersion,
-              baseRevision: known?.checkpointRevision ?? (samePeriod ? previous.revision : 0),
-              ...(id ? { id } : {}),
-            },
-          });
-          links[reportLinkKey(draft)] = {
-            id: saved.id,
-            revision: saved.revision,
-            startDate: draft.startDate,
-            endDate: draft.endDate,
-          };
-          return saved;
-        });
-        if (!result) {
+        const verified = await verifySave();
+        if (!isCurrent()) return false;
+        if (!verified) {
           toast(t('draftPending'));
-          return;
+          return false;
         }
-        reportSaved();
-        toast(
-          t(result.unchanged ? 'reportUnchanged' : 'reportSaved', { revision: result.revision }),
-        );
+        toast(t('saveVerified'));
         return true;
       }),
   });

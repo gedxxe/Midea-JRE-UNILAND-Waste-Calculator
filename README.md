@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.34-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.35-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -21,7 +21,7 @@ The intended contribution to Midea Business System work is practical: consistent
 
 ![Record readings, review consumption and save or share the result](docs/assets/reading-flow.svg)
 
-Monitoring defaults to **Latest autosave**. Choose **Saved versions** to view the last manual checkpoints without restoring or changing a working draft. **Review periods** lists exact dates, related periods and incomplete working copies. Periods without any numeric value do not block other periods. Other conflicts stay explicit; no totals are split or invented.
+Monitoring uses the current autosaved document for each period. Existing historical checkpoints remain readable in Historian. **Review periods** lists exact dates, related periods and incomplete working copies. Periods without any numeric value do not block other periods. Other conflicts stay explicit; no totals are split or invented.
 
 ### Operator quick start
 
@@ -29,7 +29,7 @@ Monitoring defaults to **Latest autosave**. Choose **Saved versions** to view th
 2. Choose **JRE / UNILAND**, recording mode, and actual reading dates/times.
 3. Enter cumulative readings. Decimal comma or dot is accepted, without thousands separators. Text import is optional. Use `-` for explicitly unavailable readings; blank means unfinished.
 4. Review individual usage, equipment totals and check notes. Complete required fields before copying a finished report.
-5. Choose the final report sections and copy the report or Excel row. Entries autosave into Historian and monitoring; use **Save version** for an immutable manual checkpoint. You have 4 seconds to cancel with **Undo save** or Escape before it is sent; autosave continues.
+5. Choose the final report sections and copy the report or Excel row. Entries autosave into Historian and monitoring; **Save** flushes pending autosave and verifies the server copy without creating another record. Verification starts immediately; autosave continues independently.
 
 | Mode             | Reading interval, editable times                  | Report date |
 | ---------------- | ------------------------------------------------- | ----------- |
@@ -41,7 +41,7 @@ Only observations with the same factory, date and time are shared. Unknown readi
 
 The welcome slogan remains "Tired of manual meter recording? Try Energy Record." in the selected language. SVG section/action icons keep their text labels. Valid gas stock increases use amber attention panels and remain copyable/saveable; invalid readings stay distinct. Calculation/reference help can be expanded when needed.
 
-The WIB clock and three summary values use short digit-roll transitions (a single dashboard entrance, then changed digits only); canonical values, signs, precision and NTP status remain unchanged. Clock changes keep the same baseline, including minute and midnight rollover. Blue button fills stay visible throughout hover. Copy report shares the Sign in edge-light effect and still copies immediately. Save version stays compact in every phase. Reduced/off motion and effect failure retain plain readable values.
+The WIB clock and three summary values use short digit-roll transitions (a single dashboard entrance, then changed digits only); canonical values, signs, precision and NTP status remain unchanged. Clock changes keep the same baseline, including minute and midnight rollover. Blue button fills stay visible throughout hover. Copy report shares the Sign in edge-light effect and still copies immediately. Save stays compact in every phase. Reduced/off motion and effect failure retain plain readable values.
 
 The signed-in panel uses a soft blue background, compact glass navigation and readable solid reading fields. Numbers take priority; supporting labels and help use softer slate text. Short entrance/focus transitions respect reduced motion; set data-panel-motion="off" on #application-surface to disable panel motion. This presentation does not change calculations, autosave or saved reports.
 
@@ -86,9 +86,9 @@ The blank template and importer use the same equipment schema. Fill the date and
 
 Parent/submeter checks show the parent usage, included total and excess, grouped by equipment. Click a component meter to go to its readings. These checks do not change the calculation or saved history.
 
-### Autosave and checkpoints
+### Autosave and save verification
 
-Incomplete electricity, gas, Water and notes save automatically for both plants and all modes. The first dated working copy appears as **Revision 1** in Historian. Charts and Monthly table use its available values without manual Save. **Save version** freezes a checkpoint; later autosaves keep it intact. Another manual save creates the next revision only when content changed. Identical saves show **Already saved**.
+Incomplete electricity, gas, Water and notes save automatically for both plants and all modes. The first dated working copy appears as **Revision 1** in Historian. Charts and Monthly table use its available values without manual Save. **Save** verifies the current server copy after flushing pending edits. Repeated checks create no checkpoints, records or revision increments. Existing historical checkpoints remain readable for explicit recovery.
 
 Tab recovery updates immediately; account sync follows after 3 seconds idle or within 15 seconds of continuous editing, at least 5 seconds between background attempts. Check **All changes saved to your account** before closing. Offline failures retry with backoff; device conflicts require a choice, even if input returns to an older local value. A crash can lose changes not acknowledged by the server. Invalid dates stay in the active draft without invented graph points. Private backup format 5 includes pending departed periods. See [autosave behavior and deployment](docs/autosave.md).
 
@@ -159,9 +159,9 @@ made in <3 by gede
 
 ## 简体中文
 
-监测默认使用**最新自动保存**。选择**已保存版本**可查看最近的手动检查点，不会恢复或更改工作草稿。**查看时段**列出具体日期、相关时段及未完成副本。没有任何数值的时段不会阻挡其他时段；真正的冲突仍明确显示，不拆分或推测用量。
+监测统一使用各时段当前自动保存的数据。手动检查点只用于历史记录中的恢复。**查看时段**列出具体日期、相关时段及未完成副本。没有任何数值的时段不会阻挡其他时段；真正的冲突仍明确显示，不拆分或推测用量。
 
-WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示值、正负号、精度和 NTP 状态保持不变。时钟切换保持对齐，包括分钟与午夜切换；蓝色按钮悬停时不闪白。复制报表采用边缘光效，点击后立即复制。保存版本按钮保持紧凑，关闭动画或效果失败时仍显示清晰的静态内容。
+WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示值、正负号、精度和 NTP 状态保持不变。时钟切换保持对齐，包括分钟与午夜切换；蓝色按钮悬停时不闪白。复制报表采用边缘光效，点击后立即复制。保存按钮保持紧凑，关闭动画或效果失败时仍显示清晰的静态内容。
 
 欢迎标语保留“还在手动整理抄表记录？试试能源记录。”。分区和操作使用带文字的 SVG 图标；有效的库存增加以黄色提示显示，仍可保存和复制，输入错误单独标明。计算与参考说明可按需展开。
 
@@ -175,14 +175,14 @@ JRE 新增第 32 项 **Warehouse Lighting**，倍率 x40；Warehouse Area 扣除
 
 ### 操作流程与功能
 
-**保存版本**有4秒取消时间：点击取消保存或按 Escape。自动保存继续；读数、期间或账户变更会取消待保存版本。登录按钮使用可选的 Specular 边缘光效，关闭动画或不支持 WebGL 时仍可正常登录。
+**保存**用于提交待同步更改并核实服务器数据，不创建新副本或修订。核实立即开始；自动保存继续。登录按钮使用可选的 Specular 边缘光效，关闭动画或不支持 WebGL 时仍可正常登录。
 
 Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。小提示可关闭，指南随时可重新打开。支持上一步、下一步、Escape/关闭、暂停动画及减少动态效果。示意图不会改动读数或保存数据；指南代码、样式和详细翻译按需加载，关闭提示的偏好仅按账户保存在本浏览器。
 
 1. 使用管理员提供的账户登录，首次登录修改临时密码。
 2. 选择工厂、模式及实际日期和时间，填写累计读数。可选文字导入；支持小数点或小数逗号，不支持千位分隔符。
 3. 检查各电表用量、设备合计及提示。空白表示未完成；无法读取时用 `-`，不自动当作零。
-4. 选择最终报表内容并复制。输入自动保存；需要固定版本时点击保存版本，原检查点保持不变。
+4. 选择最终报表内容并复制。输入自动保存；保存按钮用于核实服务器数据，不创建额外副本。旧历史记录保留。
 
 | 模式             | 时间范围，可调整                            | 报表日期 |
 | ---------------- | ------------------------------------------- | -------- |
@@ -228,15 +228,15 @@ made in <3 by gede
 
 ### 自动保存与手动版本
 
-两厂所有模式的未完成电表、气体、用水及备注都会自动保存。有有效日期的首个工作副本在历史中显示为**版本 1**，图表和月表直接使用可用值。**保存版本**固定一个检查点；后续自动保存不会改写它。只有内容改变后再次手动保存才增加版本号，重复保存相同内容不会增加。
+两厂所有模式的未完成电表、气体、用水及备注都会自动保存。有有效日期的首个工作副本在历史中显示为**版本 1**，图表和月表直接使用可用值。**保存**会完成待同步更改并核实当前服务器数据。重复点击不创建新记录或修订；旧历史检查点仍可用于明确恢复。
 
 标签页立即保留恢复副本；停止输入 3 秒或持续编辑不超过 15 秒后同步到账户，后台尝试间隔至少 5 秒。关闭前请确认“所有修改已保存到账户”。离线时退避重试，设备冲突需要明确选择。无效日期仍保存在当前草稿中，不会虚构图表日期或把缺失值设为零。私密备份格式 5 包含待同步的旧期间。
 
 ## Indonesia
 
-Monitoring memakai **Autosave terbaru** secara default. Pilih **Versi tersimpan** untuk melihat checkpoint manual terakhir tanpa memulihkan atau mengubah draft. **Periksa periode** menampilkan tanggal, periode terkait, dan working copy yang belum lengkap. Periode tanpa nilai numerik tidak menghalangi periode lain. Konflik lainnya tetap ditampilkan; total tidak dibagi atau direka.
+Monitoring memakai satu dokumen autosave aktif per periode. Checkpoint manual hanya menjadi cadangan pemulihan di Historian. **Periksa periode** menampilkan tanggal, periode terkait, dan working copy yang belum lengkap. Periode tanpa nilai numerik tidak menghalangi periode lain. Konflik lainnya tetap ditampilkan; total tidak dibagi atau direka.
 
-Jam WIB dan tiga angka ringkasan memakai animasi digit singkat. Nilai, tanda, presisi, dan status NTP tetap sama. Digit jam tetap sejajar saat berganti, termasuk pergantian menit dan tengah malam. Tombol biru tidak berkedip putih saat hover. Copy report memakai efek tepi seperti Login dan tetap langsung menyalin. Simpan revisi tetap ringkas; mode tanpa animasi tetap menampilkan angka biasa.
+Jam WIB dan tiga angka ringkasan memakai animasi digit singkat. Nilai, tanda, presisi, dan status NTP tetap sama. Digit jam tetap sejajar saat berganti, termasuk pergantian menit dan tengah malam. Tombol biru tidak berkedip putih saat hover. Copy report memakai efek tepi seperti Login dan tetap langsung menyalin. Simpan tetap ringkas; mode tanpa animasi tetap menampilkan angka biasa.
 
 Slogan welcome tetap “Capek mencatat meter secara manual? Coba Catatan Energi.”. Ikon SVG bagian dan tombol tetap disertai label. Kenaikan stok gas diberi perhatian kuning, tetap bisa disimpan/disalin; input invalid dibedakan. Bantuan perhitungan dan referensi bisa dibuka saat diperlukan.
 
@@ -250,7 +250,7 @@ JRE menambah **Warehouse Lighting** pada poin 32, ratio x40. Warehouse Area diku
 
 ### Impor dan pemeriksaan reading
 
-**Simpan revisi** memberi waktu 4 detik untuk dibatalkan lewat tombol atau Escape. Autosave tetap berjalan; perubahan reading, periode, atau akun membatalkan antrean revisi. Tombol Login memakai efek tepi Specular opsional dan tetap berfungsi tanpa WebGL atau animasi.
+**Simpan** menyelesaikan antrean autosave lalu memverifikasi data server, tanpa membuat salinan atau revisi baru. Verifikasi langsung berjalan; autosave tetap berjalan secara terpisah. Tombol Login memakai efek tepi Specular opsional dan tetap berfungsi tanpa WebGL atau animasi.
 
 Template kosong dan importer memakai daftar equipment yang sama. Isi tanggal dan reading yang diketahui; ____ atau sel kosong berarti belum diisi. Reading lama dipertahankan hanya pada pabrik, tanggal dan jam yang sama. Tanggal baru tetap kosong. Daftar lama boleh melewati meter yang baru ditambahkan; laporan lengkap tetap memerlukan reading tersebut. Angka tidak valid, jumlah meter salah atau equipment asli yang hilang membatalkan seluruh import. Modal menampilkan jumlah baris/meter terbaru dan lima masalah pertama.
 
@@ -262,9 +262,9 @@ Pilih 24 HOURS, Day/AFTER PRODUCTION atau NIGHT SHIFT, lalu **Salin baris Excel*
 
 Gas JRE memakai kg. Gas tank UNILAND memakai saldo reading raw dengan koreksi refill: Nitrogen mmH2O, Oxygen mmWC, LPG %, R32 mm. LPG manual tetap Nm3; utility manual lain mengikuti satuan catatannya. Laporan kg tetap sama. Nilai gas negatif berarti stok terukur meningkat. Water memakai periode aktif. Lihat [pemetaan Excel](docs/excel-export.md).
 
-### Autosave dan checkpoint manual
+### Autosave dan verifikasi simpan
 
-Isian belum lengkap tetap tersimpan otomatis, termasuk listrik, gas, Water dan catatan kedua pabrik pada semua mode. Salinan pertama dengan periode valid muncul sebagai **Revisi 1** di Historian. Grafik dan tabel bulanan memakai nilai yang tersedia. **Simpan revisi** mengunci checkpoint; autosave berikutnya tidak mengubahnya. Revisi baru dibuat hanya bila isi berbeda dari checkpoint terakhir. Save berulang dengan data sama tidak menambah nomor revisi.
+Isian belum lengkap tetap tersimpan otomatis, termasuk listrik, gas, Water dan catatan kedua pabrik pada semua mode. Salinan pertama dengan periode valid muncul sebagai **Revisi 1** di Historian. Grafik dan tabel bulanan memakai nilai yang tersedia. **Simpan** memverifikasi dokumen server setelah antrean autosave selesai. Klik berulang tidak membuat checkpoint, record atau revisi baru. Riwayat lama tetap tersedia untuk pemulihan.
 
 Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berhenti mengetik atau dalam 15 detik saat terus mengedit, dengan jarak percobaan latar minimal 5 detik. Periksa “Semua perubahan tersimpan di akun” sebelum menutup. Gangguan koneksi dicoba ulang dengan jeda bertahap; konflik perangkat memerlukan pilihan, termasuk saat angka dikembalikan ke nilai lokal lama. Tanggal belum valid tetap tersimpan sebagai draft aktif tanpa membuat titik grafik. Nilai kosong tidak menjadi nol. Backup privat format 5 juga menyimpan antrean periode sebelumnya.
 
@@ -275,7 +275,7 @@ Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berh
 1. Login memakai akun dari admin, ganti password sementara saat diminta.
 2. Pilih pabrik, mode dan tanggal/jam sebenarnya. Isi angka kumulatif; import teks opsional. Koma atau titik desimal boleh, tanpa pemisah ribuan.
 3. Periksa konsumsi individual, total equipment dan catatan. Kosong berarti belum selesai; gunakan `-` untuk data tidak tersedia. Kosong tidak dianggap nol.
-4. Pilih isi laporan lalu salin. Isian tersimpan otomatis; klik Simpan revisi bila membutuhkan checkpoint tetap. Checkpoint lama tetap utuh.
+4. Pilih isi laporan lalu salin. Isian tersimpan otomatis; tombol Simpan memverifikasi data server tanpa membuat salinan baru. Riwayat lama tetap utuh.
 
 | Mode             | Periode reading, jam fleksibel             | Tanggal laporan |
 | ---------------- | ------------------------------------------ | --------------- |
