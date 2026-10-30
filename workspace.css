@@ -53,6 +53,7 @@ body:not(.login-page) :is(input, select, textarea) {
 body:not(.login-page) :is(button, input, select, textarea, summary) {
   transition:
     background-color 160ms ease,
+    color 160ms ease,
     border-color 160ms ease,
     box-shadow 160ms ease;
 }
@@ -68,14 +69,20 @@ body:not(.login-page) .button {
   min-height: 42px;
 }
 body:not(.login-page) .button.primary {
-  background: linear-gradient(145deg, #286add, #2455c2);
+  background-color: #245dcc;
   box-shadow:
     inset 0 1px 0 #ffffff40,
     0 3px 10px #2455c21c;
 }
 body:not(.login-page) .button.primary:hover {
-  background: #194ba9;
+  background-color: #194ba9;
   box-shadow: 0 4px 14px #2455c22b;
+}
+/* Keep one translucent highlight over an opaque base in both hover states.
+   Removing a gradient while transitioning from transparent exposed the white card. */
+body:not(.login-page) .button.primary,
+body:not(.login-page) .button.primary:hover {
+  background-image: linear-gradient(145deg, #ffffff0f, #00000008);
 }
 body:not(.login-page) .button.secondary {
   background: #ffffffd9;

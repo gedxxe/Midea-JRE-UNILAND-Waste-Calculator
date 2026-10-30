@@ -16,6 +16,7 @@ export function createCounter(source, { clock = false, allowed }) {
     return null;
   const host = document.createElement('span');
   host.className = 'counter-host';
+  if (clock) host.dataset.counter = 'clock';
   const row = document.createElement('span');
   row.className = 'counter-row';
   row.setAttribute('aria-hidden', 'true');
@@ -54,7 +55,7 @@ export function createCounter(source, { clock = false, allowed }) {
     item.lastPaintShown = item.shown;
     item.lastPaintVel = item.vel;
     item.numerals.forEach((numeral, n) => {
-      numeral.style.transform = `translateY(${(wrap(n - item.pos) * 100).toFixed(3)}%)`;
+      numeral.style.transform = `translateY(${((clock ? n - item.pos : wrap(n - item.pos)) * 100).toFixed(3)}%)`;
     });
     item.el.style.opacity = String(Math.max(0, Math.min(1, item.shown)));
     if (item.blur) {
@@ -91,6 +92,7 @@ export function createCounter(source, { clock = false, allowed }) {
       'fontStyle',
       'letterSpacing',
       'fontVariantNumeric',
+      'fontKerning',
       'lineHeight',
       'color',
     ])
@@ -102,14 +104,27 @@ export function createCounter(source, { clock = false, allowed }) {
     row.style.left = source.offsetLeft + 'px';
     row.style.top = source.offsetTop + 'px';
     for (const item of items.values()) item.em = em;
+    if (clock && source.firstChild?.nodeType === Node.TEXT_NODE) {
+      // Read the canonical character advances once per tick/resize, not per frame.
+      // Separate spans otherwise round spacing differently and shift the whole clock.
+      const range = document.createRange();
+      const width = source.getBoundingClientRect().width;
+      const widths = [...items.values()].map((item, at) => {
+        range.setStart(source.firstChild, at);
+        range.setEnd(source.firstChild, at + 1);
+        return [item, range.getBoundingClientRect().width];
+      });
+      row.style.width = width + 'px';
+      for (const [item, width] of widths) item.el.style.width = width + 'px';
+    }
   }
   function make(slot) {
     const el = document.createElement('span');
     const item = {
       ...slot,
       el,
-      pos: slot.digit || 0,
-      target: slot.digit || 0,
+      pos: clock ? 0 : slot.digit || 0,
+      target: clock ? 0 : slot.digit || 0,
       vel: 0,
       shown: 1,
       shownVel: 0,
@@ -129,10 +144,10 @@ export function createCounter(source, { clock = false, allowed }) {
       const strip = document.createElement('span');
       strip.className = 'counter-strip';
       item.strip = strip;
-      item.numerals = Array.from({ length: 10 }, (_, n) => {
+      item.numerals = Array.from({ length: clock ? 2 : 10 }, (_, n) => {
         const numeral = document.createElement('span');
         numeral.className = 'counter-numeral';
-        numeral.textContent = String(n);
+        numeral.textContent = clock ? slot.text : String(n);
         strip.append(numeral);
         return numeral;
       });
@@ -173,9 +188,9 @@ export function createCounter(source, { clock = false, allowed }) {
     }
     const elapsed = Math.max(0, Math.min((now - last) / 1000, 1 / 20));
     last = now;
-    const duration = clock ? 0.38 : 0.55,
+    const duration = clock ? 0.28 : 0.55,
       omega = (Math.PI * 2) / duration,
-      zeta = 0.88,
+      zeta = clock ? 1 : 0.88,
       presence = (Math.PI * 2) / (duration * 0.85);
     let busy = false;
     for (const [key, item] of items) {
@@ -293,6 +308,19 @@ export function createCounter(source, { clock = false, allowed }) {
         item.el.textContent = slot.text;
         continue;
       }
+      if (clock) {
+        if (item.text !== slot.text) {
+          // A clock carry is one observation change, not a spin through 6-9 or 3-9.
+          item.numerals[0].textContent = item.text;
+          item.numerals[1].textContent = slot.text;
+          item.pos = 0;
+          item.target = 1;
+          item.vel = 0;
+          changed.push(item);
+        }
+        item.text = slot.text;
+        continue;
+      }
       const step = stepBetween(mod(Math.round(item.target), 10), slot.digit, trend);
       if (step || item.shown < 1) {
         item.target += step;
@@ -318,7 +346,7 @@ export function createCounter(source, { clock = false, allowed }) {
     changed
       .sort((a, b) => b.rank - a.rank)
       .forEach((item, i) => {
-        item.wait = i * (clock ? 0.012 : 0.025);
+        item.wait = clock ? 0 : i * 0.025;
       });
     const key = slots.map((s) => s.key).join();
     if (key !== layout) {

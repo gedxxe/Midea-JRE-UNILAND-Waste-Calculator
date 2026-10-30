@@ -125,9 +125,26 @@ test('reading and helper contrast stays readable and workspace motion honors bot
       [fg('.meter-card th'), bg('.meter-card th')],
       [fg('.gas-observation label'), bg('.gas-entry')],
       [fg('#result-state'), bg('#result-state')],
-      ...getComputedStyle(document.querySelector('#save-report'))
-        .backgroundImage.match(/rgb\([^)]+\)/g)
-        .map((c) => [fg('#save-report'), c]),
+      ...(() => {
+        const style = getComputedStyle(document.querySelector('#save-report'));
+        const base = style.backgroundColor.match(/[\d.]+/g).map(Number);
+        const stops = style.backgroundImage.match(/rgba?\([^)]+\)/g) || [];
+        return [
+          style.backgroundColor,
+          ...stops.map((color) => {
+            const rgba = color.match(/[\d.]+/g).map(Number),
+              alpha = rgba[3] ?? 1;
+            return (
+              'rgb(' +
+              rgba
+                .slice(0, 3)
+                .map((value, i) => Math.round(value * alpha + base[i] * (1 - alpha)))
+                .join(', ') +
+              ')'
+            );
+          }),
+        ].map((color) => [fg('#save-report'), color]);
+      })(),
     ];
   });
   const light = (c) => {

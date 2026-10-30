@@ -6,6 +6,17 @@
   vertical-align: baseline;
   max-width: 100%;
 }
+/* Match the clock's static and rolling line boxes, not an estimated font height. */
+#clock-time.counter-source {
+  display: inline-block;
+  line-height: 1.3;
+  font-kerning: none;
+}
+.counter-host[data-counter='clock'] .counter-window,
+.counter-host[data-counter='clock'] .counter-strip {
+  inset: 0;
+  mask-image: none;
+}
 .counter-row {
   position: absolute;
   display: inline-flex;

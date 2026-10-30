@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.33-alpha - 2026-10-30
+
+- Fix the WIB clock baseline jumping during digit changes. Keep the canonical and animated line boxes aligned and use the measured character widths. Carry directly between the two observed digits without scrolling through unrelated numbers or overshooting, including minute and midnight changes.
+- Fix white flashes on blue buttons when entering/leaving hover: keep one highlight layer above an opaque blue fill. Cover Save version, report copy and Excel copy; link labels ease between readable blue colors.
+- Preserve NTP sync/status, exact values, immediate clipboard behavior, four-second checkpoint Undo, autosave and saved history. Retain static/reduced-motion fallbacks and stop settled/hidden rendering. No runtime package, API or database migration.
+
 ## v0.11.32-alpha - 2026-10-29
 
 - Fix the Save version width: preserve the Fuse grid so the normal and Undo faces share one space, with the same four-second cancellation and checkpoint behavior.
