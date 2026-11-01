@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.35-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.36-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## Data preservation and incident evidence (2026-10-30)
 
@@ -24,7 +24,7 @@ Current development milestone: v0.11.35-alpha in package.json. Preserved baselin
 - Save incomplete readings automatically. Show clear completeness/check notices; do not reject persistence merely because fields are empty or invalid. Keep unsafe calculations/exports subject to their existing validation. Never fill missing readings with zero or treat unloaded fields as deliberate deletions.
 - Report saving/pending/offline/conflict/failure truthfully, and claim saved only after the server acknowledges the relevant edits. Preserve recovery for failed requests and concurrent edits; prevent stale, reordered or queued requests and period changes from silently erasing known data. Keep intentional operator clears distinguishable from missing fields.
 - Before implementation, reproduce the unresolved missing-reading incident, inventory existing working copies/checkpoints without mutation, prepare a private recoverable backup, and design a compatible rollout/rollback. Test early partial entry, returning to dates, date-field edit order, all modes, refresh/closure, connectivity loss, queued requests, multiple tabs/devices and manual checkpoint behavior. Protect manually re-entered readings. Do not claim Excel-like reliability based only on passing CI.
-- This revision supersedes the dual-source monitoring workaround. Implementation was authorized on 2026-10-30 and targets v0.11.35-alpha under the existing patch policy. Beta and production repair remain separate decisions. README/changelog must describe actual verified behavior.
+- This revision supersedes the dual-source monitoring workaround. Implementation was authorized on 2026-10-30 and targets v0.11.36-alpha under the existing patch policy. Beta and production repair remain separate decisions. README/changelog must describe actual verified behavior.
 
 ## User decisions, last confirmed 2026-09-25
 
@@ -239,6 +239,6 @@ Do not claim branch protection, CI success, or deployment success without readin
 
 - Audited 2026-10-30 graph gaps: show exact date/source/reason/related-period diagnostics above charts and monthly tables, including incomplete working copies. Keep Latest autosave as the default; add explicit Saved versions to read owner-scoped latest manual checkpoints without restoring drafts or changing stored output. Only periods with finite saved values participate in overlap checks. Empty copies remain stored and reviewable but cannot hide valid periods; genuine numeric overlaps remain unresolved and real zeros count as data. Keep gaps for genuinely missing values, never infer readings, merge snapshots or fabricate zeros. Show the checkpoint source in exports/tables, preserve owner/kind filters, request budgets and account reset. No migration or production data repair.
 
-- In development v0.11.35-alpha: one working source in monitoring, no redundant Save draft, destination-period loading with server version checks and owner-scoped period reads. Keep dated partial input and queued recovery; intentional Historian restoration remains explicit. The original production missing-reading incident is not proven resolved by these changes or later manually re-entered data. Require final integration/browser gates before release.
+- In development v0.11.36-alpha: one working source in monitoring, no redundant Save draft, destination-period loading with server version checks and owner-scoped period reads. Keep dated partial input and queued recovery; intentional Historian restoration remains explicit. The original production missing-reading incident is not proven resolved by these changes or later manually re-entered data. Require final integration/browser gates before release.
 
 - Superseding clarification 2026-10-30: manual Save is a verification/retry of the same canonical autosaved data, not a new checkpoint, revision or redundant backup copy. Flush pending writes, then verify server acknowledgment/content; unchanged repeated clicks create no extra records. Preserve old checkpoints as legacy history. This supersedes earlier manual-checkpoint button decisions. Implementation and tests must follow this corrected meaning.

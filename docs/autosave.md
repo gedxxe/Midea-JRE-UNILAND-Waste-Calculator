@@ -33,7 +33,7 @@ Save starts verification immediately. The earlier checkpoint delay and Undo face
 
 ## Migration, rollback and limits
 
-The original autosave rollout required checksum-tracked migration 007 with the maintenance connection. This v0.11.35 change adds no migration. It adds period_autosaves and grants the existing runtime role SELECT/INSERT/UPDATE only. No existing readings, revisions or imported history are recalculated. New workspace/report markers reject older writers that would erase newer autosave state. Older code can read historical checkpoints but cannot safely edit adopted documents.
+The original autosave rollout required checksum-tracked migration 007 with the maintenance connection. This v0.11.36 change adds no migration. It adds period_autosaves and grants the existing runtime role SELECT/INSERT/UPDATE only. No existing readings, revisions or imported history are recalculated. New workspace/report markers reject older writers that would erase newer autosave state. Older code can read historical checkpoints but cannot safely edit adopted documents.
 
 Any future production migration still requires passing CI, an up-to-date private backup and explicit owner authorization. Do not run migrations from builds, broaden preview authentication, or remove guards for rollback. Preserve the database and use a compatible release to resume editing after rollback; export a full private backup first.
 
@@ -45,7 +45,7 @@ Warehouse Lighting defaults before its recording date are excluded from the mean
 
 Queued JRE period writes must use the current meter layout before server normalization. An older tab receives DRAFT_FORMAT_CHANGED and must reload, even when its active workspace already has the current layout. Client-side backup/tab recovery can upgrade the old queue without discarding saved meter fields.
 
-## Destination-period safety (v0.11.35-alpha)
+## Destination-period safety (v0.11.36-alpha)
 
 Dates select the current document. Before installing a known daily destination, flush the departing work and read the destination under the current account. Briefly lock entry fields during navigation. The server rejects replacing an archived document without its observed version; existing workspace concurrency checks remain in force. A lost-response retry with identical content stays idempotent.
 

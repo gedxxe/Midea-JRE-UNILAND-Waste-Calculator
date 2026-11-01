@@ -254,6 +254,7 @@ test('legacy water consumption remains visible without fabricated readings and c
 test('latest period and manual dates move readings by date in either edit order, with undo and recovery', async ({
   page,
 }, info) => {
+  test.setTimeout(60000); // Two plants, both edit orders and reloads now await period reads.
   await page.route('**/api/time', (route) =>
     route.fulfill({
       json: {
@@ -271,6 +272,7 @@ test('latest period and manual dates move readings by date in either edit order,
     await page.locator(`[data-plant="${plant}"]`).click();
     await page.locator('#start-date').fill('2026-10-03');
     await page.locator('#end-date').fill('2026-10-04');
+    await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
     await cell(page).fill('100');
     await cell(page, 0, 'end').fill('125');
     await page.locator('#use-today').click();
@@ -296,6 +298,7 @@ test('latest period and manual dates move readings by date in either edit order,
       await expect(page.locator('#start-date')).toHaveValue('2026-10-03');
     }
     await page.locator('#use-today').click();
+    await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
     await cell(page, 0, 'end').fill('150');
     const report = await page.locator('#report-preview').inputValue();
     for (const language of ['zh-CN', 'id', 'en']) {
@@ -607,6 +610,7 @@ test('offline time stays honest and allows manual entry', async ({ page }) => {
   await expect(page.locator('#clock-status')).toHaveText('Device clock · NTP unavailable');
   await page.locator('#start-date').fill('2026-09-16');
   await page.locator('#end-date').fill('2026-09-17');
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
   await cell(page).fill('10');
   await page.locator('#use-today').click();
   await expect(page.locator('#toast')).toContainText('Enter reading dates manually');

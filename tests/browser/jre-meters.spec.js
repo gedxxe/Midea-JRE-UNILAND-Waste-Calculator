@@ -284,6 +284,7 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await page.locator('#reading-mode').selectOption('nightShift');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1004');
   await page.locator('#next-day').click();
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 4, 'start', 1)).toHaveValue('1010');
   await expect(cell(page, 29)).toHaveValue('1010');

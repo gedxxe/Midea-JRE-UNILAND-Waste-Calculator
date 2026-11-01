@@ -107,6 +107,7 @@ test('Excel manual-copy fallback preserves blank slots and rejects a delayed cal
   await page.locator('#copy-report').click();
   await expect.poll(() => page.evaluate(() => typeof window.rejectExcelCopy)).toBe('function');
   await page.locator('#work-date').fill('2026-10-28');
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
   await page
     .locator('.meter-input')
     .first()
