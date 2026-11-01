@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.37-alpha - 2026-11-02
+
+- Give NIGHT SHIFT a soft blue-slate panel theme for JRE and UNILAND, including reading fields, results, gas/Water, notices and dialog chrome. Keep warning/error distinctions and readable supporting text.
+- Reveal the theme from Reading mode with a native circular mask; contract the dark view back to the selector when returning to another mode. Keep reduced/off-motion, unsupported-browser and forced-color fallbacks, and settle interrupted transitions on resize, visibility changes and account reset.
+- Preserve white chart exports and print styling. No calculation, autosave, API, database, account-format or runtime dependency changes.
+
 ## v0.11.36-alpha - 2026-11-01
 
 - Use one active autosaved source for monitoring; legacy checkpoints stay in Historian for recovery.

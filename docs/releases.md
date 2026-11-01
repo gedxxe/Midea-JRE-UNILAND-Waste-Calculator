@@ -112,3 +112,9 @@ Presentation-only revision with no database, session, draft, account or analytic
 No SQL migration. New code adds owner-scoped period reads and checks the observed version before replacing an archived document. Old clients may receive a conflict when revisiting stored periods and should reload. Rollback removes these code-level protections; preserve a private workspace/period/checkpoint backup and do not treat a Git rollback as data recovery. Production incident recovery remains a separate reviewed operation.
 
 The immutable release/v0.11.35-alpha branch is a failed candidate, not a published release. Its full browser gate exposed obsolete checkpoint assertions and synthetic input during period loading. Keep that branch unchanged; the corrected candidate uses v0.11.36-alpha and must pass the complete gate before tagging.
+
+## Night Shift appearance (v0.11.37-alpha)
+
+Presentation only. No migration or persisted theme preference. A normal revert PR restores the light-only panel while preserving readings, the v0.11.36 autosave protections and historical output. Circular view transitions have immediate fallbacks; reset cancels old account snapshots. Chart exports and print colors remain unchanged. No production data writes or new environment configuration are needed.
+
+The optional circular reveal uses [native document view transitions](https://developer.mozilla.org/en-US/docs/Web/API/Document/startViewTransition) for palette changes only. Mode rendering and persistence stay synchronous with the existing controllers.

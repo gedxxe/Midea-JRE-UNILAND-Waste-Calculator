@@ -4,7 +4,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.36-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.37-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## Data preservation and incident evidence (2026-10-30)
 
@@ -242,3 +242,5 @@ Do not claim branch protection, CI success, or deployment success without readin
 - In development v0.11.36-alpha: one working source in monitoring, no redundant Save draft, destination-period loading with server version checks and owner-scoped period reads. Keep dated partial input and queued recovery; intentional Historian restoration remains explicit. The original production missing-reading incident is not proven resolved by these changes or later manually re-entered data. Require final integration/browser gates before release.
 
 - Superseding clarification 2026-10-30: manual Save is a verification/retry of the same canonical autosaved data, not a new checkpoint, revision or redundant backup copy. Flush pending writes, then verify server acknowledgment/content; unchanged repeated clicks create no extra records. Preserve old checkpoints as legacy history. This supersedes earlier manual-checkpoint button decisions. Implementation and tests must follow this corrected meaning.
+
+- Requested 2026-11-02 Night Shift appearance: selecting NIGHT SHIFT gives the signed-in control panel a soft blue-slate dark palette in JRE and UNILAND. Use a circular reveal from the Reading mode selector and reverse contraction back to the light panel. Keep calculations, readings, autosave, reports, routing and account permissions unchanged. ui/panel-theme.js owns presentation-only state; night.css owns scoped chrome. Native View Transitions are optional; reduced/off motion, forced colors, hidden tabs, resize, modal opening, failure and logout settle immediately without stale account snapshots. No saved preference or new browser dependency. Monitoring chrome follows the entry panel; chart SVG/PNG and printing retain the white scientific surface. Test desktop/mobile, all languages, keyboard focus, rapid switches, interruption, raw reading/report byte preservation and no extra writes.

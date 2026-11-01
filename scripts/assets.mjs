@@ -2,6 +2,8 @@ export const PUBLIC_FILES = [
   'index.html',
   'style.css',
   'workspace.css',
+  'night.css',
+  'ui/panel-theme.js',
   'button-effects.css',
   'counter.css',
   'counter-model.js',

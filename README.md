@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.36-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.37-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -44,6 +44,8 @@ The welcome slogan remains "Tired of manual meter recording? Try Energy Record."
 The WIB clock and three summary values use short digit-roll transitions (a single dashboard entrance, then changed digits only); canonical values, signs, precision and NTP status remain unchanged. Clock changes keep the same baseline, including minute and midnight rollover. Blue button fills stay visible throughout hover. Copy report shares the Sign in edge-light effect and still copies immediately. Save stays compact in every phase. Reduced/off motion and effect failure retain plain readable values.
 
 The signed-in panel uses a soft blue background, compact glass navigation and readable solid reading fields. Numbers take priority; supporting labels and help use softer slate text. Short entrance/focus transitions respect reduced motion; set data-panel-motion="off" on #application-surface to disable panel motion. This presentation does not change calculations, autosave or saved reports.
+
+NIGHT SHIFT uses a soft blue-slate dark panel. Selecting Reading mode reveals the theme from the selector; returning to another mode contracts it back. Reduced/off motion and unsupported browsers apply the theme directly; forced colors keeps the system palette. Chart exports and printing remain light. This is appearance only and adds no saved preference or data writes.
 
 ### Navigation
 
@@ -167,6 +169,8 @@ WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示�
 
 登录后的工作区采用柔和蓝色背景、紧凑玻璃导航和清晰的实色输入框。数字优先，辅助标签与提示使用柔和但对比清楚的灰蓝色。短入场动画遵循减少动态效果设置；可在 #application-surface 设置 data-panel-motion="off"。计算、自动保存及历史报告不变。
 
+夜班模式使用柔和的深蓝灰色面板。从读数模式选择器展开圆形过渡，切换回其他模式时反向收起。减少动态效果、关闭动画或浏览器不支持时直接切换；强制颜色模式保留系统配色。导出的图表及打印保持浅色，不更改读数、自动保存或报告，也不新增偏好存储。
+
 面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.34-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
@@ -241,6 +245,8 @@ Jam WIB dan tiga angka ringkasan memakai animasi digit singkat. Nilai, tanda, pr
 Slogan welcome tetap “Capek mencatat meter secara manual? Coba Catatan Energi.”. Ikon SVG bagian dan tombol tetap disertai label. Kenaikan stok gas diberi perhatian kuning, tetap bisa disimpan/disalin; input invalid dibedakan. Bantuan perhitungan dan referensi bisa dibuka saat diperlukan.
 
 Panel setelah login memakai latar biru lembut, navigasi glass yang ringkas, dan kolom reading dengan latar solid. Angka utama lebih tegas; label, satuan, dan petunjuk memakai warna slate yang tetap terbaca. Transisi singkat mengikuti pengaturan reduced motion; data-panel-motion="off" pada #application-surface mematikan animasi panel. Perhitungan, autosave, dan laporan tersimpan tetap sama.
+
+NIGHT SHIFT memakai panel biru-slate gelap yang lembut. Tema membuka dari pemilih Reading mode dan menyusut kembali saat pindah ke mode lain. Reduced motion, motion off dan browser yang belum mendukung memakai pergantian langsung; forced colors tetap mengikuti sistem. Ekspor grafik dan cetak tetap terang. Perubahan ini hanya tampilan, tanpa preferensi tersimpan atau write data tambahan.
 
 Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.34-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 

@@ -1,0 +1,431 @@
+/* Night Shift chrome. Charts keep their white scientific/export surface. */
+@media screen and (forced-colors: none) {
+  html:has(body[data-night-panel]:not(.login-page)) {
+    background: #151f2d;
+    color-scheme: dark;
+  }
+  body[data-night-panel]:not(.login-page) {
+    --teal: #96bcf3;
+    --dark: #b8d2f7;
+    --border: #35465d;
+    --muted: #a6b6ca;
+    --soft: #27384e;
+    --amber: #ebc77d;
+    --panel-ink: #d8e2ef;
+    --panel-help: #a6b6ca;
+    --night-card: #202d3f;
+    --night-input: #172434;
+    color-scheme: dark;
+    color: var(--panel-ink);
+    background: #151f2d;
+  }
+  body[data-night-panel]:not(.login-page) #application-surface {
+    background:
+      radial-gradient(ellipse 85% 650px at 8% 0, #233b5966, transparent),
+      linear-gradient(155deg, #192638, #17212f 65%, #1a293c);
+  }
+  body[data-night-panel]:not(.login-page) .site-header {
+    background: #1d2b3de8;
+    border-color: #35465d;
+    box-shadow: 0 1px 0 #0b142044;
+  }
+  body[data-night-panel]:not(.login-page) :is(.card, .period-card, dialog, #graphs-dialog) {
+    color: var(--panel-ink);
+    background: var(--night-card);
+    border-color: var(--border);
+    box-shadow:
+      0 8px 30px #0a122322,
+      inset 0 1px 0 #ffffff05;
+  }
+  body[data-night-panel]:not(.login-page) .account-card {
+    background: #223248d9;
+    border-color: #40536a;
+  }
+  body[data-night-panel]:not(.login-page) :is(input, select, textarea, .search-field) {
+    background: var(--night-input);
+    color: var(--panel-ink);
+    border-color: #6c87a8;
+  }
+  body[data-night-panel]:not(.login-page) :is(input, textarea)::placeholder {
+    color: #9caec5;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(input, select, textarea, button, summary, a):focus-visible {
+    outline-color: #9abef2;
+  }
+  body[data-night-panel]:not(.login-page) input[aria-invalid='true'] {
+    color: #eadfc9;
+    background: #3b3327;
+    border-color: #bc9659;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      label,
+      .equipment-number,
+      .equipment > small,
+      .ratio span,
+      .energy small,
+      .plant-bar-note,
+      .check-label,
+      .panel-help,
+      .gas-observation label,
+      .graph-help,
+      .graph-empty-state,
+      .graph-matrix-kind,
+      .matrix-weekday,
+      .graph-matrix-excluded,
+      .graph-status,
+      .guide-scene-footer,
+      .guide-progress,
+      .release-footer
+    ) {
+    color: var(--panel-help);
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .meter-input,
+      .gas-observation input,
+      .additional-table,
+      .additional-table input,
+      .meter-card td.equipment
+    ) {
+    color: #dce5f1;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .meter-card td.ratio,
+      .meter-usage strong,
+      .derived-grid strong,
+      .report-date strong,
+      .gas-entry legend,
+      .graph-period-review > summary
+    ) {
+    color: #b4cbed;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .meter-card td.energy:not(.check),
+      .total-panel strong,
+      .gas-total,
+      .text-button,
+      .text-button:hover,
+      .guide-eyebrow,
+      .eyebrow,
+      #clock-status,
+      a
+    ) {
+    color: #9dc4f5;
+  }
+  body[data-night-panel]:not(.login-page) :is(.button.secondary, .guide-close) {
+    color: #c5d8f2;
+    background: #293b53;
+    border-color: #6c87a8;
+  }
+  body[data-night-panel]:not(.login-page) :is(.button.secondary:hover, .guide-close:hover) {
+    background: #324a67;
+  }
+  body[data-night-panel]:not(.login-page) :is(.button.primary, .button.primary:hover) {
+    color: #e4edfa;
+    background-color: #315fa2;
+    border-color: #537fb8;
+    box-shadow:
+      inset 0 1px 0 #ffffff19,
+      0 3px 12px #0b152522;
+  }
+  body[data-night-panel]:not(.login-page) .button.primary:hover {
+    background-color: #3b6bb2;
+  }
+  body[data-night-panel]:not(.login-page) :is(.plant-tabs, .graph-view-switch) {
+    background: #182638;
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) :is(.plant-tab, .graph-view-switch button) {
+    color: #a9bdd7;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.plant-tab.active, .graph-view-switch button[aria-pressed='true']) {
+    color: #c1d9fb;
+    background: #314966;
+    box-shadow: 0 2px 6px #0b14202b;
+  }
+  body[data-night-panel]:not(.login-page) .plant-tab span {
+    background: #2c3c53;
+    color: #b4c6df;
+  }
+  body[data-night-panel]:not(.login-page) .plant-tab.active span {
+    background: #3a5575;
+    color: #d5e5fa;
+  }
+  body[data-night-panel]:not(.login-page) :is(.reading-mode-bar select, .report-preview) {
+    background: #1a293c;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .period-tools > details,
+      .period-tools > details[open],
+      .gas-entry,
+      .gas-refill,
+      .gas-reference,
+      .utility-note,
+      .graph-card,
+      .graph-filter-bar,
+      .graph-view-bar,
+      .graph-period-review,
+      .graph-download-options,
+      .guide-footer
+    ) {
+    color: var(--panel-ink);
+    background: #223247;
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) :is(.step-number, .section-icon, .guide-invitation) {
+    color: #b5d1f5;
+    background: #2a4160;
+    border-color: #405a7c;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .meter-card th,
+      .graph-data th,
+      .graph-matrix thead th,
+      .graph-matrix thead th:first-child
+    ) {
+    color: #b9cce5;
+    background: #26394f;
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) .meter-card th small {
+    color: #a6b9d2;
+  }
+  body[data-night-panel]:not(.login-page) .meter-card tr.main-row td {
+    background: #243850;
+  }
+  body[data-night-panel]:not(.login-page) :is(.table-footer, .entry-hint) {
+    background: #1c2a3c;
+  }
+  body[data-night-panel]:not(.login-page) .total-panel {
+    background: linear-gradient(130deg, #273f5b, #29394f);
+    border-color: #425d7f;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.table-scroll, textarea, dialog, .graph-matrix-scroll) {
+    scrollbar-color: #536c8b #1c2a3c;
+  }
+  body[data-night-panel]:not(.login-page) progress {
+    background: #33475f;
+  }
+  body[data-night-panel]:not(.login-page) progress::-webkit-progress-bar {
+    background: #33475f;
+  }
+  body[data-night-panel]:not(.login-page) progress::-webkit-progress-value {
+    background: #89b5f3;
+  }
+  body[data-night-panel]:not(.login-page) progress::-moz-progress-bar {
+    background: #89b5f3;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.result-status[data-tone='ready'], .result-badge.ready) {
+    color: #aedbc1;
+    background: #29443d;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .result-status[data-tone='pending'],
+      .result-badge:not(.ready),
+      .gas-feedback[data-tone='unavailable']
+    ) {
+    color: #b4c4d9;
+    background: #2a3b51;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .warning,
+      .validation-panel,
+      .check-note,
+      .update-notice,
+      .gas-feedback[data-tone='attention'],
+      .result-status[data-tone='attention']
+    ) {
+    color: #edcd8f;
+    background: #3f3627;
+    border-color: #9a7d47;
+  }
+  body[data-night-panel]:not(.login-page) .gas-entry[data-state='attention'] {
+    background: #302f2b;
+    border-color: #a78950;
+    box-shadow: inset 3px 0 #c4a05c;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.gas-total[data-tone='attention'], .energy.check, .gas-status, #water-status:not(:empty)) {
+    color: #edcd8f;
+  }
+  body[data-night-panel]:not(.login-page) .gas-feedback[data-tone='error'] {
+    color: #efb3b3;
+    background: #3e2c35;
+    border-color: #a66c79;
+  }
+  body[data-night-panel]:not(.login-page) .gas-entry[data-state='error'] {
+    border-color: #b77b88;
+  }
+  body[data-night-panel]:not(.login-page) .gas-total[data-tone='error'] {
+    color: #efb3b3;
+  }
+  body[data-night-panel]:not(.login-page) .gas-entry[data-gas='LPG'] legend > .panel-svg {
+    color: #e6bc83;
+  }
+  body[data-night-panel]:not(.login-page) .gas-entry[data-gas='O2'] legend > .panel-svg {
+    color: #8ecdd8;
+  }
+  body[data-night-panel]:not(.login-page) .gas-entry[data-gas='N2'] legend > .panel-svg {
+    color: #c2b0e8;
+  }
+  body[data-night-panel]:not(.login-page) .gas-entry[data-gas='R32'] legend > .panel-svg {
+    color: #9dc4f5;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(dialog > .dialog-heading, #graphs-dialog > .dialog-heading) {
+    background: var(--night-card);
+  }
+  body[data-night-panel]:not(.login-page) dialog::backdrop {
+    background: #070e1ab3;
+  }
+  body[data-night-panel]:not(.login-page) .graph-frame {
+    background: #fff;
+    color-scheme: light;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.graph-matrix td, .graph-matrix th:first-child, .graph-data td) {
+    color: #cbd9eb;
+    background: #223247;
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .graph-matrix .matrix-group th,
+      .graph-matrix tbody tr:nth-child(even):not(.matrix-group) td,
+      .graph-matrix td.matrix-combined
+    ) {
+    background: #283c53;
+    color: #b6c9e1;
+  }
+  body[data-night-panel]:not(.login-page) .graph-matrix .matrix-column-active {
+    background: #334e6d !important;
+  }
+  body[data-night-panel]:not(.login-page) .graph-matrix tbody tr:hover :is(th, td) {
+    background: #304861;
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.matrix-empty, .graph-matrix tbody th small, .matrix-combined small) {
+    color: #a6b6ca;
+  }
+  body[data-night-panel]:not(.login-page) .guide-scene {
+    background: #dbe9f0;
+    color-scheme: light;
+  }
+  body[data-night-panel]:not(.login-page) #raw-template-dialog {
+    --template-field: #182a40dc;
+    --template-field-hover: #263d58;
+    --template-line: #526a86;
+    --template-ink: #d8e2ef;
+    --template-muted: #a6b6ca;
+    --template-option: #223247;
+    --template-thumb: #7495bc;
+    --template-focus: #a3c6f5;
+    --glass-tint: #1d3047e0;
+    color-scheme: dark;
+  }
+  body[data-night-panel]:not(.login-page) .energy-glass::before {
+    box-shadow:
+      inset 0 1px 0 #d3e8ff40,
+      inset 0 0 10px #b3d4ff10;
+  }
+  body[data-night-panel]:not(.login-page) :is(#graph-status, .graph-hover > strong) {
+    color: var(--panel-help);
+  }
+  body[data-night-panel]:not(.login-page) .graph-hover {
+    color: var(--panel-ink);
+    background: #223247f5;
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) #save-status {
+    color: var(--panel-help);
+    background: #23354b;
+    border-color: #40536c;
+  }
+  body[data-night-panel]:not(.login-page) #account-session {
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) .button.danger {
+    color: #efb3b3;
+    background: #3e2c35;
+    border-color: #a66c79;
+  }
+  body[data-night-panel]:not(.login-page) :is(#guide-description, .graph-hover-row b) {
+    color: var(--panel-ink);
+  }
+  body[data-night-panel]:not(.login-page) :is(.graph-hover > small, .graph-matrix-heading > p) {
+    color: var(--panel-help);
+  }
+  body[data-night-panel]:not(.login-page) .guide-place {
+    color: var(--panel-help);
+    background: #283c53;
+    border-color: #799dc8;
+  }
+  body[data-night-panel]:not(.login-page) .guide-nav {
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) .result-status .result-badge {
+    color: inherit;
+    background: transparent;
+  }
+  body[data-night-panel]:not(.login-page) .toast {
+    color: #d8e2ef;
+    background: #2b405a;
+  }
+  body[data-night-panel]:not(.login-page) .validation-button {
+    color: #d8e2ef;
+    background: #293b53;
+    border-color: #6c87a8;
+  }
+  body[data-night-panel]:not(.login-page) .validation-button span {
+    color: #c3d5ed;
+    background: #334b66;
+  }
+  body[data-night-panel]:not(.login-page) .meter-comparison .comparison-values {
+    color: #edcd8f;
+  }
+  body[data-night-panel]:not(.login-page) .meter-comparison .comparison-meter {
+    color: #c7d9f1;
+    background: #2c4058;
+    border-color: #7086a0;
+  }
+  body[data-night-panel]:not(.login-page) .energy-glass::after {
+    background: linear-gradient(135deg, #d8eaff14, transparent 42%, transparent 64%, #d8eaff08);
+    box-shadow: inset 0 0 0 1px #9bbcdf38;
+  }
+}
+/* panel-theme owns native root transitions. Keep UA effects off through teardown. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html[data-panel-wipe]::view-transition {
+  pointer-events: none;
+}
+html[data-panel-wipe='cancelled']::view-transition {
+  display: none;
+}
+html[data-panel-wipe='in']::view-transition-new(root),
+html[data-panel-wipe='out']::view-transition-old(root) {
+  z-index: 2;
+}
+html[data-panel-wipe='in']::view-transition-old(root),
+html[data-panel-wipe='out']::view-transition-new(root) {
+  z-index: 1;
+}
+html[data-panel-wipe] body,
+html[data-panel-wipe] body :is(button, input, select, textarea, summary, a) {
+  transition: none;
+}
