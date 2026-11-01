@@ -12,6 +12,7 @@ export function createPanelTheme() {
     origin,
     transition,
     cancelledTransition,
+    deadline,
     animation;
   const shown = () => !body.classList.contains('login-page') && !surface.hidden;
   const apply = () => {
@@ -19,6 +20,7 @@ export function createPanelTheme() {
   };
   function stop() {
     sequence++;
+    clearTimeout(deadline);
     animation?.cancel();
     animation = undefined;
     const old = transition;
@@ -73,6 +75,10 @@ export function createPanelTheme() {
         if (token === sequence) apply();
       });
       transition = current;
+      // A delayed browser capture must not leave the palette waiting indefinitely.
+      deadline = setTimeout(() => {
+        if (token === sequence) stop();
+      }, 1800);
       void current.ready
         .then(() => {
           if (token !== sequence) return;
@@ -94,6 +100,7 @@ export function createPanelTheme() {
         .catch(() => {})
         .finally(() => {
           if (token === sequence) {
+            clearTimeout(deadline);
             animation?.cancel();
             animation = undefined;
             transition = undefined;

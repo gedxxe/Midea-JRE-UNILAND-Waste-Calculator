@@ -111,6 +111,30 @@ for (const plant of ['JRE', 'UNILAND'])
           return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
         });
       expect(ratio).toBeGreaterThanOrEqual(4.5);
+      const helpContrast = await page
+        .locator('.gas-help, .gas-source, #excel-row-note')
+        .evaluateAll((nodes) =>
+          nodes
+            .filter((n) => n.textContent.trim())
+            .map((n) => {
+              let bg = n;
+              while (bg.parentElement && !/^rgb\(/.test(getComputedStyle(bg).backgroundColor))
+                bg = bg.parentElement;
+              const lum = (color) => {
+                const v = color
+                  .match(/\d+/g)
+                  .slice(0, 3)
+                  .map((x) => +x / 255)
+                  .map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+                return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+              };
+              const a = lum(getComputedStyle(n).color),
+                b = lum(getComputedStyle(bg).backgroundColor);
+              return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+            }),
+        );
+      expect(helpContrast.length).toBeGreaterThan(0);
+      for (const ratio of helpContrast) expect(ratio).toBeGreaterThanOrEqual(4.5);
       if (plant === 'JRE') {
         await page.screenshot({ path: info.outputPath('night-panel.png') });
         const gas = page.locator('[data-gas="N2"]');
@@ -225,7 +249,7 @@ test('motion off, reduced motion, missing API and failed animation leave reading
   await page.evaluate(() => {
     window.nativePanelTransition = document.startViewTransition;
   });
-  for (const fallback of ['off', 'reduced', 'missing', 'throw']) {
+  for (const fallback of ['off', 'reduced', 'missing', 'throw', 'stalled']) {
     await page.emulateMedia({ reducedMotion: fallback === 'reduced' ? 'reduce' : 'no-preference' });
     await page.evaluate((kind) => {
       document.getElementById('application-surface').dataset.panelMotion =
@@ -237,7 +261,19 @@ test('motion off, reduced motion, missing API and failed animation leave reading
             ? () => {
                 throw Error('Synthetic animation failure');
               }
-            : window.nativePanelTransition;
+            : kind === 'stalled'
+              ? (update) => {
+                  update();
+                  let finish;
+                  return {
+                    ready: new Promise(() => {}),
+                    finished: new Promise((resolve) => {
+                      finish = resolve;
+                    }),
+                    skipTransition: () => finish(),
+                  };
+                }
+              : window.nativePanelTransition;
     }, fallback);
     await page.locator('#reading-mode').selectOption('nightShift');
     await night(page);
@@ -339,8 +375,10 @@ test('dark monitoring chrome preserves white chart markup and native dialog cont
   expect(guideContrast).toBeGreaterThanOrEqual(4.5);
   await page.keyboard.press('Escape');
   await expect(page.locator('#guide-dialog')).toBeHidden();
+  await page.locator('[data-gas="N2"]').scrollIntoViewIfNeeded();
   await page.locator('#report-workspace [data-open-raw-template]').first().click();
   await expect(page.locator('#raw-template-dialog')).toBeVisible();
+  await expect(page.locator('#raw-template-dialog')).toBeInViewport({ ratio: 0.95 });
   expect(
     await page.locator('#raw-template-dialog').evaluate((n) => getComputedStyle(n).colorScheme),
   ).toBe('dark');

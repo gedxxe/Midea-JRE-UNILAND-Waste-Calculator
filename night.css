@@ -68,6 +68,9 @@
       .plant-bar-note,
       .check-label,
       .panel-help,
+      .gas-help,
+      .gas-source,
+      #excel-row-note,
       .gas-observation label,
       .graph-help,
       .graph-empty-state,
@@ -323,6 +326,10 @@
     color-scheme: light;
   }
   body[data-night-panel]:not(.login-page) #raw-template-dialog {
+    /* GlassSurface is relative by default; a modal must remain viewport-bound after scrolling. */
+    position: fixed;
+    inset: 0;
+    margin: auto;
     --template-field: #182a40dc;
     --template-field-hover: #263d58;
     --template-line: #526a86;

@@ -5,7 +5,8 @@ Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versio
 ## v0.11.37-alpha - 2026-11-02
 
 - Give NIGHT SHIFT a soft blue-slate panel theme for JRE and UNILAND, including reading fields, results, gas/Water, notices and dialog chrome. Keep warning/error distinctions and readable supporting text.
-- Reveal the theme from Reading mode with a native circular mask; contract the dark view back to the selector when returning to another mode. Keep reduced/off-motion, unsupported-browser and forced-color fallbacks, and settle interrupted transitions on resize, visibility changes and account reset.
+- Reveal the theme from Reading mode with a native circular mask; contract the dark view back to the selector when returning to another mode. Keep reduced/off-motion, unsupported-browser and forced-color fallbacks, and settle interrupted or stalled transitions on resize, visibility changes, modal opening and account reset.
+- Keep gas/worksheet help readable and the glass blank-template modal inside the viewport after scrolling.
 - Preserve white chart exports and print styling. No calculation, autosave, API, database, account-format or runtime dependency changes.
 
 ## v0.11.36-alpha - 2026-11-01
