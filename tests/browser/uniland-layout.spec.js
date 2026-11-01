@@ -60,7 +60,7 @@ test('UNILAND legacy draft keeps equipment identities, manual utilities and wate
   await page.locator('#water-use-readings').click();
   await page.locator('#water-start').fill('100');
   await page.locator('#water-end').fill('125.5');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await page.locator('[data-plant="UNILAND"]').click();

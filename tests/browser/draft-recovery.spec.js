@@ -75,7 +75,7 @@ test('account save timestamps are server-confirmed and stay unchanged on failed 
   await expect(page.locator('#draft-storage-status')).toContainText('Tab copy:');
   await expect(page.locator('#draft-storage-status')).toContainText('08:23:45');
   state.offline = true;
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toContainText('sync failed');
   await expect(page.locator('#draft-storage-status')).toContainText('08:23:45');
   state.offline = false;
@@ -119,7 +119,7 @@ test('backup round trip restores both factories and partial gas/water, with work
   await expect(cell(page)).toHaveValue('888');
   await page.locator('[data-plant="JRE"]').click();
   await expect(cell(page)).toHaveValue('999');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('999');
   expect(state.reports).toBe(0);
@@ -192,7 +192,7 @@ test('tab-storage failure is distinguished from a confirmed account save', async
   });
   state.offline = true;
   await cell(page).fill('12345');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#draft-storage-status')).toContainText(
     'Tab copy could not be updated',
   );

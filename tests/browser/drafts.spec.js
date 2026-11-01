@@ -171,7 +171,7 @@ async function setup(page) {
   await expect(page.locator('#save-status')).toHaveText('Draft autosave is ready.');
   return state;
 }
-test('partial entries autosave after three seconds, restore on reload and create manual checkpoints without requiring complete data', async ({
+test('partial entries autosave, restore on reload and repeated Save only verifies the same document', async ({
   page,
 }) => {
   const state = await setup(page);
@@ -187,23 +187,23 @@ test('partial entries autosave after three seconds, restore on reload and create
   await cell(page).fill('124');
   await page.locator('#save-report').click();
   await page.clock.runFor(4100);
-  await expect(page.locator('#toast')).toContainText('Revision 1');
-  expect(state.reports).toBe(1);
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.reports).toBe(0);
   await page.reload();
   await expect(cell(page)).toHaveValue('124');
   await page.locator('#save-report').click();
   await page.clock.runFor(4100);
-  await expect(page.locator('#toast')).toContainText('Already saved');
-  expect([...state.documents.values()][0].checkpoints).toHaveLength(1);
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect([...state.documents.values()][0].checkpoints).toHaveLength(0);
   await cell(page).fill('125');
   await page.clock.runFor(5100);
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   const doc = [...state.documents.values()][0];
-  expect(doc.checkpoints[0].draft.rows[0].start[0]).toBe('124');
+  expect(doc.checkpoints).toHaveLength(0);
   expect(doc.snapshot.draft.rows[0].start[0]).toBe('125');
   await page.locator('#save-report').click();
   await page.clock.runFor(4100);
-  await expect(page.locator('#toast')).toContainText('Revision 2');
+  await expect(page.locator('#toast')).toContainText('saved and verified');
 });
 test('partial autosaves populate monitoring and monthly table without a manual checkpoint', async ({
   page,
@@ -229,7 +229,7 @@ test('newer account draft conflicts preserve both server data and local partial 
   state.workspace = empty();
   state.workspace.drafts.JRE.rows[0].start[0] = '222';
   state.version = 1;
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toContainText('Another tab or device');
   await page.clock.runFor(120000);
   expect(state.writes).toBe(1);
@@ -248,13 +248,14 @@ test('offline departed-period journal survives reload and syncs both old and new
   const oldDate = await page.locator('#start-date').inputValue();
   await page.locator('#start-date').fill('2026-09-25');
   await page.locator('#end-date').fill('2026-09-26');
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
   await cell(page).fill('666');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toContainText('sync failed');
   await page.reload();
   await expect(cell(page)).toHaveValue('666');
   state.offline = false;
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(
     [...state.documents.values()].some(
@@ -291,7 +292,7 @@ test('continuous editing syncs within fifteen seconds and late acknowledgments k
 }) => {
   const state = await setup(page);
   // Do not add real browser/driver time to the simulated deadline.
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 10000));
   const began = await page.evaluate(() => performance.now());
   await cell(page).fill('1');
   for (let i = 2; i <= 8; i++) {
@@ -322,7 +323,7 @@ test('continuous editing syncs within fifteen seconds and late acknowledgments k
     { times: 1 },
   );
   await cell(page).fill('9');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect.poll(() => started).toBe(true);
   await cell(page).fill('10');
   release();
@@ -365,7 +366,7 @@ test('reverting to an old saved value keeps a newer-device conflict and recovery
   state.workspace.drafts.JRE.rows[0].start[0] = '222';
   state.version++;
   await cell(page).fill('120');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toContainText('Another tab or device');
   await cell(page).fill('111');
   await expect(page.locator('#save-status')).toContainText('Another tab or device');

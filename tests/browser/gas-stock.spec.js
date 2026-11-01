@@ -49,23 +49,20 @@ for (const plant of ['JRE', 'UNILAND'])
           },
         }),
       );
-      let version = 1;
+      let version = 1,
+        reads = 0;
       await page.route('**/api/drafts', (r) => {
         if (r.request().method() === 'POST') {
           Object.assign(workspace, r.request().postDataJSON().workspace);
           version++;
-        }
+        } else reads++;
         return r.fulfill({ json: { workspace, version, updated_at: '2026-09-16T01:00:00Z' } });
       });
-      let saved;
+      let checkpoints = 0;
       await page.route('**/api/reports', (r) => {
         if (r.request().method() !== 'POST') return r.fulfill({ json: { reports: [] } });
-        const input = r.request().postDataJSON().draft;
-        saved = reportSnapshot(input);
-        return r.fulfill({
-          status: 201,
-          json: { id: '57e8660b-c136-4868-a492-05de0ed07e7f', revision: 1, snapshot: saved },
-        });
+        checkpoints++;
+        return r.fulfill({ status: 500, json: { error: 'Unexpected checkpoint write' } });
       });
       await context.grantPermissions(['clipboard-read', 'clipboard-write']);
       await page.goto('/');
@@ -99,10 +96,15 @@ for (const plant of ['JRE', 'UNILAND'])
       }
       await gas.scrollIntoViewIfNeeded();
       await gas.screenshot({ path: info.outputPath('gas-stock-increase.png') });
+      const before = reads;
       await page.locator('#save-report').click();
-      await expect.poll(() => Boolean(saved)).toBe(true);
+      await expect.poll(() => reads).toBeGreaterThan(before);
+      await expect(page.locator('#save-report')).not.toHaveAttribute('aria-busy', 'true');
+      await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+      const saved = reportSnapshot(workspace.drafts[plant]);
       expect(saved.output.reportText).toBe(expected);
       expect(saved.output.gas[0].kg).toBeLessThan(0);
+      expect(checkpoints).toBe(0);
       await page.reload();
       await page.locator('[data-plant="' + plant + '"]').click();
       await expect(gas.locator('.gas-total')).toHaveText(

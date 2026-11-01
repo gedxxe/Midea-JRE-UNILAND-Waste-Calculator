@@ -92,9 +92,9 @@ export const guideMessages = {
     'Pilih reading raw atau laporan jadi',
   ],
   guideCopyBody: [
-    'Export Raw Table Data copies one cumulative reading column with ratios, without consumption or utilities. Results & report checks calculated usage and offers five report combinations. Complete the required periods before copying a finished report. Entries autosave to history; Save version keeps a manual checkpoint.',
-    'Export Raw Table Data 复制一列累计读数及倍率，不含用量或公用工程。Results & report 检查计算结果，并提供五种报告组合。复制完整报告前需补齐所需时段。输入会自动保存至历史，保存版本会保留手动检查点。',
-    'Export Raw Table Data menyalin satu kolom reading kumulatif beserta ratio, tanpa konsumsi atau utilities. Results & report memeriksa hasil dan menyediakan lima kombinasi laporan. Lengkapi periode yang diperlukan sebelum copy laporan jadi. Isian otomatis tersimpan ke histori; Simpan revisi membuat checkpoint manual.',
+    'Export Raw Table Data copies one cumulative reading column with ratios, without consumption or utilities. Results & report checks calculated usage and offers five report combinations. Complete the required periods before copying a finished report. Entries autosave to history; Save verifies the current server copy without creating another record.',
+    'Export Raw Table Data 复制一列累计读数及倍率，不含用量或公用工程。Results & report 检查计算结果，并提供五种报告组合。复制完整报告前需补齐所需时段。输入会自动保存至历史，保存按钮核实当前服务器数据，不创建额外副本。',
+    'Export Raw Table Data menyalin satu kolom reading kumulatif beserta ratio, tanpa konsumsi atau utilities. Results & report memeriksa hasil dan menyediakan lima kombinasi laporan. Lengkapi periode yang diperlukan sebelum copy laporan jadi. Isian otomatis tersimpan ke histori; Simpan memverifikasi data server tanpa membuat salinan baru.',
   ],
   guideCopyPlace: [
     'Raw export below the table; Results & report beside it or below on mobile.',

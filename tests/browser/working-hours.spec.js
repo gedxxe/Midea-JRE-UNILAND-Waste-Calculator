@@ -98,7 +98,7 @@ test('NTP defaults and mode switching retain undated partial work readings', asy
   await page.locator('#reading-mode').selectOption('daily');
   await page.locator('#reading-mode').selectOption('workingHours');
   await expect(cell(page, 'end')).toHaveValue('123.5');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.workingHours.JRE.startDate).toBe('');
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('123.5');
@@ -123,7 +123,8 @@ test('work drafts reuse matching daily readings through plant/language switching
   await expect(cell(page, 'end')).toHaveValue('');
   await cell(page, 'end').fill('100125.25');
   await page.locator('#save-report').click();
-  await expect.poll(() => state.saved.length).toBe(1);
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.saved).toHaveLength(0);
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('100125.25');
   await page.locator('[data-plant="UNILAND"]').click();
   await expect(cell(page)).toHaveValue('1000');
@@ -141,7 +142,7 @@ test('work drafts reuse matching daily readings through plant/language switching
   await page.locator('#reading-mode').selectOption('daily');
   expect(await page.locator('#report-preview').inputValue()).toBe(daily);
   await expect(page.locator('#gas-section')).toBeVisible();
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
@@ -178,11 +179,12 @@ test('work reports, timed raw imports, next-morning reuse and Undo keep date/tim
   await page.locator('#apply-import').click();
   await expect(page.locator('#import-dialog')).toBeHidden();
   await page.locator('#save-report').click();
-  await expect.poll(() => state.saved[0]?.draft.periodKind).toBe('workingHours');
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.workspace.workingHours.JRE.periodKind).toBe('workingHours');
   await page.locator('#save-report').click();
-  await expect.poll(() => state.saved[1]?.baseRevision).toBe(1);
-  expect(state.saved[1].id).toBe('1e61d60e-e4b5-4c91-b7d1-6a56d9465680');
-  expect(state.saved[0].draft.startDate).toBe(state.saved[0].draft.endDate);
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.saved).toHaveLength(0);
+  expect(state.workspace.workingHours.JRE.startDate).toBe(state.workspace.workingHours.JRE.endDate);
   await page.locator('#work-end-time').fill('17:15');
   await expect(cell(page, 'end')).toHaveValue('');
   await page.locator('#undo-change').click();
@@ -337,7 +339,7 @@ test('UNILAND expanded drafts retain old readings and flexible imports use the s
   await expect(page.locator('#import-feedback')).toContainText('Indoor');
   await expect(input('Dryer', 'end')).toHaveValue('31.5');
   await page.locator('#import-dialog [data-i18n="close"]').click();
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.workingHours.UNILAND.meterLayout).toBe(4);
   await page.reload();
@@ -412,7 +414,9 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   const combined = await page.evaluate(() => navigator.clipboard.readText());
   expect(combined).not.toMatch(/^\* Water:|^\* LPG:/m);
   await page.locator('#save-report').click();
-  await expect.poll(() => state.saved.at(-1)?.draft.periodKind).toBe('nightShift');
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.workspace.nightShifts.JRE.periodKind).toBe('nightShift');
+  expect(state.saved).toHaveLength(0);
   await page.locator('#work-period').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('night-shift.png') });
   await page.locator('#next-day').click();
@@ -424,7 +428,7 @@ test('Day and Night share readings, copy separately or together, retain overnigh
   await page.locator('#undo-change').click();
   await expect(page.locator('#reading-mode')).toHaveValue('nightShift');
   await expect(cell(page, 'end')).toHaveValue('103100');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   await page.reload();
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
@@ -476,7 +480,7 @@ test('an undated partial Night reading survives NTP defaults, first date assignm
   await expect(cell(page, 'end')).toHaveValue('123.');
   await page.locator('#work-date').fill('2026-09-16');
   await expect(cell(page, 'end')).toHaveValue('123.');
-  await page.locator('#save-draft').click();
+  await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.nightShifts.JRE.endDate).toBe('2026-09-17');
   await page.reload();

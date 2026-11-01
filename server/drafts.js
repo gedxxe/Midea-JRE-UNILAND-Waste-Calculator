@@ -1,3 +1,4 @@
+import { validDate } from '../numbers.js';
 import { endpoint, appOrigin, checkOrigin, readBody, send, fail } from './http.js';
 import { getPool, transaction } from './db.js';
 import { requireUser, lockUser, limit } from './auth.js';
@@ -28,6 +29,31 @@ export function draftsHandler(database = getPool, env = process.env) {
     const user = await requireUser(db, req, origin);
     if (req.method === 'GET') {
       await limit(db, 'reads:' + user.id, 600, env);
+      const params = new URL(req.url, origin).searchParams;
+      if (params.has('period')) {
+        const parts = params.get('period').split(':');
+        if (
+          parts.length !== 4 ||
+          !['JRE', 'UNILAND'].includes(parts[0]) ||
+          !['daily', 'workingHours', 'nightShift'].includes(parts[1]) ||
+          !validDate(parts[2]) ||
+          !validDate(parts[3])
+        )
+          fail(400, 'INVALID_INPUT');
+        const row = (
+          await db.query(
+            `SELECT a.snapshot,a.version,0 AS priority FROM meter_app.period_autosaves a WHERE a.owner_id=$1 AND a.plant=$2 AND a.report_kind=$3 AND a.start_date=$4::date AND a.end_date=$5::date
+          UNION ALL SELECT v.snapshot,0 AS version,1 AS priority FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision WHERE r.owner_id=$1 AND r.plant=$2 AND r.report_kind=$3 AND r.start_date=$4::date AND r.end_date=$5::date
+          ORDER BY priority LIMIT 1`,
+            [user.id, ...parts],
+          )
+        ).rows[0];
+        return send(res, 200, {
+          key: params.get('period'),
+          draft: row?.snapshot?.draft || null,
+          version: row?.version || 0,
+        });
+      }
       const row = (
         await db.query(
           'SELECT workspace,version,updated_at FROM meter_app.working_drafts WHERE owner_id=$1',
@@ -130,7 +156,10 @@ export function draftsHandler(database = getPool, env = process.env) {
       const stale = (old?.version || 0) !== body.baseVersion;
       if (stale && !old?.unchanged) fail(409, 'DRAFT_CONFLICT');
       const plan = modern
-        ? await planPeriodAutosaves(client, user.id, [...periods, ...workspaceDrafts(workspace)])
+        ? await planPeriodAutosaves(client, user.id, [...periods, ...workspaceDrafts(workspace)], {
+            previous: old?.workspace,
+            versions: body.periodVersions,
+          })
         : { changes: [], records: [] };
       if (stale && plan.changes.length) fail(409, 'DRAFT_CONFLICT');
       if (old?.unchanged && !plan.changes.length)

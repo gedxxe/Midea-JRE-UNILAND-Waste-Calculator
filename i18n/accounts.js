@@ -1,22 +1,27 @@
 export const accountMessages = {
-  undoSave: ['Undo save', '取消保存', 'Batalkan simpan'],
+  saveVerified: [
+    'Changes saved and verified on the server.',
+    '更改已保存，并已核实服务器数据。',
+    'Perubahan tersimpan dan sudah diverifikasi di server.',
+  ],
+  undoSave: ['Cancel check', '取消核实', 'Batalkan pemeriksaan'],
   saveVersionPending: [
-    'Version saves in 4 seconds. Select Undo save or press Escape to cancel.',
-    '版本将在4秒后保存。点击取消保存或按 Escape 可取消。',
-    'Revisi disimpan dalam 4 detik. Pilih Batalkan simpan atau tekan Escape untuk membatalkan.',
+    'Verification starts in 4 seconds. Select Cancel or press Escape to cancel.',
+    '将在4秒后核实保存数据。点击取消或按 Escape 取消。',
+    'Verifikasi dimulai dalam 4 detik. Pilih Batal atau tekan Escape untuk membatalkan.',
   ],
   saveVersionCancelled: [
-    'Version save cancelled. Autosave continues.',
-    '已取消保存版本。自动保存继续。',
-    'Simpan revisi dibatalkan. Autosave tetap berjalan.',
+    'Verification cancelled. Autosave continues.',
+    '已取消核实。自动保存继续。',
+    'Verifikasi dibatalkan. Autosave tetap berjalan.',
   ],
   saveVersionContextChanged: [
-    'Version save cancelled because the readings, period or account changed. Autosave continues.',
-    '读数、期间或账户已更改，已取消保存版本。自动保存继续。',
-    'Simpan revisi dibatalkan karena reading, periode, atau akun berubah. Autosave tetap berjalan.',
+    'Verification cancelled because the readings, period or account changed. Autosave continues.',
+    '读数、时段或账户已更改，已取消核实。自动保存继续。',
+    'Verifikasi dibatalkan karena reading, periode, atau akun berubah. Autosave tetap berjalan.',
   ],
-  saveVersionSending: ['Saving version...', '正在保存版本...', 'Menyimpan revisi...'],
-  saveVersionConfirmed: ['Version saved.', '版本已保存。', 'Revisi tersimpan.'],
+  saveVersionSending: ['Checking...', '正在核实...', 'Memeriksa...'],
+  saveVersionConfirmed: ['Save verified.', '已确认保存。', 'Simpanan terverifikasi.'],
   reportUnchanged: [
     'Already saved. No changes since revision {revision}.',
     '已保存。与修订 {revision} 相比没有变化。',
@@ -71,9 +76,9 @@ export const accountMessages = {
     'Butuh akun? Hubungi admin.',
   ],
   accountPrivate: [
-    'Readings autosave, even when unfinished. Save version keeps a checkpoint.',
-    '未填完的读数也会自动保存。保存版本可保留当前记录。',
-    'Reading tersimpan otomatis, termasuk yang belum lengkap. Simpan revisi untuk menyimpan versi saat ini.',
+    'Readings save automatically, even when unfinished. Save verifies the server copy.',
+    '未填完的读数也会自动保存。保存按钮用于核实服务器数据。',
+    'Reading tersimpan otomatis, termasuk yang belum lengkap. Tombol Simpan memverifikasi data di server.',
   ],
   accountUnavailable: [
     'Cannot connect to the account service. Try again.',
@@ -85,7 +90,7 @@ export const accountMessages = {
   signIn: ['Sign in', '登录', 'Login'],
   signOut: ['Sign out', '退出登录', 'Logout'],
   history: ['Historian', '历史报告', 'Historian'],
-  saveReport: ['Save version', '保存版本', 'Simpan revisi'],
+  saveReport: ['Save', '保存', 'Simpan'],
   manageUsers: ['Manage accounts', '管理账户', 'Kelola akun'],
   changePassword: ['Change password', '修改密码', 'Ganti password'],
   passwordRequired: [

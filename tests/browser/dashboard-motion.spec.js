@@ -34,11 +34,12 @@ async function setup(page, { unixMs = Date.UTC(2026, 9, 29, 1, 7, 58) } = {}) {
       },
     }),
   );
-  await page.route('**/api/drafts', (r) => {
+  await page.route('**/api/drafts', async (r) => {
     if (r.request().method() === 'POST') {
       state.workspace = r.request().postDataJSON().workspace;
       state.version++;
     }
+    if (r.request().method() === 'GET' && state.hold) await state.hold;
     return r.fulfill({ json: { workspace: state.workspace, version: state.version } });
   });
   await page.route('**/api/reports', (r) => {
@@ -50,7 +51,7 @@ async function setup(page, { unixMs = Date.UTC(2026, 9, 29, 1, 7, 58) } = {}) {
   return { state, errors };
 }
 
-test('Save version faces share a compact grid in every language and keep the cancellable window', async ({
+test('Save stays compact in every language during immediate server verification', async ({
   page,
 }, info) => {
   const { state, errors } = await setup(page);
@@ -60,11 +61,16 @@ test('Save version faces share a compact grid in every language and keep the can
     await expect(button).toHaveCSS('display', 'grid');
     const idle = await button.boundingBox();
     expect(idle.width).toBeLessThan(245);
+    let release;
+    state.hold = new Promise((resolve) => {
+      release = resolve;
+    });
     await button.click();
-    await expect(button).toHaveAttribute('data-fuse-phase', 'armed');
+    await expect(button).toHaveAttribute('data-fuse-phase', 'saving');
     const armed = await button.boundingBox();
     expect(Math.abs(armed.width - idle.width)).toBeLessThan(24);
-    await button.click();
+    release();
+    state.hold = null;
     await expect(button).toHaveAttribute('data-fuse-phase', 'idle');
   }
   expect(state.saves).toBe(0);
@@ -409,7 +415,7 @@ test('save and report/Excel hover never expose a white intermediate fill', async
     }
   }
   await page.locator('#report-view').selectOption('plant');
-  for (const selector of ['#copy-worksheet', '#save-draft']) {
+  for (const selector of ['#copy-worksheet', '#open-history']) {
     for (const entering of [true, false]) {
       const frames = await sample(selector, entering);
       for (const frame of frames) expect(frame.color).not.toBe('rgb(255, 255, 255)');

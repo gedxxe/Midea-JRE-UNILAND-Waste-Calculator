@@ -84,7 +84,6 @@ export function createGraphs({
     $('graph-search').value = '';
     $('graph-matrix').replaceChildren();
     $('graph-kind').value = 'daily';
-    $('graph-source').value = 'working';
     $('graph-department').replaceChildren();
     $('graphs-dialog').close();
     $('graph-cards').replaceChildren();
@@ -163,10 +162,7 @@ export function createGraphs({
             ),
           );
     if (data) {
-      const review = renderGraphReview(data.records, () => {
-        $('graph-source').value = 'checkpoint';
-        void load();
-      });
+      const review = renderGraphReview(data.records);
       if (review) $('graph-warnings').append(review);
     }
     const department = $('graph-department').value || 'all';
@@ -274,7 +270,7 @@ export function createGraphs({
   });
   async function load() {
     if (!user) return;
-    const sourceView = $('graph-source').value;
+    const sourceView = 'working';
     const plant = factory(),
       start = $('graph-start').value,
       end = $('graph-end').value;
@@ -668,7 +664,7 @@ export function createGraphs({
     view === 'table' ? renderMatrix() : renderCards(),
   );
   $('graph-refresh').addEventListener('click', () => void load());
-  for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end', 'graph-source'])
+  for (const id of ['graph-plant', 'graph-kind', 'graph-start', 'graph-end'])
     $(id).addEventListener('change', () => void load());
   $('graph-presets').addEventListener('click', () => {
     if (!confirm(t('graphResetConfirm'))) return;

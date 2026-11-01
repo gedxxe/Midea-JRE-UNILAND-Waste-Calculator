@@ -2,6 +2,18 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.36-alpha - 2026-11-01
+
+- Use one active autosaved source for monitoring; legacy checkpoints stay in Historian for recovery.
+- Remove redundant Save draft. Save flushes pending edits and verifies the same server document without creating checkpoints, revisions or redundant copies. Legacy history remains readable.
+- Load an existing destination period before an autosave can replace it, locking entry during loading and preserving offline edits and pending navigation recovery. Add server checks against unacknowledged replacement of archived periods.
+- Update gas Save regressions to verify autosaved content without checkpoint writes. Wait for period loading before synthetic entry in legacy navigation and Excel clipboard tests; retain reading, reload and stale-callback assertions.
+- Missing-reading incident remains under investigation. No automatic production repair or migration.
+
+## v0.11.35-alpha - unreleased candidate
+
+- Preserved candidate branch failed the full browser gate. Superseded by v0.11.36-alpha; no release tag or production merge.
+
 ## v0.11.34-alpha - 2026-10-30
 
 - List exact dates, sources and related periods behind graph conflicts above the plots and monthly table. Explain working copies with missing readings instead of leaving only a count.

@@ -329,9 +329,9 @@ export const catalog = {
     'Laporan gabungan tersedia jika periode kedua pabrik sama.',
   ],
   privacy: [
-    'Entries autosave, including unfinished readings. Save version keeps a copy you can return to.',
-    '输入会自动保存，包括未完成的读数。保存版本可保留当前记录供以后查看。',
-    'Isian tersimpan otomatis, termasuk reading yang belum lengkap. Simpan revisi menyimpan salinan yang bisa dibuka kembali.',
+    'Entries save automatically, including unfinished readings. Save verifies the server copy.',
+    '输入会自动保存，包括未完成的读数。保存按钮用于核实服务器数据。',
+    'Isian tersimpan otomatis, termasuk reading yang belum lengkap. Simpan memverifikasi data di server.',
   ],
   forget: ['Delete saved draft', '删除已保存的草稿', 'Hapus draft tersimpan'],
   importTitle: ['Import readings', '导入读数', 'Impor reading'],

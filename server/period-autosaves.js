@@ -1,6 +1,14 @@
+import { fail } from './http.js';
 import { randomUUID } from 'node:crypto';
 import { periodKind } from '../reading-period.js';
-import { periodKey, hasEnteredData, samePeriodContent } from '../draft-records.js';
+import { sameWorkspace } from '../storage.js';
+import {
+  restorePeriodDraft,
+  workspaceDrafts,
+  periodKey,
+  hasEnteredData,
+  samePeriodContent,
+} from '../draft-records.js';
 import { reportSnapshot } from './report-data.js';
 
 const identity = (row) => [row.plant, row.report_kind, row.start_date, row.end_date].join(':');
@@ -14,7 +22,7 @@ const reference = (row) => ({
   complete: row.snapshot.complete,
 });
 // Called under the account lock. Plans writes before touching either durable store.
-export async function planPeriodAutosaves(client, owner, drafts) {
+export async function planPeriodAutosaves(client, owner, drafts, guard = {}) {
   const candidates = new Map();
   for (const draft of drafts) {
     const key = periodKey(draft);
@@ -40,6 +48,15 @@ export async function planPeriodAutosaves(client, owner, drafts) {
   for (const row of rows) {
     const draft = candidates.get(identity(row));
     if (!row.id && !hasEnteredData(draft)) continue;
+    // Merely opening a stored period must not recalculate its historical output.
+    if (
+      row.id &&
+      row.base_revision === row.checkpoint_revision &&
+      sameWorkspace(restorePeriodDraft(row.snapshot.draft), restorePeriodDraft(draft))
+    ) {
+      records.push(reference(row));
+      continue;
+    }
     const snapshot = reportSnapshot(draft, { allowPartial: true });
     if (
       row.id &&
@@ -50,6 +67,14 @@ export async function planPeriodAutosaves(client, owner, drafts) {
       records.push(reference(row));
       continue;
     }
+    const active = workspaceDrafts(guard.previous).some((d) => periodKey(d) === identity(row));
+    if (
+      'previous' in guard &&
+      (row.id || row.report_id) &&
+      !active &&
+      guard.versions?.[identity(row)] !== (row.version || 0)
+    )
+      fail(409, 'DRAFT_CONFLICT');
     changes.push({
       id: row.id || row.report_id || randomUUID(),
       plant: row.plant,

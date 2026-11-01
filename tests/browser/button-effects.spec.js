@@ -23,6 +23,7 @@ async function setup(page, { animation = false } = {}) {
     }),
     version: 1,
     writes: 0,
+    checks: 0,
     saves: [],
     revision: 0,
     previous: null,
@@ -36,11 +37,16 @@ async function setup(page, { animation = false } = {}) {
   await page.route('**/api/time', (r) =>
     r.fulfill({ status: 503, json: { error: 'TIME_UNAVAILABLE' } }),
   );
-  await page.route('**/api/drafts', (r) => {
+  await page.route('**/api/drafts', async (r) => {
     if (r.request().method() === 'POST') {
       state.workspace = r.request().postDataJSON().workspace;
       state.version++;
       state.writes++;
+    }
+    if (r.request().method() === 'GET') {
+      state.checks++;
+      if (state.hold) await state.hold;
+      if (state.fail) return r.fulfill({ status: 503, json: { error: 'SERVICE_UNAVAILABLE' } });
     }
     return r.fulfill({ json: { workspace: state.workspace, version: state.version } });
   });
@@ -64,113 +70,84 @@ async function setup(page, { animation = false } = {}) {
   });
   await page.goto('/');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  state.checks = 0;
   return state;
 }
 
-test('Fuse Undo and Escape cancel only the manual version while incomplete readings keep autosaving', async ({
+test('partial readings autosave and repeated Save verifies without checkpoint writes', async ({
   page,
 }) => {
   const state = await setup(page);
-  const button = page.locator('#save-report');
   await cell(page).fill('123.');
-  await button.click();
-  await expect(button).toContainText('Undo save');
-  await page.clock.runFor(3900);
+  await page.clock.runFor(3100);
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  const writes = state.writes;
+  for (let i = 1; i <= 2; i++) {
+    await page.locator('#save-report').click();
+    await expect(page.locator('#toast')).toContainText('saved and verified');
+    expect(state.checks).toBe(i);
+  }
+  expect(state.writes).toBe(writes);
   expect(state.saves).toHaveLength(0);
-  expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('123.');
-  await button.click();
-  await page.clock.runFor(5000);
-  expect(state.saves).toHaveLength(0);
-  await expect(page.locator('#save-version-status')).toContainText('cancelled');
-  await button.click();
-  await page.keyboard.press('Escape');
-  await page.clock.runFor(4100);
-  expect(state.saves).toHaveLength(0);
-  expect(state.writes).toBeGreaterThan(0);
-  await expect(button).toContainText('Save version');
+  expect(state.revision).toBe(0);
 });
-
-test('Fuse sends exactly once after four seconds, confirms only a server result and preserves unchanged checkpoint revisions', async ({
+test('Save starts immediately and confirms only the server read-back', async ({ page }) => {
+  const state = await setup(page);
+  let release;
+  state.hold = new Promise((r) => {
+    release = r;
+  });
+  await page.locator('#save-report').click();
+  await expect.poll(() => state.checks).toBe(1);
+  await expect(page.locator('#save-report')).toBeDisabled();
+  await expect(page.locator('#save-version-status')).toHaveText('Checking...');
+  release();
+  state.hold = null;
+  await expect(page.locator('#toast')).toContainText('saved and verified');
+  expect(state.saves).toHaveLength(0);
+  expect(state.writes).toBe(0);
+});
+test('editing readings during verification keeps the edit and suppresses stale confirmation', async ({
   page,
 }) => {
   const state = await setup(page);
   let release;
-  state.hold = new Promise((resolve) => {
-    release = resolve;
+  state.hold = new Promise((r) => {
+    release = r;
   });
   await page.locator('#save-report').click();
-  await page.clock.runFor(3999);
-  expect(state.saves).toHaveLength(0);
-  await page.clock.runFor(2);
-  await expect.poll(() => state.saves.length).toBe(1);
-  await expect(page.locator('#save-report')).toBeDisabled();
-  await expect(page.locator('#save-version-status')).toHaveText('Saving version...');
+  await expect.poll(() => state.checks).toBe(1);
+  await cell(page).fill('150');
   release();
   state.hold = null;
-  await expect(page.locator('#toast')).toContainText('Revision 1');
-  await expect(page.locator('#save-version-status')).toHaveText('Version saved.');
-  await page.locator('#save-report').click();
-  await page.clock.runFor(4100);
-  await expect(page.locator('#toast')).toContainText('Already saved');
-  expect(state.saves).toHaveLength(2);
-  expect(state.revision).toBe(1);
+  await expect(page.locator('#save-report')).toBeEnabled();
+  await expect(page.locator('#save-version-status')).not.toHaveText('Save verified.');
+  await page.clock.runFor(5100);
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  expect(state.workspace.drafts.JRE.rows[0].start[0]).toBe('150');
+  expect(state.saves).toHaveLength(0);
 });
-
-test('changing readings, mode, dates or account cancels a queued version instead of saving a different context', async ({
-  page,
-}) => {
-  const state = await setup(page);
-  const button = page.locator('#save-report');
-  await button.click();
-  await cell(page).fill('150');
-  await expect(button).toHaveAttribute('data-fuse-phase', 'idle');
-  await page.clock.runFor(4100);
-  expect(state.saves).toHaveLength(0);
-  await button.click();
-  await page.locator('#end-date').fill('2026-10-28');
-  await page.clock.runFor(4100);
-  expect(state.saves).toHaveLength(0);
-  await button.click();
-  await page.locator('#reading-mode').selectOption('workingHours');
-  await page.clock.runFor(4100);
-  expect(state.saves).toHaveLength(0);
-  await button.click();
-  state.user = { ...owner, id: '9d631ad7-e244-4f49-a1cf-c715a56f317e', username: 'other-test' };
-  state.workspace = null;
-  await page.evaluate(() =>
-    dispatchEvent(new StorageEvent('storage', { key: 'midea_account_changed', newValue: 'test' })),
-  );
-  await expect(page.locator('#account-name')).toHaveText('other-test');
-  await page.clock.runFor(4100);
-  expect(state.saves).toHaveLength(0);
-  await expect(page.locator('#save-version-status')).toHaveText('');
-});
-
-test('hidden tabs pause the remaining Undo time and request failures never show saved', async ({
+test('hidden tabs stop decoration while failed verification never reports success', async ({
   page,
 }) => {
   const state = await setup(page, { animation: true });
-  const button = page.locator('#save-report');
-  await button.click();
-  await page.clock.runFor(1000);
+  let release;
+  state.hold = new Promise((r) => {
+    release = r;
+  });
+  await page.locator('#save-report').click();
+  await expect.poll(() => state.checks).toBe(1);
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await page.clock.runFor(20000);
-  expect(state.saves).toHaveLength(0);
+  await expect(page.locator('#save-report')).toHaveAttribute('data-save-motion', 'off');
   state.fail = true;
-  await page.evaluate(() => {
-    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
-  await page.clock.runFor(2999);
+  release();
+  state.hold = null;
+  await expect(page.locator('#save-report')).toBeEnabled();
+  await expect(page.locator('#save-version-status')).not.toHaveText('Save verified.');
   expect(state.saves).toHaveLength(0);
-  await page.clock.runFor(101);
-  await expect.poll(() => state.saves.length).toBe(1);
-  await expect(button).toBeEnabled();
-  await expect(page.locator('#save-version-status')).not.toHaveText('Version saved.');
-  await expect(page.locator('#toast')).toContainText('changed');
 });
 
 test('Sign in stays native and usable without WebGL', async ({ page }) => {
@@ -275,7 +252,7 @@ test('Specular follows the pointer, stops settled and covered frames, and releas
   expect(errors).toEqual([]);
 });
 
-test('a reading edit while checkpoint waits for autosave cannot submit a different reading', async ({
+test('a reading edit while verification waits for autosave cannot submit a different reading', async ({
   page,
 }) => {
   const state = await setup(page);
@@ -302,6 +279,6 @@ test('a reading edit while checkpoint waits for autosave cannot submit a differe
   release();
   await expect(page.locator('#save-report')).toBeEnabled();
   expect(state.saves).toHaveLength(0);
-  await expect(page.locator('#save-version-status')).not.toHaveText('Version saved.');
+  await expect(page.locator('#save-version-status')).not.toHaveText('Save verified.');
   await expect(cell(page)).toHaveValue('126');
 });

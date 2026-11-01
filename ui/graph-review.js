@@ -4,7 +4,7 @@ import { graphPeriodLabel, graphSourceLabel, graphRecordStatus } from '../graph-
 import { relatedGraphPeriods } from '../graph-overlap.js';
 
 // Shared, value-free date diagnostics above all charts and the monthly table.
-export function renderGraphReview(records, showCheckpoints) {
+export function renderGraphReview(records) {
   const relevant = records.filter(
     (r) => r.overlap || r.noValues || (r.autosaved && r.complete === false),
   );
@@ -43,15 +43,5 @@ export function renderGraphReview(records, showCheckpoints) {
   table.append(body);
   scroller.append(table);
   details.append(scroller, node('p', t('graphReviewKept'), 'small muted'));
-  if (
-    showCheckpoints &&
-    relevant.some((r) => r.autosaved && r.complete === false && r.checkpointRevision > 0)
-  ) {
-    const button = node('button', t('graphViewCheckpoints'), 'button secondary');
-    button.type = 'button';
-    button.dataset.graphCheckpoints = '';
-    button.addEventListener('click', showCheckpoints);
-    details.append(button);
-  }
   return details;
 }
