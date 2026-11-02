@@ -1,6 +1,7 @@
 import { periodKey } from './draft-records.js';
 import { fitResultsColumn } from './ui/result-layout.js';
 import { createPanelEffects } from './ui/panel-effects.js';
+import { createPanelTheme } from './ui/panel-theme.js';
 import { mountPanelIcons, setPanelIcon } from './ui/panel-icons.js';
 import {
   seedUtilityReadings,
@@ -77,6 +78,7 @@ const table = createMeterTable({
 const filterTable = () => table.filter();
 const clock = new NetworkClock();
 const panelEffects = createPanelEffects();
+const panelTheme = createPanelTheme();
 fitResultsColumn(document.querySelector('.result-column'));
 let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
@@ -303,6 +305,7 @@ let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  panelTheme.reset();
   copyGeneration++;
   panelEffects.reset();
   guide.reset(user);
@@ -583,6 +586,7 @@ function mountPlant() {
   additionalPanel.rebuild();
   table.rebuild();
   workPicker.sync();
+  panelTheme.sync(mode);
   renderResults();
 }
 function renderResults() {
