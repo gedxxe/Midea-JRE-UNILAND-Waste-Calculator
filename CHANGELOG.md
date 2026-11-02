@@ -9,6 +9,7 @@ Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versio
 - Keep kg stock increases as nonblocking notices. Raw sharing uses each observation's unit; JRE Excel/report output remains kg. Preserve incomplete autosave, backup/recovery and historical output.
 - Recognize identical legacy save acknowledgments across the unit-format upgrade without extra writes. Real reading differences still require conflict resolution.
 - Migration 008 adds stale-writer/rollback guards for the new R32 input format. Apply only after passing gates, a private production backup and explicit migration approval; builds do not run migrations.
+- Include migration filenames containing digits, such as R32, in migration discovery. Check that every SQL migration is discovered, runs once and retains checksum verification.
 
 ## v0.11.40-alpha - 2026-11-02
 

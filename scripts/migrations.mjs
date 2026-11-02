@@ -4,7 +4,7 @@ import { transaction } from '../server/db.js';
 
 export async function migrate(database) {
   const files = (await readdir(new URL('../migrations/', import.meta.url)))
-    .filter((file) => /^\d+_[a-z_]+\.sql$/.test(file))
+    .filter((file) => /^\d+_[a-z0-9_]+\.sql$/.test(file))
     .sort();
   return transaction(database, async (client) => {
     await client.query('SELECT pg_advisory_xact_lock(728401)');
