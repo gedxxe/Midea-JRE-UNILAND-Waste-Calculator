@@ -52,3 +52,9 @@ Dates select the current document. Before installing a known daily destination, 
 Offline navigation keeps partial input and departed periods in owner-bound tab recovery. Deferred loading preserves unedited stored fields; an edit conflicting with unseen stored data stops as an explicit conflict. Navigation metadata is stored atomically with recovery. Historian restoration is an explicit user action, distinct from an unloaded blank field.
 
 Manual Save verifies the same canonical autosaved document without creating an extra checkpoint. The redundant Save draft control and graph source selector are removed. Monitoring reads the current autosaved documents. No production repair is implicit in this release.
+
+### Native date entry (v0.11.40-alpha)
+
+Chromium emits a change for every typed date segment, including intermediate years 0002, 0020 and 0202. These are now held in the native controls rather than installed as draft periods. Finish typing and press Enter or leave the date fields to apply a valid date; Esc restores the current document's date. Moving between the daily Start and End fields keeps both edits together. Entry and export controls remain locked while a date is unfinished. Calendar selections and intentional clearing retain their existing behavior.
+
+The guard checks native date validity before calling the existing destination loader. It cancels queued navigation while typing and preserves the buffer during same-document refreshes and delayed initial NTP synchronization. Login autofocus alone is not an edit and does not suppress initial NTP dates on an untouched draft. Switching account, factory or document clears that temporary UI buffer. It neither guesses a year nor changes stored readings, concurrency checks or checkpoint content. Invalid dates already stored in old drafts remain recoverable; this fix does not repair them or resolve the earlier missing-reading incident.

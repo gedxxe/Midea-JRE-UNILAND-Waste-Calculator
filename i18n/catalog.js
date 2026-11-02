@@ -119,6 +119,11 @@ export const catalog = {
     'Salin semua reading mentah pabrik ini, atau listrik saja untuk impor teks. Total periode yang diisi manual diberi label terpisah.',
   ],
   rawExportScope: ['Include', '包含内容', 'Sertakan'],
+  dateEntryPending: [
+    'Finish the date, then press Enter or leave the date fields. Esc cancels. Readings stay unchanged until applied.',
+    '完整输入日期后按 Enter 或离开日期栏。Esc 取消。确认前读数保持不变。',
+    'Selesaikan tanggal, lalu tekan Enter atau keluar dari kolom tanggal. Esc membatalkan. Reading tetap sama sebelum tanggal diterapkan.',
+  ],
   rawExportAll: ['All readings', '全部读数', 'Semua reading'],
   rawExportElectricity: ['Electricity only', '仅电表读数', 'Listrik saja'],
   rawMissingShown: [

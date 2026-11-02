@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.40-alpha - 2026-11-02
+
+- Keep typed date segments in the date fields until Enter or leaving the fields, preventing intermediate years such as 0202 from becoming a recording period. Esc restores the current date. Calendar selections still apply directly; late initial time synchronization does not replace an unfinished date.
+- Preserve the existing destination loader and autosave conflict checks. No stored-year correction, database migration or production data repair.
+- Let untouched login autofocus receive initial NTP dates. Only actual pending date edits hold those defaults, so a new partial reading can acquire a dated autosave and appear in monitoring.
+
 ## v0.11.39-alpha - 2026-11-02
 
 - Default raw copy to all readings: electricity, JRE T1–T4, existing UNILAND Trafo 1–3, gas levels and R32 temperature, Water, recorded refill observations and active manual period totals/notes. Preserve entered units and precision without conversion or consumption calculations.

@@ -90,6 +90,8 @@ Parent/submeter checks show the parent usage, included total and excess, grouped
 
 ### Autosave and save verification
 
+When typing a date, finish it and press Enter or leave the date fields to apply it. Esc cancels the edit. Partial years stay in the controls and do not change the recording period; calendar selections still apply directly.
+
 Incomplete electricity, gas, Water and notes save automatically for both plants and all modes. The first dated working copy appears as **Revision 1** in Historian. Charts and Monthly table use its available values without manual Save. **Save** verifies the current server copy after flushing pending edits. Repeated checks create no checkpoints, records or revision increments. Existing historical checkpoints remain readable for explicit recovery.
 
 Tab recovery updates immediately; account sync follows after 3 seconds idle or within 15 seconds of continuous editing, at least 5 seconds between background attempts. Check **All changes saved to your account** before closing. Offline failures retry with backoff; device conflicts require a choice, even if input returns to an older local value. A crash can lose changes not acknowledged by the server. Invalid dates stay in the active draft without invented graph points. Private backup format 5 includes pending departed periods. See [autosave behavior and deployment](docs/autosave.md).
@@ -232,6 +234,8 @@ made in <3 by gede
 
 ### 自动保存与手动版本
 
+键盘输入日期后，按 Enter 或离开日期栏即可应用；Esc 取消修改。未完成的年份仅保留在输入栏中，不会切换记录期间。日历选择仍直接生效。
+
 两厂所有模式的未完成电表、气体、用水及备注都会自动保存。有有效日期的首个工作副本在历史中显示为**版本 1**，图表和月表直接使用可用值。**保存**会完成待同步更改并核实当前服务器数据。重复点击不创建新记录或修订；旧历史检查点仍可用于明确恢复。
 
 标签页立即保留恢复副本；停止输入 3 秒或持续编辑不超过 15 秒后同步到账户，后台尝试间隔至少 5 秒。关闭前请确认“所有修改已保存到账户”。离线时退避重试，设备冲突需要明确选择。无效日期仍保存在当前草稿中，不会虚构图表日期或把缺失值设为零。私密备份格式 5 包含待同步的旧期间。
@@ -269,6 +273,8 @@ Pilih 24 HOURS, Day/AFTER PRODUCTION atau NIGHT SHIFT, lalu **Salin baris Excel*
 Gas JRE memakai kg. Gas tank UNILAND memakai saldo reading raw dengan koreksi refill: Nitrogen mmH2O, Oxygen mmWC, LPG %, R32 mm. LPG manual tetap Nm3; utility manual lain mengikuti satuan catatannya. Laporan kg tetap sama. Nilai gas negatif berarti stok terukur meningkat. Water memakai periode aktif. Lihat [pemetaan Excel](docs/excel-export.md).
 
 ### Autosave dan verifikasi simpan
+
+Saat mengetik tanggal, selesaikan lalu tekan Enter atau keluar dari kolom tanggal untuk menerapkannya. Esc membatalkan perubahan. Tahun yang belum selesai tidak mengganti periode pencatatan; pilihan kalender tetap langsung diterapkan.
 
 Isian belum lengkap tetap tersimpan otomatis, termasuk listrik, gas, Water dan catatan kedua pabrik pada semua mode. Salinan pertama dengan periode valid muncul sebagai **Revisi 1** di Historian. Grafik dan tabel bulanan memakai nilai yang tersedia. **Simpan** memverifikasi dokumen server setelah antrean autosave selesai. Klik berulang tidak membuat checkpoint, record atau revisi baru. Riwayat lama tetap tersedia untuk pemulihan.
 
