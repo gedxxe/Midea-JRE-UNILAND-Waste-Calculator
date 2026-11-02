@@ -2,6 +2,7 @@ import { periodKey } from './draft-records.js';
 import { fitResultsColumn } from './ui/result-layout.js';
 import { createPanelEffects } from './ui/panel-effects.js';
 import { createPanelTheme } from './ui/panel-theme.js';
+import { createDateEntry } from './ui/date-entry.js';
 import { mountPanelIcons, setPanelIcon } from './ui/panel-icons.js';
 import {
   seedUtilityReadings,
@@ -97,6 +98,20 @@ let toastTimer;
 let lastSyncAttempt = -Infinity;
 let clockDefaultsApplied = false;
 let copyGeneration = 0;
+const dateEntries = [];
+const pendingDateGroups = new Set();
+const hasPendingDate = () => dateEntries.some((entry) => entry.pending);
+let dateEntryContext = null;
+const currentDateContext = () =>
+  JSON.stringify([
+    accountUser?.id,
+    plant,
+    mode,
+    current().startDate,
+    current().endDate,
+    current().startTime,
+    current().endTime,
+  ]);
 const activeDrafts = () =>
   mode === 'nightShift' ? nightShifts : mode === 'workingHours' ? workingHours : drafts;
 const current = () => activeDrafts()[plant];
@@ -305,6 +320,7 @@ let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  dateEntries.forEach((entry) => entry.reset());
   panelTheme.reset();
   copyGeneration++;
   panelEffects.reset();
@@ -570,11 +586,15 @@ function changeWork(date, startTime, endTime) {
   toast(t('periodReadingsMoved'));
 }
 function mountPlant() {
+  const keepDateEntry = hasPendingDate() && dateEntryContext === currentDateContext();
+  if (!keepDateEntry) dateEntries.forEach((entry) => entry.reset());
   seedSharedReadings();
   if (reportFollowsMode) $('report-periods').value = selectionForMode(mode);
   periodPicker.sync();
-  $('start-date').value = current().startDate;
-  $('end-date').value = current().endDate;
+  if (!keepDateEntry) {
+    $('start-date').value = current().startDate;
+    $('end-date').value = current().endDate;
+  }
   $('table-plant').textContent = plant;
   document.querySelectorAll('[data-plant]').forEach((button) => {
     const selected = button.dataset.plant === plant;
@@ -585,7 +605,7 @@ function mountPlant() {
   waterPanel.rebuild();
   additionalPanel.rebuild();
   table.rebuild();
-  workPicker.sync();
+  workPicker.sync({ preserveDate: keepDateEntry });
   panelTheme.sync(mode);
   renderResults();
 }
@@ -879,8 +899,14 @@ async function syncTime() {
   $('sync-clock').disabled = false;
   if (ok && !clockDefaultsApplied) {
     clockDefaultsApplied = true;
+    const editingDate =
+      hasPendingDate() ||
+      ['start-date', 'end-date', 'work-date', 'combined-start', 'combined-last'].includes(
+        document.activeElement?.id,
+      );
     const end = wibDate(clock.now());
     for (const key of ['JRE', 'UNILAND']) {
+      if (key === plant && editingDate) continue;
       const draft = drafts[key];
       if (
         !draft.startDate &&
@@ -891,26 +917,28 @@ async function syncTime() {
         draft.endDate = end;
       }
     }
-    $('start-date').value = current().startDate;
-    $('end-date').value = current().endDate;
-    periodPicker.sync();
-    if (
-      isWorkingHours(current()) &&
-      !current().startDate &&
-      !current().rows.some((row) => [...row.start, ...row.end].some(Boolean))
-    )
-      putPair(
-        changeShiftPair(
-          workingHours[plant],
-          nightShifts[plant],
-          mode,
-          end,
-          current().startTime,
-          current().endTime,
-        ),
-      );
-    ensureNight();
-    workPicker.sync();
+    if (!editingDate) {
+      $('start-date').value = current().startDate;
+      $('end-date').value = current().endDate;
+      periodPicker.sync();
+      if (
+        isWorkingHours(current()) &&
+        !current().startDate &&
+        !current().rows.some((row) => [...row.start, ...row.end].some(Boolean))
+      )
+        putPair(
+          changeShiftPair(
+            workingHours[plant],
+            nightShifts[plant],
+            mode,
+            end,
+            current().startTime,
+            current().endTime,
+          ),
+        );
+      ensureNight();
+      workPicker.sync();
+    }
     renderResults();
   }
   renderClock();
@@ -988,6 +1016,47 @@ for (const [id, field] of [
     changePeriod($('start-date').value, $('end-date').value);
   });
 }
+for (const [group, ids, apply, restore] of [
+  [
+    'daily',
+    ['start-date', 'end-date'],
+    () => changePeriod($('start-date').value, $('end-date').value),
+    () => {
+      $('start-date').value = current().startDate;
+      $('end-date').value = current().endDate;
+    },
+  ],
+  [
+    'work',
+    ['work-date'],
+    () => changeWork($('work-date').value, $('work-start-time').value, $('work-end-time').value),
+    () => {
+      $('work-date').value = current().startDate;
+    },
+  ],
+])
+  dateEntries.push(
+    createDateEntry({
+      inputs: ids.map($),
+      apply,
+      restore,
+      pending(value) {
+        if (value) {
+          if (!pendingDateGroups.size) dateEntryContext = currentDateContext();
+          pendingDateGroups.add(group);
+          navigationTicket++;
+          lockPeriodEntries(true);
+        } else {
+          pendingDateGroups.delete(group);
+          if (!pendingDateGroups.size) {
+            dateEntryContext = null;
+            lockPeriodEntries(false);
+          }
+        }
+        $('date-entry-note').hidden = !pendingDateGroups.size;
+      },
+    }),
+  );
 $('use-today').addEventListener('click', async () => {
   if (!clock.synchronized) await syncTime();
   if (!clock.synchronized) {
@@ -1124,7 +1193,7 @@ $('undo-change').addEventListener('click', () => {
   changed();
 });
 window.addEventListener('beforeunload', (event) => {
-  if (dirty || autosave?.pending()) {
+  if (dirty || autosave?.pending() || hasPendingDate()) {
     event.preventDefault();
     event.returnValue = '';
   }
@@ -1132,6 +1201,7 @@ window.addEventListener('beforeunload', (event) => {
 document.addEventListener('keydown', (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 's') {
     event.preventDefault();
+    if (!dateEntries.every((entry) => entry.commit())) return;
     void (async () => {
       const owner = accounts.getUser()?.id;
       let observed;
@@ -1144,6 +1214,7 @@ document.addEventListener('keydown', (event) => {
   }
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
     event.preventDefault();
+    if (hasPendingDate()) return;
     showValidation = true;
     renderResults();
     $('check-data').scrollIntoView({ block: 'center' });

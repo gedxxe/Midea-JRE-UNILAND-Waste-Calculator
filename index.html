@@ -433,12 +433,22 @@
             </div>
             <label
               ><span data-i18n="startDate">Start date</span
-              ><input type="date" id="start-date" min="2000-01-01" max="2099-12-31"
+              ><input
+                type="date"
+                id="start-date"
+                min="2000-01-01"
+                max="2099-12-31"
+                aria-describedby="date-entry-note"
             /></label>
             <span class="period-arrow" aria-hidden="true">→</span>
             <label
               ><span data-i18n="endDate">End date</span
-              ><input type="date" id="end-date" min="2000-01-01" max="2099-12-31"
+              ><input
+                type="date"
+                id="end-date"
+                min="2000-01-01"
+                max="2099-12-31"
+                aria-describedby="date-entry-note"
             /></label>
             <div class="report-date">
               <span><span data-i18n="reportDate">Report date</span></span
@@ -460,7 +470,12 @@
             <div class="graph-toolbar">
               <label
                 ><span data-i18n="workDate">Work date</span
-                ><input id="work-date" type="date" min="2000-01-01" max="2099-12-31"
+                ><input
+                  id="work-date"
+                  type="date"
+                  min="2000-01-01"
+                  max="2099-12-31"
+                  aria-describedby="date-entry-note"
               /></label>
               <label
                 ><span data-i18n="workStart">Morning reading time</span
@@ -476,6 +491,10 @@
             </div>
           </section>
           <p class="notice" id="period-note">The report uses the start date.</p>
+          <p class="notice" id="date-entry-note" role="status" data-i18n="dateEntryPending" hidden>
+            Finish the date, then press Enter or leave the date fields. Esc cancels. Readings stay
+            unchanged until applied.
+          </p>
           <div class="period-tools">
             <details class="combined-period" id="combined-period">
               <summary data-i18n="combinedPeriod">Weekend / combined period</summary>
