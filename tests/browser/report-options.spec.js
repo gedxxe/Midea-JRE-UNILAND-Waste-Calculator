@@ -152,6 +152,8 @@ test('raw evening export works with missing morning/next morning and does not re
     await expect(page.locator('#copy-report')).toBeDisabled();
     await page.locator('#open-raw-export').click();
     await expect(page.locator('#copy-raw-export')).toBeEnabled();
+    await expect(page.locator('#raw-export-preview')).toHaveValue(/Water:/);
+    await page.locator('#raw-export-scope').selectOption('electricity');
     const raw = await page.locator('#raw-export-preview').inputValue();
     expect(raw).toContain('Reading time: 17:00 WIB');
     expect(raw).toMatch(/1\. Total: 1004/);

@@ -1,5 +1,6 @@
 import { observationLabel } from '../reading-period.js';
 import { exportRawReading } from '../raw-export.js';
+import { exportAllRawReadings } from '../raw-meter-export.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { t } from '../i18n/index.js';
 import { $ } from './dom.js';
@@ -15,24 +16,31 @@ export function createRawExport({ current, toast }) {
         ' (' +
         observationLabel(draft, option.value) +
         ')';
-    const result = exportRawReading(draft, $('raw-export-side').value);
+    const formatter =
+      $('raw-export-scope').value === 'electricity' ? exportRawReading : exportAllRawReadings;
+    const result = formatter(draft, $('raw-export-side').value);
+    if ($('raw-export-preview').value !== result.text) generation++;
     $('raw-export-preview').value = result.text;
     $('copy-raw-export').disabled = !result.text;
     $('raw-export-plant').textContent = draft.plantKey;
     $('raw-export-example').hidden = !draft.isExample;
     const issue = result.issues[0];
     $('raw-export-status').textContent = !issue
-      ? ''
-      : issue.code === 'TIME'
-        ? t('workTimeRequired')
-        : issue.code === 'DATE'
-          ? t('rawDateRequired')
-          : issue.code === 'SHAPE'
-            ? t('rawLayoutInvalid')
-            : t(issue.code === 'EMPTY' ? 'rawEmpty' : 'rawInvalid', {
-                equipment: PLANT_SCHEMAS[draft.plantKey].rows[issue.rowIndex].name,
-                meter: issue.meterIndex + 1,
-              });
+      ? result.notices?.length
+        ? t('rawMissingShown')
+        : ''
+      : issue.code === 'RAW_INVALID'
+        ? t('rawExtraInvalid', { field: issue.label })
+        : issue.code === 'TIME'
+          ? t('workTimeRequired')
+          : issue.code === 'DATE'
+            ? t('rawDateRequired')
+            : issue.code === 'SHAPE'
+              ? t('rawLayoutInvalid')
+              : t(issue.code === 'EMPTY' ? 'rawEmpty' : 'rawInvalid', {
+                  equipment: PLANT_SCHEMAS[draft.plantKey].rows[issue.rowIndex].name,
+                  meter: issue.meterIndex + 1,
+                });
   }
   function reset() {
     generation++;
@@ -43,10 +51,12 @@ export function createRawExport({ current, toast }) {
   }
   $('open-raw-export').addEventListener('click', () => {
     $('raw-export-side').value = 'end';
+    $('raw-export-scope').value = 'all';
     $('raw-export-dialog').showModal();
     render();
   });
   $('raw-export-side').addEventListener('change', render);
+  $('raw-export-scope').addEventListener('change', render);
   $('raw-export-dialog').addEventListener('close', () => {
     generation++;
     $('raw-export-preview').value = '';

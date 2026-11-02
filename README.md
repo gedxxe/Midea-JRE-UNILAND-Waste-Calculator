@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.38-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.39-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -59,7 +59,7 @@ The fullscreen dark **Energy Record** welcome uses the supplied white Midea logo
 
 | Need                               | Where and how                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Send readings without calculations | **Export Raw Table Data**, beside the electricity table. Choose Start or End; only that column must be complete. Excludes gas, Water and JRE T1–T4.                                                                                                                                                                                                                                                                                                                |
+| Send readings without calculations | **Export Raw Table Data**, beside the electricity table. Choose Start or End. All readings includes electricity, JRE T1–T4, UNILAND Trafo 1–3, raw gas/temperature, Water, refills and separately labeled manual totals/notes. Missing optional values use ____. Choose Electricity only for text import; that electricity column must be complete.                                                                                                                |
 | Prepare for an outage              | **Blank reading template**, beside raw export after login or on the sign-in card before login. Copy/download a schema-only `.txt` with `____` and `DD/MM/YYYY`, then keep it outside the website. Contains no saved readings; no duplicate in the footer.                                                                                                                                                                                                          |
 | Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery; server sync after 3 seconds idle or within 15 seconds of continuous editing, with at least 5 seconds between background attempts. Check the account save time before closing. Conflicts require an explicit choice.                                                                                                                                       |
 | Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                                                                                                                                                                               |
@@ -171,7 +171,7 @@ WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示�
 
 夜班模式采用中性炭灰色面板、柔和白色读数与灰色辅助文字。蓝色用于操作和焦点，错误使用清晰的浅红色，提示保持琥珀色。从读数模式选择器展开圆形过渡，切换回其他模式时反向收起。减少动态效果、关闭动画或浏览器不支持时直接切换；强制颜色模式保留系统配色。导出的图表及打印保持浅色，不更改读数、自动保存或报告，也不新增偏好存储。
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.34-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.39-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -197,7 +197,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 只共享工厂、日期和时间完全相同的记录。复制可选全天、全天加下班、全部三段、仅下班、仅夜班。燃气、水及现有手填公用工程按时段分别计算，在所选各段显示。共用相同时间的库存及水表读数，补充记录和手填用量属于各自时段；保存和 Excel 行使用当前编辑模式。合并日期保持整段总量，不拆成推测的每日用量。
 
 - **Excel 行：** 选择全天、白班/生产时段或夜班后复制。JRE 从 E 粘贴至 AY，共 47 格；UNILAND 从 BE 至 CV，共 44 格。不含日期，AP/CO 分隔列及无来源列留空。选择未合并的空白目标行，粘贴会覆盖范围内的值/公式。JRE 气体使用 kg；UNILAND 储罐导出含补充修正的原始读数差，单位为 mmH2O、mmWC、%、mm。手填值保留原单位，kg 报表不变。负气体值表示实测库存增加，水按当前时段计算。详见 [Excel 列映射](docs/excel-export.md)。
-- **原始导出：** 电表下方选择 Start 或 End，只需所选列完整；不含燃气、水和 JRE T1–T4。
+- **原始导出：** 选择 Start/End。默认包含全部电表、JRE T1–T4、UNILAND 变压器 1–3、气体原始液位与温度、水表、补充前后读数及单独标注的手填总量/备注，不进行换算。可选读数缺失显示 ____。文本导入请选择仅电表读数，所选电表列仍需完整。
 - **读数导入：** 空白模板与导入共用设备结构。填写日期和已知读数；____ 或空单元格表示未完成，仅在工厂、日期、时间完全相同时保留已有值。旧清单可省略新加电表，但完整报表仍需补齐。格式错误、数量不符或缺少原设备时整次导入不生效。父子表提示按设备分组，显示上级用量、下级合计及差额，可点击定位具体电表。
 - **空白模板：** 登录后在原始导出旁，登录前在登录卡片内。页脚不再重复。复制/下载带 `____` 和 `DD/MM/YYYY` 的 `.txt`，停机前自行保存，不含实际读数。
 - **草稿和备份：** 一账户工作区包含两厂、三模式。即时保存浏览器副本，空闲 3 秒或连续编辑 15 秒后同步；关闭前查看账户保存时间。冲突需手动选择；恢复到旧的本地读数也不会自动解除冲突。JSON 备份支持未完成数据、完整验证和撤销；未加密，需妥善保管。
@@ -248,7 +248,7 @@ Panel setelah login memakai latar biru lembut, navigasi glass yang ringkas, dan 
 
 NIGHT SHIFT memakai latar charcoal netral, angka putih lembut dan teks pendukung abu-abu. Biru untuk aksi dan fokus; error merah terang dan notice amber tetap jelas. Tema membuka dari pemilih Reading mode dan menyusut kembali saat pindah ke mode lain. Reduced motion, motion off dan browser yang belum mendukung memakai pergantian langsung; forced colors tetap mengikuti sistem. Ekspor grafik dan cetak tetap terang. Perubahan ini hanya tampilan, tanpa preferensi tersimpan atau write data tambahan.
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.34-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.39-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -291,7 +291,7 @@ Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berh
 
 Reading dibagikan hanya jika pabrik, tanggal dan jam sama. Pilihan salin: 24 HOURS; 24 HOURS + AFTER PRODUCTION; ketiganya; AFTER PRODUCTION saja; NIGHT SHIFT saja. Gas/Water dan utility manual dihitung terpisah per periode, lalu muncul di setiap bagian yang dipilih. Observasi gas/Water dengan waktu sama dipakai bersama; refill dan total manual tetap milik periodenya. Save dan Excel mengikuti mode aktif. Periode gabungan tetap total satu periode, tanpa membagi menjadi rata-rata fiktif.
 
-- **Export Raw Table Data:** pilih Start/End di bawah tabel. Cukup kolom itu lengkap; tanpa gas, Water atau T1–T4 JRE.
+- **Export Raw Table Data:** pilih Start/End. Default Semua reading mencakup listrik, T1–T4 JRE, Trafo 1–3 UNILAND, reading gas/suhu, Water, refill, serta total manual dan catatan yang diberi label terpisah. Tidak ada konversi; reading opsional yang kosong ditulis ____. Pilih Listrik saja untuk impor teks, dengan kolom listrik terpilih yang lengkap.
 - **Blank reading template:** di samping raw export setelah login, atau dalam kartu login sebelum masuk. Duplikat footer dihapus. Salin/unduh `.txt` dengan `____` dan `DD/MM/YYYY`, lalu simpan sebelum gangguan. Tanpa reading terisi.
 - **Draft/backup:** satu workspace per akun untuk dua pabrik dan tiga mode. Salinan tab langsung, sinkron setelah 3 detik idle atau 15 detik mengedit terus. Perhatikan waktu simpan akun sebelum menutup. Konflik dipilih manual. Backup JSON mencakup input belum lengkap, divalidasi utuh dan mendukung Undo. File tidak terenkripsi, simpan privat.
 - **Gas/Water:** LPG %, O2 mmWC, N2 mmH2O dan R32 mm/suhu memakai tabel masing-masing pabrik, konversi kg dahulu sebelum selisih stok/refill. Water = meter m³ akhir dikurangi awal. Berlaku di ketiga periode.

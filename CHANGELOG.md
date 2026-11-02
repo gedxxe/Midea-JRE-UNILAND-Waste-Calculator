@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.39-alpha - 2026-11-02
+
+- Default raw copy to all readings: electricity, JRE T1–T4, existing UNILAND Trafo 1–3, gas levels and R32 temperature, Water, recorded refill observations and active manual period totals/notes. Preserve entered units and precision without conversion or consumption calculations.
+- Label manual totals and untimed refills separately. Missing optional observations use ____ instead of invented zeros; invalid values stay explicit. Keep the selected Start/End date and time for all three recording modes.
+- Retain Electricity only for the existing text-import format. Blank electricity templates, importer, stored readings, autosave and historical output stay unchanged. Scope delayed clipboard feedback to the current preview.
+
 ## v0.11.38-alpha - 2026-11-02
 
 - Retouch Night with neutral charcoal surfaces, off-white readings, gray supporting text and quieter table borders. Keep blue for actions, focus and selected controls.

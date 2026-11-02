@@ -651,6 +651,7 @@ test('raw export copies one dated reading column independently of consumption an
     await cell(page).fill('');
     await expect(page.locator('#copy-report')).toBeDisabled();
     await page.locator('#open-raw-export').click();
+    await page.locator('#raw-export-scope').selectOption('electricity');
     await expect(page.locator('#raw-export-side')).toHaveValue('end');
     const raw = exportRawReading(draft, 'end').text;
     await expect(page.locator('#raw-export-preview')).toHaveValue(raw);
@@ -669,6 +670,7 @@ test('raw export copies one dated reading column independently of consumption an
     await page.locator('[data-close-dialog="raw-export-dialog"]').click();
     await cell(page).fill(draft.rows[0].start[0]);
     await page.locator('#open-raw-export').click();
+    await page.locator('#raw-export-scope').selectOption('electricity');
     await page.locator('#raw-export-side').selectOption('start');
     await expect(page.locator('#raw-export-preview')).toHaveValue(
       exportRawReading(draft, 'start').text,
@@ -677,6 +679,7 @@ test('raw export copies one dated reading column independently of consumption an
     for (const language of ['zh-CN', 'id', 'en']) {
       await page.locator('#language-select').selectOption(language);
       await page.locator('#open-raw-export').click();
+      await page.locator('#raw-export-scope').selectOption('electricity');
       await expect(page.locator('#raw-export-preview')).toHaveValue(raw);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
@@ -699,6 +702,7 @@ test('raw export offers manual copy when clipboard access is denied', async ({ p
   );
   await page.locator('#load-example').click();
   await page.locator('#open-raw-export').click();
+  await page.locator('#raw-export-scope').selectOption('electricity');
   await page.locator('#copy-raw-export').click();
   await expect(page.locator('#raw-export-preview')).toBeFocused();
   const selected = await page
