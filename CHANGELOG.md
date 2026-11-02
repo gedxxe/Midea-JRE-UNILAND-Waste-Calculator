@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.38-alpha - 2026-11-02
+
+- Retouch Night with neutral charcoal surfaces, off-white readings, gray supporting text and quieter table borders. Keep blue for actions, focus and selected controls.
+- Make inline gas/Water errors readable in the dark palette. Error messages inherit their error surface color; amber stock-increase notices remain distinct. Preserve all validation and calculation rules.
+- Keep the existing circular transition, light-mode styling, white chart exports, print output and autosave unchanged. No new dependencies or migration.
+
 ## v0.11.37-alpha - 2026-11-02
 
 - Give NIGHT SHIFT a soft blue-slate panel theme for JRE and UNILAND, including reading fields, results, gas/Water, notices and dialog chrome. Keep warning/error distinctions and readable supporting text.
