@@ -480,6 +480,8 @@ test('an undated partial Night reading survives NTP defaults, first date assignm
   await expect(cell(page, 'end')).toHaveValue('123.');
   await page.locator('#work-date').fill('2026-09-16');
   await expect(cell(page, 'end')).toHaveValue('123.');
+  // The source reading stays visible while the dated destination loads.
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
   await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   expect(state.workspace.nightShifts.JRE.endDate).toBe('2026-09-17');

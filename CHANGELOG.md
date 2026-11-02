@@ -6,6 +6,7 @@ Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versio
 
 - Keep typed date segments in the date fields until Enter or leaving the fields, preventing intermediate years such as 0202 from becoming a recording period. Esc restores the current date. Calendar selections still apply directly; late initial time synchronization does not replace an unfinished date.
 - Preserve the existing destination loader and autosave conflict checks. No stored-year correction, database migration or production data repair.
+- Let untouched login autofocus receive initial NTP dates. Only actual pending date edits hold those defaults, so a new partial reading can acquire a dated autosave and appear in monitoring.
 
 ## v0.11.39-alpha - 2026-11-02
 

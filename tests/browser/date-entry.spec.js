@@ -1,6 +1,7 @@
 import { test, expect, modernWorkspace } from './fixtures.js';
 import { excelWorkspace } from '../fixtures/excel-periods.mjs';
 import { periodKey } from '../../draft-records.js';
+import { createDraft } from '../../engine.js';
 
 test.use({ locale: 'en-GB' });
 const collections = ['drafts', 'workingHours', 'nightShifts'];
@@ -11,8 +12,12 @@ const raw = (d) => ({
   additional: d.additionalReadings,
   utilities: d.utilities,
 });
-async function setup(page, { deferTime = false } = {}) {
-  const before = modernWorkspace(excelWorkspace()),
+async function setup(page, { deferTime = false, empty = false } = {}) {
+  const before = modernWorkspace(
+      empty
+        ? { version: 4, drafts: { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') } }
+        : excelWorkspace(),
+    ),
     expected = new Map(),
     stored = new Map(),
     writes = [],
@@ -33,8 +38,11 @@ async function setup(page, { deferTime = false } = {}) {
       archived.rows[0].start[0] = collection === 'nightShifts' ? '610' : '600';
       archived.rows[0].end[0] = collection === 'workingHours' ? '610' : '620';
       for (const draft of [original, archived]) {
-        expected.set(periodKey(draft), structuredClone(draft));
-        stored.set(periodKey(draft), structuredClone(draft));
+        const key = periodKey(draft);
+        if (key) {
+          expected.set(key, structuredClone(draft));
+          stored.set(key, structuredClone(draft));
+        }
       }
     }
   page.on('pageerror', (e) => errors.push(e.message));
@@ -122,6 +130,26 @@ async function year(input, text) {
   await input.press('ArrowRight');
   await input.pressSequentially(text, { delay: 90 });
 }
+
+test('untouched login date focus allows NTP defaults and the first partial period autosave', async ({
+  page,
+}) => {
+  const model = await setup(page, { deferTime: true, empty: true });
+  await page.locator('#start-date').focus();
+  await expect(page.locator('#date-entry-note')).toBeHidden();
+  model.releaseTime();
+  await expect(page.locator('#clock-status')).toContainText('NTP synchronized');
+  await expect(page.locator('#start-date')).toHaveValue('2026-11-01');
+  await expect(page.locator('#end-date')).toHaveValue('2026-11-02');
+  await page.locator('.meter-input[data-row="0"][data-side="start"]').first().fill('123.');
+  await page.keyboard.press('Control+s');
+  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  const draft = model.stored.get('JRE:daily:2026-11-01:2026-11-02');
+  expect(draft.rows[0].start[0]).toBe('123.');
+  expect(model.reportWrites()).toBe(0);
+  expect(model.checkpoint()).toBe(true);
+  expect(model.errors).toEqual([]);
+});
 for (const plant of ['JRE', 'UNILAND'])
   for (const [mode, collection] of [
     ['daily', 'drafts'],

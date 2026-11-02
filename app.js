@@ -899,11 +899,9 @@ async function syncTime() {
   $('sync-clock').disabled = false;
   if (ok && !clockDefaultsApplied) {
     clockDefaultsApplied = true;
+    // Login autofocus is not an edit. The date guard tracks real uncommitted input.
     const editingDate =
-      hasPendingDate() ||
-      ['start-date', 'end-date', 'work-date', 'combined-start', 'combined-last'].includes(
-        document.activeElement?.id,
-      );
+      hasPendingDate() || ['combined-start', 'combined-last'].includes(document.activeElement?.id);
     const end = wibDate(clock.now());
     for (const key of ['JRE', 'UNILAND']) {
       if (key === plant && editingDate) continue;
