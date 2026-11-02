@@ -10,7 +10,7 @@ export function createWorkingHoursPicker({ current, switchMode, changePeriod, co
     );
   $('work-copy-morning').addEventListener('click', copyMorning);
   return {
-    sync() {
+    sync({ preserveDate = false } = {}) {
       const draft = current(),
         working = isWorkingHours(draft);
       $('reading-mode').value = periodKind(draft);
@@ -25,7 +25,7 @@ export function createWorkingHoursPicker({ current, switchMode, changePeriod, co
       $('work-period').hidden = !working;
       $('gas-section').hidden = false;
       $('water-section').hidden = false;
-      $('work-date').value = working ? draft.startDate : '';
+      if (!preserveDate) $('work-date').value = working ? draft.startDate : '';
       $('work-start-time').value = working ? draft.startTime : '';
       $('work-end-time').value = working ? draft.endTime : '';
       $('work-copy-morning').hidden = night;
