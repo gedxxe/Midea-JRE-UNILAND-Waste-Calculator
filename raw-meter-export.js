@@ -1,6 +1,6 @@
 import { exportRawReading } from './raw-export.js';
 import { ADDITIONAL_METERS } from './additional-readings.js';
-import { gasCalibration, MAX_REFILLS } from './gas.js';
+import { gasCalibration, gasPointUnit, MAX_REFILLS, JRE_GAS_INPUT_VERSION } from './gas.js';
 import { UTILITIES } from './schema.js';
 import { decimalText, validDate } from './numbers.js';
 import { observationTime, validTime } from './reading-period.js';
@@ -71,10 +71,25 @@ export function exportAllRawReadings(draft, side = 'end') {
   const gasLines = [],
     refillLines = [];
   function point(point, gas, label) {
+    if (
+      draft.plantKey === 'JRE' &&
+      draft.gas?.version === JRE_GAS_INPUT_VERSION &&
+      gas.id === 'R32' &&
+      !['kg', 'mm'].includes(point?.unit)
+    )
+      shape();
     if (point !== undefined && (!point || typeof point !== 'object' || Array.isArray(point)))
       shape();
-    let text = raw(point?.reading, label) + ' ' + gas.unit;
-    if (gas.id === 'R32')
+    const unit = gas.id === 'R32' && draft.plantKey === 'JRE' ? gasPointUnit(point) : gas.unit;
+    if (
+      point?.unit !== undefined &&
+      (gas.id !== 'R32' ||
+        !['kg', 'mm'].includes(point.unit) ||
+        (point.unit === 'kg' && draft.plantKey !== 'JRE'))
+    )
+      shape();
+    let text = raw(point?.reading, label) + ' ' + unit;
+    if (gas.id === 'R32' && unit === 'mm')
       text += '; temperature: ' + raw(point?.temperature, label + ' temperature', true) + ' °C';
     return text;
   }

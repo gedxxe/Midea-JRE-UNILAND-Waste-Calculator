@@ -88,6 +88,10 @@ The blank template and importer use the same equipment schema. Fill the date and
 
 Parent/submeter checks show the parent usage, included total and excess, grouped by equipment. Click a component meter to go to its readings. These checks do not change the calculation or saved history.
 
+### R32 stock (JRE)
+
+JRE R32 now defaults to **remaining stock in kg**, with no temperature or conversion. Consumption is start stock + refills − end stock. Each observation keeps its unit; **mm (legacy)** still uses the original temperature tables. Existing populated mm readings remain mm. Clear a reading before changing its unit. UNILAND is unchanged. See [R32 stock and legacy readings](docs/gas.md).
+
 ### Autosave and save verification
 
 When typing a date, finish it and press Enter or leave the date fields to apply it. Esc cancels the edit. Partial years stay in the controls and do not change the recording period; calendar selections still apply directly.
@@ -232,7 +236,11 @@ Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、
 
 made in <3 by gede
 
-### 自动保存与手动版本
+### R32 库存（JRE）
+
+JRE R32 新读数默认使用 **kg 剩余库存**，无需温度或换算；用量为期初库存 + 补充 − 期末库存。每次读数保留自己的单位，**mm（旧式）**仍使用原温度表，已有 mm 数值不会改成 kg。更改单位前先清空读数。UNILAND 不变。详见 [R32 库存与旧读数](docs/gas.md)。
+
+### 自动保存与保存验证
 
 键盘输入日期后，按 Enter 或离开日期栏即可应用；Esc 取消修改。未完成的年份仅保留在输入栏中，不会切换记录期间。日历选择仍直接生效。
 
@@ -271,6 +279,10 @@ Pemeriksaan induk/submeter menampilkan konsumsi induk, total submeter dan selisi
 Pilih 24 HOURS, Day/AFTER PRODUCTION atau NIGHT SHIFT, lalu **Salin baris Excel**. Tempel mulai **E sampai AY untuk JRE (47 sel)** atau **BE sampai CV untuk UNILAND (44 sel)** pada baris yang sesuai. Salinan hanya berisi nilai, tanpa tanggal; AP/CO tetap kosong. Kolom yang belum punya sumber juga kosong untuk diisi manual. Gunakan baris kosong tanpa merged cells karena paste mengganti nilai/formula dalam rentang tersebut.
 
 Gas JRE memakai kg. Gas tank UNILAND memakai saldo reading raw dengan koreksi refill: Nitrogen mmH2O, Oxygen mmWC, LPG %, R32 mm. LPG manual tetap Nm3; utility manual lain mengikuti satuan catatannya. Laporan kg tetap sama. Nilai gas negatif berarti stok terukur meningkat. Water memakai periode aktif. Lihat [pemetaan Excel](docs/excel-export.md).
+
+### Stok R32 (JRE)
+
+R32 JRE kini memakai **sisa stok kg** sebagai pilihan utama, tanpa suhu atau konversi. Konsumsi = stok awal + refill − stok akhir. Satuan disimpan per reading; **mm (legacy)** tetap memakai tabel suhu semula. Reading mm yang sudah terisi tetap mm. Kosongkan reading sebelum mengganti satuan. UNILAND tetap seperti sebelumnya. Lihat [stok R32 dan reading lama](docs/gas.md).
 
 ### Autosave dan verifikasi simpan
 

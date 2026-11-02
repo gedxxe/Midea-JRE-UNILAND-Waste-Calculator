@@ -1,6 +1,6 @@
 import { UTILITY_LAYOUT, moveUtilityPeriod } from './utility-periods.js';
 import { reconcileShiftPair } from './shifts.js';
-import { restoreGasDraft, nextGasDay } from './gas.js';
+import { restoreGasDraft, nextGasDay, copyGasPoint } from './gas.js';
 import {
   isWorkingHours,
   isNightShift,
@@ -317,7 +317,7 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
       });
       next.gas?.entries.forEach((entry, i) => {
         const old = source.draft.gas?.entries[i];
-        if (old) entry[side] = { ...old[source.side] };
+        if (old) entry[side] = copyGasPoint(old[source.side], source.draft.gas, draft.plantKey, i);
       });
     }
   }

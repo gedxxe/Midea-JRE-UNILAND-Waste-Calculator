@@ -127,9 +127,12 @@ function putPeriods(key, periods) {
       if (field in next) existing[i][field] = next[field];
       else delete existing[i][field];
     next.gas.entries.forEach((entry, index) => {
-      for (const side of ['start', 'end'])
+      for (const side of ['start', 'end']) {
         Object.assign(existing[i].gas.entries[index][side], entry[side]);
+        if (entry[side].unit === undefined) delete existing[i].gas.entries[index][side].unit;
+      }
     });
+    existing[i].gas.version = next.gas.version;
     if (next.water) existing[i].water = { ...next.water };
   });
 }

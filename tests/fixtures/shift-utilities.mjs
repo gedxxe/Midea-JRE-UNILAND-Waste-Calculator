@@ -14,8 +14,16 @@ export function utilityPeriods(plant = 'JRE') {
     draft.gas.entries.forEach((entry, i) => {
       entry.enabled = true;
       const levels = i === 0 ? ['80', '70', '60'] : points[i];
-      entry.start = { reading: levels[a], temperature: i === 3 ? ['33.5', '34', '34.5'][a] : '' };
-      entry.end = { reading: levels[b], temperature: i === 3 ? ['33.5', '34', '34.5'][b] : '' };
+      entry.start = {
+        reading: levels[a],
+        temperature: i === 3 ? ['33.5', '34', '34.5'][a] : '',
+        ...(i === 3 && plant === 'JRE' ? { unit: 'mm' } : {}),
+      };
+      entry.end = {
+        reading: levels[b],
+        temperature: i === 3 ? ['33.5', '34', '34.5'][b] : '',
+        ...(i === 3 && plant === 'JRE' ? { unit: 'mm' } : {}),
+      };
     });
     if (plant === 'UNILAND') {
       draft.utilities[1].value = ['30', '10', '20'][index];

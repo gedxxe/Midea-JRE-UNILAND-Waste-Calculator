@@ -104,7 +104,11 @@ function tanks(plant) {
     [2, '500', '400', '300', '800'],
     [3, '1000', '700', '800', '1200'],
   ]) {
-    const point = (reading) => ({ reading, temperature: i === 3 ? '30' : '' });
+    const point = (reading) => ({
+      reading,
+      temperature: i === 3 ? '30' : '',
+      ...(i === 3 ? { unit: 'mm' } : {}),
+    });
     draft.gas.entries[i] = {
       enabled: true,
       start: point(start),
@@ -149,8 +153,8 @@ test('raw gas balances keep zero, decimal precision and measured stock increases
   };
   draft.gas.entries[3] = {
     enabled: true,
-    start: { reading: '1000', temperature: '30' },
-    end: { reading: '1000', temperature: '40' },
+    start: { reading: '1000', temperature: '30', unit: 'mm' },
+    end: { reading: '1000', temperature: '40', unit: 'mm' },
     refills: [],
   };
   const report = calculateDraft(draft),

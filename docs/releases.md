@@ -123,6 +123,14 @@ The optional circular reveal uses [native document view transitions](https://dev
 
 Scoped CSS retouch and contrast regressions only. A normal revert restores the previous Night palette while retaining the circular transition and autosave protections. No migration, stored-data changes or environment configuration. Light mode, welcome/login, white chart exports and print output stay unchanged.
 
+## JRE direct R32 stock (v0.11.41-alpha)
+
+Migration 008_r32_kg.sql adds format-preservation triggers to the existing workspace, period-autosave and checkpoint tables. It rewrites no readings or historical output. The new JRE gas input marker carries per-observation kg units; populated legacy points remain mm, with their original temperature conversion. UNILAND does not adopt this marker.
+
+Before production: pass all checks, including the isolated PostgreSQL stale-writer/rollback tests; refresh the private recoverable backup; obtain explicit approval; then apply migration 008 with the maintenance connection and verify its checksum before merging/deploying this release. Do not run it during a build or use the runtime connection for maintenance.
+
+Keep migration 008 during code rollback. Old code must fail rather than remove the marker or reinterpret kg as mm. Resume editing with a compatible version; never strip units, downgrade the format marker or drop the triggers to make an old writer work. Legacy report output remains immutable. Check before/after raw readings and checkpoints in the approved environment, including all three modes and pending recovery queues.
+
 ## Complete raw copy (v0.11.39-alpha)
 
 Read-only sharing formatter and UI scope selection. No migration or stored-format changes. A normal revert restores the previous electricity-only copy control; recordings and autosave are unaffected. The complete sharing text is not an import file: Electricity only retains the existing import contract. Public blank electricity templates stay unchanged.

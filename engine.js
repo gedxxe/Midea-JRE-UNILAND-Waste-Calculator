@@ -1,7 +1,14 @@
 import { comparisonMessage } from './meter-checks.js';
 import { UTILITY_LAYOUT } from './utility-periods.js';
 import { isWorkingHours, periodKind, workPeriodError, workPeriodTitle } from './reading-period.js';
-import { createGasDraft, calculateGas, gasCalibration, gasUsageText } from './gas.js';
+import {
+  createGasDraft,
+  calculateGas,
+  gasCalibration,
+  gasUsageText,
+  validGasVersion,
+  JRE_GAS_INPUT_VERSION,
+} from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
 import { beforeMeterReporting, emptyMeterRow } from './meter-activation.js';
 import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
@@ -319,8 +326,22 @@ export function calculateDraft(draft) {
   const waterResult = calculateWater(draft.water);
   const utilities = [];
   const calibration = gasCalibration(draft.plantKey);
-  if (draft.gas && draft.gas.version !== calibration.version)
-    issue(issues, 'GAS_VERSION', 'Unknown gas calibration version.', null, null, 'ERROR');
+  if (
+    draft.gas &&
+    (!validGasVersion(draft.gas.version, draft.plantKey) ||
+      (draft.plantKey === 'JRE' &&
+        draft.gas.entries[3] &&
+        [
+          draft.gas.entries[3].start,
+          draft.gas.entries[3].end,
+          ...draft.gas.entries[3].refills.flatMap((e) => [e.before, e.after]),
+        ].some((p) =>
+          draft.gas.version === JRE_GAS_INPUT_VERSION
+            ? !['kg', 'mm'].includes(p?.unit)
+            : p?.unit === 'kg',
+        )))
+  )
+    issue(issues, 'GAS_VERSION', 'Unknown gas input format or unit.', null, null, 'ERROR');
   UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
     let stockIncrease = false;
@@ -357,7 +378,11 @@ export function calculateDraft(draft) {
     if (gasIndex >= 0 && draft.gas?.entries[gasIndex]?.enabled) {
       const gas = calibration.gases[gasIndex];
       const result = calculateGas(gas.id, draft.gas.entries[gasIndex], draft.plantKey);
-      gasResults.push({ gas: gas.id, calibration: calibration.version, ...result });
+      gasResults.push({
+        gas: gas.id,
+        calibration: result.directStock ? 'direct-kg' : calibration.version,
+        ...result,
+      });
       unit = 'Kg';
       for (const error of result.errors)
         issue(
@@ -372,8 +397,10 @@ export function calculateDraft(draft) {
               gasNumber: 'Use a decimal reading without unit suffixes.',
               gasRange: 'Reading is outside the reference table range.',
               gasTemperature: 'Enter R32 temperature from -20 to 50 C.',
-              gasSequence:
-                'Converted stock decreased during refill. Check readings, temperatures, and refill order.',
+              gasUnit: 'Unsupported gas reading unit.',
+              gasSequence: result.directStock
+                ? 'Stock decreased during refill. Check readings and refill order.'
+                : 'Converted stock decreased during refill. Check readings, temperatures, and refill order.',
             }[error.code],
           null,
           null,
@@ -392,7 +419,9 @@ export function calculateDraft(draft) {
           name +
             ': ' +
             warning.point +
-            '. Converted stock increased outside a recorded refill. Check readings, temperatures and any missing refill; measurement conditions may affect the estimate.',
+            (result.directStock
+              ? '. Stock increased outside a recorded refill. Check readings and any missing refill.'
+              : '. Converted stock increased outside a recorded refill. Check readings, temperatures and any missing refill; measurement conditions may affect the estimate.'),
           null,
           null,
           'WARNING',
@@ -413,7 +442,7 @@ export function calculateDraft(draft) {
             field: 'reading',
           },
         );
-      value = gasUsageText(result.kg);
+      value = gasUsageText(result.kg, result.kgText);
       stockIncrease = value.startsWith('+');
     }
     if (!String(value).trim()) {

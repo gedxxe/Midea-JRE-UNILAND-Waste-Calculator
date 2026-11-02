@@ -77,7 +77,7 @@ test('gas observations and temperatures follow endpoints but refills never move 
   assert.deepEqual(next.gas.entries[3], {
     enabled: true,
     start: { reading: '500', temperature: '34' },
-    end: { reading: '', temperature: '' },
+    end: { reading: '', temperature: '', unit: 'kg' },
     refills: [],
   });
   const longer = changeDraftPeriod(d, d.startDate, '2026-10-06');

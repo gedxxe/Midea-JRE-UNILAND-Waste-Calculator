@@ -91,9 +91,9 @@ export const workingHoursMessages = {
     'Energi dan utility tersimpan untuk periode terpilih. Waktu reading asli dipertahankan. Catatan lama yang hanya listrik tidak memiliki nilai utility.',
   ],
   draftFormatChanged: [
-    'A newer workspace uses an updated meter layout or reading mode. Reload before saving; your tab copy is retained.',
-    '新版工作区使用更新的电表布局或抄表模式。保存前请刷新页面；此标签页副本保留。',
-    'Workspace baru memakai susunan meter atau mode reading terbaru. Muat ulang sebelum menyimpan; salinan tab tetap tersedia.',
+    'The reading format has changed. Reload before saving; your tab copy is retained.',
+    '读数格式已更新。保存前请刷新页面；此标签页副本保留。',
+    'Format reading diperbarui. Muat ulang sebelum menyimpan; salinan tab tetap tersedia.',
   ],
   nightMode: [
     'NIGHT SHIFT · evening to next morning',

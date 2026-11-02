@@ -1578,6 +1578,14 @@ dialog textarea {
   color: #000;
   background: #fff;
 }
+.gas-observation .gas-unit-control {
+  font-size: 14px;
+}
+.gas-unit-control select {
+  width: fit-content;
+  max-width: 100%;
+  font-size: 15px;
+}
 .gas-observation output {
   font-variant-numeric: tabular-nums;
   font-size: 16px;

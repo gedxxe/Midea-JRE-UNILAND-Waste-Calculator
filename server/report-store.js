@@ -4,6 +4,7 @@ import { samePeriodContent, workspaceDrafts } from '../draft-records.js';
 import { fail, uuid } from './http.js';
 import { audit } from './auth.js';
 import { readPeriodReferences } from './period-autosaves.js';
+import { gasFormatDowngrade } from '../gas.js';
 
 export async function saveCheckpoint(client, user, body, snapshot) {
   const modern = body.autosaveLayout === 1,
@@ -44,10 +45,12 @@ export async function saveCheckpoint(client, user, body, snapshot) {
   ).rows[0];
   const working = (
     await client.query(
-      'SELECT id FROM meter_app.period_autosaves WHERE owner_id=$1 AND plant=$2 AND report_kind=$3 AND start_date=$4 AND end_date=$5',
+      'SELECT id,snapshot FROM meter_app.period_autosaves WHERE owner_id=$1 AND plant=$2 AND report_kind=$3 AND start_date=$4 AND end_date=$5',
       params,
     )
   ).rows[0];
+  if (gasFormatDowngrade(working?.snapshot?.draft?.gas, body.draft?.gas))
+    fail(409, 'DRAFT_FORMAT_CHANGED');
   if (!modern && working) fail(409, 'AUTOSAVE_FORMAT_CHANGED');
   const workspace = modern
     ? (
@@ -65,6 +68,8 @@ export async function saveCheckpoint(client, user, body, snapshot) {
         [report.id, report.revision],
       )
     ).rows[0];
+    if (gasFormatDowngrade(previous?.snapshot?.draft?.gas, body.draft?.gas))
+      fail(409, 'DRAFT_FORMAT_CHANGED');
     if (previous && samePeriodContent(previous.snapshot, snapshot))
       return {
         id,

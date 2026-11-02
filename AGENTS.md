@@ -4,7 +4,16 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.40-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.41-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+
+## JRE R32 kg stock, confirmed 2026-11-02
+
+- JRE only. R32 is remaining stock in kg, not a cumulative dispensed counter. Consumption = initial stock + measured refill additions − final stock. New JRE R32 observations default to direct kg with no temperature/interpolation. UNILAND remains mm.
+- Keep mm as a secondary legacy choice, with its original temperature conversion. Persist units per observation, including refill points and shared shift boundaries. Existing populated unitless legacy R32 points mean mm; never relabel their numeric values as kg. New empty observations may default to kg. A populated input locks its unit until deliberately cleared.
+- Mixed mm/kg boundaries convert only the mm points. Direct-only kg subtraction uses scaled integers; incomplete values autosave, stock increases remain nonblocking notices, decreasing refills remain invalid. Raw copy prints the recorded unit; JRE report/Excel/graph consumption stays kg. Preserve stored historical output, raw values and private recovery.
+- JRE gas input format jre-2026-11-r32-kg-v2 is distinct from the unchanged legacy calibration ID. Restore old editable copies without altering populated readings/temperatures. API and migration 008 guard against stale/rollback writers discarding units in workspaces, archived autosaves and checkpoints. Production migration is not yet authorized or executed; obtain passing gates, a fresh private backup and explicit approval before applying it. Builds never migrate.
+- During format adoption, compare canonically restored server/local workspaces before acknowledging an identical old lost response. Preserve all known raw values and refill order; a different stored reading remains a conflict. Tests must use raw legacy server responses, not a mock that silently normalizes them first. Direct kg results carry direct-kg provenance and exact formatted balance text; legacy calibration tables remain unchanged.
+- Every JRE R32 point in the new input format must explicitly carry kg or mm, including blank points and refill observations. A missing unit in a new-format payload is malformed and must not default to mm. Only the old input format may omit units; normalize its populated observations to explicit mm without changing readings or temperatures. Optional blank numeric fields still autosave normally. Handwritten legacy test fixtures must declare mm or use the old format marker explicitly.
 
 ## Data preservation and incident evidence (2026-10-30)
 

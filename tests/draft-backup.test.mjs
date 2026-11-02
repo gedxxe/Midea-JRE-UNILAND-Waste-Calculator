@@ -20,12 +20,12 @@ test('backup preserves incomplete electricity, gas, refills, water, extra pairs 
     d.water = { start: '100.', end: '' };
     d.gas.entries[3] = {
       enabled: true,
-      start: { reading: '1000', temperature: '33,5' },
-      end: { reading: '', temperature: '' },
+      start: { reading: '1000', temperature: '33,5', unit: 'mm' },
+      end: { reading: '', temperature: '', unit: 'mm' },
       refills: [
         {
-          before: { reading: '800', temperature: '30' },
-          after: { reading: '1200', temperature: '40' },
+          before: { reading: '800', temperature: '30', unit: 'mm' },
+          after: { reading: '1200', temperature: '40', unit: 'mm' },
         },
       ],
     };
@@ -60,9 +60,10 @@ test('backup strips report links, sessions, untrusted fields and calculated tota
   input.drafts.JRE.password = 'synthetic-password';
   input.drafts.JRE.gas.entries[0].kg = 999;
   const raw = createDraftBackup(input, owner);
-  for (const text of ['reportLinks', 'synthetic-cookie', 'synthetic-password', '"kg"'])
+  for (const text of ['reportLinks', 'synthetic-cookie', 'synthetic-password'])
     assert.equal(raw.includes(text), false);
   const parsed = JSON.parse(raw);
+  assert.equal('kg' in parsed.workspace.drafts.JRE.gas.entries[0], false);
   parsed.workspace.drafts.JRE.rows[0].start[0] = 'x'.repeat(51);
   assert.throws(() => restoreDraftBackup(JSON.stringify(parsed), owner), /backupInvalid/);
 });

@@ -182,8 +182,8 @@ test('saved gas calculation is charted as kg, separate from electricity and raw 
   const draft = exampleDraft('JRE');
   draft.gas.entries[3] = {
     enabled: true,
-    start: { reading: '587', temperature: '33.5' },
-    end: { reading: '550', temperature: '33.5' },
+    start: { reading: '587', temperature: '33.5', unit: 'mm' },
+    end: { reading: '550', temperature: '33.5', unit: 'mm' },
     refills: [],
   };
   const values = graphValues(reportSnapshot(draft), 'JRE');

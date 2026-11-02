@@ -809,6 +809,8 @@ test('JRE gas raw readings, decimal temperatures, refills, language and next day
   await lpg.locator('[data-gas-point="after0"]').fill('80');
   const r32 = page.locator('[data-gas="R32"]');
   await r32.locator('[data-gas-enable]').check();
+  await r32.locator('[data-gas-unit="start"]').selectOption('mm');
+  await r32.locator('[data-gas-unit="end"]').selectOption('mm');
   await r32.locator('[data-gas-point="start"]').fill('587');
   await r32.locator('[data-gas-temperature="start"]').fill('33,5');
   await r32.locator('[data-gas-point="end"]').fill('550');
@@ -840,7 +842,8 @@ test('JRE gas raw readings, decimal temperatures, refills, language and next day
   await page.locator('#next-day').click();
   await expect(r32.locator('[data-gas-point="start"]')).toHaveValue('550');
   await expect(r32.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
-  await expect(r32.locator('[data-gas-temperature="end"]')).toHaveValue('');
+  await expect(r32.locator('[data-gas-unit="end"]')).toHaveValue('kg');
+  await expect(r32.locator('[data-gas-temperature="end"]')).toHaveCount(0);
   await expect(lpg.locator('[data-gas-point="before0"]')).toHaveCount(0);
   await page.locator('#undo-change').click();
   await expect(page.locator('#report-preview')).toHaveValue(report);

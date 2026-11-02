@@ -7,9 +7,10 @@ import { reportSnapshot } from '../server/report-data.js';
 import { graphValues } from '../graph-data.js';
 import { exportRawReading } from '../raw-export.js';
 
-const point = (reading, temperature = '') => ({
+const point = (reading, temperature) => ({
   reading: String(reading),
-  temperature: String(temperature),
+  temperature: String(temperature ?? ''),
+  ...(temperature !== undefined ? { unit: 'mm' } : {}),
 });
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-7, a + ' vs ' + b);
 const pairs = {

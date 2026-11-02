@@ -154,7 +154,11 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       accountAt = saved.workspace ? timestamp(saved.updated_at) : null;
       updateReferences(saved.records);
       const same =
-        saved.workspace && sameWorkspace({ ...saved.workspace, autosaveLayout: 1 }, read());
+        saved.workspace &&
+        sameWorkspace(
+          restoreWorkspace(JSON.stringify({ ...saved.workspace, autosaveLayout: 1 })),
+          read(),
+        );
       if (dirty && !same && saved.version !== version) {
         conflict = true;
         status('draftConflict');

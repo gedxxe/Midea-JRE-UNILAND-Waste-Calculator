@@ -12,9 +12,10 @@ import { createDraft, calculateDraft } from '../engine.js';
 import { restoreDrafts, nextDayDraft } from '../storage.js';
 import { exampleDraft } from '../examples.js';
 import { reportSnapshot } from '../server/report-data.js';
-const point = (reading, temperature = '') => ({
+const point = (reading, temperature) => ({
   reading: String(reading),
-  temperature: String(temperature),
+  temperature: String(temperature ?? ''),
+  ...(temperature !== undefined ? { unit: 'mm' } : {}),
 });
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-7, a + ' vs ' + b);
 const entry = () => ({ enabled: true, start: point(60), end: point(40), refills: [] });
@@ -98,7 +99,7 @@ test('old manual drafts remain byte-compatible and new raw observations survive 
   assert.deepEqual(restore().gas, drafts.JRE.gas);
   const next = nextDayDraft(restore());
   assert.deepEqual(next.gas.entries[3].start, drafts.JRE.gas.entries[3].end);
-  assert.deepEqual(next.gas.entries[3].end, point(''));
+  assert.deepEqual(next.gas.entries[3].end, { ...point(''), unit: 'kg' });
   assert.deepEqual(next.gas.entries[3].refills, []);
   drafts.JRE.gas.entries[3].end.temperature = '';
   assert.throws(() => nextDayDraft(drafts.JRE), /temperature/);
@@ -123,7 +124,8 @@ test('server owns conversion and calibration, preserves raw data, and blocks inc
 });
 test('malformed or excessive events cannot enter saved drafts', () => {
   const g = createGasDraft();
-  assert.equal(g.version, GAS_TABLE_VERSION);
+  assert.notEqual(g.version, GAS_TABLE_VERSION);
+  assert.equal(g.entries[3].start.unit, 'kg');
   g.entries[0].refills = Array.from({ length: 11 }, () => ({
     before: point(40),
     after: point(60),

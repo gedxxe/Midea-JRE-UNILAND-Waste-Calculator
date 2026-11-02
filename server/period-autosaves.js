@@ -10,6 +10,7 @@ import {
   samePeriodContent,
 } from '../draft-records.js';
 import { reportSnapshot } from './report-data.js';
+import { gasFormatDowngrade } from '../gas.js';
 
 const identity = (row) => [row.plant, row.report_kind, row.start_date, row.end_date].join(':');
 const reference = (row) => ({
@@ -47,6 +48,11 @@ export async function planPeriodAutosaves(client, owner, drafts, guard = {}) {
     records = [];
   for (const row of rows) {
     const draft = candidates.get(identity(row));
+    if (
+      guard.gasVersions &&
+      gasFormatDowngrade(row.snapshot?.draft?.gas, { version: guard.gasVersions[identity(row)] })
+    )
+      fail(409, 'DRAFT_FORMAT_CHANGED');
     if (!row.id && !hasEnteredData(draft)) continue;
     // Merely opening a stored period must not recalculate its historical output.
     if (
