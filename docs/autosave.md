@@ -53,7 +53,7 @@ Offline navigation keeps partial input and departed periods in owner-bound tab r
 
 Manual Save verifies the same canonical autosaved document without creating an extra checkpoint. The redundant Save draft control and graph source selector are removed. Monitoring reads the current autosaved documents. No production repair is implicit in this release.
 
-### Native date entry (v0.11.39-alpha)
+### Native date entry (v0.11.40-alpha)
 
 Chromium emits a change for every typed date segment, including intermediate years 0002, 0020 and 0202. These are now held in the native controls rather than installed as draft periods. Finish typing and press Enter or leave the date fields to apply a valid date; Esc restores the current document's date. Moving between the daily Start and End fields keeps both edits together. Entry and export controls remain locked while a date is unfinished. Calendar selections and intentional clearing retain their existing behavior.
 

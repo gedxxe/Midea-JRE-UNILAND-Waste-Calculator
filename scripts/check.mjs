@@ -95,7 +95,7 @@ for (const file of PUBLIC_FILES) {
 // v0.11.32 adds exact-text Counter springs and panel lifecycle (~18 kB), reusing Specular; no packages.
 // v0.11.37 adds ~18 kB of scoped Night Shift CSS and native view-transition handling; no packages.
 // v0.11.39 adds a read-only full raw-sharing formatter and scope labels; no packages.
-// The native date-entry guard and localized hint add ~5.3 kB; no packages or persistence changes.
+// v0.11.40 date-entry guard and localized hint add ~5.3 kB; no packages or persistence changes.
 assert.ok(size < 1110000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

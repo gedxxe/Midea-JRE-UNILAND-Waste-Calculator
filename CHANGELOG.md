@@ -2,12 +2,16 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.40-alpha - 2026-11-02
+
+- Keep typed date segments in the date fields until Enter or leaving the fields, preventing intermediate years such as 0202 from becoming a recording period. Esc restores the current date. Calendar selections still apply directly; late initial time synchronization does not replace an unfinished date.
+- Preserve the existing destination loader and autosave conflict checks. No stored-year correction, database migration or production data repair.
+
 ## v0.11.39-alpha - 2026-11-02
 
 - Default raw copy to all readings: electricity, JRE T1–T4, existing UNILAND Trafo 1–3, gas levels and R32 temperature, Water, recorded refill observations and active manual period totals/notes. Preserve entered units and precision without conversion or consumption calculations.
 - Label manual totals and untimed refills separately. Missing optional observations use ____ instead of invented zeros; invalid values stay explicit. Keep the selected Start/End date and time for all three recording modes.
 - Retain Electricity only for the existing text-import format. Blank electricity templates, importer, stored readings, autosave and historical output stay unchanged. Scope delayed clipboard feedback to the current preview.
-- Keep typed date segments in the date fields until Enter or leaving the fields, preventing intermediate years such as 0202 from becoming a recording period. Esc restores the current date. Calendar selections still apply directly; late initial time synchronization does not replace an unfinished date.
 
 ## v0.11.38-alpha - 2026-11-02
 
