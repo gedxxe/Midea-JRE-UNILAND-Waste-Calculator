@@ -43,6 +43,8 @@ test('JRE additional readings persist, follow dates and add only report notes ac
     .locator('#additional-section')
     .screenshot({ path: info.outputPath('additional-readings.png') });
   await page.locator('#open-raw-export').click();
+  await expect(page.locator('#raw-export-preview')).toHaveValue(/\nT1: 120\.5 kWh/);
+  await page.locator('#raw-export-scope').selectOption('electricity');
   await expect(page.locator('#raw-export-preview')).not.toHaveValue(/T1/);
   await page.locator('[data-close-dialog="raw-export-dialog"]').click();
   await page.keyboard.press('Control+s');

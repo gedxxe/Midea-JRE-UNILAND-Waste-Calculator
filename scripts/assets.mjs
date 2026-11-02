@@ -1,5 +1,6 @@
 export const PUBLIC_FILES = [
   'index.html',
+  'raw-meter-export.js',
   'style.css',
   'workspace.css',
   'night.css',

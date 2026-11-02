@@ -87,6 +87,7 @@ test('JRE row32 uses x40 and net Warehouse in every mode with aligned inputs, ra
   await page.screenshot({ path: info.outputPath('jre-warehouse-lighting.png') });
   await page.locator('#reading-mode').selectOption('daily');
   await page.locator('#open-raw-export').click();
+  await page.locator('#raw-export-scope').selectOption('electricity');
   await expect(page.locator('#raw-export-preview')).toHaveValue(
     /32\. Warehouse Lighting: 12 \(Ratio 40\)$/,
   );

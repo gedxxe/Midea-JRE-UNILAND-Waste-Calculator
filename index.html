@@ -1137,8 +1137,8 @@
         </button>
       </div>
       <p data-i18n="rawExportHint">
-        Copy cumulative electricity readings for this factory. No consumption calculation, gas, or
-        water data.
+        Copy all raw readings for this factory, or electricity only for text import. Manual period
+        totals are labeled separately.
       </p>
       <p id="raw-export-example" class="notice warning" data-i18n="exampleNote" hidden>
         Example data for testing. Replace it with actual readings before making an operational
@@ -1149,6 +1149,13 @@
         <select id="raw-export-side">
           <option value="start" data-i18n="startReading">Start reading</option>
           <option value="end" data-i18n="endReading" selected>End reading</option>
+        </select>
+      </label>
+      <label
+        ><span data-i18n="rawExportScope">Include</span>
+        <select id="raw-export-scope">
+          <option value="all" data-i18n="rawExportAll">All readings</option>
+          <option value="electricity" data-i18n="rawExportElectricity">Electricity only</option>
         </select>
       </label>
       <p id="raw-export-status" role="status"></p>

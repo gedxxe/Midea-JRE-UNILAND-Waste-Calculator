@@ -122,3 +122,7 @@ The optional circular reveal uses [native document view transitions](https://dev
 ## Neutral Night palette (v0.11.38-alpha)
 
 Scoped CSS retouch and contrast regressions only. A normal revert restores the previous Night palette while retaining the circular transition and autosave protections. No migration, stored-data changes or environment configuration. Light mode, welcome/login, white chart exports and print output stay unchanged.
+
+## Complete raw copy (v0.11.39-alpha)
+
+Read-only sharing formatter and UI scope selection. No migration or stored-format changes. A normal revert restores the previous electricity-only copy control; recordings and autosave are unaffected. The complete sharing text is not an import file: Electricity only retains the existing import contract. Public blank electricity templates stay unchanged.
