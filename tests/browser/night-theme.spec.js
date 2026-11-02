@@ -152,6 +152,91 @@ for (const plant of ['JRE', 'UNILAND'])
       expect(errors).toEqual([]);
     },
   );
+for (const plant of ['JRE', 'UNILAND'])
+  test(
+    plant + ' Night keeps neutral surfaces and readable inline gas/Water errors',
+    async ({ page }, info) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await setup(page);
+      await page.locator(`[data-plant="${plant}"]`).click();
+      await page.locator('#reading-mode').selectOption('nightShift');
+      await night(page);
+      const stockInk = await page
+        .locator('[data-gas="N2"] .gas-total')
+        .evaluate((n) => getComputedStyle(n).color.match(/\d+/g).slice(0, 3).map(Number));
+      expect(stockInk[1] - stockInk[2]).toBeGreaterThan(25);
+      const neutrals = await page
+        .locator('body, .meter-card, .meter-input')
+        .evaluateAll((nodes) =>
+          nodes
+            .slice(0, 4)
+            .map((n) => getComputedStyle(n).backgroundColor.match(/\d+/g).slice(0, 3).map(Number)),
+        );
+      for (const rgb of neutrals)
+        expect(Math.max(...rgb) - Math.min(...rgb)).toBeLessThanOrEqual(8);
+      expect(
+        await page.locator('.total-panel').evaluate((n) => getComputedStyle(n).backgroundImage),
+      ).toBe('none');
+      const contrast = (n) => {
+        let bg = n;
+        while (bg.parentElement && !/^rgb\(/.test(getComputedStyle(bg).backgroundColor))
+          bg = bg.parentElement;
+        const lum = (color) => {
+          const c = color
+            .match(/\d+/g)
+            .slice(0, 3)
+            .map((x) => +x / 255)
+            .map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+          return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        };
+        const a = lum(getComputedStyle(n).color),
+          b = lum(getComputedStyle(bg).backgroundColor);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      };
+      for (const id of ['LPG', 'O2', 'N2', 'R32']) {
+        const gas = page.locator(`[data-gas="${id}"]`);
+        await gas.locator('[data-gas-point="end"]').fill('');
+        if (id === 'R32') await gas.locator('[data-gas-temperature="end"]').fill('');
+        const inline = gas.locator(`#gas-error-${id}-end`),
+          message = gas.locator('.gas-feedback .gas-status');
+        await expect(inline).toBeVisible();
+        await expect(gas.locator('.gas-feedback')).toHaveAttribute('data-tone', 'error');
+        expect(await inline.evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+        expect(await message.evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+        expect(
+          await gas.locator('[data-gas-point="end"]').evaluate(contrast),
+        ).toBeGreaterThanOrEqual(4.5);
+        const ink = await inline.evaluate((n) => getComputedStyle(n).color);
+        expect(await message.evaluate((n) => getComputedStyle(n).color)).toBe(ink);
+        expect(await gas.locator('.gas-feedback').evaluate((n) => getComputedStyle(n).color)).toBe(
+          ink,
+        );
+        expect(await gas.locator('.gas-total').evaluate((n) => getComputedStyle(n).color)).toBe(
+          ink,
+        );
+        const rgb = ink.match(/\d+/g).slice(0, 3).map(Number);
+        expect(rgb[0] - rgb[1]).toBeGreaterThan(40);
+      }
+      await page.screenshot({ path: info.outputPath('night-validation-' + plant + '.png') });
+      await page.locator('#water-start').fill('100');
+      await page.locator('#water-end').fill('50');
+      await expect(page.locator('#water-end')).toHaveAttribute('aria-invalid', 'true');
+      const status = page.locator('#water-status');
+      await expect(status).not.toBeEmpty();
+      expect(await status.evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+      expect(await status.evaluate((n) => getComputedStyle(n).color)).toBe(
+        await page.locator('#gas-error-R32-end').evaluate((n) => getComputedStyle(n).color),
+      );
+      await page.locator('#water-end').fill('-');
+      await expect(page.locator('#water-end')).toHaveAttribute('aria-invalid', 'false');
+      const amber = await status.evaluate((n) =>
+        getComputedStyle(n).color.match(/\d+/g).slice(0, 3).map(Number),
+      );
+      expect(amber[1] - amber[2]).toBeGreaterThan(25);
+      expect(await status.evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
 test('the circular reveal and reverse contraction start at Reading mode and retain keyboard focus', async ({
   page,
 }) => {
@@ -352,7 +437,7 @@ test('dark monitoring chrome preserves white chart markup and native dialog cont
   await page.evaluate(() => document.body.setAttribute('data-night-panel', ''));
   expect(await svg.evaluate((n) => n.outerHTML)).toBe(markup);
   const dialog = page.locator('#graphs-dialog');
-  expect(await dialog.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgb(32, 45, 63)');
+  expect(await dialog.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgb(27, 27, 31)');
   await page.screenshot({ path: info.outputPath('night-monitoring.png') });
   await page.keyboard.press('Escape');
   await expect(page.locator('#graphs-dialog')).toBeHidden();

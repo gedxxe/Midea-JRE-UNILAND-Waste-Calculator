@@ -1,62 +1,64 @@
-/* Night Shift chrome. Charts keep their white scientific/export surface. */
+/* Neutral Night Shift chrome. Charts keep their white scientific/export surface. */
 @media screen and (forced-colors: none) {
   html:has(body[data-night-panel]:not(.login-page)) {
-    background: #151f2d;
+    background: #101012;
     color-scheme: dark;
   }
   body[data-night-panel]:not(.login-page) {
-    --teal: #96bcf3;
-    --dark: #b8d2f7;
-    --border: #35465d;
-    --muted: #a6b6ca;
-    --soft: #27384e;
-    --amber: #ebc77d;
-    --panel-ink: #d8e2ef;
-    --panel-help: #a6b6ca;
-    --night-card: #202d3f;
-    --night-input: #172434;
+    --teal: #80b7ff;
+    --dark: #e5e5eb;
+    --border: #343439;
+    --muted: #b1b1b9;
+    --soft: #242428;
+    --amber: #f4cd7d;
+    --panel-ink: #e7e7ed;
+    --panel-help: #b1b1b9;
+    --night-card: #1b1b1f;
+    --night-input: #141416;
+    --night-error: #ffaaa3;
+    --night-error-bg: #362123;
+    --night-error-border: #b66c68;
     color-scheme: dark;
     color: var(--panel-ink);
-    background: #151f2d;
+    background: #101012;
   }
   body[data-night-panel]:not(.login-page) #application-surface {
-    background:
-      radial-gradient(ellipse 85% 650px at 8% 0, #233b5966, transparent),
-      linear-gradient(155deg, #192638, #17212f 65%, #1a293c);
+    background: #111113;
   }
   body[data-night-panel]:not(.login-page) .site-header {
-    background: #1d2b3de8;
-    border-color: #35465d;
-    box-shadow: 0 1px 0 #0b142044;
+    background: #18181bea;
+    border-color: #343439;
+    box-shadow: 0 1px 0 #00000022;
   }
   body[data-night-panel]:not(.login-page) :is(.card, .period-card, dialog, #graphs-dialog) {
     color: var(--panel-ink);
     background: var(--night-card);
     border-color: var(--border);
+    border-radius: 18px;
     box-shadow:
-      0 8px 30px #0a122322,
+      0 8px 30px #00000018,
       inset 0 1px 0 #ffffff05;
   }
   body[data-night-panel]:not(.login-page) .account-card {
-    background: #223248d9;
-    border-color: #40536a;
+    background: #1b1b1f;
+    border-color: #38383f;
   }
   body[data-night-panel]:not(.login-page) :is(input, select, textarea, .search-field) {
     background: var(--night-input);
     color: var(--panel-ink);
-    border-color: #6c87a8;
+    border-color: #63636d;
   }
   body[data-night-panel]:not(.login-page) :is(input, textarea)::placeholder {
-    color: #9caec5;
+    color: #a3a3ad;
   }
   body[data-night-panel]:not(.login-page)
     :is(input, select, textarea, button, summary, a):focus-visible {
-    outline-color: #9abef2;
+    outline-color: #85baff;
   }
   body[data-night-panel]:not(.login-page) input[aria-invalid='true'] {
-    color: #eadfc9;
-    background: #3b3327;
-    border-color: #bc9659;
+    color: #ffb4ad;
+    background: #2b1d1e;
+    border-color: #c47770;
   }
   body[data-night-panel]:not(.login-page)
     :is(
@@ -92,7 +94,12 @@
       .additional-table input,
       .meter-card td.equipment
     ) {
-    color: #dce5f1;
+    color: #eeeef2;
+  }
+  body[data-night-panel]:not(.login-page) .meter-card td.energy:not(.check),
+  body[data-night-panel]:not(.login-page) .total-panel strong,
+  body[data-night-panel]:not(.login-page) .gas-total {
+    color: #eeeef2;
   }
   body[data-night-panel]:not(.login-page)
     :is(
@@ -103,64 +110,54 @@
       .gas-entry legend,
       .graph-period-review > summary
     ) {
-    color: #b4cbed;
+    color: #d4d4dc;
   }
-  body[data-night-panel]:not(.login-page)
-    :is(
-      .meter-card td.energy:not(.check),
-      .total-panel strong,
-      .gas-total,
-      .text-button,
-      .text-button:hover,
-      .guide-eyebrow,
-      .eyebrow,
-      #clock-status,
-      a
-    ) {
-    color: #9dc4f5;
+  body[data-night-panel]:not(.login-page) :is(.text-button, .text-button:hover, #clock-status, a) {
+    color: #8ebcff;
   }
   body[data-night-panel]:not(.login-page) :is(.button.secondary, .guide-close) {
-    color: #c5d8f2;
-    background: #293b53;
-    border-color: #6c87a8;
+    color: #e1e1e7;
+    background: #25252a;
+    border-color: #4c4c54;
   }
   body[data-night-panel]:not(.login-page) :is(.button.secondary:hover, .guide-close:hover) {
-    background: #324a67;
+    background: #303036;
   }
   body[data-night-panel]:not(.login-page) :is(.button.primary, .button.primary:hover) {
-    color: #e4edfa;
-    background-color: #315fa2;
-    border-color: #537fb8;
+    color: #f5f5f7;
+    background-color: #1264cb;
+    background-image: none;
+    border-color: #347bd2;
     box-shadow:
       inset 0 1px 0 #ffffff19,
-      0 3px 12px #0b152522;
+      0 3px 12px #0000001a;
   }
   body[data-night-panel]:not(.login-page) .button.primary:hover {
-    background-color: #3b6bb2;
+    background-color: #1c70d7;
   }
   body[data-night-panel]:not(.login-page) :is(.plant-tabs, .graph-view-switch) {
-    background: #182638;
+    background: #161619;
     border-color: var(--border);
   }
   body[data-night-panel]:not(.login-page) :is(.plant-tab, .graph-view-switch button) {
-    color: #a9bdd7;
+    color: #b1b1bb;
   }
   body[data-night-panel]:not(.login-page)
     :is(.plant-tab.active, .graph-view-switch button[aria-pressed='true']) {
-    color: #c1d9fb;
-    background: #314966;
-    box-shadow: 0 2px 6px #0b14202b;
+    color: #f0f0f5;
+    background: #303035;
+    box-shadow: 0 2px 6px #0000001a;
   }
   body[data-night-panel]:not(.login-page) .plant-tab span {
-    background: #2c3c53;
-    color: #b4c6df;
+    background: #242429;
+    color: #c4c4ce;
   }
   body[data-night-panel]:not(.login-page) .plant-tab.active span {
-    background: #3a5575;
-    color: #d5e5fa;
+    background: #3b3b43;
+    color: #ececf2;
   }
   body[data-night-panel]:not(.login-page) :is(.reading-mode-bar select, .report-preview) {
-    background: #1a293c;
+    background: #17171a;
   }
   body[data-night-panel]:not(.login-page)
     :is(
@@ -178,13 +175,13 @@
       .guide-footer
     ) {
     color: var(--panel-ink);
-    background: #223247;
+    background: #202024;
     border-color: var(--border);
   }
   body[data-night-panel]:not(.login-page) :is(.step-number, .section-icon, .guide-invitation) {
-    color: #b5d1f5;
-    background: #2a4160;
-    border-color: #405a7c;
+    color: #cbdcf5;
+    background: #252c38;
+    border-color: #3b4352;
   }
   body[data-night-panel]:not(.login-page)
     :is(
@@ -193,38 +190,47 @@
       .graph-matrix thead th,
       .graph-matrix thead th:first-child
     ) {
-    color: #b9cce5;
-    background: #26394f;
+    color: #d3d3dc;
+    background: #222226;
     border-color: var(--border);
   }
   body[data-night-panel]:not(.login-page) .meter-card th small {
-    color: #a6b9d2;
+    color: #b3b3bd;
+  }
+  body[data-night-panel]:not(.login-page) .meter-card table {
+    color: var(--panel-ink);
+  }
+  body[data-night-panel]:not(.login-page) :is(.meter-card, .additional-table) :is(th, td) {
+    border-color: var(--border);
+  }
+  body[data-night-panel]:not(.login-page) :is(.eyebrow, .guide-eyebrow) {
+    color: var(--panel-help);
   }
   body[data-night-panel]:not(.login-page) .meter-card tr.main-row td {
-    background: #243850;
+    background: #202024;
   }
   body[data-night-panel]:not(.login-page) :is(.table-footer, .entry-hint) {
-    background: #1c2a3c;
+    background: #19191d;
   }
   body[data-night-panel]:not(.login-page) .total-panel {
-    background: linear-gradient(130deg, #273f5b, #29394f);
-    border-color: #425d7f;
+    background: #222226;
+    border-color: #3b3b42;
   }
   body[data-night-panel]:not(.login-page)
     :is(.table-scroll, textarea, dialog, .graph-matrix-scroll) {
-    scrollbar-color: #536c8b #1c2a3c;
+    scrollbar-color: #66666e #19191d;
   }
   body[data-night-panel]:not(.login-page) progress {
-    background: #33475f;
+    background: #36363d;
   }
   body[data-night-panel]:not(.login-page) progress::-webkit-progress-bar {
-    background: #33475f;
+    background: #36363d;
   }
   body[data-night-panel]:not(.login-page) progress::-webkit-progress-value {
-    background: #89b5f3;
+    background: #7aaceb;
   }
   body[data-night-panel]:not(.login-page) progress::-moz-progress-bar {
-    background: #89b5f3;
+    background: #7aaceb;
   }
   body[data-night-panel]:not(.login-page)
     :is(.result-status[data-tone='ready'], .result-badge.ready) {
@@ -237,8 +243,8 @@
       .result-badge:not(.ready),
       .gas-feedback[data-tone='unavailable']
     ) {
-    color: #b4c4d9;
-    background: #2a3b51;
+    color: #bdbdc6;
+    background: #26262c;
   }
   body[data-night-panel]:not(.login-page)
     :is(
@@ -249,29 +255,40 @@
       .gas-feedback[data-tone='attention'],
       .result-status[data-tone='attention']
     ) {
-    color: #edcd8f;
+    color: #f1cd86;
     background: #483a1e;
-    border-color: #9a7d47;
+    border-color: #9b7941;
   }
   body[data-night-panel]:not(.login-page) .gas-entry[data-state='attention'] {
-    background: #302f2b;
+    background: #29251d;
     border-color: #a78950;
     box-shadow: inset 3px 0 #c4a05c;
   }
+  body[data-night-panel]:not(.login-page) :is(.gas-total[data-tone='attention'], .energy.check) {
+    color: #f1cd86;
+  }
+  body[data-night-panel]:not(.login-page) .gas-error,
   body[data-night-panel]:not(.login-page)
-    :is(.gas-total[data-tone='attention'], .energy.check, .gas-status, #water-status:not(:empty)) {
-    color: #edcd8f;
+    #water-section:has(input[aria-invalid='true'])
+    #water-status {
+    color: var(--night-error);
+  }
+  body[data-night-panel]:not(.login-page) #water-status:not(:empty) {
+    color: #f1cd86;
+  }
+  body[data-night-panel]:not(.login-page) .gas-feedback .gas-status {
+    color: inherit;
   }
   body[data-night-panel]:not(.login-page) .gas-feedback[data-tone='error'] {
-    color: #efb3b3;
-    background: #3e2c35;
-    border-color: #a66c79;
+    color: var(--night-error);
+    background: var(--night-error-bg);
+    border-color: var(--night-error-border);
   }
   body[data-night-panel]:not(.login-page) .gas-entry[data-state='error'] {
-    border-color: #b77b88;
+    border-color: var(--night-error-border);
   }
   body[data-night-panel]:not(.login-page) .gas-total[data-tone='error'] {
-    color: #efb3b3;
+    color: var(--night-error);
   }
   body[data-night-panel]:not(.login-page) .gas-entry[data-gas='LPG'] legend > .panel-svg {
     color: #e6bc83;
@@ -283,14 +300,14 @@
     color: #c2b0e8;
   }
   body[data-night-panel]:not(.login-page) .gas-entry[data-gas='R32'] legend > .panel-svg {
-    color: #9dc4f5;
+    color: #8ebcff;
   }
   body[data-night-panel]:not(.login-page)
     :is(dialog > .dialog-heading, #graphs-dialog > .dialog-heading) {
     background: var(--night-card);
   }
   body[data-night-panel]:not(.login-page) dialog::backdrop {
-    background: #070e1ab3;
+    background: #000000b3;
   }
   body[data-night-panel]:not(.login-page) .graph-frame {
     background: #fff;
@@ -298,8 +315,8 @@
   }
   body[data-night-panel]:not(.login-page)
     :is(.graph-matrix td, .graph-matrix th:first-child, .graph-data td) {
-    color: #cbd9eb;
-    background: #223247;
+    color: #dedee5;
+    background: #202024;
     border-color: var(--border);
   }
   body[data-night-panel]:not(.login-page)
@@ -308,21 +325,21 @@
       .graph-matrix tbody tr:nth-child(even):not(.matrix-group) td,
       .graph-matrix td.matrix-combined
     ) {
-    background: #283c53;
-    color: #b6c9e1;
+    background: #29292e;
+    color: #c8c8d2;
   }
   body[data-night-panel]:not(.login-page) .graph-matrix .matrix-column-active {
-    background: #334e6d !important;
+    background: #343a44 !important;
   }
   body[data-night-panel]:not(.login-page) .graph-matrix tbody tr:hover :is(th, td) {
-    background: #304861;
+    background: #303036;
   }
   body[data-night-panel]:not(.login-page)
     :is(.matrix-empty, .graph-matrix tbody th small, .matrix-combined small) {
-    color: #a6b6ca;
+    color: #b1b1b9;
   }
   body[data-night-panel]:not(.login-page) .guide-scene {
-    background: #dbe9f0;
+    background: #e2e6e9;
     color-scheme: light;
   }
   body[data-night-panel]:not(.login-page) #raw-template-dialog {
@@ -330,42 +347,45 @@
     position: fixed;
     inset: 0;
     margin: auto;
-    --template-field: #182a40dc;
-    --template-field-hover: #263d58;
-    --template-line: #526a86;
-    --template-ink: #d8e2ef;
-    --template-muted: #a6b6ca;
-    --template-option: #223247;
-    --template-thumb: #7495bc;
-    --template-focus: #a3c6f5;
-    --glass-tint: #1d3047e0;
+    --template-field: #141416e8;
+    --template-field-hover: #2a2a30;
+    --template-line: #60606a;
+    --template-ink: #e7e7ed;
+    --template-muted: #b1b1b9;
+    --template-option: #202024;
+    --template-thumb: #787882;
+    --template-focus: #85baff;
+    --glass-tint: #1c1c20ed;
     color-scheme: dark;
+  }
+  body[data-night-panel]:not(.login-page) #raw-template-dialog .dialog-heading {
+    background: transparent;
   }
   body[data-night-panel]:not(.login-page) .energy-glass::before {
     box-shadow:
-      inset 0 1px 0 #d3e8ff40,
-      inset 0 0 10px #b3d4ff10;
+      inset 0 1px 0 #ffffff24,
+      inset 0 0 10px #ffffff08;
   }
   body[data-night-panel]:not(.login-page) :is(#graph-status, .graph-hover > strong) {
     color: var(--panel-help);
   }
   body[data-night-panel]:not(.login-page) .graph-hover {
     color: var(--panel-ink);
-    background: #223247f5;
+    background: #202024f5;
     border-color: var(--border);
   }
   body[data-night-panel]:not(.login-page) #save-status {
     color: var(--panel-help);
-    background: #23354b;
-    border-color: #40536c;
+    background: #212125;
+    border-color: #3e3e46;
   }
   body[data-night-panel]:not(.login-page) #account-session {
     border-color: var(--border);
   }
   body[data-night-panel]:not(.login-page) .button.danger {
-    color: #efb3b3;
-    background: #3e2c35;
-    border-color: #a66c79;
+    color: #ffaaa3;
+    background: #362123;
+    border-color: #b66c68;
   }
   body[data-night-panel]:not(.login-page) :is(#guide-description, .graph-hover-row b) {
     color: var(--panel-ink);
@@ -375,8 +395,8 @@
   }
   body[data-night-panel]:not(.login-page) .guide-place {
     color: var(--panel-help);
-    background: #283c53;
-    border-color: #799dc8;
+    background: #29292e;
+    border-color: #686874;
   }
   body[data-night-panel]:not(.login-page) .guide-nav {
     border-color: var(--border);
@@ -386,29 +406,29 @@
     background: transparent;
   }
   body[data-night-panel]:not(.login-page) .toast {
-    color: #d8e2ef;
-    background: #2b405a;
+    color: #e7e7ed;
+    background: #2a2a30;
   }
   body[data-night-panel]:not(.login-page) .validation-button {
-    color: #d8e2ef;
-    background: #293b53;
-    border-color: #6c87a8;
+    color: #e7e7ed;
+    background: #25252a;
+    border-color: #63636d;
   }
   body[data-night-panel]:not(.login-page) .validation-button span {
-    color: #c3d5ed;
-    background: #334b66;
+    color: #d4d4de;
+    background: #34343c;
   }
   body[data-night-panel]:not(.login-page) .meter-comparison .comparison-values {
-    color: #edcd8f;
+    color: #f1cd86;
   }
   body[data-night-panel]:not(.login-page) .meter-comparison .comparison-meter {
-    color: #c7d9f1;
-    background: #2c4058;
-    border-color: #7086a0;
+    color: #dfdfe7;
+    background: #2c2c33;
+    border-color: #777782;
   }
   body[data-night-panel]:not(.login-page) .energy-glass::after {
-    background: linear-gradient(135deg, #d8eaff14, transparent 42%, transparent 64%, #d8eaff08);
-    box-shadow: inset 0 0 0 1px #9bbcdf38;
+    background: linear-gradient(135deg, #ffffff0a, transparent 42%, transparent 64%, #ffffff04);
+    box-shadow: inset 0 0 0 1px #ffffff24;
   }
 }
 /* panel-theme owns native root transitions. Keep UA effects off through teardown. */

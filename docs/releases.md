@@ -118,3 +118,7 @@ The immutable release/v0.11.35-alpha branch is a failed candidate, not a publish
 Presentation only. No migration or persisted theme preference. A normal revert PR restores the light-only panel while preserving readings, the v0.11.36 autosave protections and historical output. Circular view transitions have immediate fallbacks; reset cancels old account snapshots. Chart exports and print colors remain unchanged. No production data writes or new environment configuration are needed.
 
 The optional circular reveal uses [native document view transitions](https://developer.mozilla.org/en-US/docs/Web/API/Document/startViewTransition) for palette changes only. Mode rendering and persistence stay synchronous with the existing controllers.
+
+## Neutral Night palette (v0.11.38-alpha)
+
+Scoped CSS retouch and contrast regressions only. A normal revert restores the previous Night palette while retaining the circular transition and autosave protections. No migration, stored-data changes or environment configuration. Light mode, welcome/login, white chart exports and print output stay unchanged.
