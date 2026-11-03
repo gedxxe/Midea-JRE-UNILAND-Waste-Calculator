@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { createDraft, calculateDraft, generateFullIndonesiaReport } from '../engine.js';
 import { scaledReading, parseFlexibleNumber, shiftDate, formatSignedNumber } from '../numbers.js';
-import { worksheetRowToTSV } from '../worksheet.js';
+import { buildWorksheet, worksheetRowToTSV } from '../worksheet.js';
 import { parseReading, planTablePaste } from '../importer.js';
 import { restoreDrafts, nextDayDraft } from '../storage.js';
 import { exportRawReading } from '../raw-export.js';
@@ -36,6 +36,26 @@ function raw(draft, side = 'start') {
       .join('\n')
   );
 }
+
+test('legacy worksheets keep the first normalized name, missing values and zero without mutating rows', () => {
+  const rows = [
+    { name: ' INDOOR ', totalEnergy: 0, missing: false },
+    { name: 'Indoor', totalEnergy: 900, missing: false },
+    { name: 'Outdoor', totalEnergy: 4, missing: true },
+    { name: ' outdoor ', totalEnergy: 999, missing: false },
+    { name: 'vacum_box_indoor', totalEnergy: 2, missing: false },
+  ];
+  const before = structuredClone(rows);
+  const jre = buildWorksheet('JRE', '2026-11-03', rows);
+  assert.deepEqual(jre.values.slice(0, 3), ['2026-11-03', 0, null]);
+  const uniland = buildWorksheet('UNILAND', '', rows);
+  assert.deepEqual(uniland.values.slice(0, 4), [2, null, 0, null]);
+  // Lookup state is local to each calculation, never retained across edits.
+  rows[0].totalEnergy = 3;
+  assert.equal(buildWorksheet('UNILAND', '', rows).values[0], 5);
+  rows[0].totalEnergy = 0;
+  assert.deepEqual(rows, before);
+});
 
 test('fixed schemas match every meter in the supplied templates', () => {
   assert.equal(PLANT_SCHEMAS.JRE.rows.length, 32);

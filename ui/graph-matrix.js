@@ -33,10 +33,13 @@ export function renderMonthlyTable({
       timeZone: 'UTC',
       ...options,
     });
+  const monthFormat = dateFormat({ month: 'long', year: 'numeric' }),
+    fullDateFormat = dateFormat({ dateStyle: 'full' }),
+    weekdayFormat = dateFormat({ weekday: 'short' }),
+    dayFormat = dateFormat({ day: '2-digit', month: 'short' });
   const date = (value) => new Date(value + 'T00:00:00Z');
   const heading = node('div', undefined, 'graph-matrix-heading');
-  const title =
-    plant + ' · ' + dateFormat({ month: 'long', year: 'numeric' }).format(date(model.start));
+  const title = plant + ' · ' + monthFormat.format(date(model.start));
   const titleGroup = node('div', undefined, 'graph-matrix-title');
   titleGroup.append(
     node('h3', title),
@@ -87,10 +90,11 @@ export function renderMonthlyTable({
       th = node('th');
     th.scope = 'col';
     th.dataset.date = value;
-    th.setAttribute('aria-label', dateFormat({ dateStyle: 'full' }).format(date(value)));
+    const day = date(value);
+    th.setAttribute('aria-label', fullDateFormat.format(day));
     th.append(
-      node('span', dateFormat({ weekday: 'short' }).format(date(value)), 'matrix-weekday'),
-      node('strong', dateFormat({ day: '2-digit', month: 'short' }).format(date(value))),
+      node('span', weekdayFormat.format(day), 'matrix-weekday'),
+      node('strong', dayFormat.format(day)),
     );
     header.append(th);
   }

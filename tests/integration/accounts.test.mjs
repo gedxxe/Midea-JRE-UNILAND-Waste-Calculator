@@ -357,7 +357,12 @@ test('malformed HTTP bodies, duplicate cookies and browser cross-site metadata c
 
 test('login throttling persists across handler instances and canonical username variations', async () => {
   const probe = await seed();
-  for (let i = 0; i < 11; i++) {
+  const key = rateKey('login:user:' + probe.name, env);
+  let previous,
+    blocked = false;
+  // Count attempts within the actual database window, not across a wall-clock rollover.
+  // Two windows still leave enough attempts to observe the unchanged 10-attempt limit.
+  for (let i = 0; i < 22 && !blocked; i++) {
     const result = await call(i % 2 ? '/api/auth-replica' : '/api/auth', {
       body: {
         action: 'login',
@@ -366,9 +371,42 @@ test('login throttling persists across handler instances and canonical username 
       },
       headers: { 'X-Forwarded-For': '203.0.113.' + (i + 1) },
     });
-    assert.equal(result.status, i < 10 ? 401 : 429);
+    const counter = (
+      await db.query(
+        'SELECT hits,window_start::text FROM meter_app.rate_limits WHERE key_hash=$1',
+        [key],
+      )
+    ).rows[0];
+    assert.ok(counter);
+    assert.equal(
+      counter.hits,
+      previous?.window_start === counter.window_start ? previous.hits + 1 : 1,
+    );
+    blocked = counter.hits > 10;
+    assert.equal(result.status, blocked ? 429 : 401);
+    assert.equal(result.value.error, blocked ? 'RATE_LIMITED' : 'INVALID_CREDENTIALS');
     assert.equal(result.cookie, undefined);
+    previous = counter;
   }
+  assert.equal(blocked, true, 'The 11th attempt in one database window must be blocked');
+  assert.equal(previous.hits, 11);
+
+  // Reproduce the boundary explicitly on this synthetic key: the next window starts at one.
+  await db.query(
+    "UPDATE meter_app.rate_limits SET window_start=now()-interval '15 minutes' WHERE key_hash=$1",
+    [key],
+  );
+  const reset = await call('/api/auth-replica', {
+    body: { action: 'login', username: probe.name, password: 'wrong synthetic password' },
+  });
+  assert.equal(reset.status, 401);
+  assert.equal(reset.value.error, 'INVALID_CREDENTIALS');
+  assert.equal(reset.cookie, undefined);
+  assert.equal(
+    (await db.query('SELECT hits FROM meter_app.rate_limits WHERE key_hash=$1', [key])).rows[0]
+      .hits,
+    1,
+  );
 });
 
 test('working drafts replace partial entries without report revisions and reject stale or foreign writes', async () => {

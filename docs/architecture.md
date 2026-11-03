@@ -7,9 +7,9 @@
 The optional [Quick guide](guide.md) is isolated from this data flow. Its decorative cursor illustrations, styles and long translations load on demand. It changes only a bounded browser invitation preference, never workspace data or database records.
 
 1. The signed-in operator chooses a factory and daily, After production or Night period. The table stores cumulative reading strings, not precomputed totals. Exact factory/date/time identifies shared electricity, gas stock (including R32 temperature) and Water observations. Manual utility totals and untimed refill lists remain period-scoped. The language selection changes interface messages, not copied report bytes.
-2. Pure modules validate numbers, periods, factors, gas calibration and water readings. Empty readings stay incomplete. Explicit unavailable values retain their check notes. The browser shows individual usage and equipment totals before the operator saves.
+2. Pure modules validate numbers, periods, factors, gas calibration and water readings. Empty readings stay incomplete. Explicit unavailable values retain their check notes. JRE R32 defaults to direct kg stock; legacy mm and UNILAND mm still use temperature conversion. The browser shows individual usage and equipment totals during entry.
 3. Incomplete work goes to a tab recovery copy and one replaceable account workspace. Debounced autosave sends an expected version. The API checks the session, owner, payload and version in a transaction; conflicting writers cannot silently replace one another.
-4. A completed report sends raw inputs, not authoritative client totals. The API restores the allowed draft shape and recalculates with the same pure modules. A new report revision contains the original output and engine version. Reads always use the verified session owner.
+4. Autosave sends raw inputs, not authoritative client totals. The API restores the allowed draft shape and calculates the current period snapshot with the same pure modules, retaining incomplete readings. Manual Save flushes pending autosave and verifies that same server copy; it creates no extra checkpoint or revision. Legacy checkpoints remain readable for recovery. Reads always use the verified session owner.
 5. Historian returns that saved output. Graphs parse the latest period autosave, or manual-only report text, plus approved consumption history. They do not recalculate historical snapshots with new meter rules. A raw export instead validates one selected reading column independently of report completion.
 
 ## Module map
@@ -29,6 +29,29 @@ The optional [Quick guide](guide.md) is isolated from this data flow. Its decora
 The current Excel clipboard layout is owned by excel-row.js and reads the active draft/calculation only. It does not rewrite worksheet.js output used by saved snapshots and graph mappings. New numeric exports keep each destination column, including blanks, and omit dates. See [Excel export](excel-export.md).
 
 Business modules have no DOM, storage or network dependencies. Browser modules have no runtime package dependencies. There is no React/Next.js framework or AI service. Server dependencies are pg and @node-rs/argon2; development tools are Playwright and Prettier.
+
+## Refactor boundaries (v0.11.42-alpha)
+
+The duplication audit covered browser/domain JavaScript and reviewed API, persistence, build and test boundaries. The implemented cleanup is deliberately narrower than that review:
+
+- ui/dom.js supplies one SVG element builder to charts, guide illustrations, panel icons and glass filters. It creates namespaced elements and assigns literal text; no HTML parsing is introduced.
+- worksheet.js indexes normalized row names once per calculation. excel-row.js indexes exact equipment/gas names once per export. Both retain the first matching value, including zero and unavailable data; indexes are never shared between edits.
+- ui/graph-matrix.js creates four date formatters for the selected language per render. Date labels, combined-period totals and values retain their existing meaning.
+- scripts/check.mjs keeps the same public-asset budget and checks; release history belongs in the changelog rather than repeated source comments.
+
+No stored format, schema, API, database migration, calculation rule or autosave path changes. Existing layout/unit adapters and historical report readers are compatibility code, not disposable duplication. Theme CSS remains scoped; separate optional WebGL effects retain their own resource lifecycles. There is no new application module or package.
+
+| Reviewed area                                       | Decision                                                                                                                         |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Autosave, date navigation and shared observations   | Retain version/conflict/recovery checks and queued-period ownership. Changes here require a separate preservation investigation. |
+| Client and server validation                        | Retain both trust boundaries. Browser checks cannot replace server validation.                                                   |
+| Legacy worksheet and current Excel layout           | Keep both public contracts; saved history still depends on legacy worksheet positions.                                           |
+| Old meter layouts, gas units and migration triggers | Retain compatibility and stale-writer protection. Existing data must remain readable.                                            |
+| Optional effects and theme CSS                      | Share only equivalent element construction; retain effect-specific GPU cleanup, motion fallbacks and CSS scopes.                 |
+
+Verification compares pre/post-refactor synthetic report, worksheet, Excel and raw-copy output across both plants and all three modes, plus unit, browser and isolated database checks. Synthetic equivalence does not prove that the earlier production missing-reading incident was recovered or that the website is free of every bug.
+
+The integration run also exposed a wall-clock assumption in the login-throttle test: 11 requests can span two fixed 15-minute windows. The regression now checks consecutive persisted counter hits within each actual window, still requires the 11th same-window attempt to return 429, and explicitly expires its synthetic key to verify reset to one. Production throttling, request budgets and authentication handlers are unchanged.
 
 ## Deployment and trust boundaries
 
@@ -65,4 +88,4 @@ Standard input templates reduce re-entry differences. Visible component checks h
 
 ## v0.11.23 autosave
 
-Latest account-confirmed partial period snapshots now feed monitoring, with missing values kept as gaps. Manual checkpoints remain immutable and identical saves do not add revisions. See [autosave design, limits and migration 007](autosave.md). Production needs an updated private backup and explicit approval before migration.
+Latest account-confirmed partial period snapshots feed monitoring, with missing values kept as gaps. Legacy checkpoints remain immutable; the current manual Save action verifies autosave and creates no checkpoint. See [autosave design, limits and migration 007](autosave.md) and the current v0.11.36 behavior in [release notes](releases.md). Builds never migrate.

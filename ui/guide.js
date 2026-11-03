@@ -1,16 +1,10 @@
-import { node } from './dom.js';
+import { node, svgNode } from './dom.js';
 import { getLanguage, LANGUAGES, t } from '../i18n/index.js';
 import { guideMessages } from '../i18n/guide.js';
 
 const STEPS = ['Period', 'Table', 'Import', 'Utilities', 'Save', 'Copy', 'History', 'Graphs'];
 const message = (key, values = {}) =>
   guideMessages[key][LANGUAGES.indexOf(getLanguage())].replace(/\{(\w+)\}/g, (_, k) => values[k]);
-const svgNode = (tag, attrs = {}, text) => {
-  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, String(value));
-  if (text !== undefined) el.textContent = text;
-  return el;
-};
 
 // Decorative, synthetic UI. No selectors, draft values or real control events enter this scene.
 function illustration(step) {

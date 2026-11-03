@@ -2,6 +2,15 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.42-alpha - 2026-11-03
+
+- Reuse one SVG creation helper for charts, guide illustrations, panel icons and glass filters, retaining namespaces, attributes and literal text.
+- Index worksheet and Excel source rows once per export. Keep legacy worksheet name matching, exact Excel names, first-match behavior, missing values, zeros and column order.
+- Reuse four localized date formatters per monthly table instead of recreating them for each date. Preserve every date label, tooltip and combined period.
+- Condense historical footprint comments without changing the asset limit or CI checks. Clarify current R32, raw-copy and manual Save behavior in the documentation.
+- Keep the login-throttle integration assertion within its actual database window and explicitly test window reset. Retain the 10-attempt limit, cross-handler checks and 429 requirement.
+- No dependency, API, database, stored-format, autosave or calculation-rule change. Historical compatibility paths remain supported.
+
 ## v0.11.41-alpha - 2026-11-02
 
 - Default new JRE R32 observations to remaining stock in kg, without temperature or conversion. Consumption remains initial stock plus measured refills minus final stock, for all three periods. UNILAND is unchanged.

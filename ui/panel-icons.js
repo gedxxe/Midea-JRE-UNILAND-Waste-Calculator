@@ -1,4 +1,5 @@
 // Lucide geometry pinned to be09619c1c1124ad09c19fc3e87ee3b939409bbd; full ISC/MIT notices: asset/licenses/lucide.txt.
+import { svgNode } from './dom.js';
 const geometry = {
   cylinder: [
     ['ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }],
@@ -114,12 +115,10 @@ const geometry = {
     ['path', { d: 'M16 17h.01' }],
   ],
 };
-const NS = 'http://www.w3.org/2000/svg';
 export function panelIcon(name) {
   const nodes = geometry[name];
   if (!nodes) throw new RangeError('Unknown panel icon');
-  const svg = document.createElementNS(NS, 'svg');
-  for (const [key, value] of Object.entries({
+  const svg = svgNode('svg', {
     viewBox: '0 0 24 24',
     width: '20',
     height: '20',
@@ -131,13 +130,8 @@ export function panelIcon(name) {
     'aria-hidden': 'true',
     focusable: 'false',
     class: 'panel-svg',
-  }))
-    svg.setAttribute(key, value);
-  for (const [tag, attributes] of nodes) {
-    const node = document.createElementNS(NS, tag);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
-    svg.append(node);
-  }
+  });
+  for (const [tag, attributes] of nodes) svg.append(svgNode(tag, attributes));
   return svg;
 }
 export function setPanelIcon(element, name) {
@@ -154,8 +148,7 @@ export function gasMark(id) {
   if (id === 'LPG') return panelIcon('flame');
   const names = { N2: 'N₂', O2: 'O₂', R32: 'R32' };
   if (!names[id]) throw new RangeError('Unknown gas mark');
-  const svg = document.createElementNS(NS, 'svg');
-  for (const [key, value] of Object.entries({
+  const svg = svgNode('svg', {
     viewBox: '0 0 40 40',
     width: '36',
     height: '36',
@@ -163,39 +156,34 @@ export function gasMark(id) {
     'data-gas-mark': id,
     'aria-hidden': 'true',
     focusable: 'false',
-  }))
-    svg.setAttribute(key, value);
-  const frame = document.createElementNS(
-    NS,
-    id === 'O2' ? 'circle' : id === 'N2' ? 'polygon' : 'rect',
-  );
+  });
   const bounds =
     id === 'O2'
       ? { cx: 20, cy: 20, r: 18.5 }
       : id === 'N2'
         ? { points: '20,1.5 36.5,11 36.5,29 20,38.5 3.5,29 3.5,11' }
         : { x: 1.5, y: 1.5, width: 37, height: 37, rx: 9 };
-  for (const [key, value] of Object.entries({
+  const frame = svgNode(id === 'O2' ? 'circle' : id === 'N2' ? 'polygon' : 'rect', {
     ...bounds,
     fill: 'currentColor',
     'fill-opacity': '.08',
     stroke: 'currentColor',
     'stroke-opacity': '.4',
     'stroke-width': '1.4',
-  }))
-    frame.setAttribute(key, String(value));
-  const text = document.createElementNS(NS, 'text');
-  for (const [key, value] of Object.entries({
-    x: 20,
-    y: id === 'R32' ? 25 : 26,
-    'text-anchor': 'middle',
-    'font-family': 'Arial, sans-serif',
-    'font-size': id === 'R32' ? 14 : 20,
-    'font-weight': 700,
-    fill: 'currentColor',
-  }))
-    text.setAttribute(key, String(value));
-  text.textContent = names[id];
+  });
+  const text = svgNode(
+    'text',
+    {
+      x: 20,
+      y: id === 'R32' ? 25 : 26,
+      'text-anchor': 'middle',
+      'font-family': 'Arial, sans-serif',
+      'font-size': id === 'R32' ? 14 : 20,
+      'font-weight': 700,
+      fill: 'currentColor',
+    },
+    names[id],
+  );
   svg.append(frame, text);
   return svg;
 }
