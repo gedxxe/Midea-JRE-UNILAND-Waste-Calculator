@@ -76,7 +76,7 @@ test('account save timestamps are server-confirmed and stay unchanged on failed 
   await expect(page.locator('#draft-storage-status')).toContainText('08:23:45');
   state.offline = true;
   await page.keyboard.press('Control+s');
-  await expect(page.locator('#save-status')).toContainText('sync failed');
+  await expect(page.locator('#save-status')).toContainText('could not reach your account');
   await expect(page.locator('#draft-storage-status')).toContainText('08:23:45');
   state.offline = false;
   await page.locator('#draft-retry').click();

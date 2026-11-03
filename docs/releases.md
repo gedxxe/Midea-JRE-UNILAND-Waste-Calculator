@@ -16,7 +16,7 @@ package.json is the version source; package-lock.json must match it. Use v0.MINO
 3. Run npm ci, npm run verify, npm run test:integration against a test/development database, and npm run test:e2e. Install Chromium once with npx playwright install chromium.
 4. Push the branch normally and open a PR. CI uses read-only permissions and official Actions pinned to commit hashes. Quality gate rejects high/critical dependency advisories with npm run security:audit and checks selected secret patterns, formatting, source contracts, unit tests, the build, and Chromium desktop/mobile behavior. Failure artifacts and build metadata are kept for seven days.
 
-   PR commits run the full gate once through pull_request. Main pushes and manual dispatch also run the full gate; feature/release branch pushes do not create a duplicate check with the same required name. The 45-minute job budget includes setup and evidence uploads: the previous 35-minute limit cancelled a push run after its 33.6-minute browser suite had already passed. Keep one browser worker because clipboard tests share host clipboard access.
+   PR commits run the full gate once through pull_request. Main pushes and manual dispatch also run the full gate; feature/release branch pushes do not create a duplicate check with the same required name. Every current job allows at least 60 minutes including setup and evidence uploads, as requested on 2026-11-04. The earlier 35-minute limit cancelled a push run after its 33.6-minute browser suite had passed. Keep one browser worker because clipboard tests share host clipboard access. Individual browser action/scenario deadlines still detect stalled behavior.
 
 5. Inspect the actual GitHub checks and Vercel preview. Verify build-info.json matches the commit and /api/time reports NTP or an explicit 503, never a false success. Browser tests mock time and do not establish real network synchronization.
 6. Merge only after the required checks pass and the owner is ready. The Git integration deploys main; no extra Vercel token or duplicate deployment workflow is needed.
@@ -143,3 +143,9 @@ Read-only sharing formatter and UI scope selection. No migration or stored-forma
 ## Rendering and export refactor (v0.11.42-alpha)
 
 Reuse existing DOM helpers and per-call export/date lookups without changing the schema, persistence, API, dependency set or calculation rules. No migration or production data write is needed. Preserve legacy layout/unit readers and original saved output. A normal revert PR restores v0.11.41 behavior while keeping migration 008 and all stored observations intact. Local synthetic comparisons and targeted browser checks complement the full required Quality gate; do not merge while it is pending or failing.
+
+## Pending browser recovery (v0.11.43-alpha)
+
+No SQL migration or API/format adoption. Pending localStorage recovery uses owner/writer-specific keys while retaining the existing tab copy, workspace and period API. A compatible client can read pending copies after tab closure or account reauthentication. A rollback to v0.11.42 leaves these keys intact but cannot recover them through that older UI; keep the browser data and return to compatible code. Do not clear recovery as a rollback step. Original stored reports, raw strings, units, queued-period versions and migration guards remain unchanged.
+
+The pre-edit production recovery archive was specifically approved for encrypted local storage and verified by local read-back/hashes. That permission did not authorize transferring production data to development. Browser and database regressions use synthetic data. No production repair or deployment is part of the local test evidence; the earlier missing-reading incident is not proven recovered.

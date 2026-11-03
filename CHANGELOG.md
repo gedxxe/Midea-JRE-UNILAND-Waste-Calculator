@@ -2,6 +2,14 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.43-alpha - 2026-11-04
+
+- Keep unacknowledged readings in owner-scoped browser recovery as well as the tab copy, so closing a tab or losing a session before sync can be recovered after login. Validate each copy, preserve conflicting copies for explicit selection and remove only acknowledged, unchanged recoveries.
+- Preserve the previous account's pending readings before clearing its form. Freeze outgoing workspace/period snapshots so late responses cannot adopt later edits as acknowledged baselines. Reject malformed save acknowledgments and attempt sync when the page becomes hidden.
+- Continue automatic storage of incomplete readings in the same period documents. Manual Save still verifies autosave without a new checkpoint or revision. Save status distinguishes pending browser copies from account-confirmed readings.
+- Give additional T1–T4 cells and manual gas utility controls explicit Night foreground/background colors, with readable mobile labels and existing validation colors.
+- Allow 60 minutes for every current CI job, retaining all checks. No migration, calibration or calculation-rule change.
+
 ## v0.11.42-alpha - 2026-11-03
 
 - Reuse one SVG creation helper for charts, guide illustrations, panel icons and glass filters, retaining namespaces, attributes and literal text.

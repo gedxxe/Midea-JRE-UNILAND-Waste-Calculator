@@ -1,4 +1,29 @@
 export const draftMessages = {
+  draftBrowserReview: [
+    'Current readings saved. Unsynced browser copies need review.',
+    '当前读数已保存，请核对浏览器中未同步的副本。',
+    'Reading saat ini tersimpan. Salinan browser yang belum tersinkron perlu diperiksa.',
+  ],
+  draftBrowserCopies: [
+    'Unsynced readings from another tab are kept in this browser. Choose a copy to review.',
+    '浏览器保留了其他标签页未同步的读数，请选择副本核对。',
+    'Reading tab lain yang belum tersinkron masih tersimpan di browser ini. Pilih salinan untuk diperiksa.',
+  ],
+  draftBrowserOpen: [
+    'Review browser copy: {time}',
+    '核对浏览器副本：{time}',
+    'Periksa salinan browser: {time}',
+  ],
+  draftBrowserDamaged: [
+    'A browser copy cannot be read. It has been retained.',
+    '一个浏览器副本无法读取，已保留原件。',
+    'Satu salinan browser tidak dapat dibaca. Salinannya tetap dipertahankan.',
+  ],
+  draftBrowserConfirm: [
+    'Open these unsynced readings? Current pending edits will remain available separately. Server conflicts still require a choice.',
+    '打开这些未同步读数？当前未同步输入会单独保留，服务器冲突仍需确认。',
+    'Buka reading yang belum tersinkron ini? Edit yang sedang tertunda tetap disimpan terpisah. Konflik server tetap perlu dipilih.',
+  ],
   draftTabAt: ['Tab copy: {time}', '标签页副本：{time}', 'Salinan tab: {time}'],
   draftTabNone: ['No tab copy yet', '尚无标签页副本', 'Belum ada salinan tab'],
   draftTabFailed: [
@@ -55,23 +80,23 @@ export const draftMessages = {
     '标签页恢复副本已损坏，自动保存已暂停。请检查备份后再载入账户副本。',
     'Salinan pemulihan tab rusak. Autosave dijeda; periksa backup sebelum memuat salinan akun.',
   ],
-  draftIdle: ['Draft autosave is ready.', '草稿自动保存已就绪。', 'Autosave draft siap.'],
-  draftLoading: ['Checking saved draft…', '正在检查已保存草稿…', 'Memeriksa draft tersimpan…'],
+  draftIdle: ['Autosave is ready.', '自动保存已就绪。', 'Autosave siap.'],
+  draftLoading: ['Checking saved readings…', '正在检查已保存读数…', 'Memeriksa reading tersimpan…'],
   draftPending: [
-    'Draft saved in this tab. Sync pending.',
-    '草稿已保存在此标签页，等待同步。',
-    'Draft tersimpan di tab ini. Menunggu sinkronisasi.',
+    'Changes kept in this browser. Sync pending.',
+    '修改已保存在此浏览器，等待同步。',
+    'Perubahan tersimpan di browser ini. Menunggu sinkronisasi.',
   ],
-  draftSyncing: ['Syncing draft…', '正在同步草稿…', 'Menyinkronkan draft…'],
+  draftSyncing: ['Autosaving…', '正在自动保存…', 'Menyimpan otomatis…'],
   draftSynced: [
     'All changes saved to your account.',
     '所有修改已保存到账户。',
     'Semua perubahan tersimpan di akun.',
   ],
   draftOffline: [
-    'Draft sync failed. This tab keeps your edits; retry before closing it.',
-    '草稿同步失败。此标签页保留修改，请在关闭前重试。',
-    'Draft belum tersinkron. Isian tetap di tab ini; coba lagi sebelum menutup tab.',
+    'Autosave could not reach your account. Changes remain in this browser; retry when connected.',
+    '自动保存未能连接账户。修改保留在此浏览器，请联网后重试。',
+    'Autosave belum berhasil ke akun. Perubahan tetap di browser ini; coba lagi saat terhubung.',
   ],
   draftLocalError: [
     'Could not save a local copy. Keep this tab open until the account draft is saved.',

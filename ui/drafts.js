@@ -1,5 +1,5 @@
 import { emptyPeriodBaseline, mergePeriodEdits } from '../period-document.js';
-import { $ } from './dom.js';
+import { $, node } from './dom.js';
 import { t, getLanguage } from '../i18n/index.js';
 import { STORAGE_KEY, restoreWorkspace, sameWorkspace } from '../storage.js';
 import {
@@ -50,7 +50,11 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     retry = 30000,
     state = 'draftIdle',
     localAt = null,
-    accountAt = null;
+    accountAt = null,
+    writer = crypto.randomUUID(),
+    recoverySource = null,
+    recoveryLanguage = null,
+    otherRecoveries = false;
   const timestamp = (value) =>
     typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null;
   const time = (value) =>
@@ -61,11 +65,16 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       timeStyle: 'medium',
     }).format(new Date(value)) + ' WIB';
   const key = () => STORAGE_KEY + '_' + user.id;
+  const browserPrefix = () => STORAGE_KEY + '_pending_' + user.id + '_';
+  const browserKey = () => browserPrefix() + writer;
   const raw = () => JSON.stringify(read());
   const recoveryRaw = () => JSON.stringify({ workspace: read(), periods });
   function render() {
     if (!user) return;
-    $('save-status').textContent = t(state);
+    if (recoveryLanguage !== getLanguage()) showBrowserCopies();
+    $('save-status').textContent = t(
+      state === 'draftSynced' && otherRecoveries ? 'draftBrowserReview' : state,
+    );
     const storageStatus = [
       t(localOk ? (localAt ? 'draftTabAt' : 'draftTabNone') : 'draftTabFailed', {
         time: localAt ? time(localAt) : '',
@@ -86,42 +95,144 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     state = !localOk && ['draftPending', 'draftOffline'].includes(next) ? 'draftLocalError' : next;
     render();
   }
-  function backup() {
-    if (!user || recoveryBroken) return;
+  function browserCopies() {
+    const copies = [];
     try {
-      const now = new Date().toISOString();
-      // Store readings and sync state atomically; a failed second write must never
-      // leave newer readings labelled as already saved by older metadata.
-      sessionStorage.setItem(
-        key(),
-        JSON.stringify({
-          ...read(),
-          tabRecovery: {
-            version,
-            pending: dirty,
-            conflict,
-            localAt: now,
-            accountAt,
-            pendingPeriods: periods,
-            navigationSeeds: [...navigationSeeds],
-            periodBases: [...bases],
-            replacements: [...replacements],
-            periodVersions: [...periodVersions],
-          },
-        }),
-      );
-      try {
-        sessionStorage.removeItem(key() + '_sync');
-      } catch {
-        /* Atomic copy is intact. */
+      for (let i = 0; i < localStorage.length; i++) {
+        const name = localStorage.key(i);
+        if (!name?.startsWith(browserPrefix()) || name === browserKey()) continue;
+        const raw = localStorage.getItem(name);
+        try {
+          const meta = JSON.parse(raw).tabRecovery;
+          if (meta?.owner !== user.id || (!meta.pending && !meta.conflict)) continue;
+          restoreWorkspace(raw);
+          const duplicate = copies.find((copy) => !copy.damaged && sameRecovery(copy.raw, raw));
+          if (duplicate) duplicate.aliases.push({ key: name, raw });
+          else copies.push({ key: name, raw, at: timestamp(meta.localAt), aliases: [] });
+        } catch {
+          // A damaged copy stays intact and cannot initialize the workspace.
+          copies.push({ key: name, raw, damaged: true });
+        }
       }
-      localAt = now;
-      localOk = true;
-      localSaved();
-      render();
     } catch {
       localOk = false;
-      status('draftLocalError');
+    }
+    return copies;
+  }
+  function sameRecovery(a, b) {
+    try {
+      const content = (raw) => {
+        const value = JSON.parse(raw);
+        delete value.tabRecovery.localAt;
+        delete value.tabRecovery.accountAt;
+        for (const field of ['navigationSeeds', 'periodBases'])
+          if (Array.isArray(value.tabRecovery[field]))
+            value.tabRecovery[field] = value.tabRecovery[field].map(([key, draft]) => [
+              key,
+              restorePeriodDraft(draft),
+            ]);
+        return value;
+      };
+      return sameWorkspace(content(a), content(b));
+    } catch {
+      return false;
+    }
+  }
+  function showBrowserCopies() {
+    recoveryLanguage = getLanguage();
+    otherRecoveries = false;
+    const list = $('draft-browser-recoveries');
+    list.replaceChildren();
+    list.hidden = true;
+    if (!user) return;
+    try {
+      const copies = browserCopies().filter(
+        (copy) => !recoverySource || !sameRecovery(copy.raw, recoverySource.raw),
+      );
+      if (!copies.length) return;
+      otherRecoveries = true;
+      list.append(node('p', t('draftBrowserCopies')));
+      const owner = user.id,
+        identity = epoch;
+      for (const copy of copies) {
+        const button = node(
+          'button',
+          copy.damaged
+            ? t('draftBrowserDamaged')
+            : t('draftBrowserOpen', { time: copy.at ? time(copy.at) : '-' }),
+          'button secondary',
+        );
+        button.type = 'button';
+        button.disabled = Boolean(copy.damaged);
+        button.addEventListener('click', () => {
+          if (epoch !== identity || user?.id !== owner || !confirm(t('draftBrowserConfirm')))
+            return;
+          reset(user, copy);
+        });
+        list.append(button);
+      }
+      list.hidden = false;
+    } catch {
+      /* Save status reports unavailable storage. */
+    }
+  }
+  function backup({ tab = true } = {}) {
+    if (!user || recoveryBroken) return;
+    const now = new Date().toISOString();
+    const value = JSON.stringify({
+      ...read(),
+      tabRecovery: {
+        owner: user.id,
+        version,
+        pending: dirty,
+        conflict,
+        localAt: now,
+        accountAt,
+        pendingPeriods: periods,
+        navigationSeeds: [...navigationSeeds],
+        periodBases: [...bases],
+        replacements: [...replacements],
+        periodVersions: [...periodVersions],
+      },
+    });
+    let tabOk = !tab,
+      browserOk = false;
+    if (tab)
+      try {
+        // Readings and their sync token share one atomic value.
+        sessionStorage.setItem(key(), value);
+        tabOk = true;
+        try {
+          sessionStorage.removeItem(key() + '_sync');
+        } catch {
+          /* Atomic copy is intact. */
+        }
+      } catch {
+        /* Still attempt durable recovery if tab storage is unavailable. */
+      }
+    try {
+      if (dirty || conflict || periods.length) {
+        localStorage.setItem(browserKey(), value);
+        if (localStorage.getItem(browserKey()) !== value) throw Error('RECOVERY_WRITE_FAILED');
+      } else {
+        localStorage.removeItem(browserKey());
+        // Never remove another writer's newer recovery or an unacknowledged copy.
+        if (recoverySource)
+          for (const copy of [recoverySource, ...(recoverySource.aliases || [])])
+            if (localStorage.getItem(copy.key) === copy.raw) localStorage.removeItem(copy.key);
+        recoverySource = null;
+        showBrowserCopies();
+      }
+      browserOk = true;
+    } catch {
+      /* Keep the tab copy and continue server autosave. */
+    }
+    localOk = tabOk && browserOk;
+    if (tabOk || browserOk) localAt = now;
+    if (tab) {
+      if (tabOk || browserOk) localSaved();
+      if (!localOk) status('draftLocalError');
+      else render();
     }
   }
   function schedule(delay) {
@@ -138,7 +249,9 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     );
   }
   async function remote() {
-    return request('/api/drafts', { signal: AbortSignal.timeout(20000) });
+    const saved = await request('/api/drafts', { signal: AbortSignal.timeout(20000) });
+    if (!Number.isSafeInteger(saved.version) || saved.version < 0) throw Error('INVALID_ACK');
+    return saved;
   }
   async function initialize() {
     const identity = epoch;
@@ -282,9 +395,9 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         return false;
       }
       if (navigationSeeds.size) return false;
-      const workspace = read(),
+      const workspace = structuredClone(read()),
         sent = JSON.stringify(workspace);
-      let batch = periods.slice(0, PERIOD_BATCH_SIZE);
+      let batch = structuredClone(periods.slice(0, PERIOD_BATCH_SIZE));
       while (
         batch.length &&
         new TextEncoder().encode(
@@ -306,6 +419,8 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
           signal: AbortSignal.timeout(20000),
         });
         if (identity !== epoch) return false;
+        if (!Number.isSafeInteger(result.version) || result.version < version)
+          throw Error('INVALID_ACK');
         version = result.version;
         workspaceSaved = true;
         accountAt = timestamp(result.updated_at);
@@ -430,7 +545,8 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     if (!conflict) status('draftPending');
     schedule();
   }
-  function reset(next) {
+  function reset(next, recovery = null) {
+    if (user && (dirty || conflict || periods.length)) backup({ tab: false });
     epoch++;
     bases.clear();
     replacements.clear();
@@ -442,6 +558,9 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     previous = null;
     periodSequence = null;
     user = next?.mustChangePassword ? null : next;
+    writer = crypto.randomUUID();
+    recoverySource = null;
+    otherRecoveries = false;
     dirty = ready = conflict = workspaceSaved = false;
     localOk = true;
     recoveryBroken = false;
@@ -453,10 +572,25 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
     localAt = accountAt = null;
     $('draft-storage-status').textContent = '';
     $('draft-sync-actions').hidden = true;
+    $('draft-browser-recoveries').replaceChildren();
+    $('draft-browser-recoveries').hidden = true;
     if (!user) return;
     let local;
     try {
-      local = sessionStorage.getItem(key());
+      local = recovery?.raw;
+      if (!local)
+        try {
+          local = sessionStorage.getItem(key());
+        } catch {
+          localOk = false;
+        }
+      const copies = browserCopies();
+      if (!local && copies.length === 1 && !copies[0].damaged) {
+        recovery = copies[0];
+        local = recovery.raw;
+      }
+      recoverySource =
+        recovery || copies.find((copy) => !copy.damaged && sameRecovery(copy.raw, local)) || null;
       if (local) {
         const restored = restoreWorkspace(local);
         let meta = JSON.parse(local).tabRecovery;
@@ -494,6 +628,12 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
         for (const [key, v] of meta?.periodVersions || [])
           if (Number.isSafeInteger(v) && v >= 0) periodVersions.set(key, v);
         apply(restored);
+        if (recovery)
+          try {
+            sessionStorage.setItem(key(), local);
+          } catch {
+            localOk = false;
+          }
         localAt = timestamp(meta?.localAt);
         accountAt = timestamp(meta?.accountAt);
         version = Number.isSafeInteger(meta?.version) && meta.version >= 0 ? meta.version : 0;
@@ -514,6 +654,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       status('draftLocalError');
     }
     previous = structuredClone(read());
+    showBrowserCopies();
     const identity = epoch;
     pending = initialize();
     void pending.finally(() => {
@@ -578,6 +719,7 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
       firstDirty = performance.now();
       if (!dirty) lastSynced = raw();
       backup();
+      showBrowserCopies();
       status(dirty ? 'draftPending' : 'draftSynced');
       if (dirty) await flush();
     } catch {
@@ -652,6 +794,18 @@ export function createDraftAutosave({ request, read, apply, localSaved, synced =
   $('draft-keep-local').addEventListener('click', () => void resolveConflict(false));
   window.addEventListener('online', () => {
     if (dirty) void flush();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && dirty) {
+      backup();
+      void flush();
+    }
+  });
+  window.addEventListener('storage', (event) => {
+    if (user && event.key?.startsWith(browserPrefix())) {
+      showBrowserCopies();
+      render();
+    }
   });
   window.addEventListener('pagehide', () => {
     if (!dirty) return;

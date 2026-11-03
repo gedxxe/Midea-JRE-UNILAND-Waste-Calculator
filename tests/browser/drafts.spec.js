@@ -168,7 +168,7 @@ async function setup(page) {
     return r.fulfill({ json: { ...p, records: graphRecords(rows, p.plant) } });
   });
   await page.goto('/');
-  await expect(page.locator('#save-status')).toHaveText('Draft autosave is ready.');
+  await expect(page.locator('#save-status')).toHaveText('Autosave is ready.');
   return state;
 }
 test('partial entries autosave, restore on reload and repeated Save only verifies the same document', async ({
@@ -251,7 +251,7 @@ test('offline departed-period journal survives reload and syncs both old and new
   await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
   await cell(page).fill('666');
   await page.keyboard.press('Control+s');
-  await expect(page.locator('#save-status')).toContainText('sync failed');
+  await expect(page.locator('#save-status')).toContainText('could not reach your account');
   await page.reload();
   await expect(cell(page)).toHaveValue('666');
   state.offline = false;

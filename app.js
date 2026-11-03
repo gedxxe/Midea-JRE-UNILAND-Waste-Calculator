@@ -323,6 +323,8 @@ let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  // Preserve the previous owner's pending input before clearing its form or tab recovery.
+  autosave?.reset(null);
   dateEntries.forEach((entry) => entry.reset());
   panelTheme.reset();
   copyGeneration++;
