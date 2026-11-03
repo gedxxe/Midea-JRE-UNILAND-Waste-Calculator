@@ -24,8 +24,16 @@ function filled(plant, kind = 'daily') {
     }));
   d.gas.entries.forEach((g, i) => {
     g.enabled = true;
-    g.start = { reading: '0010.000001', temperature: i === 3 ? '-10,125000' : '' };
-    g.end = { reading: '0025,250000', temperature: i === 3 ? '+33.500000' : '' };
+    g.start = {
+      reading: '0010.000001',
+      temperature: i === 3 ? '-10,125000' : '',
+      ...(i === 3 ? { unit: 'mm' } : {}),
+    };
+    g.end = {
+      reading: '0025,250000',
+      temperature: i === 3 ? '+33.500000' : '',
+      ...(i === 3 ? { unit: 'mm' } : {}),
+    };
   });
   return d;
 }
@@ -70,8 +78,8 @@ test('all modes copy exact selected raw observations for both plants, without co
 test('refills retain before/after raw readings, temperatures and explicit period context', () => {
   const d = filled('UNILAND', 'nightShift');
   d.gas.entries[3].refills.push({
-    before: { reading: '10.000001', temperature: '31,125' },
-    after: { reading: '11,000002', temperature: '32.25' },
+    before: { reading: '10.000001', temperature: '31,125', unit: 'mm' },
+    after: { reading: '11,000002', temperature: '32.25', unit: 'mm' },
   });
   const out = exportAllRawReadings(d);
   assert.deepEqual(out.issues, []);
@@ -127,7 +135,7 @@ test('raw sharing does not require valid opposite readings or calibration-range 
   const d = filled('JRE');
   d.rows.forEach((r) => r.start.fill('unfinished'));
   d.startDate = '';
-  d.gas.entries[3].end = { reading: '0', temperature: '55.000001' };
+  d.gas.entries[3].end = { reading: '0', temperature: '55.000001', unit: 'mm' };
   const out = exportAllRawReadings(d);
   assert.deepEqual(out.issues, []);
   assert.match(out.text, /Refrigerant R32: 0 mm; temperature: 55\.000001 °C/);

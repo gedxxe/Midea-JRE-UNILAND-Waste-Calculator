@@ -199,7 +199,7 @@ export function buildExcelRow(draft, report) {
           ? rawGasBalance(draft, column.gas, gas)
           : gas.kg === null
             ? '-'
-            : gasMassText(gas.kg)
+            : gasMassText(gas.kg, gas.kgText)
         : number(draft.utilities[column.index]?.value);
       if (gas && value !== '-' && Number(value) < 0)
         notes.push({ column: column.column, name: column.name, code: 'stockIncrease' });

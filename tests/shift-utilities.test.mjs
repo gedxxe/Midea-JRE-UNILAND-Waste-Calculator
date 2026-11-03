@@ -77,10 +77,10 @@ test('shared gas readings include R32 temperature while manual amounts, enable s
 
 test('seeding shares only unambiguous observations and retains conflicting legacy stock or temperature', () => {
   const p = utilityPeriods();
-  p[2].gas.entries[3].start = { reading: '', temperature: '' };
+  p[2].gas.entries[3].start = { reading: '', temperature: '', unit: 'mm' };
   const seeded = seedUtilityReadings(p);
   assert.deepEqual(seeded[2].gas.entries[3].start, p[1].gas.entries[3].end);
-  p[2].gas.entries[3].start = { reading: '900', temperature: '35' };
+  p[2].gas.entries[3].start = { reading: '900', temperature: '35', unit: 'mm' };
   const kept = seedUtilityReadings(p);
   assert.deepEqual(kept[2].gas.entries[3].start, p[2].gas.entries[3].start);
   assert.ok(utilityConflicts(kept).some((c) => c.kind === 'gas' && c.index === 3));

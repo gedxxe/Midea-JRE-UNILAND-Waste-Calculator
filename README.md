@@ -88,6 +88,10 @@ The blank template and importer use the same equipment schema. Fill the date and
 
 Parent/submeter checks show the parent usage, included total and excess, grouped by equipment. Click a component meter to go to its readings. These checks do not change the calculation or saved history.
 
+### R32 stock (JRE)
+
+JRE R32 now defaults to **remaining stock in kg**, with no temperature or conversion. Consumption is start stock + refills − end stock. Each observation keeps its unit; **mm (legacy)** still uses the original temperature tables. Existing populated mm readings remain mm. Clear a reading before changing its unit. UNILAND is unchanged. See [R32 stock and legacy readings](docs/gas.md).
+
 ### Autosave and save verification
 
 When typing a date, finish it and press Enter or leave the date fields to apply it. Esc cancels the edit. Partial years stay in the controls and do not change the recording period; calendar selections still apply directly.
@@ -152,6 +156,8 @@ npm run test:e2e
 ```
 
 The required **Quality gate** runs formatting, source/secret checks, unit tests, disposable PostgreSQL integration, build and Chromium desktop/mobile tests. Mocked browser time does not prove live NTP; inspect `/api/time` and `build-info.json` after deployment.
+
+Each PR commit runs the full gate once. Main pushes and manual runs remain available; the 45-minute job budget includes setup and result uploads. Feature-branch pushes do not create a duplicate required check.
 
 Releases stay `0.MINOR.PATCH-alpha`. Work in a `codex/vX.Y.Z-alpha` branch, review the PR, and preserve tested release branches/tags. Revert through a new PR; never force push or move existing tags. **Code rollback does not restore database data.** Keep a private full draft backup before rolling back across layout changes. See [release procedure](docs/releases.md) and [change history](CHANGELOG.md).
 
@@ -228,11 +234,17 @@ Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、
 
 开发用 Node.js 22.x，执行 `npm ci`，配置独立开发数据库后 `npm run dev`。按[账户文档](docs/accounts.md)显式迁移/初始化，维护凭据仅留本地。PR 前运行 `npm run verify`、`npm run security:audit`、开发数据库集成测试和桌面/移动端浏览器测试。Quality gate 通过后由所有者合并，Vercel Git 集成发布 `main`。保留 alpha、分支/标签，通过新 PR 回退，禁止强推。代码回退不能恢复数据库，见[发布流程](docs/releases.md)。
 
+每次 PR 提交只运行一次完整检查；main 推送与手动运行仍保留。任务时限为 45 分钟，包含环境准备和结果上传，功能分支推送不会重复创建必需检查。
+
 **保留权利，不授予公开复用许可。** 公开仓库不等于开源许可。复用需遵守法律、GitHub 条款和权利人授权。美的商标、公司数据、参考资料具有独立权利；依赖保留各自许可。见 [LICENSE](LICENSE) 和[第三方说明](THIRD_PARTY_NOTICES.md)。不确认职务作品归属，也不代表公司批准。
 
 made in <3 by gede
 
-### 自动保存与手动版本
+### R32 库存（JRE）
+
+JRE R32 新读数默认使用 **kg 剩余库存**，无需温度或换算；用量为期初库存 + 补充 − 期末库存。每次读数保留自己的单位，**mm（旧式）**仍使用原温度表，已有 mm 数值不会改成 kg。更改单位前先清空读数。UNILAND 不变。详见 [R32 库存与旧读数](docs/gas.md)。
+
+### 自动保存与保存验证
 
 键盘输入日期后，按 Enter 或离开日期栏即可应用；Esc 取消修改。未完成的年份仅保留在输入栏中，不会切换记录期间。日历选择仍直接生效。
 
@@ -271,6 +283,10 @@ Pemeriksaan induk/submeter menampilkan konsumsi induk, total submeter dan selisi
 Pilih 24 HOURS, Day/AFTER PRODUCTION atau NIGHT SHIFT, lalu **Salin baris Excel**. Tempel mulai **E sampai AY untuk JRE (47 sel)** atau **BE sampai CV untuk UNILAND (44 sel)** pada baris yang sesuai. Salinan hanya berisi nilai, tanpa tanggal; AP/CO tetap kosong. Kolom yang belum punya sumber juga kosong untuk diisi manual. Gunakan baris kosong tanpa merged cells karena paste mengganti nilai/formula dalam rentang tersebut.
 
 Gas JRE memakai kg. Gas tank UNILAND memakai saldo reading raw dengan koreksi refill: Nitrogen mmH2O, Oxygen mmWC, LPG %, R32 mm. LPG manual tetap Nm3; utility manual lain mengikuti satuan catatannya. Laporan kg tetap sama. Nilai gas negatif berarti stok terukur meningkat. Water memakai periode aktif. Lihat [pemetaan Excel](docs/excel-export.md).
+
+### Stok R32 (JRE)
+
+R32 JRE kini memakai **sisa stok kg** sebagai pilihan utama, tanpa suhu atau konversi. Konsumsi = stok awal + refill − stok akhir. Satuan disimpan per reading; **mm (legacy)** tetap memakai tabel suhu semula. Reading mm yang sudah terisi tetap mm. Kosongkan reading sebelum mengganti satuan. UNILAND tetap seperti sebelumnya. Lihat [stok R32 dan reading lama](docs/gas.md).
 
 ### Autosave dan verifikasi simpan
 
@@ -324,6 +340,8 @@ Password Argon2id, cookie HTTPS Secure/HttpOnly/SameSite=Strict, origin tepat, S
 Analytics hanya kunjungan halaman utama production tanpa akun/reading; vendor tetap memproses metadata. Preview/lokal tidak merekam, lihat [privasi dan cara mematikan](docs/analytics.md). Rotasi kredensial yang pernah terpapar, MFA admin platform dan uji pemulihan backup masih perlu konfirmasi. **Kesiapan beta belum terbukti.** Backup browser tidak terenkripsi, NTP bukan jam audit terautentikasi, nama equipment/rumus frontend dapat diakses publik. Lihat [audit keamanan](docs/security.md) dan [pelaporan privat](SECURITY.md).
 
 Gunakan Node.js 22.x, `npm ci`, konfigurasi database development terpisah, lalu `npm run dev`. Ikuti [setup akun](docs/accounts.md) untuk migration/bootstrap eksplisit; koneksi maintenance tetap lokal. Jalankan `npm run verify`, `npm run security:audit`, integrasi development dan browser desktop/mobile. Quality gate wajib lulus; pemilik merge, lalu Vercel Git integration men-deploy `main`. Tetap alpha, simpan branch/tag, rollback melalui PR baru, tanpa force push. Rollback kode tidak memulihkan database. Lihat [rilis dan rollback](docs/releases.md).
+
+Setiap commit PR menjalankan gate lengkap satu kali. Push main dan run manual tetap tersedia; batas 45 menit mencakup persiapan dan unggah hasil. Push branch fitur tidak membuat required check duplikat.
 
 **Hak tetap dilindungi; tidak ada lisensi penggunaan ulang publik.** Repo publik tidak otomatis open source. Reuse perlu izin pemegang hak sesuai hukum dan ketentuan GitHub. Merek Midea, data perusahaan dan materi acuan memiliki hak tersendiri; dependensi mempertahankan lisensinya. Lihat [LICENSE](LICENSE) dan [catatan pihak ketiga](THIRD_PARTY_NOTICES.md). Tidak menetapkan kepemilikan karya hubungan kerja atau menyatakan persetujuan perusahaan.
 

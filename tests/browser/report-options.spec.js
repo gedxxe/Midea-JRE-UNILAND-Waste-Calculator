@@ -91,6 +91,8 @@ test('both factories offer all five final reports, copy matching bytes and prese
   page,
   context,
 }, info) => {
+  // Covers ten report selections and thirty language switches in one session.
+  test.slow();
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const { errors } = await setup(page);
   await expect(page.locator('#report-periods option')).toHaveCount(5);
@@ -179,6 +181,8 @@ test('explicit electricity edits share morning/evening/next morning, keep unrela
   await expect(page.locator('#copy-report')).toBeDisabled();
   await page.locator('[data-gas-enable="R32"]').check();
   const gas = page.locator('[data-gas="R32"]');
+  await gas.locator('[data-gas-unit="start"]').selectOption('mm');
+  await gas.locator('[data-gas-unit="end"]').selectOption('mm');
   await gas.locator('[data-gas-point="start"]').fill('1000');
   await gas.locator('[data-gas-temperature="start"]').fill('33.5');
   await gas.locator('[data-gas-point="end"]').fill('990');
@@ -206,6 +210,7 @@ test('explicit electricity edits share morning/evening/next morning, keep unrela
   expect(state.workspace.drafts.JRE.gas.entries[3].start).toEqual({
     reading: '995',
     temperature: '33.5',
+    unit: 'mm',
   });
   expect(state.workspace.drafts.JRE.gas.entries[3].end.reading).toBe('990');
   expect(state.workspace.workingHours.JRE.rows[0].end[0]).toBe('1006');

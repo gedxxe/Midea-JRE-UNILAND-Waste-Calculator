@@ -26,6 +26,7 @@ export function excelWorkspace(zero = false) {
           const point = (reading) => ({
             reading: String(reading),
             temperature: i === 3 ? '30' : '',
+            ...(i === 3 && plant === 'JRE' ? { unit: 'mm' } : {}),
           });
           draft.gas.entries[i] = {
             enabled: true,

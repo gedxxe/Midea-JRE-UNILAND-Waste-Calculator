@@ -3,6 +3,9 @@ import {
   gasCalibration,
   MAX_REFILLS,
   gasPoint,
+  gasPointUnit,
+  gasObservations,
+  gasInputVersion,
   createGasDraft,
   calculateGas,
   gasMassText,
@@ -27,7 +30,11 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       const card = node('fieldset', undefined, 'gas-entry');
       card.dataset.gas = gas.id;
       const legend = node('legend');
-      legend.append(gasMark(gas.id), node('span', gas.name + ' (' + gas.unit + ')'));
+      const r32Units = plant === 'JRE' && gas.id === 'R32';
+      legend.append(
+        gasMark(gas.id),
+        node('span', gas.name + (r32Units ? '' : ' (' + gas.unit + ')')),
+      );
       card.append(legend);
       const toggleLabel = node('label', undefined, 'check-label');
       const toggle = node('input');
@@ -51,8 +58,13 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         $('gas-fields').append(card);
         return;
       }
-      card.append(node('p', t('gasRangeHint', gas), 'gas-help'));
-      if (gas.id === 'R32') card.append(node('p', t('gasTempHint'), 'gas-help'));
+      card.append(node('p', t(r32Units ? 'r32KgHint' : 'gasRangeHint', gas), 'gas-help'));
+      if (r32Units) card.append(node('p', t('gasUnitClearHint'), 'gas-help'));
+      if (
+        gas.id === 'R32' &&
+        (!r32Units || gasObservations(entry).some((p) => gasPointUnit(p) === 'mm'))
+      )
+        card.append(node('p', t(r32Units ? 'r32LegacyHint' : 'gasTempHint', gas), 'gas-help'));
       const view = {
         gas,
         card,
@@ -68,7 +80,47 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       views.push(view);
       function observation(point, key, caption) {
         const group = node('div', undefined, 'gas-observation');
-        const label = node('label', caption + ' (' + gas.unit + ')');
+        const unit = r32Units ? gasPointUnit(point) : gas.unit;
+        const label = node('label', caption + ' (' + unit + ')');
+        let unitSelect;
+        if (r32Units) {
+          const unitLabel = node('label', t('gasReadingUnit'), 'gas-unit-control');
+          unitSelect = node('select');
+          unitSelect.dataset.gasUnit = key;
+          unitSelect.setAttribute(
+            'aria-label',
+            gas.name + ': ' + caption + ', ' + t('gasReadingUnit'),
+          );
+          for (const [value, text] of [
+            ['kg', 'r32UnitKg'],
+            ['mm', 'r32UnitMm'],
+          ]) {
+            const option = node('option', t(text));
+            option.value = value;
+            unitSelect.append(option);
+          }
+          unitSelect.value = unit;
+          unitSelect.disabled = Boolean(point.reading.trim());
+          unitSelect.addEventListener('change', () => {
+            if (point.reading.trim()) {
+              unitSelect.value = gasPointUnit(point);
+              return;
+            }
+            rememberUndo();
+            current().gas.version = gasInputVersion(plant);
+            point.unit = unitSelect.value;
+            changed(
+              false,
+              [],
+              ['start', 'end'].includes(key)
+                ? [{ kind: 'gas', index, side: key, field: 'unit' }]
+                : [],
+            );
+            rebuild();
+          });
+          unitLabel.append(unitSelect);
+          group.append(unitLabel);
+        }
         const input = node('input');
         input.type = 'text';
         input.inputMode = 'decimal';
@@ -77,7 +129,7 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         input.spellcheck = false;
         input.value = point.reading;
         input.dataset.gasPoint = key;
-        input.setAttribute('aria-label', gas.name + ': ' + caption + ' (' + gas.unit + ')');
+        input.setAttribute('aria-label', gas.name + ': ' + caption + ' (' + unit + ')');
         input.addEventListener('input', () => {
           point.reading = input.value;
           changed(
@@ -91,7 +143,7 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         label.append(input);
         group.append(label);
         const inputs = [input];
-        if (gas.id === 'R32') {
+        if (gas.id === 'R32' && unit === 'mm') {
           const tempLabel = node('label', t('gasTemperatureLabel'));
           const temp = node('input');
           temp.type = 'text';
@@ -118,11 +170,12 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
           inputs.push(temp);
         }
         const mass = node('output');
+        mass.hidden = r32Units && unit === 'kg';
         const error = node('span', undefined, 'gas-error');
         error.id = 'gas-error-' + gas.id + '-' + key;
         inputs.forEach((input) => input.setAttribute('aria-describedby', error.id));
         group.append(mass, error);
-        view.points[key] = { inputs, mass, error, raw: point };
+        view.points[key] = { inputs, mass, error, raw: point, unit, unitSelect };
         return group;
       }
       const endpoints = node('div', undefined, 'gas-pair');
@@ -170,7 +223,8 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       add.addEventListener('click', () => {
         if (entry.refills.length >= MAX_REFILLS) return;
         rememberUndo();
-        entry.refills.push({ before: gasPoint(), after: gasPoint() });
+        entry.refills.push({ before: gasPoint(gas.id, plant), after: gasPoint(gas.id, plant) });
+        if (r32Units) current().gas.version = gasInputVersion(plant);
         rebuild();
         changed();
         document
@@ -212,6 +266,13 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
     for (const view of views) {
       const result = calculateGas(view.gas.id, view.entry, current().plantKey);
       for (const [key, elements] of Object.entries(view.points)) {
+        if (elements.unitSelect) {
+          if (elements.unit !== gasPointUnit(elements.raw)) {
+            rebuild();
+            return;
+          }
+          elements.unitSelect.disabled = Boolean(elements.raw.reading.trim());
+        }
         for (const [i, field] of ['reading', 'temperature'].entries()) {
           const input = elements.inputs[i];
           if (input && document.activeElement !== input && input.value !== elements.raw[field])
@@ -224,7 +285,7 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
           input.setAttribute('aria-invalid', String(Boolean(point.error))),
         );
       }
-      const value = gasUsageText(result.kg);
+      const value = gasUsageText(result.kg, result.kgText);
       view.outputText.textContent =
         t(value.startsWith('+') ? 'gasIncreaseTotal' : 'gasTotal') + ': ' + value + ' kg';
       const tone = result.errors.length
@@ -244,13 +305,13 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
         !result.errors.length && !result.unavailable && result.warnings.length > 0,
       );
       view.status.textContent = result.errors.some((e) => e.code === 'gasSequence')
-        ? t('gasSequence')
+        ? t(result.directStock ? 'gasSequenceDirect' : 'gasSequence')
         : result.errors.length
           ? t('gasPending')
           : result.unavailable
             ? t('gasUnavailable')
             : result.warnings.length
-              ? t('gasStockIncrease')
+              ? t(result.directStock ? 'gasStockIncreaseDirect' : 'gasStockIncrease')
               : '';
       view.feedback.dataset.tone = view.status.textContent ? tone : 'none';
       view.statusIcon.hidden = !view.status.textContent;

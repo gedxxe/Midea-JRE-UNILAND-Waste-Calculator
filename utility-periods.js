@@ -1,5 +1,6 @@
 import { observationTime, periodKind, validTime } from './reading-period.js';
 import { validDate, scaledReading } from './numbers.js';
+import { gasPoint, gasPointUnit, syncGasVersion, copyGasPoint } from './gas.js';
 
 export const UTILITY_LAYOUT = 1;
 export const hasUtilityData = (d) =>
@@ -17,8 +18,13 @@ const numeric = (value, temperature = false) => {
     return String(Number(text.replace(',', '.')));
   return scaledReading(text)?.toString() ?? text;
 };
-const pointId = (p) => JSON.stringify([numeric(p.reading), numeric(p.temperature, true)]);
-const hasPoint = (p) => Boolean(p?.reading.trim() || p?.temperature.trim());
+const pointId = (p) =>
+  JSON.stringify([
+    gasPointUnit(p),
+    numeric(p.reading),
+    p.unit === 'kg' ? '' : numeric(p.temperature, true),
+  ]);
+const hasPoint = (p) => Boolean(p?.reading.trim() || (p?.unit !== 'kg' && p?.temperature.trim()));
 const legacyWater = (d) => !d.water && Boolean(d.utilities[4].value.trim());
 function matches(periods, target, side) {
   const time = stamp(target, side);
@@ -42,11 +48,14 @@ export function seedUtilityReadings(periods) {
         if (hasPoint(entry[side])) return;
         const points = sources
           .filter((s) => s.draft.gas.entries[index].enabled)
-          .map((s) => s.draft.gas.entries[index][s.side])
+          .map((s) =>
+            copyGasPoint(s.draft.gas.entries[index][s.side], s.draft.gas, s.draft.plantKey, index),
+          )
           .filter(hasPoint);
         if (new Set(points.map(pointId)).size === 1) entry[side] = { ...points[0] };
       });
     }
+  next.forEach((d) => syncGasVersion(d.gas, d.plantKey));
   return next;
 }
 
@@ -60,12 +69,28 @@ export function shareUtilityEdits(periods, kind, edits) {
       if (edit.kind === 'water' && !legacyWater(target)) {
         target.water ??= { start: '', end: '' };
         target.water[side] = source.water?.[edit.side] || '';
-      } else if (edit.kind === 'gas' && ['reading', 'temperature'].includes(edit.field)) {
-        target.gas.entries[edit.index][side][edit.field] =
-          source.gas.entries[edit.index][edit.side][edit.field];
+      } else if (edit.kind === 'gas' && ['reading', 'temperature', 'unit'].includes(edit.field)) {
+        const from = source.gas.entries[edit.index][edit.side],
+          to = target.gas.entries[edit.index][side];
+        // Choosing a unit or editing temperature must not erase a retained observation.
+        if (
+          hasPoint(to) &&
+          (edit.field === 'unit' ||
+            (gasPointUnit(from) !== gasPointUnit(to) && edit.field !== 'reading'))
+        )
+          continue;
+        if (edit.field === 'unit' || gasPointUnit(from) !== gasPointUnit(to))
+          target.gas.entries[edit.index][side] = copyGasPoint(
+            from,
+            source.gas,
+            source.plantKey,
+            edit.index,
+          );
+        else to[edit.field] = from[edit.field];
       }
     }
   }
+  next.forEach((d) => syncGasVersion(d.gas, d.plantKey));
   return next;
 }
 
@@ -158,11 +183,12 @@ export function moveUtilityPeriod(target, previous, sources) {
         .filter(({ p }) => hasPoint(p));
       const own = points.find(({ s }) => s.draft === previous);
       entry[side] = own
-        ? { ...own.p }
+        ? copyGasPoint(own.p, own.s.draft.gas, own.s.draft.plantKey, i)
         : new Set(points.map(({ p }) => pointId(p))).size === 1
-          ? { ...points[0].p }
-          : { reading: '', temperature: '' };
+          ? copyGasPoint(points[0].p, points[0].s.draft.gas, points[0].s.draft.plantKey, i)
+          : gasPoint(i === 3 ? 'R32' : undefined, target.plantKey);
     });
   }
+  syncGasVersion(target.gas, target.plantKey);
   return target;
 }

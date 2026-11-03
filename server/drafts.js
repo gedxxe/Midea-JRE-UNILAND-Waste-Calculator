@@ -4,6 +4,7 @@ import { getPool, transaction } from './db.js';
 import { requireUser, lockUser, limit } from './auth.js';
 import { restoreWorkspace } from '../storage.js';
 import { JRE_METER_LAYOUT } from '../meter-layout.js';
+import { gasFormatDowngrade, JRE_GAS_INPUT_VERSION } from '../gas.js';
 import {
   workspaceDrafts,
   restorePeriodDraft,
@@ -126,6 +127,28 @@ export function draftsHandler(database = getPool, env = process.env) {
       ).rows[0];
       if (workspace && old?.workspace?.autosaveLayout === 1 && !modern)
         fail(409, 'DRAFT_FORMAT_CHANGED');
+      if (
+        workspace &&
+        ['drafts', 'workingHours', 'nightShifts'].some((collection) =>
+          gasFormatDowngrade(
+            old?.workspace?.[collection]?.JRE?.gas,
+            body.workspace?.[collection]?.JRE?.gas,
+          ),
+        )
+      )
+        fail(409, 'DRAFT_FORMAT_CHANGED');
+      if (
+        workspace &&
+        workspaceDrafts(body.workspace).some(
+          (d) => d.plantKey === 'JRE' && d.gas?.version !== JRE_GAS_INPUT_VERSION,
+        )
+      ) {
+        const adopted = await client.query(
+          "SELECT 1 FROM meter_app.period_autosaves WHERE owner_id=$1 AND plant='JRE' AND snapshot->'draft'->'gas'->>'version'=$2 LIMIT 1",
+          [user.id, JRE_GAS_INPUT_VERSION],
+        );
+        if (adopted.rows.length) fail(409, 'DRAFT_FORMAT_CHANGED');
+      }
       if (workspace && old?.workspace?.workingHours && !workspace.workingHours)
         fail(409, 'DRAFT_FORMAT_CHANGED');
       if (workspace && old?.workspace?.nightShifts && !workspace.nightShifts)
@@ -159,6 +182,12 @@ export function draftsHandler(database = getPool, env = process.env) {
         ? await planPeriodAutosaves(client, user.id, [...periods, ...workspaceDrafts(workspace)], {
             previous: old?.workspace,
             versions: body.periodVersions,
+            gasVersions: Object.fromEntries(
+              [...(body.periods || []), ...workspaceDrafts(body.workspace)].map((d) => [
+                periodKey(d),
+                d.gas?.version,
+              ]),
+            ),
           })
         : { changes: [], records: [] };
       if (stale && plan.changes.length) fail(409, 'DRAFT_CONFLICT');

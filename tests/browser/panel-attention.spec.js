@@ -64,6 +64,10 @@ for (const plant of ['JRE', 'UNILAND'])
             entry.end.reading = String(base + phases[1] * step);
             entry.refills = [];
             if (i === 3) {
+              if (draft.plantKey === 'JRE') {
+                entry.start.unit = 'mm';
+                entry.end.unit = 'mm';
+              }
               entry.start.temperature = '30';
               entry.end.temperature = '30';
             }

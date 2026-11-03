@@ -1,9 +1,20 @@
 import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from './engine.js';
 import { periodKind } from './reading-period.js';
 import { sameWorkspace } from './storage.js';
+import { gasPointUnit, syncGasVersion } from './gas.js';
 // Preserve stored fields that have not been explicitly edited after navigation.
 export function mergePeriodEdits(stored, seed, edited) {
   if (sameWorkspace(seed, edited)) return structuredClone(stored);
+  const point = [stored, seed, edited].every(
+    (p) => p && typeof p.reading === 'string' && typeof p.temperature === 'string',
+  );
+  if (
+    point &&
+    gasPointUnit(stored) !== gasPointUnit(edited) &&
+    (stored.reading.trim() || (stored.unit !== 'kg' && stored.temperature.trim())) &&
+    !sameWorkspace(stored, seed)
+  )
+    throw Error('DRAFT_CONFLICT');
   if (
     Array.isArray(edited) &&
     Array.isArray(seed) &&
@@ -25,6 +36,11 @@ export function mergePeriodEdits(stored, seed, edited) {
     for (const key of Object.keys(edited))
       if (!sameWorkspace(seed[key], edited[key]))
         result[key] = mergePeriodEdits(stored[key], seed[key], edited[key]);
+    if (point) {
+      if (edited.unit === undefined) delete result.unit;
+      else result.unit = edited.unit;
+    }
+    if (result.gas && result.plantKey) syncGasVersion(result.gas, result.plantKey);
     return result;
   }
   if (

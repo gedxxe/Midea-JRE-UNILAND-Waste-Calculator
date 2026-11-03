@@ -95,7 +95,7 @@ test('backup round trip restores both factories and partial gas/water, with work
   await page.locator('#water-start').fill('100,25');
   await page.locator('[data-gas-enable="R32"]').check();
   await page.locator('[data-gas="R32"] [data-gas-point="start"]').fill('1000');
-  await page.locator('[data-gas="R32"] [data-gas-temperature="start"]').fill('33,5');
+  await expect(page.locator('[data-gas="R32"] [data-gas-temperature]')).toHaveCount(0);
   await page.locator('.draft-backup-tools summary').click();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
@@ -104,6 +104,16 @@ test('backup round trip restores both factories and partial gas/water, with work
   const raw = await readFile(await download.path(), 'utf8');
   const parsed = JSON.parse(raw);
   expect(parsed.workspace.drafts.JRE.water).toEqual({ start: '100,25', end: '' });
+  expect(parsed.workspace.drafts.JRE.gas.entries[3].start).toEqual({
+    reading: '1000',
+    temperature: '',
+    unit: 'kg',
+  });
+  expect(parsed.workspace.drafts.JRE.gas.entries[3].end).toEqual({
+    reading: '',
+    temperature: '',
+    unit: 'kg',
+  });
   expect(parsed.workspace.reportLinks).toBeUndefined();
   await cell(page).fill('999');
   await page.locator('[data-plant="UNILAND"]').click();
@@ -113,7 +123,9 @@ test('backup round trip restores both factories and partial gas/water, with work
   await expect(cell(page)).toHaveValue(parsed.workspace.drafts.UNILAND.rows[0].start[0]);
   await page.locator('[data-plant="JRE"]').click();
   await expect(page.locator('#water-start')).toHaveValue('100,25');
-  await expect(page.locator('[data-gas="R32"] [data-gas-temperature="start"]')).toHaveValue('33,5');
+  await expect(page.locator('[data-gas="R32"] [data-gas-point="start"]')).toHaveValue('1000');
+  await expect(page.locator('[data-gas="R32"] [data-gas-unit="start"]')).toHaveValue('kg');
+  await expect(page.locator('[data-gas="R32"] [data-gas-temperature]')).toHaveCount(0);
   await expect(page.locator('#copy-report')).toBeDisabled();
   await page.locator('#undo-change').click();
   await expect(cell(page)).toHaveValue('888');
@@ -206,7 +218,7 @@ test('tab-storage failure is distinguished from a confirmed account save', async
   await expect(page.locator('#draft-storage-status')).toContainText('09:34:56');
 });
 
-test('check notes focus exact R32 temperature, refill and Water fields without changing report bytes', async ({
+test('check notes focus exact R32 kg or legacy temperature, refill and Water fields without changing report bytes', async ({
   page,
 }) => {
   const { errors } = await setup(page);
@@ -214,15 +226,22 @@ test('check notes focus exact R32 temperature, refill and Water fields without c
     await page.locator(`[data-plant="${plant}"]`).click();
     await page.locator('[data-gas-enable="R32"]').check();
     await page.locator('[data-gas="R32"] [data-gas-point="start"]').fill('1000');
-    await page.locator('[data-gas="R32"] [data-gas-temperature="start"]').fill('99');
+    const gas = page.locator('[data-gas="R32"]');
+    if (plant === 'UNILAND') await gas.locator('[data-gas-temperature="start"]').fill('99');
+    else await expect(gas.locator('[data-gas-temperature]')).toHaveCount(0);
     await page.locator('#water-start').fill('100');
     await page.locator('#check-data').click();
-    await page
-      .locator('#validation-list button')
-      .filter({ hasText: 'start. Enter R32 temperature' })
-      .click();
-    await expect(page.locator('[data-gas="R32"] [data-gas-temperature="start"]')).toBeFocused();
-    await page.locator('[data-gas="R32"] [data-gas-temperature="start"]').fill('33.5');
+    const problem =
+      plant === 'UNILAND' ? 'start. Enter R32 temperature' : 'end. Enter the raw gas reading';
+    await page.locator('#validation-list button').filter({ hasText: problem }).click();
+    if (plant === 'UNILAND') {
+      await expect(gas.locator('[data-gas-temperature="start"]')).toBeFocused();
+      await gas.locator('[data-gas-temperature="start"]').fill('33.5');
+    } else {
+      await expect(gas.locator('[data-gas-point="end"]')).toBeFocused();
+      await gas.locator('[data-gas-point="end"]').fill('900');
+      await expect(page.locator('#validation-list')).not.toContainText('Enter R32 temperature');
+    }
     await page.locator('[data-add-refill="R32"]').click();
     await page.locator('#validation-list button').filter({ hasText: 'before0.' }).click();
     await expect(page.locator('[data-gas="R32"] [data-gas-point="before0"]')).toBeFocused();

@@ -2,6 +2,16 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.41-alpha - 2026-11-02
+
+- Default new JRE R32 observations to remaining stock in kg, without temperature or conversion. Consumption remains initial stock plus measured refills minus final stock, for all three periods. UNILAND is unchanged.
+- Keep mm as a legacy option with the original temperature interpolation. Preserve units per observation, including refills and shared shift boundaries; existing readings are not relabeled. Clear a reading before changing its unit.
+- Keep kg stock increases as nonblocking notices. Raw sharing uses each observation's unit; JRE Excel/report output remains kg. Preserve incomplete autosave, backup/recovery and historical output.
+- Recognize identical legacy save acknowledgments across the unit-format upgrade without extra writes. Real reading differences still require conflict resolution.
+- Migration 008 adds stale-writer/rollback guards for the new R32 input format. Apply only after passing gates, a private production backup and explicit migration approval; builds do not run migrations.
+- Include migration filenames containing digits, such as R32, in migration discovery. Check that every SQL migration is discovered, runs once and retains checksum verification.
+- Run one Quality gate per feature PR instead of duplicate push/PR runs. Keep the full checks and allow 45 minutes for browser setup, the complete suite and result uploads. Reuse one gas-observation iterator for units, validation and the UI.
+
 ## v0.11.40-alpha - 2026-11-02
 
 - Keep typed date segments in the date fields until Enter or leaving the fields, preventing intermediate years such as 0202 from becoming a recording period. Esc restores the current date. Calendar selections still apply directly; late initial time synchronization does not replace an unfinished date.

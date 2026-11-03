@@ -121,8 +121,10 @@ test('account drafts, required password change, historian revisions, and logout 
   const gas = page.locator('[data-gas="R32"]');
   await gas.locator('[data-gas-point="start"]').fill('587');
   await gas.locator('[data-gas-point="end"]').fill('550');
-  await gas.locator('[data-gas-temperature="start"]').fill('33.5');
-  await gas.locator('[data-gas-temperature="end"]').fill('33.5');
+  await expect(gas.locator('[data-gas-unit="start"]')).toHaveValue('kg');
+  await expect(gas.locator('[data-gas-unit="end"]')).toHaveValue('kg');
+  await expect(gas.locator('[data-gas-temperature]')).toHaveCount(0);
+  await expect(gas.locator('.gas-total')).toHaveText('Consumption: 37 kg');
   await page.keyboard.press('Control+s');
   expect(await page.evaluate(() => localStorage.getItem('midea_energy_draft_v4'))).toBe(guest);
   await page.reload();
@@ -155,7 +157,10 @@ test('account drafts, required password change, historian revisions, and logout 
   page.on('dialog', (dialog) => dialog.accept());
   await page.locator('#use-history').click();
   await expect(page.locator('#report-preview')).toHaveValue(original);
-  await expect(gas.locator('[data-gas-temperature="start"]')).toHaveValue('33.5');
+  await expect(gas.locator('[data-gas-point="start"]')).toHaveValue('587');
+  await expect(gas.locator('[data-gas-point="end"]')).toHaveValue('550');
+  await expect(gas.locator('[data-gas-unit="start"]')).toHaveValue('kg');
+  await expect(gas.locator('[data-gas-temperature]')).toHaveCount(0);
   await page.locator('#save-report').click();
   await expect(page.locator('#toast')).toContainText('saved and verified');
   await page.locator('#logout').click();

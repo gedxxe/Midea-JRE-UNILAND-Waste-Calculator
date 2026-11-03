@@ -1,4 +1,33 @@
 export const gasMessages = {
+  r32LegacyHint: [
+    'Legacy range: {min}–{max} mm. Each mm reading needs its own temperature (-20 to 50 °C).',
+    '旧式范围：{min}–{max} mm。每次 mm 读数均需对应温度（-20 至 50 °C）。',
+    'Rentang legacy: {min}–{max} mm. Setiap reading mm perlu suhunya sendiri (-20 hingga 50 °C).',
+  ],
+  gasSequenceDirect: [
+    'Stock decreased during refill. Check readings and event order.',
+    '补充时库存下降，请核对读数与顺序。',
+    'Stok turun saat refill. Periksa reading dan urutannya.',
+  ],
+  gasStockIncreaseDirect: [
+    'Stock increased. Check readings and any missing refill. You can still save and copy.',
+    '库存增加，请核对读数及漏记的补充；仍可保存和复制。',
+    'Stok bertambah. Periksa reading dan refill yang belum dicatat. Tetap bisa disimpan dan disalin.',
+  ],
+  gasReadingUnit: ['Reading unit', '读数单位', 'Satuan reading'],
+  r32UnitKg: ['kg · direct stock', 'kg · 直接库存', 'kg · stok langsung'],
+  r32UnitMm: ['mm · legacy conversion', 'mm · 旧式换算', 'mm · konversi legacy'],
+  r32KgHint: [
+    'Enter remaining stock in kg. No conversion or temperature is required. Legacy mm readings remain available.',
+    '直接填写剩余库存 kg，无需换算或温度。仍可使用旧式 mm 读数。',
+    'Isi sisa stok dalam kg. Tidak perlu konversi atau suhu. Reading mm tetap tersedia sebagai opsi legacy.',
+  ],
+  gasUnitClearHint: [
+    'Clear the reading before changing its unit.',
+    '更改单位前请先清空读数。',
+    'Kosongkan reading sebelum mengganti satuan.',
+  ],
+  gasUnit: ['Unsupported reading unit.', '不支持的读数单位。', 'Satuan reading tidak didukung.'],
   gasTitle: ['{plant} gas consumption', '{plant} 气体用量', 'Konsumsi gas {plant}'],
   gasSourceUniland: [
     'Uses the UNILAND workbook mass tables. R32 requires temperature for each reading. LPG follows the printed kg values, which differ from the stated density and capacity. Table limits are not filling limits.',
@@ -11,9 +40,9 @@ export const gasMessages = {
     'Isi stok awal dan akhir. Tambahkan refill yang terjadi dalam periode ini.',
   ],
   gasSource: [
-    'Uses the supplied tank tables. R32 requires temperature for each reading. LPG uses the corrected reference values documented in the workbook.',
-    '使用提供的储罐数据表。每次 R32 读数都需填写温度。LPG 使用工作簿中注明修正后的参考值。',
-    'Menggunakan tabel tangki yang diberikan. Setiap reading R32 perlu suhu. LPG mengikuti koreksi tabel referensi yang dicatat dalam workbook.',
+    'R32 uses direct kg stock readings. Legacy R32 mm readings require temperature. Other gases use the supplied tank tables.',
+    'R32 直接使用 kg 库存读数；旧式 mm 读数需要温度。其他气体使用提供的储罐数据表。',
+    'R32 memakai reading stok kg langsung. Reading R32 mm legacy memerlukan suhu. Gas lain memakai tabel tangki yang diberikan.',
   ],
   gasEnable: ['Calculate from tank readings', '根据储罐读数计算', 'Hitung dari reading tangki'],
   gasDisabled: [

@@ -1,4 +1,5 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
+import { gasCalibration, GAS_TABLE_VERSION, JRE_GAS_INPUT_VERSION } from '../../gas.js';
 import {
   layout2Draft,
   layout3JreDraft,
@@ -759,8 +760,8 @@ test('report ownership comes from the session; server output and raw readings ar
   ];
   draft.gas.entries[3] = {
     enabled: true,
-    start: { reading: '587', temperature: '33.5' },
-    end: { reading: '550', temperature: '33.5' },
+    start: { reading: '587', temperature: '33.5', unit: 'mm' },
+    end: { reading: '550', temperature: '33.5', unit: 'mm' },
     refills: [],
   };
   const saved = await call('/api/reports', {
@@ -777,7 +778,7 @@ test('report ownership comes from the session; server output and raw readings ar
   assert.equal(own.value.snapshot.output.water.value, '25.5');
   assert.deepEqual(own.value.snapshot.draft.additionalReadings, draft.additionalReadings);
   assert.match(own.value.snapshot.output.reportText, /T1 consumption: 4.25 kWh/);
-  assert.equal(own.value.snapshot.output.gas[0].calibration, draft.gas.version);
+  assert.equal(own.value.snapshot.output.gas[0].calibration, gasCalibration('JRE').version);
   assert.ok(Math.abs(own.value.snapshot.output.gas[0].kg - 154.2086) < 1e-7);
   assert.equal((await call('/api/reports?id=' + reportId, { actor: other })).status, 404);
   assert.equal((await call('/api/reports?id=' + reportId, { actor: admin })).status, 404);
@@ -1489,6 +1490,123 @@ function partialPeriod(date = '2026-11-10') {
   draft.rows[0].end[0] = '125';
   return draft;
 }
+
+test('JRE R32 kg persists with units and rejects stale clients and rollback writers without changing raw data or checkpoints', async () => {
+  const actor = await autosaveActor(),
+    draft = exampleDraft('JRE');
+  draft.gas.entries[3] = {
+    enabled: true,
+    start: { reading: '1500.125', temperature: '', unit: 'kg' },
+    end: { reading: '1200.025', temperature: '', unit: 'kg' },
+    refills: [],
+  };
+  const workspace = autosaveWorkspace(draft);
+  const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
+  assert.equal(saved.status, 200);
+  const key = ['JRE', 'daily', draft.startDate, draft.endDate].join(':');
+  const stored = await call('/api/drafts?period=' + encodeURIComponent(key), { actor });
+  assert.equal(stored.status, 200);
+  assert.deepEqual(stored.value.draft.gas.entries[3], draft.gas.entries[3]);
+  const missingUnit = structuredClone(workspace);
+  delete missingUnit.drafts.JRE.gas.entries[3].end.unit;
+  const malformed = await call('/api/drafts', {
+    actor,
+    body: { workspace: missingUnit, baseVersion: saved.value.version },
+  });
+  assert.equal(malformed.status, 400);
+  const downgrade = (value) => {
+    const old = structuredClone(value);
+    old.version = GAS_TABLE_VERSION;
+    for (const point of [
+      old.entries[3].start,
+      old.entries[3].end,
+      ...old.entries[3].refills.flatMap((e) => [e.before, e.after]),
+    ])
+      delete point.unit;
+    return old;
+  };
+  const oldWorkspace = structuredClone(workspace);
+  oldWorkspace.drafts.JRE.gas = downgrade(draft.gas);
+  const rejected = await call('/api/drafts', {
+    actor,
+    body: { workspace: oldWorkspace, baseVersion: saved.value.version },
+  });
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+  await assert.rejects(
+    runtime.query('UPDATE meter_app.working_drafts SET workspace=$2::jsonb WHERE owner_id=$1', [
+      actor.id,
+      JSON.stringify(oldWorkspace),
+    ]),
+    (e) => e.code === '23514',
+  );
+  const row = (
+    await db.query(
+      'SELECT snapshot FROM meter_app.period_autosaves WHERE owner_id=$1 AND plant=$2 AND start_date=$3',
+      [actor.id, 'JRE', draft.startDate],
+    )
+  ).rows[0];
+  const oldSnapshot = structuredClone(row.snapshot);
+  oldSnapshot.draft.gas = downgrade(oldSnapshot.draft.gas);
+  await assert.rejects(
+    runtime.query('UPDATE meter_app.period_autosaves SET snapshot=$2::jsonb WHERE owner_id=$1', [
+      actor.id,
+      JSON.stringify(oldSnapshot),
+    ]),
+    (e) => e.code === '23514',
+  );
+  const report = await call('/api/reports', {
+    actor,
+    body: { draft, autosaveLayout: 1, baseRevision: 0, workspaceVersion: saved.value.version },
+  });
+  assert.equal(report.status, 201);
+  assert.equal(report.value.snapshot.draft.gas.version, JRE_GAS_INPUT_VERSION);
+  assert.equal(report.value.snapshot.output.gas.find((g) => g.gas === 'R32').kg, 300.1);
+  const oldCheckpoint = structuredClone(report.value.snapshot);
+  oldCheckpoint.draft.gas = downgrade(oldCheckpoint.draft.gas);
+  await assert.rejects(
+    runtime.query(
+      'INSERT INTO meter_app.report_revisions(report_id,revision,actor_id,snapshot) VALUES($1,2,$2,$3::jsonb)',
+      [report.value.id, actor.id, JSON.stringify(oldCheckpoint)],
+    ),
+    (e) => e.code === '23514',
+  );
+  const staleDraft = structuredClone(draft);
+  staleDraft.gas = downgrade(draft.gas);
+  const active = await call('/api/drafts', { actor });
+  const queued = await call('/api/drafts', {
+    actor,
+    body: {
+      workspace: autosaveWorkspace(partialPeriod()),
+      periods: [staleDraft],
+      baseVersion: active.value.version,
+    },
+  });
+  assert.equal(queued.status, 409);
+  assert.equal(queued.value.error, 'DRAFT_FORMAT_CHANGED');
+  const cleared = await call('/api/drafts', {
+    actor,
+    body: { workspace: null, baseVersion: active.value.version },
+  });
+  assert.equal(cleared.status, 200);
+  const afterClear = await call('/api/drafts', {
+    actor,
+    body: { workspace: oldWorkspace, baseVersion: cleared.value.version },
+  });
+  assert.equal(afterClear.status, 409);
+  assert.equal(afterClear.value.error, 'DRAFT_FORMAT_CHANGED');
+  await assert.rejects(
+    runtime.query('UPDATE meter_app.working_drafts SET workspace=$2::jsonb WHERE owner_id=$1', [
+      actor.id,
+      JSON.stringify(oldWorkspace),
+    ]),
+    (e) => e.code === '23514',
+  );
+  const kept = await call('/api/reports?id=' + report.value.id, { actor });
+  assert.deepEqual(kept.value.snapshot, report.value.snapshot);
+  const keptRaw = await call('/api/drafts?period=' + encodeURIComponent(key), { actor });
+  assert.deepEqual(keptRaw.value.draft.gas.entries[3], draft.gas.entries[3]);
+});
 test('partial autosaves appear as Revision 1 in history and monitoring before a manual checkpoint', async () => {
   const actor = await autosaveActor(),
     draft = partialPeriod(),

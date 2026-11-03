@@ -10,8 +10,8 @@ async function setup(page) {
     for (const plant of ['JRE', 'UNILAND'])
       workspace[collection][plant].gas.entries[3].refills = [
         {
-          before: { reading: '700.000001', temperature: '31,25' },
-          after: { reading: '800,000002', temperature: '32.5' },
+          before: { reading: '700.000001', temperature: '31,25', unit: 'mm' },
+          after: { reading: '800,000002', temperature: '32.5', unit: 'mm' },
         },
       ];
   const original = structuredClone(workspace),
