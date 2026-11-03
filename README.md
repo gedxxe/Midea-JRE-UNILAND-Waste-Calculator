@@ -157,6 +157,8 @@ npm run test:e2e
 
 The required **Quality gate** runs formatting, source/secret checks, unit tests, disposable PostgreSQL integration, build and Chromium desktop/mobile tests. Mocked browser time does not prove live NTP; inspect `/api/time` and `build-info.json` after deployment.
 
+Each PR commit runs the full gate once. Main pushes and manual runs remain available; the 45-minute job budget includes setup and result uploads. Feature-branch pushes do not create a duplicate required check.
+
 Releases stay `0.MINOR.PATCH-alpha`. Work in a `codex/vX.Y.Z-alpha` branch, review the PR, and preserve tested release branches/tags. Revert through a new PR; never force push or move existing tags. **Code rollback does not restore database data.** Keep a private full draft backup before rolling back across layout changes. See [release procedure](docs/releases.md) and [change history](CHANGELOG.md).
 
 ### License and attribution
@@ -231,6 +233,8 @@ Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、
 生产分析仅统计根页面访问，不发送账户或读数，供应商仍处理访问元数据；本地和预览不启用。见[分析及关闭方式](docs/analytics.md)。历史泄露凭据轮换、平台管理员 MFA 和独立备份恢复演练仍待确认，**尚不能宣称达到 beta 条件**。浏览器备份未加密，NTP 非认证审计时钟，前端公式和设备名称为公开资源。见[安全审查](docs/security.md)及[私下报告方式](SECURITY.md)。
 
 开发用 Node.js 22.x，执行 `npm ci`，配置独立开发数据库后 `npm run dev`。按[账户文档](docs/accounts.md)显式迁移/初始化，维护凭据仅留本地。PR 前运行 `npm run verify`、`npm run security:audit`、开发数据库集成测试和桌面/移动端浏览器测试。Quality gate 通过后由所有者合并，Vercel Git 集成发布 `main`。保留 alpha、分支/标签，通过新 PR 回退，禁止强推。代码回退不能恢复数据库，见[发布流程](docs/releases.md)。
+
+每次 PR 提交只运行一次完整检查；main 推送与手动运行仍保留。任务时限为 45 分钟，包含环境准备和结果上传，功能分支推送不会重复创建必需检查。
 
 **保留权利，不授予公开复用许可。** 公开仓库不等于开源许可。复用需遵守法律、GitHub 条款和权利人授权。美的商标、公司数据、参考资料具有独立权利；依赖保留各自许可。见 [LICENSE](LICENSE) 和[第三方说明](THIRD_PARTY_NOTICES.md)。不确认职务作品归属，也不代表公司批准。
 
@@ -336,6 +340,8 @@ Password Argon2id, cookie HTTPS Secure/HttpOnly/SameSite=Strict, origin tepat, S
 Analytics hanya kunjungan halaman utama production tanpa akun/reading; vendor tetap memproses metadata. Preview/lokal tidak merekam, lihat [privasi dan cara mematikan](docs/analytics.md). Rotasi kredensial yang pernah terpapar, MFA admin platform dan uji pemulihan backup masih perlu konfirmasi. **Kesiapan beta belum terbukti.** Backup browser tidak terenkripsi, NTP bukan jam audit terautentikasi, nama equipment/rumus frontend dapat diakses publik. Lihat [audit keamanan](docs/security.md) dan [pelaporan privat](SECURITY.md).
 
 Gunakan Node.js 22.x, `npm ci`, konfigurasi database development terpisah, lalu `npm run dev`. Ikuti [setup akun](docs/accounts.md) untuk migration/bootstrap eksplisit; koneksi maintenance tetap lokal. Jalankan `npm run verify`, `npm run security:audit`, integrasi development dan browser desktop/mobile. Quality gate wajib lulus; pemilik merge, lalu Vercel Git integration men-deploy `main`. Tetap alpha, simpan branch/tag, rollback melalui PR baru, tanpa force push. Rollback kode tidak memulihkan database. Lihat [rilis dan rollback](docs/releases.md).
+
+Setiap commit PR menjalankan gate lengkap satu kali. Push main dan run manual tetap tersedia; batas 45 menit mencakup persiapan dan unggah hasil. Push branch fitur tidak membuat required check duplikat.
 
 **Hak tetap dilindungi; tidak ada lisensi penggunaan ulang publik.** Repo publik tidak otomatis open source. Reuse perlu izin pemegang hak sesuai hukum dan ketentuan GitHub. Merek Midea, data perusahaan dan materi acuan memiliki hak tersendiri; dependensi mempertahankan lisensinya. Lihat [LICENSE](LICENSE) dan [catatan pihak ketiga](THIRD_PARTY_NOTICES.md). Tidak menetapkan kepemilikan karya hubungan kerja atau menyatakan persetujuan perusahaan.
 

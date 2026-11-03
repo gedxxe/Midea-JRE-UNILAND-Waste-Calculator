@@ -6,6 +6,7 @@ import {
   calculateGas,
   gasCalibration,
   gasUsageText,
+  gasObservations,
   validGasVersion,
   JRE_GAS_INPUT_VERSION,
 } from './gas.js';
@@ -331,11 +332,7 @@ export function calculateDraft(draft) {
     (!validGasVersion(draft.gas.version, draft.plantKey) ||
       (draft.plantKey === 'JRE' &&
         draft.gas.entries[3] &&
-        [
-          draft.gas.entries[3].start,
-          draft.gas.entries[3].end,
-          ...draft.gas.entries[3].refills.flatMap((e) => [e.before, e.after]),
-        ].some((p) =>
+        gasObservations(draft.gas.entries[3]).some((p) =>
           draft.gas.version === JRE_GAS_INPUT_VERSION
             ? !['kg', 'mm'].includes(p?.unit)
             : p?.unit === 'kg',

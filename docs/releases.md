@@ -15,6 +15,9 @@ package.json is the version source; package-lock.json must match it. Use v0.MINO
 2. Implement changes, update the version/lockfile/changelog, and update AGENTS.md if requirements changed.
 3. Run npm ci, npm run verify, npm run test:integration against a test/development database, and npm run test:e2e. Install Chromium once with npx playwright install chromium.
 4. Push the branch normally and open a PR. CI uses read-only permissions and official Actions pinned to commit hashes. Quality gate rejects high/critical dependency advisories with npm run security:audit and checks selected secret patterns, formatting, source contracts, unit tests, the build, and Chromium desktop/mobile behavior. Failure artifacts and build metadata are kept for seven days.
+
+   PR commits run the full gate once through pull_request. Main pushes and manual dispatch also run the full gate; feature/release branch pushes do not create a duplicate check with the same required name. The 45-minute job budget includes setup and evidence uploads: the previous 35-minute limit cancelled a push run after its 33.6-minute browser suite had already passed. Keep one browser worker because clipboard tests share host clipboard access.
+
 5. Inspect the actual GitHub checks and Vercel preview. Verify build-info.json matches the commit and /api/time reports NTP or an explicit 503, never a false success. Browser tests mock time and do not establish real network synchronization.
 6. Merge only after the required checks pass and the owner is ready. The Git integration deploys main; no extra Vercel token or duplicate deployment workflow is needed.
 7. Preserve a tested milestone using an annotated tag and release branch. Annotate the release with the commit, checks, changes, and known limits. A tag is a code rollback point, not evidence of a production deployment.
@@ -128,6 +131,8 @@ Scoped CSS retouch and contrast regressions only. A normal revert restores the p
 Migration 008_r32_kg.sql adds format-preservation triggers to the existing workspace, period-autosave and checkpoint tables. It rewrites no readings or historical output. The new JRE gas input marker carries per-observation kg units; populated legacy points remain mm, with their original temperature conversion. UNILAND does not adopt this marker.
 
 Before production: pass all checks, including the isolated PostgreSQL stale-writer/rollback tests; refresh the private recoverable backup; obtain explicit approval; then apply migration 008 with the maintenance connection and verify its checksum before merging/deploying this release. Do not run it during a build or use the runtime connection for maintenance.
+
+Migration 008 was explicitly approved and applied on 2026-11-03. A fresh private encrypted application-data archive passed read-back verification and restoration into temporary tables in the separate development environment. All application tables were compared unchanged within the production migration transaction; three triggers, the migration checksum and restricted runtime reads were verified. This is not a full Neon project disaster-recovery test. The code release still requires the final PR gate.
 
 Keep migration 008 during code rollback. Old code must fail rather than remove the marker or reinterpret kg as mm. Resume editing with a compatible version; never strip units, downgrade the format marker or drop the triggers to make an old writer work. Legacy report output remains immutable. Check before/after raw readings and checkpoints in the approved environment, including all three modes and pending recovery queues.
 

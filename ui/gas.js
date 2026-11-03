@@ -4,6 +4,7 @@ import {
   MAX_REFILLS,
   gasPoint,
   gasPointUnit,
+  gasObservations,
   gasInputVersion,
   createGasDraft,
   calculateGas,
@@ -61,10 +62,7 @@ export function createGasPanel({ current, changed, rememberUndo, rebuildUtilitie
       if (r32Units) card.append(node('p', t('gasUnitClearHint'), 'gas-help'));
       if (
         gas.id === 'R32' &&
-        (!r32Units ||
-          [entry.start, entry.end, ...entry.refills.flatMap((e) => [e.before, e.after])].some(
-            (p) => gasPointUnit(p) === 'mm',
-          ))
+        (!r32Units || gasObservations(entry).some((p) => gasPointUnit(p) === 'mm'))
       )
         card.append(node('p', t(r32Units ? 'r32LegacyHint' : 'gasTempHint', gas), 'gas-help'));
       const view = {

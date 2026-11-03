@@ -10,6 +10,7 @@ Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versio
 - Recognize identical legacy save acknowledgments across the unit-format upgrade without extra writes. Real reading differences still require conflict resolution.
 - Migration 008 adds stale-writer/rollback guards for the new R32 input format. Apply only after passing gates, a private production backup and explicit migration approval; builds do not run migrations.
 - Include migration filenames containing digits, such as R32, in migration discovery. Check that every SQL migration is discovered, runs once and retains checksum verification.
+- Run one Quality gate per feature PR instead of duplicate push/PR runs. Keep the full checks and allow 45 minutes for browser setup, the complete suite and result uploads. Reuse one gas-observation iterator for units, validation and the UI.
 
 ## v0.11.40-alpha - 2026-11-02
 

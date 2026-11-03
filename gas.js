@@ -10,6 +10,11 @@ export const validGasVersion = (version, plant = 'JRE') =>
 export const gasFormatDowngrade = (before, after) =>
   before?.version === JRE_GAS_INPUT_VERSION && after?.version !== JRE_GAS_INPUT_VERSION;
 export const gasPointUnit = (point) => point?.unit ?? 'mm';
+export const gasObservations = ({ start, end, refills }) => [
+  start,
+  end,
+  ...refills.flatMap((event) => [event.before, event.after]),
+];
 export function copyGasPoint(point, source, plant, index) {
   if (
     plant === 'JRE' &&
@@ -21,21 +26,11 @@ export function copyGasPoint(point, source, plant, index) {
   return { ...point };
 }
 export function syncGasVersion(gas, plant = 'JRE') {
-  if (
-    plant === 'JRE' &&
-    gas.entries[3] &&
-    [
-      gas.entries[3].start,
-      gas.entries[3].end,
-      ...gas.entries[3].refills.flatMap((e) => [e.before, e.after]),
-    ].some((p) => p?.unit === 'kg' || p?.unit === 'mm')
-  ) {
+  if (plant === 'JRE' && gas.entries[3]) {
+    const points = gasObservations(gas.entries[3]);
+    if (!points.some((point) => point?.unit === 'kg' || point?.unit === 'mm')) return gas;
     if (gas.version === GAS_TABLE_VERSION)
-      for (const point of [
-        gas.entries[3].start,
-        gas.entries[3].end,
-        ...gas.entries[3].refills.flatMap((e) => [e.before, e.after]),
-      ])
+      for (const point of points)
         if (point.unit === undefined)
           point.unit = point.reading === '' && point.temperature === '' ? 'kg' : 'mm';
     gas.version = JRE_GAS_INPUT_VERSION;
