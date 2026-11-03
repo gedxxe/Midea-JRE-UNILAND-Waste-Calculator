@@ -5,14 +5,19 @@ import { changeDraftPeriod, restoreWorkspace, STORAGE_KEY } from '../storage.js'
 import { createDraftAutosave } from '../ui/drafts.js';
 async function harness(t, { tombstone = false, journal = false, journalUnchanged = false } = {}) {
   const savedGlobals = Object.fromEntries(
-    ['document', 'window', 'sessionStorage', 'confirm'].map((k) => [
+    ['document', 'window', 'sessionStorage', 'localStorage', 'confirm'].map((k) => [
       k,
       Object.getOwnPropertyDescriptor(globalThis, k),
     ]),
   );
   const elements = new Map(),
-    tab = new Map();
+    tab = new Map(),
+    browser = new Map();
   globalThis.document = {
+    addEventListener() {},
+    createElement() {
+      return { textContent: '', append() {}, addEventListener() {}, setAttribute() {} };
+    },
     getElementById(id) {
       if (!elements.has(id))
         elements.set(id, {
@@ -22,6 +27,8 @@ async function harness(t, { tombstone = false, journal = false, journalUnchanged
           addEventListener(type, handler) {
             this.events[type] = handler;
           },
+          replaceChildren() {},
+          append() {},
         });
       return elements.get(id);
     },
@@ -37,6 +44,23 @@ async function harness(t, { tombstone = false, journal = false, journalUnchanged
     },
     removeItem(k) {
       tab.delete(k);
+    },
+  };
+  globalThis.localStorage = {
+    get length() {
+      return browser.size;
+    },
+    key(index) {
+      return [...browser.keys()][index] ?? null;
+    },
+    setItem(k, v) {
+      browser.set(k, v);
+    },
+    getItem(k) {
+      return browser.get(k) ?? null;
+    },
+    removeItem(k) {
+      browser.delete(k);
     },
   };
   let workspace = {
@@ -75,7 +99,12 @@ async function harness(t, { tombstone = false, journal = false, journalUnchanged
       }
       if (options.body) {
         writes.push(structuredClone(options.body));
+        const sent = structuredClone(options.body);
         if (gates.failWrites) throw Error('OFFLINE');
+        if (gates.holdWrite)
+          await new Promise((resolve) => {
+            gates.releaseWrite = resolve;
+          });
         if (options.body.workspace === null && gates.holdDelete)
           await new Promise((resolve) => {
             gates.releaseDelete = resolve;
@@ -89,14 +118,18 @@ async function harness(t, { tombstone = false, journal = false, journalUnchanged
             recordsChanged: false,
           };
         }
-        cloud = structuredClone(options.body.workspace);
+        cloud = sent.workspace;
         version++;
       }
       if (!options.body && gates.holdRead)
         await new Promise((resolve) => {
           gates.releaseRead = resolve;
         });
-      return { workspace: cloud, version, updated_at: '2026-10-24T01:00:00Z' };
+      return {
+        workspace: cloud,
+        version: options.body && gates.invalidAck ? gates.invalidAck.version : version,
+        updated_at: '2026-10-24T01:00:00Z',
+      };
     },
   });
   t.after(() => {
@@ -128,6 +161,15 @@ async function harness(t, { tombstone = false, journal = false, journalUnchanged
     },
     cloud: () => cloud,
     gates,
+    browser,
+    tab,
+    status: () => elements.get('save-status').textContent,
+    reopen: () => {
+      autosave.reset(null);
+      tab.clear();
+      workspace = structuredClone(initial);
+      autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+    },
     advanceVersion: (next) => {
       version = next;
     },
@@ -182,6 +224,38 @@ test('an identical queued-period retry is acknowledged without adopting its toke
 });
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+test('explicit account recovery can leave a damaged journal without sending its malformed queue', async (t) => {
+  const { autosave, tab, click, writes, status, read } = await harness(t, { tombstone: true });
+  tab.set(
+    STORAGE_KEY + '_b89c2b90-bbee-4a90-bd68-a0e9fc761352',
+    JSON.stringify({
+      ...read(),
+      tabRecovery: { version: 7, pending: true, pendingPeriods: { broken: true } },
+    }),
+  );
+  autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+  assert.match(status(), /recovery copy is damaged/);
+  click('draft-load-cloud');
+  await tick();
+  assert.equal(status(), 'All changes saved to your account.');
+  assert.equal(writes.length, 0);
+  assert.equal(autosave.pending(), false);
+});
+
+for (const version of [undefined, 0])
+  test(`a ${version === undefined ? 'missing' : 'regressing'} acknowledgment version keeps raw input pending`, async (t) => {
+    const { autosave, gates, read, recovery, browser } = await harness(t);
+    gates.invalidAck = { version };
+    read().drafts.JRE.rows[0].end[0] = '130.';
+    autosave.changed();
+    assert.equal(await autosave.flushAll(), false);
+    assert.equal(autosave.pending(), true);
+    assert.equal(recovery().tabRecovery.version, 1);
+    assert.equal(recovery().drafts.JRE.rows[0].end[0], '130.');
+    assert.equal(browser.size, 1);
+    assert.equal(JSON.parse([...browser.values()][0]).drafts.JRE.rows[0].end[0], '130.');
+  });
+
 function queuedReading(value = '777') {
   const d = createDraft('JRE', '2026-10-01', '2026-10-02');
   d.rows[0].start[0] = value;
@@ -351,4 +425,84 @@ test('malformed baseline recovery is retained instead of silently replaced', asy
   assert.equal(await autosave.flushAll(), false);
   assert.equal(writes.length, 0);
   assert.equal(recovery().tabRecovery.periodBases, 'invalid');
+});
+
+test('closing a tab before autosave keeps partial readings for the next authenticated visit', async (t) => {
+  const { autosave, read, reopen, cloud, browser } = await harness(t);
+  for (const collection of ['drafts', 'workingHours', 'nightShifts'])
+    for (const plant of ['JRE', 'UNILAND']) {
+      const draft = read()[collection][plant];
+      draft.rows[0].end[0] = '130.';
+      draft.water = { start: '100,25', end: '' };
+      draft.utilities[0].note = 'Synthetic pending note';
+      if (plant === 'JRE') {
+        draft.gas.entries[3].start = { reading: '999.123456', temperature: '', unit: 'kg' };
+        draft.additionalReadings = [
+          { start: '10', end: '' },
+          ...Array.from({ length: 3 }, () => ({ start: '', end: '' })),
+        ];
+      }
+    }
+  const expected = structuredClone(read());
+  autosave.changed();
+  reopen();
+  await tick();
+  assert.deepEqual(read(), expected);
+  reopen();
+  await tick();
+  assert.deepEqual(read(), expected);
+  assert.equal(await autosave.flushAll(), true);
+  assert.deepEqual(cloud(), expected);
+  assert.equal(
+    browser.size,
+    0,
+    'Acknowledged duplicate recoveries are removed without keeping redundant copies',
+  );
+});
+
+test('blocked browser recovery scanning does not discard the existing pending tab copy', async (t) => {
+  const { autosave, read, cloud } = await harness(t);
+  read().drafts.JRE.rows[0].end[0] = '140';
+  autosave.changed();
+  localStorage.key = () => {
+    throw Error('STORAGE_BLOCKED');
+  };
+  autosave.reset({ id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352' });
+  assert.equal(await autosave.flushAll(), true);
+  assert.equal(cloud().drafts.JRE.rows[0].end[0], '140');
+});
+
+test('a recovery copy changed by its original writer is not deleted by another acknowledgment', async (t) => {
+  const { autosave, read, browser, reopen } = await harness(t);
+  read().drafts.JRE.rows[0].end[0] = '150';
+  autosave.changed();
+  reopen();
+  await tick();
+  const [sourceKey, source] = [...browser][0];
+  const updated = JSON.parse(source);
+  updated.drafts.JRE.rows[0].end[0] = '160';
+  browser.set(sourceKey, JSON.stringify(updated));
+  assert.equal(await autosave.flushAll(), true);
+  assert.equal(JSON.parse(browser.get(sourceKey)).drafts.JRE.rows[0].end[0], '160');
+});
+
+test('an acknowledged write cannot adopt edits typed while that request was in flight', async (t) => {
+  const { autosave, read, gates, recovery } = await harness(t);
+  read().drafts.JRE.rows[0].end[0] = '120';
+  autosave.changed();
+  gates.holdWrite = true;
+  const saving = autosave.flush();
+  await tick();
+  assert.equal(typeof gates.releaseWrite, 'function');
+  read().drafts.JRE.rows[0].end[0] = '130';
+  autosave.changed();
+  gates.releaseWrite();
+  gates.holdWrite = false;
+  assert.equal(await saving, false);
+  const base = recovery().tabRecovery.periodBases.find(
+    ([key]) => key === 'JRE:daily:2026-10-03:2026-10-04',
+  )[1];
+  assert.equal(base.rows[0].end[0], '120');
+  assert.equal(read().drafts.JRE.rows[0].end[0], '130');
+  assert.equal(autosave.pending(), true);
 });

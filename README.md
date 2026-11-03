@@ -47,6 +47,8 @@ The signed-in panel uses a soft blue background, compact glass navigation and re
 
 NIGHT SHIFT uses neutral charcoal surfaces, off-white readings and gray supporting text. Blue marks actions and focus; errors use readable light red and notices stay amber. Selecting Reading mode reveals the theme from the selector; returning to another mode contracts it back. Reduced/off motion and unsupported browsers apply the theme directly; forced colors keeps the system palette. Chart exports and printing remain light. This is appearance only and adds no saved preference or data writes.
 
+Autosave keeps incomplete readings in the same dated documents without manual Save. Pending input also has owner-scoped browser recovery for tab closure or session expiry. Different browser copies require review; storage/network failures remain visible. Browser recovery is private, unencrypted device data and cannot survive clearing browser storage. See [autosave and recovery](docs/autosave.md).
+
 ### Navigation
 
 Use /app for reading entry, /app/monitoring for charts/monthly tables, /app/history for saved reports, and /app/accounts for admin account management. Back/Forward and direct-link refresh work without reloading on menu changes. Protected links resolve the current session first; unknown paths return 404. Navigation keeps the existing workspace and drafts. See [routing](docs/navigation.md).
@@ -61,7 +63,7 @@ The fullscreen dark **Energy Record** welcome uses the supplied white Midea logo
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Send readings without calculations | **Export Raw Table Data**, beside the electricity table. Choose Start or End. All readings includes electricity, JRE T1–T4, UNILAND Trafo 1–3, raw gas/temperature, Water, refills and separately labeled manual totals/notes. Missing optional values use ____. Choose Electricity only for text import; that electricity column must be complete.                                                                                                                |
 | Prepare for an outage              | **Blank reading template**, beside raw export after login or on the sign-in card before login. Copy/download a schema-only `.txt` with `____` and `DD/MM/YYYY`, then keep it outside the website. Contains no saved readings; no duplicate in the footer.                                                                                                                                                                                                          |
-| Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery; server sync after 3 seconds idle or within 15 seconds of continuous editing, with at least 5 seconds between background attempts. Check the account save time before closing. Conflicts require an explicit choice.                                                                                                                                       |
+| Keep unfinished work               | One replaceable workspace per account covers both factories and all three modes. Immediate tab recovery plus pending browser recovery across tab closure; server sync after 3 seconds idle or within 15 seconds of continuous editing, with at least 5 seconds between background attempts. Check the account save time before closing. Conflicts require an explicit choice.                                                                                      |
 | Keep a portable backup             | **Draft backup and restore** downloads owner-bound JSON including incomplete readings, gas/refills, Water and notes. Restore validates the whole file and supports Undo. Files are not encrypted; keep them private.                                                                                                                                                                                                                                               |
 | Calculate gas and Water            | Both plants convert LPG %, O2 mmWC and N2 mmH2O to kg before stock/refill subtraction. JRE R32 defaults to direct kg stock; legacy JRE mm and UNILAND mm still need temperature conversion. Water is cumulative m³ end minus start. Both support all three periods.                                                                                                                                                                                                |
 | Review trends                      | **Graphs** reads latest account autosaves, manual-only reports and approved consumption imports. White background, thin lines and one selected language for chart text and exports. Filter departments; 9 JRE / 7 UNILAND presets and every period label remain. Copy high-resolution PNG directly; PNG/SVG downloads and custom series/scales remain available in compact controls. Latest account autosaves enter graphs; missing or invalid values remain gaps. |
@@ -159,7 +161,7 @@ npm run test:e2e
 
 The required **Quality gate** runs formatting, source/secret checks, unit tests, disposable PostgreSQL integration, build and Chromium desktop/mobile tests. Mocked browser time does not prove live NTP; inspect `/api/time` and `build-info.json` after deployment.
 
-Each PR commit runs the full gate once. Main pushes and manual runs remain available; the 45-minute job budget includes setup and result uploads. Feature-branch pushes do not create a duplicate required check.
+Each PR commit runs the full gate once. Main pushes and manual runs remain available; the 60-minute job budget includes setup and result uploads. Feature-branch pushes do not create a duplicate required check.
 
 Releases stay `0.MINOR.PATCH-alpha`. Work in a `codex/vX.Y.Z-alpha` branch, review the PR, and preserve tested release branches/tags. Revert through a new PR; never force push or move existing tags. **Code rollback does not restore database data.** Keep a private full draft backup before rolling back across layout changes. See [release procedure](docs/releases.md) and [change history](CHANGELOG.md).
 
@@ -224,6 +226,8 @@ JRE 为 32 项设备 / 62 个电表，UNILAND 为 34 项 / 48 个读数位置。
 
 已记录修复的复现、兼容性和限制见[问题审查](docs/reliability.md)。
 
+未完成读数也会自动保存在同一日期文档，无需手动 Save。未同步输入另有按账户隔离的浏览器恢复副本，以应对标签页关闭或会话过期。不同副本需核对，存储及网络失败会显示提示。浏览器副本未加密，清除浏览器数据会删除它。详见[自动保存与恢复](docs/autosave.md)。
+
 ### 架构、安全与维护
 
 [模块与重构边界](docs/architecture.md)说明共用渲染和导出工具、兼容规则与验证范围。
@@ -238,7 +242,7 @@ Argon2id 密码、HTTPS Secure/HttpOnly/SameSite=Strict Cookie、来源检查、
 
 开发用 Node.js 22.x，执行 `npm ci`，配置独立开发数据库后 `npm run dev`。按[账户文档](docs/accounts.md)显式迁移/初始化，维护凭据仅留本地。PR 前运行 `npm run verify`、`npm run security:audit`、开发数据库集成测试和桌面/移动端浏览器测试。Quality gate 通过后由所有者合并，Vercel Git 集成发布 `main`。保留 alpha、分支/标签，通过新 PR 回退，禁止强推。代码回退不能恢复数据库，见[发布流程](docs/releases.md)。
 
-每次 PR 提交只运行一次完整检查；main 推送与手动运行仍保留。任务时限为 45 分钟，包含环境准备和结果上传，功能分支推送不会重复创建必需检查。
+每次 PR 提交只运行一次完整检查；main 推送与手动运行仍保留。任务时限为 60 分钟，包含环境准备和结果上传，功能分支推送不会重复创建必需检查。
 
 **保留权利，不授予公开复用许可。** 公开仓库不等于开源许可。复用需遵守法律、GitHub 条款和权利人授权。美的商标、公司数据、参考资料具有独立权利；依赖保留各自许可。见 [LICENSE](LICENSE) 和[第三方说明](THIRD_PARTY_NOTICES.md)。不确认职务作品归属，也不代表公司批准。
 
@@ -333,6 +337,8 @@ JRE memiliki 32 equipment / 62 meter; UNILAND 34 equipment / 48 slot. Window met
 
 Lihat [bug yang direproduksi, perbaikan dan kompatibilitas](docs/reliability.md).
 
+Reading yang belum lengkap tetap tersimpan otomatis pada dokumen tanggal yang sama, tanpa Save manual. Input tertunda juga memiliki recovery browser per akun untuk tab yang tertutup atau sesi yang berakhir. Salinan berbeda perlu diperiksa; kegagalan storage/jaringan tetap ditampilkan. Recovery browser tidak terenkripsi dan akan hilang bila data browser dihapus. Lihat [autosave dan recovery](docs/autosave.md).
+
 ### Arsitektur, keamanan dan pengembangan
 
 Lihat [modul dan batas refactor](docs/architecture.md) untuk helper tampilan/ekspor, aturan kompatibilitas dan batas pengujian.
@@ -347,7 +353,7 @@ Analytics hanya kunjungan halaman utama production tanpa akun/reading; vendor te
 
 Gunakan Node.js 22.x, `npm ci`, konfigurasi database development terpisah, lalu `npm run dev`. Ikuti [setup akun](docs/accounts.md) untuk migration/bootstrap eksplisit; koneksi maintenance tetap lokal. Jalankan `npm run verify`, `npm run security:audit`, integrasi development dan browser desktop/mobile. Quality gate wajib lulus; pemilik merge, lalu Vercel Git integration men-deploy `main`. Tetap alpha, simpan branch/tag, rollback melalui PR baru, tanpa force push. Rollback kode tidak memulihkan database. Lihat [rilis dan rollback](docs/releases.md).
 
-Setiap commit PR menjalankan gate lengkap satu kali. Push main dan run manual tetap tersedia; batas 45 menit mencakup persiapan dan unggah hasil. Push branch fitur tidak membuat required check duplikat.
+Setiap commit PR menjalankan gate lengkap satu kali. Push main dan run manual tetap tersedia; batas 60 menit mencakup persiapan dan unggah hasil. Push branch fitur tidak membuat required check duplikat.
 
 **Hak tetap dilindungi; tidak ada lisensi penggunaan ulang publik.** Repo publik tidak otomatis open source. Reuse perlu izin pemegang hak sesuai hukum dan ketentuan GitHub. Merek Midea, data perusahaan dan materi acuan memiliki hak tersendiri; dependensi mempertahankan lisensinya. Lihat [LICENSE](LICENSE) dan [catatan pihak ketiga](THIRD_PARTY_NOTICES.md). Tidak menetapkan kepemilikan karya hubungan kerja atau menyatakan persetujuan perusahaan.
 

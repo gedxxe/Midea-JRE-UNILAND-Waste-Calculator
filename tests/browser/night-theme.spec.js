@@ -53,6 +53,50 @@ async function setup(page) {
 const settled = (page) => expect(page.locator('html')).not.toHaveAttribute('data-panel-wipe', /.+/);
 const night = (page) => expect(page.locator('body')).toHaveAttribute('data-night-panel', '');
 const day = (page) => expect(page.locator('body')).not.toHaveAttribute('data-night-panel', '');
+
+for (const plant of ['JRE', 'UNILAND'])
+  test(plant + ' Night keeps additional and manual utility text readable', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await setup(page);
+    await page.locator(`[data-plant="${plant}"]`).click();
+    await page.locator('#reading-mode').selectOption('nightShift');
+    await night(page);
+    await page.locator('[data-gas-enable="LPG"]').uncheck();
+    const contrast = await page
+      .locator(
+        '#additional-section th, #additional-section output, #additional-section input, #gas-fields .utility-entry label, #gas-fields .utility-entry input, #utility-fields label, #utility-fields input',
+      )
+      .evaluateAll((nodes) =>
+        nodes
+          .filter((n) => n.getClientRects().length && (n.matches('input') || n.textContent.trim()))
+          .map((n) => {
+            let bg = n;
+            while (bg.parentElement && !/^rgb\(/.test(getComputedStyle(bg).backgroundColor))
+              bg = bg.parentElement;
+            const lum = (color) => {
+              const rgb = color
+                .match(/\d+/g)
+                .slice(0, 3)
+                .map(Number)
+                .map((v) => v / 255)
+                .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+              return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+            };
+            const style = getComputedStyle(n),
+              a = lum(style.color),
+              b = lum(getComputedStyle(bg).backgroundColor);
+            return {
+              id: n.id || n.textContent.trim().slice(0, 45),
+              ink: style.color,
+              ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+            };
+          }),
+      );
+    expect(contrast.length).toBeGreaterThan(2);
+    for (const item of contrast)
+      expect(item.ratio, JSON.stringify(item)).toBeGreaterThanOrEqual(4.5);
+  });
+
 async function rawMatches(page, draft) {
   const values = await page.locator('.meter-input').evaluateAll((nodes) =>
     nodes.map((n) => ({

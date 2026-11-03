@@ -1,7 +1,205 @@
 import { test, expect, modernWorkspace, checkpointReply } from './fixtures.js';
-import { createDraft } from '../../engine.js';
+import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from '../../engine.js';
 import { restoreWorkspace } from '../../storage.js';
+import { periodKey } from '../../draft-records.js';
 const id = 'b89c2b90-bbee-4a90-bd68-a0e9fc761352';
+
+async function browserRecoverySetup(page, context) {
+  const user = { id, username: 'recovery-test', role: 'operator', mustChangePassword: false };
+  const workspace = modernWorkspace({
+    version: 4,
+    drafts: {
+      JRE: createDraft('JRE', '2026-11-03', '2026-11-04'),
+      UNILAND: createDraft('UNILAND', '2026-11-03', '2026-11-04'),
+    },
+    workingHours: Object.fromEntries(
+      ['JRE', 'UNILAND'].map((p) => [p, createWorkingHoursDraft(p, '2026-11-03')]),
+    ),
+    nightShifts: Object.fromEntries(
+      ['JRE', 'UNILAND'].map((p) => [p, createNightShiftDraft(p, '2026-11-03')]),
+    ),
+  });
+  for (const collection of ['drafts', 'workingHours', 'nightShifts'])
+    for (const draft of Object.values(workspace[collection])) draft.rows[0].start[0] = '100';
+  const state = { workspace, version: 1, offline: false, expire: false, user, writes: 0 };
+  await page.unroute('**/api/drafts');
+  await page.unroute('**/api/drafts?**');
+  await context.route('**/api/time', (r) =>
+    r.fulfill({ status: 503, json: { error: 'TIME_UNAVAILABLE' } }),
+  );
+  await context.route('**/api/auth', (r) =>
+    r.fulfill({ json: { available: true, user: state.user } }),
+  );
+  await context.route(/\/api\/drafts(?:\?|$)/, (r) => {
+    const key = new URL(r.request().url()).searchParams.get('period');
+    if (state.offline) return r.abort();
+    if (r.request().method() === 'POST') {
+      if (state.expire) {
+        state.user = null;
+        return r.fulfill({ status: 401, json: { error: 'LOGIN_REQUIRED' } });
+      }
+      const body = r.request().postDataJSON();
+      expect(r.request().headers()['x-meter-user']).toBe(id);
+      if (body.baseVersion !== state.version)
+        return r.fulfill({ status: 409, json: { error: 'DRAFT_CONFLICT' } });
+      state.workspace = body.workspace;
+      state.version++;
+      state.writes++;
+    }
+    if (key) return r.fulfill({ json: { key, draft: null, version: 0 } });
+    return r.fulfill({
+      json: {
+        workspace: state.workspace,
+        version: state.version,
+        updated_at: '2026-11-03T01:00:00Z',
+        records: [],
+      },
+    });
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/app');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  return state;
+}
+
+test('closing an offline tab retains partial electricity, kg stock and Water without pressing Save', async ({
+  page,
+  context,
+}) => {
+  const state = await browserRecoverySetup(page, context);
+  state.offline = true;
+  await page.locator('.meter-input[data-row="0"][data-side="end"]').first().fill('130.');
+  await page.locator('#additional-0-start').fill('1,25');
+  await page.locator('[data-gas-enable="R32"]').check();
+  await page.locator('[data-gas="R32"] [data-gas-point="start"]').fill('999.123456');
+  await page.locator('#water-start').fill('100,25');
+  await page.close();
+  expect(state.writes).toBe(0);
+  state.offline = false;
+  const resumed = await context.newPage();
+  await resumed.emulateMedia({ reducedMotion: 'reduce' });
+  await resumed.goto('/app');
+  await expect(resumed.locator('.meter-input[data-row="0"][data-side="end"]').first()).toHaveValue(
+    '130.',
+  );
+  await expect(resumed.locator('#additional-0-start')).toHaveValue('1,25');
+  await expect(resumed.locator('#water-start')).toHaveValue('100,25');
+  await expect(resumed.locator('[data-gas="R32"] [data-gas-point="start"]')).toHaveValue(
+    '999.123456',
+  );
+  await expect(resumed.locator('[data-gas="R32"] [data-gas-temperature]')).toHaveCount(0);
+  await expect
+    .poll(() => state.workspace.drafts.JRE.rows[0].end[0], { timeout: 12000 })
+    .toBe('130.');
+  await expect(resumed.locator('#save-status')).toHaveText('All changes saved to your account.');
+  expect(state.workspace.drafts.JRE.gas.entries[3].start.unit).toBe('kg');
+  await resumed.close();
+});
+
+test('incomplete readings autosave for both factories and every mode without manual Save', async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(90000); // Six workflows retain their own 12-second autosave deadline.
+  const state = await browserRecoverySetup(page, context);
+  for (const plant of ['JRE', 'UNILAND']) {
+    await page.locator(`[data-plant="${plant}"]`).click();
+    for (const [mode, collection] of [
+      ['daily', 'drafts'],
+      ['workingHours', 'workingHours'],
+      ['nightShift', 'nightShifts'],
+    ]) {
+      await page.locator('#reading-mode').selectOption(mode);
+      const cell = page.locator('.meter-input[data-row="0"][data-side="end"]').first();
+      const value = String(130 + state.writes);
+      await cell.fill(value);
+      await expect
+        .poll(() => state.workspace[collection][plant].rows[0].end[0], { timeout: 12000 })
+        .toBe(value);
+      await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+      expect(periodKey(state.workspace[collection][plant])).not.toBeNull();
+      expect(state.workspace[collection][plant].rows[1].end[0]).toBe('');
+    }
+  }
+  expect(state.writes).toBeGreaterThanOrEqual(6);
+});
+
+test('session expiry keeps pending input before hiding the workspace and recovers it after login', async ({
+  page,
+  context,
+}) => {
+  const state = await browserRecoverySetup(page, context);
+  const actor = state.user;
+  state.expire = true;
+  await page.locator('.meter-input[data-row="0"][data-side="end"]').first().fill('177.25');
+  await expect(page.locator('#report-workspace')).toBeHidden({ timeout: 12000 });
+  const copies = await page.evaluate(
+    (id) =>
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('midea_energy_draft_v4_pending_' + id + '_'))
+        .map((k) => JSON.parse(localStorage.getItem(k))),
+    id,
+  );
+  expect(copies.some((copy) => copy.drafts.JRE.rows[0].end[0] === '177.25')).toBe(true);
+  state.expire = false;
+  state.user = actor;
+  await page.reload();
+  await expect(page.locator('.meter-input[data-row="0"][data-side="end"]').first()).toHaveValue(
+    '177.25',
+  );
+  await expect
+    .poll(() => state.workspace.drafts.JRE.rows[0].end[0], { timeout: 12000 })
+    .toBe('177.25');
+});
+
+test('conflicting browser copies require selection and another owner remains private', async ({
+  page,
+  context,
+}) => {
+  const state = await browserRecoverySetup(page, context);
+  await page.evaluate((id) => {
+    const key = 'midea_energy_draft_v4_' + id;
+    const original = JSON.parse(sessionStorage.getItem(key));
+    for (const [suffix, value, owner, hour] of [
+      ['one', '150', id, 3],
+      ['two', '160', id, 4],
+      ['foreign', '999', 'eb90c39b-1801-4aa4-98f7-bcb591e68c68', 5],
+    ]) {
+      const copy = structuredClone(original);
+      copy.drafts.JRE.rows[0].end[0] = value;
+      copy.tabRecovery.owner = owner;
+      copy.tabRecovery.pending = true;
+      copy.tabRecovery.localAt = `2026-11-03T0${hour}:00:00Z`;
+      localStorage.setItem(
+        'midea_energy_draft_v4_pending_' + owner + '_' + suffix,
+        JSON.stringify(copy),
+      );
+    }
+    sessionStorage.removeItem(key);
+  }, id);
+  await page.reload();
+  const choices = page.locator('#draft-browser-recoveries');
+  await expect(choices).toBeVisible();
+  await expect(choices.locator('button')).toHaveCount(2);
+  await expect(page.locator('.meter-input[data-row="0"][data-side="end"]').first()).toHaveValue('');
+  await expect(page.locator('#save-status')).toContainText('need review');
+  page.once('dialog', (dialog) => dialog.accept());
+  await choices.getByRole('button', { name: /10:00:00 WIB/ }).click();
+  await expect(page.locator('.meter-input[data-row="0"][data-side="end"]').first()).toHaveValue(
+    '150',
+  );
+  await expect
+    .poll(() => state.workspace.drafts.JRE.rows[0].end[0], { timeout: 12000 })
+    .toBe('150');
+  await expect(choices.locator('button')).toHaveCount(1);
+  const retained = await page.evaluate(
+    (id) =>
+      JSON.parse(localStorage.getItem('midea_energy_draft_v4_pending_' + id + '_two')).drafts.JRE
+        .rows[0].end[0],
+    id,
+  );
+  expect(retained).toBe('160');
+});
 test('editing End then Start journals the original period, without an intermediate combined document', async ({
   page,
 }) => {

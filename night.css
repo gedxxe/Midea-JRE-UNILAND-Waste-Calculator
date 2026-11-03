@@ -203,6 +203,26 @@
   body[data-night-panel]:not(.login-page) :is(.meter-card, .additional-table) :is(th, td) {
     border-color: var(--border);
   }
+  body[data-night-panel]:not(.login-page)
+    :is(
+      .additional-table th,
+      .additional-table td,
+      .additional-table output,
+      #utility-fields label,
+      #gas-fields .utility-entry label
+    ) {
+    color: var(--panel-ink);
+  }
+  body[data-night-panel]:not(.login-page) .additional-table td::before {
+    color: var(--panel-help);
+  }
+  body[data-night-panel]:not(.login-page)
+    :is(.additional-table input, #utility-fields input, #gas-fields .utility-entry input):not(
+      [aria-invalid='true']
+    ) {
+    color: var(--panel-ink);
+    background: var(--night-input);
+  }
   body[data-night-panel]:not(.login-page) :is(.eyebrow, .guide-eyebrow) {
     color: var(--panel-help);
   }

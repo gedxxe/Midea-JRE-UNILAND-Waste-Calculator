@@ -4,7 +4,17 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.42-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.43-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+
+## Autosave preservation audit, requested 2026-11-04
+
+- User reaffirmed canonical autosave from the first entry, including incomplete readings, with manual Save only verifying that same account copy. No routine draft/final source split or extra manual checkpoint is wanted.
+- Reproduced two synthetic bugs before editing: closing a tab before acknowledgment lost its session-only recovery; outgoing workspace references allowed a late response to adopt later edits as an acknowledged baseline. These are reproduced causes in those scenarios, not proof that the earlier production missing-reading incident is resolved or recovered.
+- The user specifically approved production reads for an encrypted local backup only, after automatic approval review rejected the broader production-to-local/development transfer. A fresh 11-table archive was encrypted and read-back/hash verified locally, with zero production writes and no development connection. A subsequent read-only comparison matched all 11 table hashes. Do not transfer that archive/data into development under this approval. Integration tests must remain synthetic.
+- Keep pending recovery per authenticated owner and writer in localStorage plus existing sessionStorage. Existing tab recovery is preferred; one distinct valid browser copy can recover automatically, multiple different copies require selection. Canonicalize only known legacy recovery metadata for comparison, preserve reading strings/units, retain damaged/conflicting copies and never delete another writer's changed bytes. Browser recovery contains no session credentials and is not a competing server source. Show pending-copy notices truthfully; clear private recovery UI on identity changes.
+- Preserve the old owner's pending data before app state/session cleanup. Clone sent workspace and period batches before awaiting network; only those exact inputs may advance baselines. Keep retries, queued periods, owner/version checks, incomplete persistence and immutable historical checkpoints. Attempt flush on page visibility loss; keepalive remains best effort, never an acknowledgment.
+- All current CI jobs must explicitly allow at least 60 minutes, retaining security/unit/integration/browser checks. Browser per-action/per-scenario deadlines stay meaningful; do not hide a failing assertion by globally allowing every action an hour. Stop after the push handoff rather than waiting for remote CI, as previously requested.
+- Night controls must explicitly cover T1–T4 headers/cells/outputs/mobile pseudo-labels and manual gas utility labels/inputs, including empty/invalid states. Preserve warning/error distinctions, forced-color accessibility, circular transitions, light mode and white chart exports. No migration or production data repair is implicit.
 
 ## Refactor audit, requested 2026-11-03
 

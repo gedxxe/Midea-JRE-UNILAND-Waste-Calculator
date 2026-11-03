@@ -64,7 +64,7 @@ async function setup(page, saved = false) {
   await page.goto('/');
   await expect(page.locator('#report-workspace')).toBeVisible();
   await expect(page.locator('#save-status')).toHaveText(
-    saved ? 'All changes saved to your account.' : 'Draft autosave is ready.',
+    saved ? 'All changes saved to your account.' : 'Autosave is ready.',
   );
   return { state, errors };
 }
