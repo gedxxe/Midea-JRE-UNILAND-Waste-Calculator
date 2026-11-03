@@ -139,3 +139,7 @@ Keep migration 008 during code rollback. Old code must fail rather than remove t
 ## Complete raw copy (v0.11.39-alpha)
 
 Read-only sharing formatter and UI scope selection. No migration or stored-format changes. A normal revert restores the previous electricity-only copy control; recordings and autosave are unaffected. The complete sharing text is not an import file: Electricity only retains the existing import contract. Public blank electricity templates stay unchanged.
+
+## Rendering and export refactor (v0.11.42-alpha)
+
+Reuse existing DOM helpers and per-call export/date lookups without changing the schema, persistence, API, dependency set or calculation rules. No migration or production data write is needed. Preserve legacy layout/unit readers and original saved output. A normal revert PR restores v0.11.41 behavior while keeping migration 008 and all stored observations intact. Local synthetic comparisons and targeted browser checks complement the full required Quality gate; do not merge while it is pending or failing.

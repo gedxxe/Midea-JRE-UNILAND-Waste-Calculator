@@ -1,20 +1,22 @@
 import { normalizeName, round, formatNumber } from './numbers.js';
 
-function getRowByName(rows, name) {
-  const target = normalizeName(name);
-  return rows.find((row) => normalizeName(row.name) === target) || null;
-}
-
-function numericRowValue(rows, name) {
-  const row = getRowByName(rows, name);
+function numericRowValue(rowsByName, name) {
+  const row = rowsByName.get(normalizeName(name));
   return row && !row.missing && Number.isFinite(row.totalEnergy) ? row.totalEnergy : null;
 }
 
 export function buildWorksheet(plantKey, reportDate, rows) {
+  // Retain the first matching row, including missing/zero values, as the legacy lookup did.
+  const rowsByName = new Map();
+  for (const row of rows) {
+    const name = normalizeName(row.name);
+    if (!rowsByName.has(name)) rowsByName.set(name, row);
+  }
+  const value = (name) => numericRowValue(rowsByName, name);
   const day = reportDate || '';
   if (plantKey === 'JRE') {
-    const p1 = numericRowValue(rows, 'Piping Building 1#');
-    const p3 = numericRowValue(rows, 'Piping Building 3#');
+    const p1 = value('Piping Building 1#');
+    const p3 = value('Piping Building 3#');
     const pipingAll = p1 !== null && p3 !== null ? round(p1 + p3, 8) : null;
     const headers = [
       'Date',
@@ -39,37 +41,37 @@ export function buildWorksheet(plantKey, reportDate, rows) {
     ];
     const values = [
       day,
-      numericRowValue(rows, 'Indoor'),
-      numericRowValue(rows, 'Outdoor'),
-      numericRowValue(rows, 'Window'),
-      numericRowValue(rows, 'Dehumidifier'),
-      numericRowValue(rows, 'Heat Exchanger'),
+      value('Indoor'),
+      value('Outdoor'),
+      value('Window'),
+      value('Dehumidifier'),
+      value('Heat Exchanger'),
       pipingAll,
       p1,
       p3,
-      numericRowValue(rows, 'Injection Molding'),
-      numericRowValue(rows, 'Crusher Machine'),
-      numericRowValue(rows, 'Cooling Tower and Water Pump Injection Molding'),
-      numericRowValue(rows, 'Structural Laboratory'),
-      numericRowValue(rows, 'Test Control Room'),
-      numericRowValue(rows, 'IQC and OQC Room'),
-      numericRowValue(rows, 'New Laboratory'),
-      numericRowValue(rows, 'Warehouse Area'),
-      numericRowValue(rows, 'Charging Forklift Building 3#'),
-      numericRowValue(rows, 'All Office Building'),
+      value('Injection Molding'),
+      value('Crusher Machine'),
+      value('Cooling Tower and Water Pump Injection Molding'),
+      value('Structural Laboratory'),
+      value('Test Control Room'),
+      value('IQC and OQC Room'),
+      value('New Laboratory'),
+      value('Warehouse Area'),
+      value('Charging Forklift Building 3#'),
+      value('All Office Building'),
     ];
     return { headers, values, derived: { pipingAll } };
   }
 
-  const indoor = numericRowValue(rows, 'Indoor');
-  const heatExchanger = numericRowValue(rows, 'Heat Exchanger');
-  const piping = numericRowValue(rows, 'Piping');
+  const indoor = value('Indoor');
+  const heatExchanger = value('Heat Exchanger');
+  const piping = value('Piping');
   const heatAndPiping =
     heatExchanger !== null && piping !== null ? round(heatExchanger + piping, 8) : null;
-  const vacIn = numericRowValue(rows, 'Vacum box indoor');
-  const outdoor = numericRowValue(rows, 'Outdoor');
-  const vacOut = numericRowValue(rows, 'Vacum box outdoor');
-  const lineComp = numericRowValue(rows, 'Line compressor outdoor');
+  const vacIn = value('Vacum box indoor');
+  const outdoor = value('Outdoor');
+  const vacOut = value('Vacum box outdoor');
+  const lineComp = value('Line compressor outdoor');
   const indoorArea = indoor !== null && vacIn !== null ? round(indoor + vacIn, 8) : null;
   const outdoorArea =
     outdoor !== null && vacOut !== null && lineComp !== null
@@ -103,14 +105,14 @@ export function buildWorksheet(plantKey, reportDate, rows) {
     vacIn,
     vacOut,
     lineComp,
-    numericRowValue(rows, 'Machine Stamping'),
-    numericRowValue(rows, 'Injection Molding'),
-    numericRowValue(rows, 'Line PCB Trial Product'),
-    numericRowValue(rows, '10HP Enthalpy Difference Lab'),
-    numericRowValue(rows, '20HP Test chamber Lab'),
-    numericRowValue(rows, 'OQC- Testing Room B'),
-    numericRowValue(rows, 'IQC- Testing Room B'),
-    numericRowValue(rows, 'Charger Forklift Area'),
+    value('Machine Stamping'),
+    value('Injection Molding'),
+    value('Line PCB Trial Product'),
+    value('10HP Enthalpy Difference Lab'),
+    value('20HP Test chamber Lab'),
+    value('OQC- Testing Room B'),
+    value('IQC- Testing Room B'),
+    value('Charger Forklift Area'),
   ];
   return { headers, values, derived: { indoorArea, outdoorArea } };
 }

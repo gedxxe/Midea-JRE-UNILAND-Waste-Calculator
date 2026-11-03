@@ -70,33 +70,8 @@ for (const file of PUBLIC_FILES) {
     }
   }
 }
-// Includes separate UNILAND mass tables (~17 kB); identical R32 data is shared. No browser dependencies.
-// v0.9.18 adds owner-validated recovery files and translated draft status (~12 kB). No browser dependencies.
-// v0.10.0 adds separate work periods, time validation and translations (~24 kB), without dependencies.
-// v0.11.0 adds shared Day/Night drafts, copy output and translations (~15 kB); still no browser dependencies.
-// v0.11.1 adds five report choices and timestamp-based reuse (~11 kB), replacing old shift copy controls.
-// v0.11.6 adds an optional guide; its illustrations, styles and long translations load on demand.
-// v0.11.8 adds stock-increase notices and signed report presentation (~2 kB), without dependencies.
-// v0.11.11 adds the Structural zero rule and translated guidance (~0.5 kB), without dependencies.
-// v0.11.12 adds shared shift utilities, compatibility guards and translations (~10.5 kB), without dependencies.
-// v0.11.13 adds one JRE meter and layout/import compatibility (~0.5 kB), without dependencies.
-// v0.11.14 adds trilingual display labels, layout recovery and compact graph controls (~16.5 kB); no dependencies.
-// v0.11.15 adds calendar matrix, bounded curves and accessible graph interactions; no dependencies.
-// v0.11.16 adds a small DOM-only window controller and responsive scroll rules; no dependencies.
-// v0.11.17 adds optional canvas decoration with capped resolution/frame rate and no dependencies.
-// v0.11.18 adds fixed routes and a small History API controller; no browser dependencies.
-// v0.11.20 adds bounded ASCII shaders but removes duplicate login decoration; retain the 900 kB budget.
-// v0.11.22 adds the supplied TechText metrics/selection/drag engine and SVG glass/modal layers (~35 kB); no browser dependencies.
-// v0.11.23 adds a period journal, partial monitoring labels and checkpoint coalescing (~17 kB); no dependencies.
-// v0.11.28 adds grouped meter checks and trilingual import diagnostics (~12 kB net); no dependencies.
-// v0.11.29 adds explicit Excel column mapping and period/unit guidance (~12 kB); no browser packages.
-// v0.11.30 adds a scoped blue workspace theme and inline icons; no animation runtime or new dependencies.
-// v0.11.31 adds local SVG notices/attention plus native Fuse and lazy Specular (~25 kB); no packages.
-// v0.11.32 adds exact-text Counter springs and panel lifecycle (~18 kB), reusing Specular; no packages.
-// v0.11.37 adds ~18 kB of scoped Night Shift CSS and native view-transition handling; no packages.
-// v0.11.39 adds a read-only full raw-sharing formatter and scope labels; no packages.
-// v0.11.40 date-entry guard and localized hint add ~5.3 kB; no packages or persistence changes.
-// v0.11.41 adds ~12 kB for unit-aware R32 kg stock and legacy controls; no packages or new tables.
+// Bound total allowlisted static bytes, including calibration tables and optional effects.
+// Keep historical footprint changes in CHANGELOG.md; review any increase to this limit.
 assert.ok(size < 1120000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

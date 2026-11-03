@@ -162,6 +162,12 @@ function rawGasBalance(draft, id, result) {
 export function buildExcelRow(draft, report) {
   const layout = EXCEL_LAYOUTS[draft.plantKey];
   if (!layout || report.plantKey !== draft.plantKey) throw new RangeError('Unknown Excel layout');
+  // Exact names are the workbook contract; do not normalize them or select a later duplicate.
+  const rowsByName = new Map(),
+    gasesById = new Map();
+  for (const row of report.calculatedRows)
+    if (!rowsByName.has(row.name)) rowsByName.set(row.name, row);
+  for (const gas of report.gasResults) if (!gasesById.has(gas.gas)) gasesById.set(gas.gas, gas);
   const notes = layout.columns
     .filter((c) => c.source === 'unmapped')
     .map((c) => ({ column: c.column, name: c.name, code: 'unmapped' }));
@@ -170,14 +176,12 @@ export function buildExcelRow(draft, report) {
     if (!source.isTotal && source.name !== 'Total' && !mapped.has(source.name))
       notes.push({ name: source.name, code: 'unmappedRow' });
   const columns = layout.columns.map((column) =>
-    column.column === 'CS'
-      ? { ...column, unit: report.gasResults.some((gas) => gas.gas === 'LPG') ? '%' : 'Nm³' }
-      : column,
+    column.column === 'CS' ? { ...column, unit: gasesById.has('LPG') ? '%' : 'Nm³' } : column,
   );
   const values = columns.map((column) => {
     if (column.source === 'separator' || column.source === 'unmapped') return '';
     if (column.source === 'row') {
-      const found = report.calculatedRows.find((item) => item.name === column.name);
+      const found = rowsByName.get(column.name);
       if (found && String(found.unit).toLowerCase() !== column.unit.toLowerCase()) {
         notes.push({ column: column.column, name: column.name, code: 'unit' });
         return '-';
@@ -193,7 +197,7 @@ export function buildExcelRow(draft, report) {
           : draft.utilities[column.index]?.value,
       );
     if (column.source === 'utility') {
-      const gas = report.gasResults.find((item) => item.gas === column.gas);
+      const gas = gasesById.get(column.gas);
       const value = gas
         ? draft.plantKey === 'UNILAND'
           ? rawGasBalance(draft, column.gas, gas)

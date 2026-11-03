@@ -2,12 +2,7 @@
  * Adapted from the user-supplied component; /asset/licenses/react-bits.txt.
  * Geometry only: no screenshots, canvas/video backdrop, form data or animation loop.
  */
-const NS = 'http://www.w3.org/2000/svg';
-const svgNode = (tag, attributes = {}) => {
-  const node = document.createElementNS(NS, tag);
-  for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-  return node;
-};
+import { svgNode } from './dom.js';
 let count = 0;
 export function createGlassSurface(element) {
   if (!element || typeof ResizeObserver !== 'function') return { destroy() {} };

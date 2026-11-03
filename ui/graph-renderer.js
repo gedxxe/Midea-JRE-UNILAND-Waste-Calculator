@@ -11,6 +11,7 @@ import { GRAPH_METRICS } from '../graph-schema.js';
 import { graphSegments } from '../graph-data.js';
 import { formatNumber } from '../numbers.js';
 import { periodLabel, graphYAxis } from '../graph-axis.js';
+import { svgNode } from './dom.js';
 const NS = 'http://www.w3.org/2000/svg';
 const COLORS = [
   '#165a9c',
@@ -23,12 +24,6 @@ const COLORS = [
   '#555555',
 ];
 const FONT = 'Arial, Helvetica, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif';
-function svgNode(name, attrs = {}, text) {
-  const el = document.createElementNS(NS, name);
-  for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, String(value));
-  if (text !== undefined) el.textContent = text;
-  return el;
-}
 export function renderGraph(
   config,
   { plant, start, end, records, kind = 'daily', view = 'working' },

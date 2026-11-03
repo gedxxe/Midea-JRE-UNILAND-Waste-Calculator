@@ -198,3 +198,27 @@ test('missing and unavailable readings keep slots and never produce false zero',
   for (const column of ['K', 'I', 'J', 'AQ', 'AY']) assert.equal(get(row, column), '-');
   assert.equal(get(row, 'AP'), '');
 });
+
+test('Excel uses exact first matches and refreshes its lookup on every export', () => {
+  const draft = reportPeriods('JRE', '2026-11-03')[0];
+  const report = calculateDraft(draft);
+  const indoor = report.calculatedRows.find((item) => item.name === 'Indoor');
+  indoor.totalEnergy = 0;
+  indoor.missing = false;
+  report.calculatedRows.unshift({ ...indoor, name: ' indoor ', totalEnergy: 999 });
+  report.calculatedRows.push({ ...indoor, totalEnergy: 888 });
+  report.gasResults = [
+    { gas: 'LPG', kg: 1.000001, kgText: '1.000001' },
+    { gas: 'LPG', kg: 500, kgText: '500' },
+  ];
+  const before = structuredClone({ draft, report });
+  const exported = buildExcelRow(draft, report);
+  assert.equal(get(exported, 'K'), '0');
+  assert.equal(get(exported, 'AQ'), '1.000001');
+  assert.deepEqual({ draft, report }, before);
+  indoor.missing = true;
+  assert.equal(get(buildExcelRow(draft, report), 'K'), '-');
+  indoor.missing = false;
+  indoor.totalEnergy = 3.125;
+  assert.equal(get(buildExcelRow(draft, report), 'K'), '3.125');
+});
