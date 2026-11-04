@@ -1,6 +1,50 @@
 import { test, expect, modernWorkspace } from './fixtures.js';
 import { excelWorkspace } from '../fixtures/excel-periods.mjs';
 
+test('every recording mode keeps light controls and raw snapshots import without losing sections', async ({
+  page,
+}) => {
+  test.setTimeout(120000); // Six factory/mode round trips, with normal assertion deadlines.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const errors = await setup(page);
+  for (const plant of ['JRE', 'UNILAND']) {
+    await page.locator(`[data-plant="${plant}"]`).click();
+    for (const mode of ['daily', 'workingHours', 'nightShift']) {
+      await page.locator('#reading-mode').selectOption(mode);
+      await expect(page.locator('body')).not.toHaveAttribute('data-night-panel', '');
+      await expect(page.locator('html')).not.toHaveAttribute('data-panel-wipe', /.+/);
+      expect(
+        await page
+          .locator('.meter-input')
+          .first()
+          .evaluate((n) => getComputedStyle(n).color),
+      ).not.toBe('rgb(255, 255, 255)');
+      const report = await page.locator('#report-preview').inputValue();
+      await page.locator('#open-raw-export').click();
+      const raw = await page.locator('#raw-export-preview').inputValue();
+      expect(raw).toContain('Gas readings:');
+      await page.locator('#raw-export-dialog').evaluate((n) => n.close());
+      const end = page.locator('.meter-input[data-side="end"]').first();
+      await end.fill('999999');
+      await page.locator('#water-end').fill('999999');
+      await page.locator('#open-import').click();
+      await page.locator('#import-side').selectOption('end');
+      await page.locator('#import-text').fill(raw + '\n\nUnknown: 123');
+      await page.locator('#apply-import').click();
+      await expect(page.locator('#import-dialog')).toBeVisible();
+      await expect(end).toHaveValue('999999');
+      await page.locator('#import-text').fill(raw);
+      await page.locator('#apply-import').click();
+      await expect(page.locator('#import-dialog')).not.toBeVisible();
+      await expect(page.locator('#report-preview')).toHaveValue(report);
+      await page.locator('#open-raw-export').click();
+      await expect(page.locator('#raw-export-preview')).toHaveValue(raw);
+      await page.locator('#raw-export-dialog').evaluate((n) => n.close());
+    }
+  }
+  expect(errors).toEqual([]);
+});
+
 async function setup(page, { role = 'admin', theme = true } = {}) {
   let workspace = modernWorkspace(excelWorkspace()),
     version = 1;

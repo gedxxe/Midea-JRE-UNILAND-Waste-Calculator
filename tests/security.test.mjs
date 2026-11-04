@@ -54,6 +54,13 @@ test('secret guard blocks private files and recognizable credentials without tre
     'npg_' + 'a'.repeat(24),
     'AUTH_SECRET=' + 'c'.repeat(48),
     'ghp_' + 'b'.repeat(36),
+    '<!-- ' + 'AKIA' + 'A'.repeat(16) + ' -->',
+    '// ' + 'AIza' + 'a'.repeat(35),
+    'notes: ' + 'sk-' + 'a'.repeat(48),
+    'token=' + 'npm_' + 'a'.repeat(36),
+    'token=' + 'vcp_' + 'a'.repeat(32),
+    'API_KEY=' + '"' + 'a'.repeat(24) + '"',
+    'redis' + '://user:synthetic@db.invalid/app',
     '-----BEGIN ' + 'PRIVATE KEY-----',
     'postgres' + '://user:synthetic@db.invalid/app',
   ])

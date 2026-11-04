@@ -1,12 +1,194 @@
 import { exportRawReading } from './raw-export.js';
+import { parseReading } from './importer.js';
 import { ADDITIONAL_METERS } from './additional-readings.js';
-import { gasCalibration, gasPointUnit, MAX_REFILLS, JRE_GAS_INPUT_VERSION } from './gas.js';
+import {
+  createGasDraft,
+  restoreGasDraft,
+  gasCalibration,
+  gasPointUnit,
+  MAX_REFILLS,
+  JRE_GAS_INPUT_VERSION,
+} from './gas.js';
 import { UTILITIES } from './schema.js';
 import { decimalText, validDate } from './numbers.js';
 import { observationTime, validTime } from './reading-period.js';
 
+function rawEndpoint(draft, side) {
+  const date = draft[side + 'Date'],
+    time = observationTime(draft, side);
+  return (
+    (validDate(date) ? date.split('-').reverse().join('/') : '____') +
+    ' ' +
+    (validTime(time) ? time : '____') +
+    ' WIB'
+  );
+}
+
+// Parse a complete sharing snapshot without mutating the current document.
+// Regenerating it catches unknown, duplicate or misplaced fields rather than dropping them.
+export function parseRawReading(text, draft, side = 'end') {
+  const input = String(text).replaceAll('\r\n', '\n').trim();
+  if (input.length > 131072) return parseReading(input, draft.plantKey);
+  if (!input.includes('\nSelected observation:')) return parseReading(input, draft.plantKey);
+  const boundary = input.indexOf('\n\nSelected observation:');
+  const parts = input.slice(boundary + 2).split('\n\n');
+  const parsed = parseReading(input.slice(0, boundary), draft.plantKey);
+  if (!parsed.success) return parsed;
+  try {
+    const next = structuredClone(draft);
+    const selected = parts.shift().match(/^Selected observation: (Start|End), (.+)$/);
+    if (!selected) throw Error('Invalid selected observation.');
+    // A full snapshot owns refill/manual context for the complete period.
+    // Do not silently attach that context to different dates or times.
+    const endpoint = (s) => rawEndpoint(next, s);
+    if (
+      selected[2] !== endpoint(side) ||
+      parsed.date !== next[side + 'Date'] ||
+      (parsed.time || '08:00') !== observationTime(next, side)
+    )
+      throw Error('Select the matching date and time before importing all readings.');
+    parsed.values.forEach((values, ri) =>
+      values.forEach((value, mi) => {
+        if (parsed.suppliedMeters[ri][mi]) next.rows[ri][side][mi] = value;
+      }),
+    );
+    const value = (v) => {
+      if (v === '____') return '';
+      if (v !== '-' && decimalText(v.replace(/^[+-]/, '')) === null)
+        throw Error('Invalid raw value.');
+      return v;
+    };
+    if (next.plantKey === 'JRE') {
+      const lines = parts.shift().split('\n');
+      if (lines.shift() !== 'Additional cumulative electricity readings:' || lines.length !== 4)
+        throw Error('Invalid additional readings.');
+      next.additionalReadings ??= ADDITIONAL_METERS.map(() => ({ start: '', end: '' }));
+      lines.forEach((line, i) => {
+        const prefix = ADDITIONAL_METERS[i] + ': ';
+        if (!line.startsWith(prefix) || !line.endsWith(' kWh'))
+          throw Error('Invalid additional meter.');
+        next.additionalReadings[i][side] = value(line.slice(prefix.length, -4));
+      });
+    } else if (parts.shift() !== 'Trafo 1, 2 and 3 cumulative readings are in MWh.')
+      throw Error('Invalid Trafo units.');
+    const gases = gasCalibration(next.plantKey).gases;
+    next.gas = next.gas ? restoreGasDraft(next.gas, next.plantKey) : createGasDraft(next.plantKey);
+    const point = (line, prefix, gas) => {
+      if (!line.startsWith(prefix)) throw Error('Unknown gas reading.');
+      const match = line
+        .slice(prefix.length)
+        .match(/^(\S+) (kg|mm|%|mmWC|mmH2O)(?:; temperature: (\S+) °C)?$/);
+      if (
+        !match ||
+        (gas.id !== 'R32' && match[2] !== gas.unit) ||
+        (gas.id === 'R32' && !['kg', 'mm'].includes(match[2])) ||
+        (next.plantKey !== 'JRE' && gas.id === 'R32' && match[2] !== 'mm')
+      )
+        throw Error('Invalid gas unit.');
+      return {
+        reading: value(match[1]),
+        temperature: match[3] === undefined ? '' : value(match[3]),
+        ...(next.plantKey === 'JRE' && gas.id === 'R32' ? { unit: match[2] } : {}),
+      };
+    };
+    const gasLines = parts.shift().split('\n');
+    if (gasLines.shift() !== 'Gas readings:' || gasLines.length !== gases.length)
+      throw Error('Invalid gas section.');
+    gasLines.forEach((line, i) => {
+      const off = line.endsWith(' (tank entry off)');
+      const entry = next.gas.entries[i];
+      entry.enabled = !off;
+      entry[side] = point(off ? line.slice(0, -17) : line, gases[i].name + ': ', gases[i]);
+      entry.refills = [];
+    });
+    const water = parts.shift().match(/^Cumulative Water reading:\nWater: (\S+) m³$/);
+    if (!water) throw Error('Invalid Water reading.');
+    if (next.water !== undefined || water[1] !== '____') {
+      next.water ??= { start: '', end: '' };
+      next.water[side] = value(water[1]);
+    }
+    const period = endpoint('start') + ' to ' + endpoint('end');
+    if (parts[0]?.startsWith('Refill observations for ')) {
+      const lines = parts.shift().split('\n');
+      if (
+        lines.shift() !== 'Refill observations for ' + period ||
+        lines.shift() !== 'Event times not recorded.'
+      )
+        throw Error('Refill period does not match.');
+      while (lines.length) {
+        const label = lines.shift();
+        const i = gases.findIndex((g) => label.startsWith(g.name + ' refill '));
+        if (
+          i < 0 ||
+          label !== gases[i].name + ' refill ' + (next.gas.entries[i].refills.length + 1) + ':'
+        )
+          throw Error('Invalid refill sequence.');
+        next.gas.entries[i].refills.push({
+          before: point(lines.shift(), '  Before: ', gases[i]),
+          after: point(lines.shift(), '  After: ', gases[i]),
+        });
+        if (
+          !next.gas.entries[i].enabled &&
+          lines.shift() !== '  Tank entry off; stored observations.'
+        )
+          throw Error('Invalid refill context.');
+      }
+    }
+    if (parts[0]?.startsWith('Manual period totals for ')) {
+      const lines = parts.shift().split('\n');
+      if (
+        lines.shift() !== 'Manual period totals for ' + period ||
+        lines.shift() !== 'Entered values, not cumulative meter readings.'
+      )
+        throw Error('Manual totals period does not match.');
+      const seen = new Set();
+      for (const line of lines) {
+        const i = UTILITIES[next.plantKey].findIndex(([name]) => line.startsWith(name + ': '));
+        if (i < 0 || seen.has(i)) throw Error('Unknown or duplicate manual total.');
+        seen.add(i);
+        next.utilities[i].value = value(
+          line.slice(UTILITIES[next.plantKey][i][0].length + 2).split(' ')[0],
+        );
+      }
+    }
+    next.utilities.forEach((u) => {
+      u.note = '';
+    });
+    if (parts[0]?.startsWith('Notes:\n')) {
+      const lines = parts.shift().split('\n').slice(1);
+      let index = -1;
+      const seen = new Set();
+      for (const line of lines) {
+        if (line.startsWith('  ') && index >= 0)
+          next.utilities[index].note += (next.utilities[index].note ? '\n' : '') + line.slice(2);
+        else {
+          index = UTILITIES[next.plantKey].findIndex(([name]) => line === name + ':');
+          if (index < 0 || seen.has(index)) throw Error('Unknown or duplicate note.');
+          seen.add(index);
+        }
+      }
+    }
+    // The source side label may differ when reusing an observation at a shared boundary.
+    const regenerated = exportAllRawReadings(next, side);
+    const canonical = input.replace(
+      'Selected observation: ' + selected[1] + ',',
+      'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ',',
+    );
+    if (parts.length || regenerated.text !== canonical)
+      throw Error('Raw sections do not match the current format. No data was imported.');
+    parsed.raw = next;
+    return parsed;
+  } catch (error) {
+    return {
+      ...parsed,
+      success: false,
+      issues: [...parsed.issues, { level: 'ERROR', code: 'RAW_IMPORT', message: error.message }],
+    };
+  }
+}
+
 // Sharing snapshot only. Never convert units, subtract readings or modify a draft.
-// The electricity-only formatter remains the text-import contract.
+// Both sharing and import use the same named sections and recorded units.
 export function exportAllRawReadings(draft, side = 'end') {
   const electricity = exportRawReading(draft, side);
   if (electricity.issues.length) return electricity;
@@ -36,16 +218,7 @@ export function exportAllRawReadings(draft, side = 'end') {
       issues.push({ code: 'RAW_INVALID', label });
     return text;
   }
-  const endpoint = (which) => {
-    const date = draft[which + 'Date'],
-      time = observationTime(draft, which);
-    return (
-      (validDate(date) ? date.split('-').reverse().join('/') : '____') +
-      ' ' +
-      (validTime(time) ? time : '____') +
-      ' WIB'
-    );
-  };
+  const endpoint = (which) => rawEndpoint(draft, which);
   sections.push(
     'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ', ' + endpoint(side),
   );

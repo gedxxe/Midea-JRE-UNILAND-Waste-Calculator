@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.44-alpha - 2026-11-05
+
+- Accept complete raw sharing snapshots in Import readings, including native gas units, T1–T4, Water, refills, manual totals and notes. Validate sections against the sharing formatter before applying; keep electricity-only imports compatible. Full imports require matching observation dates/times and period context.
+- Restore the default light workspace for every recording mode. Remove the unused Night theme module, stylesheet and circular theme animation; shift calculations remain unchanged.
+- Cover both factories and all three modes with raw round-trip and light-workspace regressions. No dependency, migration or calculation-rule change.
+- Expand credential detection in source, comments and documentation to common provider tokens, literal service keys and password-bearing service URLs. Keep diagnostics redacted.
+
 ## v0.11.43-alpha - 2026-11-04
 
 - Keep unacknowledged readings in owner-scoped browser recovery as well as the tab copy, so closing a tab or losing a session before sync can be recovered after login. Validate each copy, preserve conflicting copies for explicit selection and remove only acknowledged, unchanged recoveries.

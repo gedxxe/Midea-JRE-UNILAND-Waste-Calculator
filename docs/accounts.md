@@ -17,7 +17,7 @@ Local scripts load .env.local. Existing process environment variables take prece
 1. Create a Neon development branch separately from production. Before the database contains real readings, branching from an empty production branch is sufficient. Later previews should use synthetic data or a schema-only copy, not copies of operational data.
 2. Enter development DATABASE_URL, AUTH_SECRET, and local APP_ORIGIN in .env.local.
 3. Run npm ci, npm run db:check, then npm run db:migrate -- --apply.
-4. Run npm run admin:create -- power-engineer. Read the generated .admin-setup.local.txt locally. Log in, change the temporary password, then delete the file.
+4. Run npm run admin:create -- example-admin. Read the generated .admin-setup.local.txt locally. Log in, change the temporary password, then delete the file.
 5. Use the account panel to create operators. Their temporary password appears once in the admin dialog and is cleared when the dialog closes. Deliver it privately.
 
 The bootstrap command refuses to create a second admin or overwrite a credentials file. Do not commit or upload that file. On a shared workstation, use a private OS profile and appropriate file permissions.
@@ -63,7 +63,7 @@ Login limits apply per IP and canonical username, stored in PostgreSQL across se
 For admin recovery, remove or securely archive the old local credentials file first, then run:
 
 ```sh
-node scripts/database.mjs reset-admin power-engineer --apply
+node scripts/database.mjs reset-admin example-admin --apply
 ```
 
 This generates a temporary password, requires a change on next login, and revokes all admin sessions. It requires privileged database access, not a public HTTP endpoint.

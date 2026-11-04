@@ -4,7 +4,13 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.43-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.44-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+
+## Import and light workspace revision, requested 2026-11-04
+
+- User requested matching raw export/import, removal of Night dark mode and its animation, and conservative cleanup. All recording modes now use the existing light workspace. Remove only the unused theme module, stylesheet and obsolete feature assertions; retain workflow and calculation coverage.
+- Full raw snapshots use the existing named sections, preserving native units, precision, T1–T4, gas, Water, refills, manual totals and notes. Parse and validate before applying; reject unknown/duplicate sections, mismatched factory/date/time and period-owned context rather than dropping data. Full imports require the matching period to be selected first; electricity-only legacy imports retain their current date workflow. Preserve opposite readings, historical snapshots and canonical autosave. No migration or production data repair.
+- User also requested auditing README/docs/comments/code for leaked credentials. Scan current tracked/non-ignored files and reachable history without printing matched secrets. Expand the existing guard and tests rather than adding a separate public scanner module; keep local ignored environment/recovery files private. No finding from configured patterns does not prove credentials shared elsewhere were revoked.
 
 ## Autosave preservation audit, requested 2026-11-04
 
@@ -73,7 +79,7 @@ Current development milestone: v0.11.43-alpha in package.json. Preserved baselin
 - JRE gas rework uses raw LPG %, Oxygen mmWC, Nitrogen mmH2O and R32 mm plus temperature at every observation. R32 supports -20 to 50 °C, including decimals, using the supplied workbook tables. Convert each Before Work, Before/After Refill and After Work observation to kg first, then calculate stock usage with refill correction. After Work normally uses next morning's reading. Preserve manual legacy utilities and store raw gas history. The original rework was JRE only; the UNILAND extension is recorded below.
 - Add individual username/password accounts without Google SSO and save reports per account in Neon PostgreSQL.
 - Keep the existing static frontend and Vercel Node APIs. No framework migration is required.
-- User chose power-engineer for the first admin username. Generate temporary credentials locally; require a password change at first login.
+- Configure the initial administrator username locally. Generate temporary credentials locally; require a password change at first login.
 - Separate development and production database connections. Do not store or print credentials in agent memory.
 - Admins manage accounts; reports remain private to their owner. Correcting a report creates a revision.
 

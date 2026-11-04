@@ -4,8 +4,6 @@ export const PUBLIC_FILES = [
   'ui/date-entry.js',
   'style.css',
   'workspace.css',
-  'night.css',
-  'ui/panel-theme.js',
   'button-effects.css',
   'counter.css',
   'counter-model.js',
