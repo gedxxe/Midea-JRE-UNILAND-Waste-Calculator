@@ -1,6 +1,6 @@
 import { isWorkingHours, observationLabel, validTime } from '../reading-period.js';
 import { formatReadingColumn } from '../raw-export.js';
-import { parseReading } from '../importer.js';
+import { parseRawReading } from '../raw-meter-export.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { importFeedback, readingText } from '../i18n/reading-feedback.js';
 import { t } from '../i18n/index.js';
@@ -51,7 +51,7 @@ export function createImportEditor({ current, apply, toast }) {
   });
   $('import-dialog').addEventListener('close', reset);
   $('apply-import').addEventListener('click', () => {
-    const parsed = parseReading($('import-text').value, current().plantKey);
+    const parsed = parseRawReading($('import-text').value, current(), $('import-side').value);
     lastParsed = parsed;
     $('import-feedback').textContent = importFeedback(parsed, current().plantKey);
     if (!parsed.success) return;

@@ -1,7 +1,6 @@
 import { periodKey } from './draft-records.js';
 import { fitResultsColumn } from './ui/result-layout.js';
 import { createPanelEffects } from './ui/panel-effects.js';
-import { createPanelTheme } from './ui/panel-theme.js';
 import { createDateEntry } from './ui/date-entry.js';
 import { mountPanelIcons, setPanelIcon } from './ui/panel-icons.js';
 import {
@@ -79,7 +78,6 @@ const table = createMeterTable({
 const filterTable = () => table.filter();
 const clock = new NetworkClock();
 const panelEffects = createPanelEffects();
-const panelTheme = createPanelTheme();
 fitResultsColumn(document.querySelector('.result-column'));
 let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
@@ -264,9 +262,21 @@ const importEditor = createImportEditor({
         }
       }),
     );
+    const utilityEdits = [];
+    if (parsed.raw) {
+      for (const field of ['additionalReadings', 'gas', 'water', 'utilities'])
+        current()[field] = structuredClone(parsed.raw[field]);
+      if (plant === 'JRE')
+        current().additionalReadings.forEach((_, index) => edits.push({ index, side }));
+      if (current().water !== undefined) utilityEdits.push({ kind: 'water', side });
+      current().gas.entries.forEach((_, index) => {
+        for (const field of ['reading', 'temperature', 'unit'])
+          utilityEdits.push({ kind: 'gas', index, side, field });
+      });
+    }
     current().importIssues = [...(current().importIssues || []), ...parsed.issues];
     current().isExample = false;
-    changed(false, edits);
+    changed(false, edits, utilityEdits);
     mountPlant();
   },
 });
@@ -326,7 +336,6 @@ function accountChanged(user) {
   // Preserve the previous owner's pending input before clearing its form or tab recovery.
   autosave?.reset(null);
   dateEntries.forEach((entry) => entry.reset());
-  panelTheme.reset();
   copyGeneration++;
   panelEffects.reset();
   guide.reset(user);
@@ -611,7 +620,6 @@ function mountPlant() {
   additionalPanel.rebuild();
   table.rebuild();
   workPicker.sync({ preserveDate: keepDateEntry });
-  panelTheme.sync(mode);
   renderResults();
 }
 function renderResults() {

@@ -114,9 +114,9 @@ export const catalog = {
   copyRawTemplate: ['Copy template', '复制模板', 'Salin template'],
   downloadRawTemplate: ['Download .txt', '下载 .txt', 'Unduh .txt'],
   rawExportHint: [
-    'Copy all raw readings for this factory, or electricity only for text import. Manual period totals are labeled separately.',
-    '复制本厂全部原始读数，或选择仅电表读数用于文本导入。手动填写的期间总量单独标注。',
-    'Salin semua reading mentah pabrik ini, atau listrik saja untuk impor teks. Total periode yang diisi manual diberi label terpisah.',
+    'Copy all raw readings or electricity only. Import a full snapshot into its matching period; manual totals and refills belong to that period.',
+    '可复制全部原始读数或仅电表读数。完整副本须导入相同时段，手填总量和补充记录属于该时段。',
+    'Salin semua reading mentah atau listrik saja. Impor salinan lengkap ke periode yang sama; total manual dan refill mengikuti periode tersebut.',
   ],
   rawExportScope: ['Include', '包含内容', 'Sertakan'],
   dateEntryPending: [

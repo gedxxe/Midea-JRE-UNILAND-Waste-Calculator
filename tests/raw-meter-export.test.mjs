@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from '../engine.js';
-import { exportAllRawReadings } from '../raw-meter-export.js';
+import { exportAllRawReadings, parseRawReading } from '../raw-meter-export.js';
 import { exportRawReading } from '../raw-export.js';
 import { parseReading } from '../importer.js';
 
@@ -166,5 +166,54 @@ test('electricity-only round trip remains unchanged and full snapshots are expli
       raw = exportRawReading(d).text;
     assert.equal(parseReading(raw, plant).success, true);
     assert.equal(parseReading(exportAllRawReadings(d).text, plant).success, false);
+  }
+});
+
+test('full raw snapshots round trip both factories, sides and modes without altering the opposite observation', () => {
+  for (const plant of ['JRE', 'UNILAND'])
+    for (const mode of ['daily', 'workingHours', 'nightShift'])
+      for (const side of ['start', 'end']) {
+        const source = filled(plant, mode);
+        source.gas.entries[0].refills = [
+          { before: { reading: '10', temperature: '' }, after: { reading: '30', temperature: '' } },
+        ];
+        source.gas.entries[1].enabled = false;
+        source.utilities[2].value = '12,5';
+        if (plant === 'JRE') {
+          source.gas.entries[3][side] = { reading: '123.456', temperature: '', unit: 'kg' };
+          source.gas.entries[3].refills = [
+            {
+              before: { reading: '100', temperature: '33.5', unit: 'mm' },
+              after: { reading: '300.125', temperature: '', unit: 'kg' },
+            },
+          ];
+        }
+        source.utilities[1].note = 'Synthetic note\nSecond line';
+        const raw = exportAllRawReadings(source, side).text;
+        const before = structuredClone(source);
+        const parsed = parseRawReading(raw, source, side);
+        assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+        assert.equal(exportAllRawReadings(parsed.raw, side).text, raw);
+        assert.deepEqual(source, before);
+        assert.equal(parseRawReading(raw.replaceAll('\n', '\r\n'), source, side).success, true);
+        const wrongPeriod = structuredClone(source);
+        wrongPeriod[side + 'Date'] = '2026-11-10';
+        assert.equal(parseRawReading(raw, wrongPeriod, side).success, false);
+        assert.equal(parseRawReading(raw + '\n\nUnknown: 123', source, side).success, false);
+      }
+});
+
+test('legacy manual Water and absent tank observations survive full raw import', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const draft = filled(plant);
+    delete draft.water;
+    delete draft.gas;
+    draft.utilities[4].value = '12.5';
+    const raw = exportAllRawReadings(draft).text;
+    const parsed = parseRawReading(raw, draft);
+    assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+    assert.equal(parsed.raw.water, undefined);
+    assert.equal(parsed.raw.utilities[4].value, '12.5');
+    assert.equal(exportAllRawReadings(parsed.raw).text, raw);
   }
 });
