@@ -20,7 +20,7 @@ import { emptyNightShifts } from '../../shifts.js';
 import { emptyWorkingHours } from '../../storage.js';
 import { importHistory } from '../../server/history-import.js';
 import { graphsHandler } from '../../server/graphs.js';
-import { test, before, after } from 'node:test';
+import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { randomUUID, randomBytes } from 'node:crypto';
@@ -473,6 +473,32 @@ test('login throttling persists across handler instances and canonical username 
   );
 });
 
+test('authentication IP budget is shared across accounts and handlers and ignores forged forwarded addresses', async () => {
+  const key = rateKey('auth:ip:127.0.0.1', env);
+  const probes = [await seed(), await seed()];
+  for (const [index, hits] of [59, 60].entries()) {
+    // Place this synthetic counter ahead of the boundary to avoid a clock rollover.
+    await db.query(
+      `INSERT INTO meter_app.rate_limits(key_hash,window_start,hits)
+       VALUES($1,now()+interval '15 minutes',$2)
+       ON CONFLICT(key_hash) DO UPDATE SET window_start=EXCLUDED.window_start,hits=EXCLUDED.hits`,
+      [key, hits],
+    );
+    const result = await call(index ? '/api/auth-replica' : '/api/auth', {
+      body: { action: 'login', username: probes[index].name, password: 'wrong synthetic password' },
+      headers: { 'X-Forwarded-For': '203.0.113.' + (index + 1) },
+    });
+    assert.equal(result.status, index ? 429 : 401);
+    assert.equal(result.value.error, index ? 'RATE_LIMITED' : 'INVALID_CREDENTIALS');
+    assert.equal(result.cookie, undefined);
+    assert.equal(
+      (await db.query('SELECT hits FROM meter_app.rate_limits WHERE key_hash=$1', [key])).rows[0]
+        .hits,
+      hits + 1,
+    );
+  }
+});
+
 test('working drafts replace partial entries without report revisions and reject stale or foreign writes', async () => {
   const workspace = {
     version: 4,
@@ -621,6 +647,14 @@ before(async () => {
   operator = await login(await seed());
   other = await login(await seed('operator', true));
 });
+beforeEach(async () => {
+  // Independent scenarios share a loopback server, not one user's 15-minute login budget.
+  // Keep the real limiter active within every scenario, including the boundary test above.
+  await db.query('DELETE FROM meter_app.rate_limits WHERE key_hash=$1', [
+    rateKey('auth:ip:127.0.0.1', env),
+  ]);
+});
+
 after(async () => {
   if (server) {
     server.closeAllConnections();
