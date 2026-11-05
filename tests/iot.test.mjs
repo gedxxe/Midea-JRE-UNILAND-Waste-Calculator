@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateIotEvent as validateEvent } from '../iot-contract.js';
 import { iotCloudEndpoint, iotNodeConfig, IOT_NODE_PROFILES } from '../iot-contract.js';
+import { validateIotHeartbeat, iotPresence } from '../iot-contract.js';
 const validateIotEvent = (value) => validateEvent(value, Date.parse('2026-11-05T02:00:00Z'));
 import { iotIngestHandler, iotDevicesHandler } from '../server/iot.js';
 const event = () => ({
@@ -16,6 +17,47 @@ const event = () => ({
   scheduled_at: '2026-11-05T01:00:00Z',
   quality: 'valid',
   readings: { active_energy_kwh: '123.000001' },
+});
+test('heartbeat has no measurement, event identity or device-clock dependency and rejects extra fields', () => {
+  const beat = {
+    schema_version: 1,
+    event_type: 'heartbeat',
+    device_id: 'test_device',
+    meter_id: 'meter_1',
+    meter_profile: 'fort',
+  };
+  assert.deepEqual(validateIotHeartbeat(beat), beat);
+  assert.deepEqual(validateIotHeartbeat(Object.fromEntries(Object.entries(beat).reverse())), beat);
+  assert.throws(() => validateIotEvent(beat));
+  for (const patch of [
+    { readings: {} },
+    { readings: { active_energy_kwh: '0' } },
+    { event_id: 'not_a_reading' },
+    { captured_at: '2026-11-05T01:00:00Z' },
+    { schema_version: 2 },
+    { event_type: 'telemetry' },
+    { device_id: '../bad' },
+    { meter_id: null },
+    { meter_profile: '' },
+    { owner_id: 'forged' },
+  ])
+    assert.throws(() => validateIotHeartbeat({ ...beat, ...patch }));
+  for (const bad of [null, [], 'heartbeat', false]) assert.throws(() => validateIotHeartbeat(bad));
+});
+
+test('presence uses server receipt freshness, expires at three minutes and never infers Modbus health', () => {
+  const now = Date.parse('2026-11-05T02:00:00Z');
+  const device = { active: true, last_received_at: '2026-11-05T01:57:01Z' };
+  assert.equal(iotPresence(device, now), 'connected');
+  assert.equal(iotPresence(device, now + 1000), 'offline');
+  assert.equal(iotPresence({ ...device, last_received_at: null }, now), 'unknown');
+  assert.equal(iotPresence({ ...device, last_received_at: 'invalid' }, now), 'unknown');
+  assert.equal(
+    iotPresence({ ...device, last_received_at: '2026-11-05T02:00:01Z' }, now),
+    'unknown',
+  );
+  assert.equal(iotPresence(device, NaN), 'unknown');
+  assert.equal(iotPresence({ ...device, active: false }, now), 'disabled');
 });
 test('IoT preserves exact primary kWh and validates firmware capture windows without changing input', () => {
   const e = event(),

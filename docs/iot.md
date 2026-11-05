@@ -12,9 +12,33 @@ Events are append-only through the API. `(device_id,event_id)` is the deduplicat
 
 HTTPS protects transport and the existing PostgreSQL client verifies remote TLS certificates. Database/platform encryption at rest and access policy require deployment verification; this code does not add a second custom encryption scheme or certify the installation.
 
+## Device presence without Modbus readings
+
+Wi-Fi association and a credential-free GET probe do not identify a registered node to the website. A GET returning 405 only proves the route is reachable. Do not mark a source Connected from registration, a browser refresh or a failed request.
+
+Using the same HTTPS endpoint and device headers as readings, compatible firmware sends this separate body about every 60 seconds, even when Modbus has no valid sample:
+
+```json
+{
+  "schema_version": 1,
+  "event_type": "heartbeat",
+  "device_id": "dev_source",
+  "meter_id": "meter_1",
+  "meter_profile": "fort"
+}
+```
+
+The registered IDs/profile and bearer must match. Heartbeats contain no reading, event ID or device timestamp. The server returns 200 with `event_type: "heartbeat"`, the matching `device_id`, `server_time` and `heartbeat_interval_seconds: 60`. This is a separate contact acknowledgment, never a checkpoint/event ACK: do not advance the durable reading cursor or change an existing retry payload. Reuse TLS verification, bounded networking, retry/backoff and the capture quiet window. Do not let repeated heartbeats starve queued readings. Keep heartbeat possible without a Modbus sample; report blocked configuration/TLS/auth failures honestly.
+
+An accepted heartbeat updates only the source's existing `last_received_at` contact field and shared upload budget. It creates no observation rows and changes no latest reading, checkpoint, report or autosave. Successful reading inserts and identical accepted retries also refresh contact; invalid, conflicting, mismatched, revoked or throttled requests do not. The existing 120-attempt/minute source budget also covers heartbeats. No migration or additional runtime grant is needed.
+
+Cards show **Connected** for authenticated contact less than 180 seconds old, **Offline** after that, **Unverified** before any contact or when status cannot be verified, and **Disabled** for revoked sources. These describe recent node-to-website HTTPS communication, not Modbus health or a persistent socket. Capture/reading receipt times remain separate from last device contact. A connected node can still show no readings. Cached readings stay visible when offline; never substitute zero. Browser expiry uses the server's observation time plus monotonic elapsed time, not the user's wall clock. Refresh (or enable the existing 30-second refresh option) to discover new contact; a failed refresh does not retain a green badge.
+
+The reference firmware reviewed on 2026-11-05 already sends optional current A, but its no-sample connectivity probe is still credential-free. It must adopt the heartbeat contract above before the website can identify that node without a meter. Update firmware in its own repository; no firmware implementation is copied here. Test heartbeat with Modbus disconnected, expiry/reconnect, revoked credentials and reading retries independently of hardware acquisition.
+
 ## Physical node: Wi-Fi to HTTPS
 
-The selected first path is **ESP32-S3 node -> Wi-Fi with internet -> HTTPS ingestion -> Neon -> authenticated Power Meter Reading**. This tests the physical node uplink; it does not establish that a LoRa gateway path has been commissioned. The reference node main already contains a development-only HTTPS worker. Its current telemetry/checkpoint serializer sends kWh only; optional A fields supported here require the small extension described below.
+The selected first path is **ESP32-S3 node -> Wi-Fi with internet -> HTTPS ingestion -> Neon -> authenticated Power Meter Reading**. This tests the physical node uplink; it does not establish that a LoRa gateway path has been commissioned. The reference node main already contains a development-only HTTPS worker with kWh and optional valid current A. Older builds may need the extension described below; do not add a second uploader or duplicate current support.
 
 Use a separate cloud project backed by Neon development for the physical pilot. The operator production project and database are separate. A Vercel project can use its public stable deployment domain while still requiring normal application login for private reads and device bearer authentication for uploads. Protected per-build preview URLs are unsuitable firmware endpoints: a Vercel login response arrives before this API can authenticate the device. Do not give firmware an account-wide automation bypass secret or turn off protection on the operator project. See [Vercel deployment protection](https://vercel.com/docs/deployment-protection).
 
@@ -39,7 +63,7 @@ The uploader verifies a public CA bundle and hostname, rejects HTTP/redirects, a
 
 ## Firmware handoff: optional current (A)
 
-Use this scoped request in the node-repository chat without including any secret values:
+For an older build without current support, use this scoped request in the node-repository chat without including any secret values. Check the current main first; this support may already be present:
 
 ```text
 Keep the existing Energy Record schema v1 uploader and all Modbus, capture,

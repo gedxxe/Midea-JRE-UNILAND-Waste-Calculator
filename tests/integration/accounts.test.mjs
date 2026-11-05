@@ -110,6 +110,141 @@ test('IoT ingestion deduplicates atomically, isolates owners and rejects revoked
   }
 });
 
+test('authenticated heartbeats show presence without a meter reading and cannot bypass binding, budgets or revocation', async () => {
+  const actor = await login(await seed()),
+    stranger = await login(await seed());
+  const id = 'heartbeat_' + randomBytes(8).toString('hex'),
+    key = randomBytes(32).toString('base64url');
+  const headers = { 'X-Device-ID': id, Authorization: 'Bearer ' + key };
+  const body = {
+    schema_version: 1,
+    event_type: 'heartbeat',
+    device_id: id,
+    meter_id: 'meter_1',
+    meter_profile: 'fort',
+  };
+  const read = async () => (await call('/api/iot-readings', { actor })).value;
+  const stored = async () =>
+    (await db.query('SELECT last_received_at FROM meter_app.iot_devices WHERE device_id=$1', [id]))
+      .rows[0].last_received_at;
+  await db.query(
+    'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6)',
+    [id, actor.id, 'JRE', 'meter_1', 'fort', tokenHash(key)],
+  );
+  try {
+    assert.equal((await read()).devices[0].connection_status, 'unknown');
+    assert.equal((await call('/api/iot-ingest', { headers, method: 'GET' })).status, 405);
+    assert.equal((await call('/api/iot-ingest', { body })).status, 401);
+    assert.equal((await call('/api/iot-ingest', { body, actor })).status, 401);
+    assert.equal(
+      (
+        await call('/api/iot-ingest', {
+          body,
+          headers: { ...headers, Authorization: 'Bearer ' + 'x'.repeat(43) },
+        })
+      ).status,
+      401,
+    );
+    assert.equal(
+      (await call('/api/iot-ingest', { body: { ...body, meter_id: 'wrong' }, headers })).status,
+      403,
+    );
+    assert.equal(
+      (await call('/api/iot-ingest', { body: { ...body, meter_profile: 'wrong' }, headers }))
+        .status,
+      403,
+    );
+    assert.equal(
+      (
+        await call('/api/iot-ingest', {
+          body: { ...body, readings: { active_energy_kwh: '0' } },
+          headers,
+        })
+      ).status,
+      400,
+    );
+    assert.equal(await stored(), null);
+    const beat = await call('/api/iot-ingest', { body, headers });
+    assert.equal(beat.status, 200);
+    assert.equal(beat.value.event_type, 'heartbeat');
+    assert.equal(beat.value.device_id, id);
+    assert.equal(beat.value.heartbeat_interval_seconds, 60);
+    assert.equal(beat.value.event_id, undefined);
+    assert.ok(Number.isFinite(Date.parse(beat.value.server_time)));
+    let list = await read();
+    assert.equal(list.devices[0].connection_status, 'connected');
+    assert.equal(list.devices[0].latest_reading, null);
+    assert.equal(list.readings.length, 0);
+    assert.equal(list.connection.presence_timeout_seconds, 180);
+    assert.ok(Number.isFinite(Date.parse(list.server_time)));
+    assert.equal((await call('/api/iot-readings', { actor: stranger })).value.devices.length, 0);
+    assert.ok(!JSON.stringify(list).includes(tokenHash(key)));
+    assert.ok(!JSON.stringify(list).includes(key));
+    await db.query(
+      "UPDATE meter_app.iot_devices SET last_received_at=now()-interval '4 minutes' WHERE device_id=$1",
+      [id],
+    );
+    assert.equal((await read()).devices[0].connection_status, 'offline');
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 200);
+    assert.equal((await read()).devices[0].connection_status, 'connected');
+    const telemetry = {
+      ...body,
+      event_type: 'telemetry',
+      event_id: 'sample_1',
+      captured_at: '2026-11-01T01:00:00Z',
+      quality: 'valid',
+      readings: { active_energy_kwh: '123.000001' },
+    };
+    assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
+    const before = (await read()).devices[0].latest_reading;
+    await db.query(
+      "UPDATE meter_app.iot_devices SET last_received_at=now()-interval '4 minutes' WHERE device_id=$1",
+      [id],
+    );
+    assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 200);
+    list = await read();
+    assert.equal(list.devices[0].connection_status, 'connected');
+    assert.deepEqual(list.devices[0].latest_reading, before);
+    assert.equal(list.readings.length, 1);
+    const seen = await stored();
+    assert.equal(
+      (
+        await call('/api/iot-ingest', {
+          body: { ...telemetry, readings: { active_energy_kwh: '124' } },
+          headers,
+        })
+      ).status,
+      409,
+    );
+    assert.deepEqual(await stored(), seen);
+    await db.query(
+      'UPDATE meter_app.iot_devices SET hits=120,window_start=now() WHERE device_id=$1',
+      [id],
+    );
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 429);
+    assert.deepEqual(await stored(), seen);
+    await db.query('UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1', [id]);
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 401);
+    assert.equal((await read()).devices[0].connection_status, 'disabled');
+    assert.deepEqual(await stored(), seen);
+    await db.query('UPDATE meter_app.iot_devices SET active=true,hits=0 WHERE device_id=$1', [id]);
+    await db.query('UPDATE meter_app.users SET active=false WHERE id=$1', [actor.id]);
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 401);
+    assert.deepEqual(await stored(), seen);
+    assert.equal(
+      (
+        await db.query('SELECT count(*)::int AS n FROM meter_app.reports WHERE owner_id=$1', [
+          actor.id,
+        ])
+      ).rows[0].n,
+      0,
+    );
+  } finally {
+    await db.query('DELETE FROM meter_app.iot_readings WHERE device_id=$1', [id]);
+    await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
+  }
+});
+
 test('diagnostic meter management enforces admin ownership, one-time keys, latest per source and no report writes', async () => {
   const actor = await login(await seed('admin'));
   const stranger = await login(await seed('admin'));

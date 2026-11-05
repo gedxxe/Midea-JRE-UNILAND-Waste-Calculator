@@ -15,6 +15,29 @@ export const IOT_SCHEDULE_WIB = [
 export const iotIdentifier = (value) =>
   typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value);
 export const IOT_CURRENT_FIELDS = ['current_a', 'current_l1_a', 'current_l2_a', 'current_l3_a'];
+export const IOT_HEARTBEAT_INTERVAL_SECONDS = 60;
+export const IOT_PRESENCE_TIMEOUT_SECONDS = 180;
+// Presence means recent authenticated HTTPS contact, not a working Modbus meter.
+export function iotPresence(device, now) {
+  if (!device.active) return 'disabled';
+  if (!device.last_received_at) return 'unknown';
+  const seen = Date.parse(device.last_received_at);
+  if (!Number.isFinite(seen) || !Number.isFinite(now) || seen > now) return 'unknown';
+  return now - seen < IOT_PRESENCE_TIMEOUT_SECONDS * 1000 ? 'connected' : 'offline';
+}
+export function validateIotHeartbeat(value) {
+  const keys = ['schema_version', 'event_type', 'device_id', 'meter_id', 'meter_profile'];
+  if (
+    !value ||
+    Array.isArray(value) ||
+    value.schema_version !== 1 ||
+    value.event_type !== 'heartbeat' ||
+    Object.keys(value).some((key) => !keys.includes(key)) ||
+    !keys.slice(2).every((key) => iotIdentifier(value[key]))
+  )
+    throw Error('INVALID_IOT_EVENT');
+  return Object.fromEntries(keys.map((key) => [key, value[key]]));
+}
 // Profile identifiers from the reference node's MeterProfiles.h; custom IDs remain valid.
 export const IOT_NODE_PROFILES = ['fort', 'habuer', 'acrel-adl400', 'acrel-acr', 'acrel-apm'];
 export function iotCloudEndpoint(origin) {

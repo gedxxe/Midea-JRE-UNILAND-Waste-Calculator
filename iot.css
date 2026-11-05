@@ -87,6 +87,41 @@
   font-size: clamp(1.4rem, 3vw, 2rem);
   font-variant-numeric: tabular-nums;
 }
+.iot-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  margin: 4px 0;
+  border: 1px solid #d1dce8;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #4d6075;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.iot-presence::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.iot-presence[data-state='connected'] {
+  background: #e8f6ef;
+  border-color: #b8ddc9;
+  color: #17613e;
+}
+.iot-presence[data-state='offline'] {
+  background: #fff4e4;
+  border-color: #e8cda2;
+  color: #815214;
+}
+@media (forced-colors: active) {
+  .iot-presence {
+    border-color: CanvasText;
+  }
+}
 @media (max-width: 600px) {
   .iot-form-grid {
     grid-template-columns: 1fr;

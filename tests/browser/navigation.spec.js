@@ -121,6 +121,82 @@ test('diagnostic meter cards show latest kWh and phase currents while operator c
   expect(state.errors).toEqual([]);
 });
 
+test('device presence is independent of readings, expires without refreshing and fails to unverified on API errors', async ({
+  page,
+}, testInfo) => {
+  const state = await setup(page);
+  await page.clock.install({ time: new Date('2026-11-05T02:00:00Z') });
+  let fail = false,
+    reads = 0;
+  await page.route('**/api/iot-readings?**', (route) => {
+    reads++;
+    if (fail) return route.fulfill({ status: 503, json: { error: 'NOT_CONFIGURED' } });
+    return route.fulfill({
+      json: {
+        enabled: true,
+        server_time: '2026-11-05T02:00:00Z',
+        readings: [],
+        devices: [
+          {
+            device_id: 'connected-node',
+            plant: 'JRE',
+            meter_id: 'warehouse',
+            meter_profile: 'fort',
+            active: true,
+            last_received_at: '2026-11-05T02:00:00Z',
+            latest_reading: null,
+          },
+          {
+            device_id: 'unseen-node',
+            plant: 'UNILAND',
+            meter_id: 'other',
+            meter_profile: 'fort',
+            active: true,
+            last_received_at: null,
+            latest_reading: null,
+          },
+          {
+            device_id: 'disabled-node',
+            plant: 'JRE',
+            meter_id: 'old',
+            meter_profile: 'fort',
+            active: false,
+            last_received_at: '2026-11-05T02:00:00Z',
+            latest_reading: null,
+          },
+        ],
+      },
+    });
+  });
+  await page.goto('/iot-power-meter-reading');
+  const connected = page.locator('.iot-device-card').filter({ hasText: 'connected-node' });
+  await expect(connected.locator('.iot-presence')).toHaveText('Connected');
+  await expect(connected).toContainText('No readings received yet.');
+  await expect(connected.locator('.iot-reading')).toHaveCount(0);
+  await page.clock.setSystemTime(new Date('2001-01-01T00:00:00Z'));
+  await expect(connected.locator('.iot-presence')).toHaveText('Connected');
+  await expect(
+    page.locator('.iot-device-card').filter({ hasText: 'unseen-node' }).locator('.iot-presence'),
+  ).toHaveText('Unverified');
+  await expect(
+    page.locator('.iot-device-card').filter({ hasText: 'disabled-node' }).locator('.iot-presence'),
+  ).toHaveText('Disabled');
+  await page.screenshot({ path: '.vercel/iot-presence-' + testInfo.project.name + '.png' });
+  await page.clock.fastForward(181000);
+  await expect(connected.locator('.iot-presence')).toHaveText('Offline');
+  expect(reads).toBe(1);
+  await page.locator('#iot-refresh').click();
+  await expect(connected.locator('.iot-presence')).toHaveText('Connected');
+  fail = true;
+  await page.locator('#iot-refresh').click();
+  await expect(page.locator('#iot-status')).toContainText('could not be loaded');
+  await expect(connected.locator('.iot-presence')).toHaveText('Unverified');
+  await page.locator('[data-close-dialog="iot-dialog"]').click();
+  await page.clock.fastForward(300000);
+  await expect(page.locator('#iot-data')).toBeEmpty();
+  expect(state.errors).toEqual([]);
+});
+
 test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on close without report writes', async ({
   page,
 }, testInfo) => {

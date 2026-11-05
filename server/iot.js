@@ -3,12 +3,22 @@ import { endpoint, appOrigin, checkOrigin, readBody, send, fail, HttpError } fro
 import { getPool, transaction } from './db.js';
 import { requireUser, limit, lockUser, audit } from './auth.js';
 import { tokenHash, secretToken } from './password.js';
-import { validateIotEvent, iotIdentifier, iotCloudEndpoint } from '../iot-contract.js';
+import {
+  validateIotEvent,
+  validateIotHeartbeat,
+  iotIdentifier,
+  iotCloudEndpoint,
+  iotPresence,
+  IOT_HEARTBEAT_INTERVAL_SECONDS,
+  IOT_PRESENCE_TIMEOUT_SECONDS,
+} from '../iot-contract.js';
 
 const connection = (env) => ({
   schema_version: 1,
   endpoint: iotCloudEndpoint(env.IOT_PUBLIC_ORIGIN || env.APP_ORIGIN),
   telemetry_interval_seconds: 30,
+  heartbeat_interval_seconds: IOT_HEARTBEAT_INTERVAL_SECONDS,
+  presence_timeout_seconds: IOT_PRESENCE_TIMEOUT_SECONDS,
 });
 
 export function iotIngestHandler(database = getPool, env = process.env) {
@@ -44,7 +54,9 @@ export function iotIngestHandler(database = getPool, env = process.env) {
       if (budget.hits > 120) return { status: 429, error: 'RATE_LIMITED' };
       let payload;
       try {
-        payload = validateIotEvent(await readBody(req, 16384));
+        const value = await readBody(req, 16384);
+        payload =
+          value?.event_type === 'heartbeat' ? validateIotHeartbeat(value) : validateIotEvent(value);
       } catch (error) {
         return {
           status: error instanceof HttpError ? error.status : 400,
@@ -57,6 +69,21 @@ export function iotIngestHandler(database = getPool, env = process.env) {
         payload.meter_profile !== device.meter_profile
       )
         return { status: 403, error: 'DEVICE_BINDING_MISMATCH' };
+      const touch = async () =>
+        (
+          await client.query(
+            'UPDATE meter_app.iot_devices SET last_received_at=now() WHERE device_id=$1 RETURNING last_received_at',
+            [id],
+          )
+        ).rows[0].last_received_at;
+      if (payload.event_type === 'heartbeat')
+        return {
+          status: 200,
+          event_type: 'heartbeat',
+          device_id: id,
+          server_time: await touch(),
+          heartbeat_interval_seconds: IOT_HEARTBEAT_INTERVAL_SECONDS,
+        };
       const hash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
       const previous = (
         await client.query(
@@ -64,18 +91,16 @@ export function iotIngestHandler(database = getPool, env = process.env) {
           [id, payload.event_id],
         )
       ).rows[0];
-      if (previous)
-        return previous.payload_hash === hash
-          ? { status: 200, event_id: payload.event_id, duplicate: true }
-          : { status: 409, error: 'EVENT_CONFLICT' };
+      if (previous) {
+        if (previous.payload_hash !== hash) return { status: 409, error: 'EVENT_CONFLICT' };
+        await touch();
+        return { status: 200, event_id: payload.event_id, duplicate: true };
+      }
       await client.query(
         'INSERT INTO meter_app.iot_readings(device_id,event_id,captured_at,event_type,payload,payload_hash) VALUES($1,$2,$3,$4,$5,$6)',
         [id, payload.event_id, payload.captured_at, payload.event_type, payload, hash],
       );
-      await client.query(
-        'UPDATE meter_app.iot_devices SET last_received_at=now() WHERE device_id=$1',
-        [id],
-      );
+      await touch();
       return { status: 201, event_id: payload.event_id, duplicate: false };
     });
     if (result.status === 429) res.setHeader('Retry-After', '60');
@@ -119,7 +144,17 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
         [user.id, id, kind],
       )
     ).rows;
-    send(res, 200, { enabled: true, devices, readings, connection: connection(env) });
+    const serverTime = (await db.query('SELECT clock_timestamp() AS time')).rows[0].time;
+    send(res, 200, {
+      enabled: true,
+      devices: devices.map((device) => ({
+        ...device,
+        connection_status: iotPresence(device, new Date(serverTime).getTime()),
+      })),
+      readings,
+      server_time: serverTime,
+      connection: connection(env),
+    });
   });
 }
 
