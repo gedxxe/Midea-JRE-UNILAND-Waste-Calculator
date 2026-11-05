@@ -21,6 +21,12 @@
     },
     "api/drafts.js": {
       "maxDuration": 30
+    },
+    "api/iot-ingest.js": {
+      "maxDuration": 30
+    },
+    "api/iot-readings.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
@@ -78,6 +84,14 @@
     },
     {
       "source": "/app/accounts/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/iot-power-meter-reading",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/iot-power-meter-reading/",
       "destination": "/index.html"
     }
   ]

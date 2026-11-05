@@ -1,4 +1,6 @@
 import drafts from '../api/drafts.js';
+import iotIngest from '../api/iot-ingest.js';
+import iotReadings from '../api/iot-readings.js';
 import graphs from '../api/graphs.js';
 import { PUBLIC_FILES } from './assets.mjs';
 import { routeForPath } from '../routes.js';
@@ -19,6 +21,8 @@ if (!process.env.CI && process.env.METER_SKIP_LOCAL_ENV !== '1') {
   }
 }
 const api = {
+  '/api/iot-ingest': iotIngest,
+  '/api/iot-readings': iotReadings,
   '/api/graphs': graphs,
   '/api/drafts': drafts,
   '/api/time': time,

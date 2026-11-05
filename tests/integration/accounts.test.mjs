@@ -1,4 +1,6 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
+import { iotIngestHandler, iotReadingsHandler } from '../../server/iot.js';
+import { tokenHash } from '../../server/password.js';
 import { gasCalibration, GAS_TABLE_VERSION, JRE_GAS_INPUT_VERSION } from '../../gas.js';
 import {
   layout2Draft,
@@ -38,12 +40,74 @@ const runtime = process.env.TEST_RUNTIME_DATABASE_URL
   ? createPool(process.env.TEST_RUNTIME_DATABASE_URL)
   : db;
 const env = {
+  IOT_ENABLED: '1',
   DATABASE_URL: process.env.TEST_DATABASE_URL,
   AUTH_SECRET: randomBytes(32).toString('hex'),
 };
 const ids = [];
 const names = [];
 const password = 'Test-only initial passphrase 123';
+
+test('IoT ingestion deduplicates atomically, isolates owners and rejects revoked or conflicting uploads without report writes', async () => {
+  const actor = await login(await seed()),
+    stranger = await login(await seed()),
+    id = 'test_' + randomBytes(8).toString('hex'),
+    key = randomBytes(32).toString('base64url');
+  const body = {
+    schema_version: 1,
+    event_id: 'reading_1',
+    device_id: id,
+    meter_id: 'meter_1',
+    meter_profile: 'fort',
+    event_type: 'telemetry',
+    captured_at: '2026-11-01T01:00:00Z',
+    quality: 'valid',
+    readings: { active_energy_kwh: '123.000001' },
+  };
+  const headers = { 'X-Device-ID': id, Authorization: 'Bearer ' + key };
+  await db.query(
+    'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6)',
+    [id, actor.id, 'JRE', 'meter_1', 'fort', tokenHash(key)],
+  );
+  try {
+    assert.equal((await call('/api/iot-ingest', { body })).status, 401);
+    const results = await Promise.all([
+      call('/api/iot-ingest', { body, headers }),
+      call('/api/iot-ingest', { body, headers }),
+    ]);
+    assert.deepEqual(results.map((x) => x.status).sort(), [200, 201]);
+    assert.equal(
+      (
+        await call('/api/iot-ingest', {
+          body: { ...body, readings: { active_energy_kwh: '124' } },
+          headers,
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (await call('/api/iot-ingest', { body: { ...body, meter_id: 'forged' }, headers })).status,
+      403,
+    );
+    assert.equal((await call('/api/iot-readings', { actor })).value.readings.length, 1);
+    assert.equal(
+      (await call('/api/iot-readings?device_id=' + id, { actor: stranger })).value.readings.length,
+      0,
+    );
+    assert.equal((await call('/api/iot-readings')).status, 401);
+    assert.equal((await call('/api/reports', { actor })).value.reports.length, 0);
+    await db.query(
+      'UPDATE meter_app.iot_devices SET hits=120,window_start=now() WHERE device_id=$1',
+      [id],
+    );
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 429);
+    await db.query('UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1', [id]);
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 401);
+  } finally {
+    await db.query('DELETE FROM meter_app.iot_readings WHERE device_id=$1', [id]);
+    await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
+  }
+});
 
 test('work reports persist times and private revisions separately from daily reports and graphs', async () => {
   const actor = await login(await seed());
@@ -490,6 +554,8 @@ test('working drafts replace partial entries without report revisions and reject
 });
 let server, origin, admin, operator, other, reportId;
 const routes = {
+  '/api/iot-ingest': iotIngestHandler(() => runtime, env),
+  '/api/iot-readings': iotReadingsHandler(() => runtime, env),
   '/api/auth': authHandler(() => runtime, env),
   '/api/auth-replica': authHandler(() => runtime, env),
   '/api/users': usersHandler(() => runtime, env),

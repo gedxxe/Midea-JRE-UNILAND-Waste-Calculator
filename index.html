@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="/button-effects.css" />
     <link rel="stylesheet" href="/counter.css" />
     <link rel="stylesheet" href="/workspace.css" />
+    <link rel="stylesheet" href="/iot.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body class="login-page" data-welcome="hero">
@@ -212,6 +213,9 @@
               <button id="save-report" class="button primary" data-i18n-title="accountPrivate">
                 <span class="panel-action-icon" data-panel-icon="save" aria-hidden="true"></span
                 ><span data-i18n="saveReport">Save report</span>
+              </button>
+              <button id="open-iot" class="button secondary" data-i18n="iotTitle">
+                Power Meter Reading
               </button>
               <button id="open-graphs" class="button secondary">
                 <svg
@@ -967,6 +971,43 @@
       data-i18n="updateAvailable"
       hidden
     ></p>
+    <dialog id="iot-dialog" aria-labelledby="iot-title">
+      <header>
+        <h2 id="iot-title" data-i18n="iotTitle">Power Meter Reading</h2>
+        <button class="button secondary" data-close-dialog="iot-dialog" data-i18n="close">
+          Close
+        </button>
+      </header>
+      <p data-i18n="iotIntro">
+        Device observations are separate from operator reports. Nothing is applied automatically.
+      </p>
+      <div class="iot-controls">
+        <label
+          ><span data-i18n="iotKind">Reading type</span
+          ><select id="iot-kind">
+            <option value="" data-i18n="iotAll">All readings</option>
+            <option value="checkpoint" data-i18n="iotCheckpoint">Scheduled checkpoint</option>
+            <option value="telemetry" data-i18n="iotTelemetry">Telemetry</option>
+          </select></label
+        >
+        <button id="iot-refresh" class="button secondary" data-i18n="iotRefresh">Refresh</button>
+        <label
+          ><input id="iot-auto" type="checkbox" /><span data-i18n="iotAuto"
+            >Refresh every 30 seconds</span
+          ></label
+        >
+      </div>
+      <p id="iot-status" role="status" aria-live="polite"></p>
+      <div id="iot-data"></div>
+      <details>
+        <summary data-i18n="iotSchedule">Firmware checkpoints</summary>
+        <p id="iot-schedule"></p>
+        <p data-i18n="iotLimit">
+          Latest 100 observations, ordered by capture time. Receipt time is not proof of a live
+          connection. Mapping to reports is not enabled.
+        </p>
+      </details>
+    </dialog>
     <dialog id="graphs-dialog" aria-labelledby="graphs-title">
       <div class="dialog-heading">
         <h2 id="graphs-title" data-i18n="graphMonitor">Graphs</h2>
