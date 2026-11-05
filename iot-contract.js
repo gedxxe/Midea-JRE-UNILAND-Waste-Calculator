@@ -14,6 +14,7 @@ export const IOT_SCHEDULE_WIB = [
 ];
 export const iotIdentifier = (value) =>
   typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value);
+export const IOT_CURRENT_FIELDS = ['current_a', 'current_l1_a', 'current_l2_a', 'current_l3_a'];
 export function validateIotEvent(value, now = Date.now()) {
   const invalid = () => {
     throw Error('INVALID_IOT_EVENT');
@@ -55,12 +56,17 @@ export function validateIotEvent(value, now = Date.now()) {
   for (const field of ['event_id', 'device_id', 'meter_id', 'meter_profile'])
     if (!iotIdentifier(value[field])) return invalid();
   const captured = time(value.captured_at);
+  const readingKeys = ['active_energy_kwh', ...IOT_CURRENT_FIELDS];
   if (
     !value.readings ||
     Array.isArray(value.readings) ||
-    Object.keys(value.readings).join() !== 'active_energy_kwh' ||
-    typeof value.readings.active_energy_kwh !== 'string' ||
-    decimalText(value.readings.active_energy_kwh) === null
+    !Object.hasOwn(value.readings, 'active_energy_kwh') ||
+    Object.keys(value.readings).some((key) => !readingKeys.includes(key)) ||
+    Object.values(value.readings).some(
+      (reading) => typeof reading !== 'string' || decimalText(reading) === null,
+    ) ||
+    (Object.hasOwn(value.readings, 'current_a') &&
+      IOT_CURRENT_FIELDS.slice(1).some((key) => Object.hasOwn(value.readings, key)))
   )
     return invalid();
   if (value.event_type === 'checkpoint') {
@@ -82,7 +88,13 @@ export function validateIotEvent(value, now = Date.now()) {
       .filter((k) => value[k] !== undefined)
       .map((k) => [
         k,
-        k === 'readings' ? { active_energy_kwh: value.readings.active_energy_kwh } : value[k],
+        k === 'readings'
+          ? Object.fromEntries(
+              readingKeys
+                .filter((key) => Object.hasOwn(value.readings, key))
+                .map((key) => [key, value.readings[key]]),
+            )
+          : value[k],
       ]),
   );
 }

@@ -979,8 +979,90 @@
         </button>
       </header>
       <p data-i18n="iotIntro">
-        Device observations are separate from operator reports. Nothing is applied automatically.
+        LoRa monitoring diagnostics only. Readings never fill operator tables or reports.
       </p>
+      <div id="iot-management" hidden>
+        <button id="iot-add" type="button" class="button secondary" data-i18n="iotAdd">
+          Add power meter
+        </button>
+        <form id="iot-device-form" class="iot-editor" hidden>
+          <div class="iot-form-grid">
+            <label
+              ><span data-i18n="iotFactory">Factory</span
+              ><select id="iot-plant">
+                <option value="JRE">JRE</option>
+                <option value="UNILAND">UNILAND</option>
+              </select></label
+            >
+            <label
+              ><span data-i18n="iotSourceId">Device ID</span
+              ><input
+                id="iot-source-id"
+                required
+                maxlength="64"
+                pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,63}"
+                placeholder="gateway-01"
+                autocomplete="off"
+            /></label>
+            <label
+              ><span data-i18n="iotMeterId">Meter ID</span
+              ><input
+                id="iot-meter-id"
+                required
+                maxlength="64"
+                pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,63}"
+                placeholder="meter-01"
+                autocomplete="off"
+            /></label>
+            <label
+              ><span data-i18n="iotProfile">Firmware profile ID</span
+              ><input
+                id="iot-profile"
+                required
+                maxlength="64"
+                pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,63}"
+                autocomplete="off"
+            /></label>
+          </div>
+          <p data-i18n="iotBindingHelp">
+            Use the exact IDs configured in firmware. These identify a source, not a report row.
+          </p>
+          <div class="iot-actions">
+            <button type="submit" class="button" data-i18n="iotCreate">Create device key</button
+            ><button id="iot-cancel" type="button" class="button secondary" data-i18n="iotCancel">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+      <section id="iot-credential" class="iot-editor" aria-labelledby="iot-key-title" hidden>
+        <h3 id="iot-key-title" data-i18n="iotKeyTitle">Device key</h3>
+        <p id="iot-key-device"></p>
+        <p data-i18n="iotKeyHelp">
+          Copy this key into the gateway's private configuration. It cannot be retrieved again.
+          Closing or hiding this page clears it.
+        </p>
+        <label
+          ><span data-i18n="iotEndpoint">Upload endpoint</span><input id="iot-endpoint" readonly
+        /></label>
+        <label
+          ><span data-i18n="iotKeyTitle">Device key</span
+          ><input id="iot-key" type="password" readonly autocomplete="off"
+        /></label>
+        <div class="iot-actions">
+          <button id="iot-key-copy" type="button" class="button" data-i18n="iotCopyKey">
+            Copy key</button
+          ><button
+            id="iot-key-dismiss"
+            type="button"
+            class="button secondary"
+            data-i18n="iotDismissKey"
+          >
+            Hide key
+          </button>
+        </div>
+      </section>
+      <p id="iot-manage-status" role="status" aria-live="polite"></p>
       <div class="iot-controls">
         <label
           ><span data-i18n="iotKind">Reading type</span

@@ -81,6 +81,142 @@ test('Power Meter Reading renders exact received values as text and filters even
   expect(await page.locator('#iot-data input[type="password"]').count()).toBe(0);
   expect(state.errors).toEqual([]);
 });
+test('diagnostic meter cards show latest kWh and phase currents while operator controls stay hidden', async ({
+  page,
+}, testInfo) => {
+  const state = await setup(page);
+  await page.route('**/api/iot-readings?**', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        devices: [
+          {
+            device_id: 'synthetic-source',
+            plant: 'UNILAND',
+            meter_id: 'custom-meter',
+            meter_profile: 'custom',
+            active: true,
+            last_received_at: '2026-11-01T01:00:03Z',
+            latest_reading: {
+              captured_at: '2026-11-01T01:00:00Z',
+              readings: {
+                active_energy_kwh: '123.000001',
+                current_l1_a: '12.01',
+                current_l2_a: '11.9',
+                current_l3_a: '0',
+              },
+            },
+          },
+        ],
+        readings: [],
+      },
+    }),
+  );
+  await page.goto('/iot-power-meter-reading');
+  await expect(page.locator('.iot-device-card')).toContainText('123.000001 kWh');
+  await expect(page.locator('.iot-device-card')).toContainText('L1 12.01 A · L2 11.9 A · L3 0 A');
+  await expect(page.locator('#iot-management')).not.toBeVisible();
+  await expect(page.locator('.iot-device-card button')).toHaveCount(0);
+  await page.screenshot({ path: '.vercel/iot-current-' + testInfo.project.name + '.png' });
+  expect(state.errors).toEqual([]);
+});
+
+test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on close without report writes', async ({
+  page,
+}, testInfo) => {
+  const state = await setup(page, { role: 'admin' });
+  const requests = [];
+  let device;
+  let reportWrites = 0;
+  const key = 'k'.repeat(43);
+  await page.route('**/api/reports', (route) => {
+    if (route.request().method() === 'POST') reportWrites++;
+    return route.fulfill({ json: { reports: [] } });
+  });
+  await page.route('**/api/iot-readings?**', (route) =>
+    route.fulfill({ json: { enabled: true, devices: device ? [device] : [], readings: [] } }),
+  );
+  await page.route('**/api/iot-devices', (route) => {
+    const body = route.request().postDataJSON();
+    requests.push(body);
+    device = { ...body, active: true, last_received_at: null };
+    return route.fulfill({ status: 201, json: { device, credential: key } });
+  });
+  await page.goto('/iot-power-meter-reading');
+  await page.locator('#iot-add').click();
+  await page.locator('#iot-plant').selectOption('UNILAND');
+  await page.locator('#iot-source-id').fill('custom-lora-source');
+  await page.locator('#iot-meter-id').fill('custom-warehouse');
+  await page.locator('#iot-profile').fill('custom-profile');
+  await page.locator('#iot-device-form button[type="submit"]').click();
+  await expect(page.locator('#iot-credential')).toBeVisible();
+  await expect(page.locator('#iot-key')).toHaveValue(key);
+  await expect(page.locator('#iot-endpoint')).toHaveValue('http://127.0.0.1:4173/api/iot-ingest');
+  await expect(page.locator('.iot-device-card')).toContainText('custom-warehouse / custom-profile');
+  expect(requests).toEqual([
+    {
+      action: 'create',
+      plant: 'UNILAND',
+      device_id: 'custom-lora-source',
+      meter_id: 'custom-warehouse',
+      meter_profile: 'custom-profile',
+    },
+  ]);
+  expect(
+    await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage })),
+  ).not.toContain(key);
+  await page.locator('#iot-key-dismiss').click();
+  await expect(page.locator('#iot-key')).toHaveValue('');
+  await page.screenshot({ path: '.vercel/iot-management-' + testInfo.project.name + '.png' });
+  await page.locator('[data-close-dialog="iot-dialog"]').click();
+  await page.locator('#open-iot').click();
+  await expect(page.locator('#iot-key')).toHaveValue('');
+  expect(reportWrites).toBe(0);
+  expect(state.errors).toEqual([]);
+});
+
+test('closing diagnostics while a key request is pending discards late private responses', async ({
+  page,
+}) => {
+  const state = await setup(page, { role: 'admin' });
+  let release,
+    started = false;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/iot-readings?**', (route) =>
+    route.fulfill({ json: { enabled: true, devices: [], readings: [] } }),
+  );
+  await page.route('**/api/iot-devices', async (route) => {
+    started = true;
+    await pending;
+    await route
+      .fulfill({
+        status: 201,
+        json: {
+          device: { device_id: 'late-source', meter_id: 'meter', meter_profile: 'profile' },
+          credential: 's'.repeat(43),
+        },
+      })
+      .catch(() => {});
+  });
+  await page.goto('/iot-power-meter-reading');
+  await page.locator('#iot-add').click();
+  await page.locator('#iot-source-id').fill('late-source');
+  await page.locator('#iot-meter-id').fill('meter');
+  await page.locator('#iot-profile').fill('profile');
+  await page.locator('#iot-device-form button[type="submit"]').click();
+  await expect.poll(() => started).toBe(true);
+  await expect(page.locator('#iot-device-form button[type="submit"]')).toBeDisabled();
+  await page.locator('[data-close-dialog="iot-dialog"]').click();
+  release();
+  await page.locator('#open-iot').click();
+  await expect(page.locator('#iot-status')).toContainText('No devices');
+  await expect(page.locator('#iot-credential')).not.toBeVisible();
+  await expect(page.locator('#iot-key')).toHaveValue('');
+  expect(state.errors).toEqual([]);
+});
+
 async function setup(
   page,
   { signedIn = true, role = 'operator', passwordRequired = false, delayHistory = false } = {},

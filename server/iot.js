@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
-import { endpoint, appOrigin, readBody, send, fail, HttpError } from './http.js';
+import { endpoint, appOrigin, checkOrigin, readBody, send, fail, HttpError } from './http.js';
 import { getPool, transaction } from './db.js';
-import { requireUser, limit } from './auth.js';
-import { tokenHash } from './password.js';
+import { requireUser, limit, lockUser, audit } from './auth.js';
+import { tokenHash, secretToken } from './password.js';
 import { validateIotEvent, iotIdentifier } from '../iot-contract.js';
 
 export function iotIngestHandler(database = getPool, env = process.env) {
@@ -98,7 +98,12 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
       fail(400, 'INVALID_INPUT');
     const devices = (
       await db.query(
-        'SELECT device_id,plant,meter_id,meter_profile,active,last_received_at FROM meter_app.iot_devices WHERE owner_id=$1 ORDER BY device_id LIMIT 100',
+        `SELECT d.device_id,d.plant,d.meter_id,d.meter_profile,d.active,d.last_received_at,
+         CASE WHEN latest.event_id IS NULL THEN NULL ELSE jsonb_build_object('captured_at',latest.captured_at,'received_at',latest.received_at,'readings',latest.payload->'readings') END AS latest_reading
+         FROM meter_app.iot_devices d LEFT JOIN LATERAL (
+           SELECT event_id,captured_at,received_at,payload FROM meter_app.iot_readings
+           WHERE device_id=d.device_id ORDER BY captured_at DESC,received_at DESC,event_id DESC LIMIT 1
+         ) latest ON true WHERE d.owner_id=$1 ORDER BY d.device_id LIMIT 100`,
         [user.id],
       )
     ).rows;
@@ -109,5 +114,88 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
       )
     ).rows;
     send(res, 200, { enabled: true, devices, readings });
+  });
+}
+
+export function iotDevicesHandler(database = getPool, env = process.env) {
+  return endpoint(async (req, res) => {
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      fail(405, 'METHOD_NOT_ALLOWED');
+    }
+    if (!env.AUTH_SECRET || env.AUTH_SECRET.length < 32) fail(503, 'NOT_CONFIGURED');
+    const origin = appOrigin(env);
+    checkOrigin(req, origin);
+    const db = database();
+    const user = await requireUser(db, req, origin, { admin: true });
+    if (env.IOT_ENABLED !== '1') fail(503, 'IOT_NOT_CONFIGURED');
+    await limit(db, 'admin:' + user.id, 40, env);
+    const body = await readBody(req, 4096);
+    const fields =
+      body.action === 'create'
+        ? ['action', 'device_id', 'plant', 'meter_id', 'meter_profile']
+        : ['action', 'device_id'];
+    if (
+      !['create', 'rotate', 'revoke'].includes(body.action) ||
+      !iotIdentifier(body.device_id) ||
+      Object.keys(body).some((key) => !fields.includes(key))
+    )
+      fail(400, 'INVALID_INPUT');
+    if (
+      body.action === 'create' &&
+      (!['JRE', 'UNILAND'].includes(body.plant) ||
+        !iotIdentifier(body.meter_id) ||
+        !iotIdentifier(body.meter_profile))
+    )
+      fail(400, 'INVALID_INPUT');
+    const credential = body.action === 'revoke' ? null : secretToken();
+    const result = await transaction(db, async (client) => {
+      // Serialize this owner's registry changes, including the 100-source quota.
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [
+        'iot:devices:' + user.id,
+      ]);
+      if ((await lockUser(client, user)).role !== 'admin') fail(403, 'FORBIDDEN');
+      if (body.action === 'create') {
+        const count = (
+          await client.query(
+            'SELECT count(*)::int AS count FROM meter_app.iot_devices WHERE owner_id=$1',
+            [user.id],
+          )
+        ).rows[0].count;
+        if (count >= 100) fail(409, 'DEVICE_LIMIT_REACHED');
+        const device = (
+          await client.query(
+            'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6) RETURNING device_id,plant,meter_id,meter_profile,active',
+            [
+              body.device_id,
+              user.id,
+              body.plant,
+              body.meter_id,
+              body.meter_profile,
+              tokenHash(credential),
+            ],
+          )
+        ).rows[0];
+        await audit(client, user.id, 'iot.device.create', user.id);
+        return device;
+      }
+      const changed =
+        body.action === 'rotate'
+          ? await client.query(
+              'UPDATE meter_app.iot_devices SET token_hash=$3,active=true WHERE device_id=$1 AND owner_id=$2 RETURNING device_id,plant,meter_id,meter_profile,active',
+              [body.device_id, user.id, tokenHash(credential)],
+            )
+          : await client.query(
+              'UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1 AND owner_id=$2 RETURNING device_id,plant,meter_id,meter_profile,active',
+              [body.device_id, user.id],
+            );
+      if (!changed.rowCount) fail(404, 'NOT_FOUND');
+      await audit(client, user.id, 'iot.device.' + body.action, user.id);
+      return changed.rows[0];
+    });
+    send(res, body.action === 'create' ? 201 : 200, {
+      device: result,
+      ...(credential ? { credential } : {}),
+    });
   });
 }

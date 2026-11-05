@@ -27,6 +27,9 @@
     },
     "api/iot-readings.js": {
       "maxDuration": 30
+    },
+    "api/iot-devices.js": {
+      "maxDuration": 30
     }
   },
   "headers": [

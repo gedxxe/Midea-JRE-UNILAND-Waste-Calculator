@@ -111,6 +111,7 @@ export const PUBLIC_FILES = [
 export const RUNTIME_FILES = [
   'api/iot-ingest.js',
   'api/iot-readings.js',
+  'api/iot-devices.js',
   'server/iot.js',
   'migrations/009_iot_readings.sql',
   ...PUBLIC_FILES,

@@ -2,6 +2,14 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.46-alpha - 2026-11-05
+
+- Let admins register diagnostic power meters with configurable factory, device, meter and firmware profile IDs, generate one-time keys, replace keys and disable uploads without deleting observations.
+- Show each source's latest captured kWh and optional current in A, with explicit phase labels. Keep older kWh-only uploads compatible; a busy source cannot hide another source's latest card reading.
+- Keep LoRa diagnostics separate from operator readings, autosave, consumption charts and reports. No automatic filling, conversion or report mapping is provided.
+- Clear one-time keys on close, account change or hidden pages. Retain owner/admin/origin checks, upload limits and explicit pending/error states. No new dependency or database migration; runtime device-management grants require explicit setup before enabling the feature.
+- Allow 1,160,000 static bytes for the added device controls, translations and cards, retaining the explicit public-file allowlist and footprint check.
+
 ## v0.11.45-alpha - 2026-11-05
 
 - Add the authenticated Power Meter Reading route and separate owner-scoped IoT observations, with optional visible-page refresh. No automatic report or autosave mapping.

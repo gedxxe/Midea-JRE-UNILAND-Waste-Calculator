@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.39-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.46-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -47,7 +47,7 @@ The signed-in panel uses a soft blue background, compact glass navigation and re
 
 All recording modes use the default light workspace. Night Shift changes the recording period only; there is no dark-theme toggle or circular theme animation.
 
-**Power Meter Reading** opens `/iot-power-meter-reading` beside Graphs. Device telemetry and scheduled observations stay separate from reports. It is disabled by default; see [development setup and firmware contract](docs/iot.md).
+**Power Meter Reading** opens `/iot-power-meter-reading` for LoRa diagnostics only. Admins can register device/meter/profile IDs, create or replace keys and disable uploads. Cards show latest kWh and reported current (A), including explicit phases. No operator tables, autosaves, consumption charts or reports are populated. Keys appear once. See [setup and firmware contract](docs/iot.md).
 
 Autosave keeps incomplete readings in the same dated documents without manual Save. Pending input also has owner-scoped browser recovery for tab closure or session expiry. Different browser copies require review; storage/network failures remain visible. Browser recovery is private, unencrypted device data and cannot survive clearing browser storage. See [autosave and recovery](docs/autosave.md).
 
@@ -185,7 +185,7 @@ WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示�
 
 所有记录模式均使用默认浅色面板。夜班仅改变记录时段，不再切换深色主题或播放圆形主题动画。
 
-**电表读数**位于 Graphs 旁，地址为 `/iot-power-meter-reading`。设备遥测及定时记录独立于人工报告，不会自动覆盖输入。默认未启用上传，请先完成[开发配置与固件接口](docs/iot.md)。
+**电表读数**打开 `/iot-power-meter-reading`，仅用于LoRa诊断。管理员可添加设备、电表与固件配置ID，生成或更换密钥并停用上传。卡片显示最新kWh和设备发送的电流(A)，支持分相。不会填入人工表格、自动保存、能耗图表或报告。密钥仅显示一次。见[配置与固件协议](docs/iot.md)。
 
 面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.39-alpha**，数据用于决策前仍需人工复核。
 
@@ -276,7 +276,7 @@ Panel setelah login memakai latar biru lembut, navigasi glass yang ringkas, dan 
 
 Semua mode memakai panel terang yang sama. Night Shift hanya mengubah periode pencatatan, tanpa dark mode atau animasi pergantian tema.
 
-**Power Meter Reading** di sebelah Graphs membuka `/iot-power-meter-reading`. Telemetry dan reading terjadwal terpisah dari laporan. Upload belum aktif sebelum konfigurasi development dan migration 009; lihat [kontrak firmware](docs/iot.md).
+**Power Meter Reading** di sebelah Graphs membuka `/iot-power-meter-reading` untuk diagnostik LoRa saja. Admin dapat menambah ID perangkat/meter/profil, membuat atau mengganti key, dan menonaktifkan upload. Card menampilkan kWh terbaru serta arus (A) yang dikirim, termasuk per fase. Tidak mengisi tabel, autosave, grafik konsumsi atau laporan operator. Key hanya tampil sekali. Lihat [konfigurasi dan kontrak firmware](docs/iot.md).
 
 Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.39-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
