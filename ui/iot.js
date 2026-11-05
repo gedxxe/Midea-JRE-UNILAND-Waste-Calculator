@@ -5,6 +5,7 @@ import {
   IOT_CURRENT_FIELDS,
   IOT_NODE_PROFILES,
   iotNodeConfig,
+  iotPresence,
 } from '../iot-contract.js';
 
 export function createIotReading({ request, opened, getUser }) {
@@ -15,8 +16,38 @@ export function createIotReading({ request, opened, getUser }) {
     cloudEndpoint = null,
     writeController,
     controller,
-    timer;
+    timer,
+    presenceTimer,
+    presenceBadges = [];
   const dialog = $('iot-dialog');
+  function stopPresence() {
+    clearTimeout(presenceTimer);
+    presenceBadges = [];
+  }
+  function paintPresence(now) {
+    for (const { device, badge } of presenceBadges) {
+      const status = iotPresence(device, now);
+      badge.dataset.state = status;
+      badge.textContent = t(
+        {
+          connected: 'iotConnected',
+          offline: 'iotOffline',
+          disabled: 'iotDisabled',
+          unknown: 'iotUnknown',
+        }[status],
+      );
+    }
+  }
+  function watchPresence(serverTime) {
+    const serverNow = Date.parse(serverTime);
+    const started = performance.now();
+    const tick = () => {
+      paintPresence(serverNow + performance.now() - started);
+      if (dialog.open && !document.hidden && presenceBadges.length)
+        presenceTimer = setTimeout(tick, 5000);
+    };
+    tick();
+  }
   const currentText = (readings) =>
     IOT_CURRENT_FIELDS.filter((key) => readings[key] !== undefined)
       .map(
@@ -46,6 +77,7 @@ export function createIotReading({ request, opened, getUser }) {
     $('iot-cloud-status').textContent = '';
   }
   function reset() {
+    stopPresence();
     clearManagement();
     identity++;
     controller?.abort();
@@ -56,6 +88,7 @@ export function createIotReading({ request, opened, getUser }) {
     dialog.close();
   }
   async function refresh() {
+    clearTimeout(presenceTimer);
     clearTimeout(timer);
     controller?.abort();
     controller = new AbortController();
@@ -87,6 +120,7 @@ export function createIotReading({ request, opened, getUser }) {
         data.connection?.endpoint ? 'iotCloudReady' : 'iotCloudMissing',
       );
       const host = $('iot-data');
+      stopPresence();
       host.replaceChildren();
       $('iot-status').textContent = t(
         !data.enabled
@@ -103,15 +137,18 @@ export function createIotReading({ request, opened, getUser }) {
         const list = node('div', null, 'iot-devices');
         for (const d of data.devices) {
           const card = node('section', null, 'iot-device-card');
+          const badge = node('span', null, 'iot-presence');
+          presenceBadges.push({ device: d, badge });
           card.append(
             node('strong', d.device_id + ' · ' + d.plant),
             node('p', d.meter_id + ' / ' + d.meter_profile),
+            badge,
             node(
               'p',
               !d.active
                 ? t('iotRevoked')
                 : d.last_received_at
-                  ? t('iotReceived') + ': ' + date(d.last_received_at)
+                  ? t('iotLastContact') + ': ' + date(d.last_received_at)
                   : t('iotNeverReceived'),
             ),
           );
@@ -125,7 +162,11 @@ export function createIotReading({ request, opened, getUser }) {
               node('p', t('iotCurrent') + ': ' + currentText(latest.readings)),
               node('p', t('iotCaptured') + ': ' + date(latest.captured_at), 'iot-meta'),
             );
-          }
+            if (latest.received_at)
+              card.append(
+                node('p', t('iotReceived') + ': ' + date(latest.received_at), 'iot-meta'),
+              );
+          } else card.append(node('p', t('iotNoReadings'), 'iot-meta'));
           if (getUser()?.role === 'admin') {
             const actions = node('div', null, 'iot-actions');
             for (const action of ['rotate', 'revoke']) {
@@ -181,10 +222,14 @@ export function createIotReading({ request, opened, getUser }) {
         table.append(body);
         wrap.append(table);
         if (data.readings.length) host.append(wrap);
+        watchPresence(data.server_time);
       }
     } catch (error) {
-      if (epoch === identity && (error.name !== 'AbortError' || timedOut))
+      if (epoch === identity && (error.name !== 'AbortError' || timedOut)) {
+        paintPresence(NaN);
+        stopPresence();
         $('iot-status').textContent = t('iotLoadFailed');
+      }
     } finally {
       clearTimeout(timeout);
       if (epoch === identity) {
@@ -311,6 +356,7 @@ export function createIotReading({ request, opened, getUser }) {
     if ($('iot-auto').checked) void refresh();
   });
   dialog.addEventListener('close', () => {
+    stopPresence();
     clearManagement();
     identity++;
     controller?.abort();
@@ -320,6 +366,8 @@ export function createIotReading({ request, opened, getUser }) {
   document.addEventListener('visibilitychange', () => {
     clearTimeout(timer);
     if (document.hidden) {
+      paintPresence(NaN);
+      clearTimeout(presenceTimer);
       clearCredential();
       if (managing) {
         scope++;
@@ -334,6 +382,6 @@ export function createIotReading({ request, opened, getUser }) {
       $('iot-refresh').disabled = false;
     } else if (dialog.open) void refresh();
   });
-  window.addEventListener('pagehide', clearManagement);
+  window.addEventListener('pagehide', reset);
   return { open, reset };
 }

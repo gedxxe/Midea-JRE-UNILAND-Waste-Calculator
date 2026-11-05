@@ -979,7 +979,7 @@
         </button>
       </header>
       <p data-i18n="iotIntro">
-        LoRa monitoring diagnostics only. Readings never fill operator tables or reports.
+        Device monitoring only. Readings never fill operator tables or reports.
       </p>
       <div id="iot-management" hidden>
         <button id="iot-add" type="button" class="button secondary" data-i18n="iotAdd">
@@ -1100,8 +1100,9 @@
         <summary data-i18n="iotSchedule">Firmware checkpoints</summary>
         <p id="iot-schedule"></p>
         <p data-i18n="iotLimit">
-          Latest 100 observations, ordered by capture time. Receipt time is not proof of a live
-          connection. Mapping to reports is not enabled.
+          Connected means authenticated contact within 3 minutes, not a working Modbus meter.
+          Firmware must send heartbeats even without readings. Refresh to check for new contact.
+          Latest 100 readings are ordered by capture time.
         </p>
       </details>
     </dialog>

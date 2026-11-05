@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.48-alpha - 2026-11-05
+
+- Show Connected, Offline, Unverified and Disabled per device, independently of meter readings. Use authenticated server contact and expire stale badges after three minutes, including when automatic refresh is off.
+- Accept a bounded heartbeat through the existing device endpoint without inventing measurements or adding observation rows. Refresh contact on identical accepted reading retries; retain event deduplication, owner isolation and upload budgets.
+- Document the firmware heartbeat handoff and distinguish a reachable HTTPS route from verified device contact. No new dependency, migration or operator-data mapping.
+
 ## v0.11.47-alpha - 2026-11-05
 
 - Add a private node configuration download matching the existing ESP32-S3 uploader macros and supported meter profile IDs. Use the server-configured stable HTTPS origin instead of the browser's localhost or temporary preview URL.
