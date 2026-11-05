@@ -12,6 +12,66 @@ Events are append-only through the API. `(device_id,event_id)` is the deduplicat
 
 HTTPS protects transport and the existing PostgreSQL client verifies remote TLS certificates. Database/platform encryption at rest and access policy require deployment verification; this code does not add a second custom encryption scheme or certify the installation.
 
+## Physical node: Wi-Fi to HTTPS
+
+The selected first path is **ESP32-S3 node -> Wi-Fi with internet -> HTTPS ingestion -> Neon -> authenticated Power Meter Reading**. This tests the physical node uplink; it does not establish that a LoRa gateway path has been commissioned. The reference node main already contains a development-only HTTPS worker. Its current telemetry/checkpoint serializer sends kWh only; optional A fields supported here require the small extension described below.
+
+Use a separate cloud project backed by Neon development for the physical pilot. The operator production project and database are separate. A Vercel project can use its public stable deployment domain while still requiring normal application login for private reads and device bearer authentication for uploads. Protected per-build preview URLs are unsuitable firmware endpoints: a Vercel login response arrives before this API can authenticate the device. Do not give firmware an account-wide automation bypass secret or turn off protection on the operator project. See [Vercel deployment protection](https://vercel.com/docs/deployment-protection).
+
+Set server-only `IOT_PUBLIC_ORIGIN` to the exact stable HTTPS origin, without path, credentials, query or trailing slash. Set `APP_ORIGIN` to the same deployment's browser origin. Only that configured origin enters provisioning; the browser's localhost address is never substituted. Missing/invalid HTTPS disables website device creation and node-config export. This configuration is not a health check or evidence of a physical connection.
+
+On the cloud site, sign in with the development account and choose **Add power meter**. Select the actual factory/profile and enter stable source/meter IDs; no report-row mapping is created. Download **iot_credentials.local.h** while the one-time key is visible. This file contains a live private device credential, so keep it out of chat, screenshots and Git. The website emits these existing firmware configuration identifiers:
+
+| Macro                 | Meaning                                                                            |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                          |
+| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                 |
+| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                  |
+| IOT_DEV_METER_ID      | Exact registered meter ID                                                          |
+| IOT_DEV_METER_PROFILE | fort, habuer, acrel-adl400, acrel-acr or acrel-apm, matching the actual node setup |
+| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential       |
+
+Place the downloaded file in the node repository's `firmware/include/` directory, where the existing uploader includes it. Use the current node repository's normal PlatformIO build/flash workflow. Configure **Client with recovery AP** or **Dual** Wi-Fi in the node's own panel, on an approved internet-connected network; the node AP alone cannot reach the cloud. Save the correct physical meter profile and its verified scaling. Do not multiply CT/PT again on this website. Custom profiles can still be registered for compatible adapters, but this reference-node header export supports only the reviewed keys above.
+
+Check the node's `/api/status` IoT section. `configured`/`enabled` show setup, not successful data delivery. Inspect `lastHttp`, `accepted`, `duplicates`, `failures`, `error` and the durable checkpoint cursor. Verify an accepted event on the cloud card against the physical meter, with its capture time. Existing backfill runs before live telemetry, so the first received historical checkpoint is not necessarily the current meter value. The source's newest capture remains on the card even when older events arrive later.
+
+The uploader verifies a public CA bundle and hostname, rejects HTTP/redirects, and needs a valid TLS clock anchored from the RTC. Do not use setInsecure, a browser session cookie or the Neon connection string in firmware. The current reference stores its compiled development key in flash and is explicitly development-only. Production hardware provisioning, secure storage/physical access and credential rotation require a separate commissioning decision; downloading a header does not certify those controls.
+
+## Firmware handoff: optional current (A)
+
+Use this scoped request in the node-repository chat without including any secret values:
+
+```text
+Keep the existing Energy Record schema v1 uploader and all Modbus, capture,
+RTC, LoRa and local-UI behavior. Read docs/IOT_HTTPS.md, iot_contract.h,
+iot_uplink.h/.cpp and the current website docs/iot.md. The private header
+is provisioned separately; never print, commit or embed its contents in docs.
+
+The website accepts readings.active_energy_kwh as exact nonnegative decimal
+text, plus optional current_a OR current_l1_a/current_l2_a/current_l3_a with
+the same decimal-string convention. It never scales CT/PT or sums phases.
+Review the existing currentA acquisition value and register/profile semantics.
+Carry a valid, fresh current sample through the existing bounded owner-to-
+worker snapshot. Do not perform extra Modbus reads in the HTTPS task. Omit
+unavailable, stale, negative or nonfinite current instead of emitting zero.
+Only label phases when the source actually provides that phase.
+
+Add current to new live telemetry only. Preserve old kWh-only senders and
+all existing checkpoint payloads/event IDs: archived checkpoints do not have
+historical current and must not be supplemented from a live value. Freeze
+the complete live JSON body at event creation so retries of one event ID
+cannot pick up a later current and cause a 409 conflict. Keep six-decimal
+serialization, bounded buffers and maximal-ID/size tests without truncation.
+
+Keep TLS validation, no redirects, no credentials in URLs/logs, exact 200/201
+matching-event ACKs, persistent checkpoint cursor, retry/backoff/429 handling
+and the existing acquisition quiet window. Keep radio and power-loss behavior.
+Run native contract tests plus disabled/enabled ESP32 builds. Report physical
+tests separately; do not claim that compilation proves cloud or meter I/O.
+```
+
+Reference files reviewed on 2026-11-05: [HTTPS workflow](https://github.com/gedxxe/esp32-modbus-energy/blob/main/docs/IOT_HTTPS.md), [provisioning identifiers](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/include/iot_credentials.example.h), [wire adapter](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/include/iot_contract.h), [uploader](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/src/iot_uplink.cpp) and [meter profiles](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/lib/FortMeter/src/MeterProfiles.h). Only interface facts were used; no GPL implementation was copied into this repository.
+
 ## Development activation
 
 1. Keep `IOT_ENABLED=0` in production. Make a development database recovery point and inspect `migrations/009_iot_readings.sql`. Run the existing explicit migration tool against **development only**. Builds do not migrate. No production migration is authorized by this implementation.

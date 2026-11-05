@@ -3,7 +3,13 @@ import { endpoint, appOrigin, checkOrigin, readBody, send, fail, HttpError } fro
 import { getPool, transaction } from './db.js';
 import { requireUser, limit, lockUser, audit } from './auth.js';
 import { tokenHash, secretToken } from './password.js';
-import { validateIotEvent, iotIdentifier } from '../iot-contract.js';
+import { validateIotEvent, iotIdentifier, iotCloudEndpoint } from '../iot-contract.js';
+
+const connection = (env) => ({
+  schema_version: 1,
+  endpoint: iotCloudEndpoint(env.IOT_PUBLIC_ORIGIN || env.APP_ORIGIN),
+  telemetry_interval_seconds: 30,
+});
 
 export function iotIngestHandler(database = getPool, env = process.env) {
   return endpoint(async (req, res) => {
@@ -113,7 +119,7 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
         [user.id, id, kind],
       )
     ).rows;
-    send(res, 200, { enabled: true, devices, readings });
+    send(res, 200, { enabled: true, devices, readings, connection: connection(env) });
   });
 }
 
@@ -148,6 +154,8 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
         !iotIdentifier(body.meter_profile))
     )
       fail(400, 'INVALID_INPUT');
+    if (body.action === 'create' && !connection(env).endpoint)
+      fail(503, 'IOT_CLOUD_NOT_CONFIGURED');
     const credential = body.action === 'revoke' ? null : secretToken();
     const result = await transaction(db, async (client) => {
       // Serialize this owner's registry changes, including the 100-source quota.
@@ -195,6 +203,7 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
     });
     send(res, body.action === 'create' ? 201 : 200, {
       device: result,
+      connection: connection(env),
       ...(credential ? { credential } : {}),
     });
   });

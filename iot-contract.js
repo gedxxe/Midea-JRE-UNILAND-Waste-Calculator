@@ -15,6 +15,50 @@ export const IOT_SCHEDULE_WIB = [
 export const iotIdentifier = (value) =>
   typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value);
 export const IOT_CURRENT_FIELDS = ['current_a', 'current_l1_a', 'current_l2_a', 'current_l3_a'];
+// Profile identifiers from the reference node's MeterProfiles.h; custom IDs remain valid.
+export const IOT_NODE_PROFILES = ['fort', 'habuer', 'acrel-adl400', 'acrel-acr', 'acrel-apm'];
+export function iotCloudEndpoint(origin) {
+  try {
+    const url = new URL(origin);
+    if (
+      url.protocol !== 'https:' ||
+      url.origin !== origin ||
+      !url.hostname.includes('.') ||
+      /(^localhost$|\.(local|internal)$|^[\d.]+$)/i.test(url.hostname)
+    )
+      return null;
+    return new URL('/api/iot-ingest', url).href;
+  } catch {
+    return null;
+  }
+}
+export function iotNodeConfig(device, credential, endpoint) {
+  let origin;
+  try {
+    origin = new URL(endpoint).origin;
+  } catch {
+    return null;
+  }
+  if (
+    iotCloudEndpoint(origin) !== endpoint ||
+    !/^[A-Za-z0-9_-]{43}$/.test(credential) ||
+    !IOT_NODE_PROFILES.includes(device?.meter_profile) ||
+    !['device_id', 'meter_id', 'meter_profile'].every((key) => iotIdentifier(device?.[key]))
+  )
+    return null;
+  const define = (key, value) => '#define ' + key + ' ' + JSON.stringify(value);
+  return [
+    '// Private development provisioning. Do not commit this file.',
+    '#pragma once',
+    '#define IOT_DEV_ENABLED 1',
+    define('IOT_DEV_ENDPOINT', endpoint),
+    define('IOT_DEV_DEVICE_ID', device.device_id),
+    define('IOT_DEV_METER_ID', device.meter_id),
+    define('IOT_DEV_METER_PROFILE', device.meter_profile),
+    define('IOT_DEV_BEARER', credential),
+    '',
+  ].join('\n');
+}
 export function validateIotEvent(value, now = Date.now()) {
   const invalid = () => {
     throw Error('INVALID_IOT_EVENT');
