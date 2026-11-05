@@ -24,9 +24,73 @@
 }
 .iot-devices {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 12px;
   margin-bottom: 20px;
+}
+.iot-device-card,
+.iot-editor {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #d8e4f3;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff, #edf4ff);
+  box-shadow: 0 6px 22px #24456508;
+  overflow-wrap: anywhere;
+}
+.iot-editor {
+  margin: 16px 0;
+}
+.iot-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.iot-editor label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.iot-editor :is(input, select) {
+  width: 100%;
+  min-width: 0;
+}
+.iot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.iot-controls label:has(input[type='checkbox']) {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.iot-controls input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  flex: none;
+}
+.iot-device-card p {
+  margin: 0.5rem 0;
+}
+.iot-meta,
+.iot-editor p {
+  color: #526984;
+  font-size: 0.9rem;
+}
+.iot-reading {
+  display: block;
+  color: #245abe;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 600px) {
+  .iot-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .iot-scroll {
   overflow: auto;

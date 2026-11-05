@@ -1,5 +1,5 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
-import { iotIngestHandler, iotReadingsHandler } from '../../server/iot.js';
+import { iotIngestHandler, iotReadingsHandler, iotDevicesHandler } from '../../server/iot.js';
 import { tokenHash } from '../../server/password.js';
 import { gasCalibration, GAS_TABLE_VERSION, JRE_GAS_INPUT_VERSION } from '../../gas.js';
 import {
@@ -106,6 +106,168 @@ test('IoT ingestion deduplicates atomically, isolates owners and rejects revoked
   } finally {
     await db.query('DELETE FROM meter_app.iot_readings WHERE device_id=$1', [id]);
     await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
+  }
+});
+
+test('diagnostic meter management enforces admin ownership, one-time keys, latest per source and no report writes', async () => {
+  const actor = await login(await seed('admin'));
+  const stranger = await login(await seed('admin'));
+  const source = 'registry_' + randomBytes(8).toString('hex');
+  const body = {
+    action: 'create',
+    device_id: source,
+    plant: 'UNILAND',
+    meter_id: 'custom_meter',
+    meter_profile: 'custom_profile',
+  };
+  const registry = (payload, owner = actor, headers = {}) =>
+    call('/api/iot-devices', { actor: owner, body: payload, headers });
+  const inventory = async () => {
+    const result = {};
+    for (const table of ['working_drafts', 'period_autosaves', 'reports'])
+      result[table] = (
+        await db.query(
+          `SELECT to_jsonb(t) AS row FROM meter_app.${table} t WHERE owner_id=$1 ORDER BY to_jsonb(t)::text`,
+          [actor.id],
+        )
+      ).rows;
+    result.revisions = (
+      await db.query(
+        'SELECT to_jsonb(v) AS row FROM meter_app.report_revisions v JOIN meter_app.reports r ON r.id=v.report_id WHERE r.owner_id=$1 ORDER BY to_jsonb(v)::text',
+        [actor.id],
+      )
+    ).rows;
+    return result;
+  };
+  try {
+    assert.equal((await registry(body, null)).status, 401);
+    assert.equal((await registry(body, operator)).status, 403);
+    assert.equal((await registry(body, actor, { Origin: 'https://evil.example' })).status, 403);
+    assert.equal(
+      (await registry(body, null, { Cookie: actor.cookie, 'X-Meter-User': stranger.id })).status,
+      409,
+    );
+    assert.equal((await registry({ ...body, owner_id: stranger.id })).status, 400);
+    assert.equal((await registry({ ...body, endpoint: 'http://127.0.0.1/internal' })).status, 400);
+    assert.equal((await registry({ ...body, device_id: '../bad' })).status, 400);
+    const draft = exampleDraft('JRE');
+    assert.equal((await call('/api/reports', { actor, body: { draft } })).status, 201);
+    assert.equal(
+      (
+        await call('/api/drafts', {
+          actor,
+          body: {
+            workspace: { version: 4, drafts: { JRE: draft, UNILAND: createDraft('UNILAND') } },
+            baseVersion: 0,
+          },
+        })
+      ).status,
+      200,
+    );
+    const before = await inventory();
+    const created = await Promise.all([registry(body), registry(body)]);
+    assert.deepEqual(created.map((r) => r.status).sort(), [201, 409]);
+    const key = created.find((r) => r.status === 201).value.credential;
+    assert.match(key, /^[A-Za-z0-9_-]{43}$/);
+    assert.equal(created.find((r) => r.status === 201).value.device.plant, 'UNILAND');
+    assert.equal(
+      (await db.query('SELECT token_hash FROM meter_app.iot_devices WHERE device_id=$1', [source]))
+        .rows[0].token_hash,
+      tokenHash(key),
+    );
+    const event = {
+      schema_version: 1,
+      event_id: 'latest',
+      device_id: source,
+      meter_id: body.meter_id,
+      meter_profile: body.meter_profile,
+      event_type: 'telemetry',
+      captured_at: '2026-11-02T01:00:00Z',
+      quality: 'valid',
+      readings: {
+        active_energy_kwh: '321.000001',
+        current_l1_a: '1.01',
+        current_l2_a: '2.02',
+        current_l3_a: '0',
+      },
+    };
+    const upload = (credential, payload = event) =>
+      call('/api/iot-ingest', {
+        body: payload,
+        headers: { 'X-Device-ID': source, Authorization: 'Bearer ' + credential },
+      });
+    assert.equal((await upload(key)).status, 201);
+    assert.equal(
+      (
+        await upload(key, {
+          ...event,
+          event_id: 'backfill',
+          captured_at: '2026-11-01T01:00:00Z',
+          readings: { active_energy_kwh: '123', current_a: '0.1' },
+        })
+      ).status,
+      201,
+    );
+    const other = await registry({ ...body, device_id: source + '_busy' });
+    assert.equal(other.status, 201);
+    await db.query(
+      `INSERT INTO meter_app.iot_readings(device_id,event_id,captured_at,event_type,payload,payload_hash)
+      SELECT $1,'busy_'||n,'2026-11-03T01:00:00Z'::timestamptz,'telemetry',$2::jsonb,repeat('0',64) FROM generate_series(1,101) n`,
+      [
+        source + '_busy',
+        { ...event, device_id: source + '_busy', captured_at: '2026-11-03T01:00:00Z' },
+      ],
+    );
+    const list = await call('/api/iot-readings', { actor });
+    assert.equal(list.value.readings.length, 100);
+    assert.ok(list.value.readings.every((r) => r.device_id !== source));
+    const device = list.value.devices.find((d) => d.device_id === source);
+    assert.equal(device.latest_reading.readings.active_energy_kwh, '321.000001');
+    assert.equal(device.latest_reading.readings.current_l3_a, '0');
+    assert.equal(
+      new Date(device.latest_reading.captured_at).toISOString(),
+      '2026-11-02T01:00:00.000Z',
+    );
+    assert.ok(!JSON.stringify(list.value).includes(key));
+    assert.ok(!JSON.stringify(list.value).includes('token_hash'));
+    const filtered = await call('/api/iot-readings?event_type=checkpoint', { actor });
+    assert.equal(filtered.value.readings.length, 0);
+    assert.equal(
+      filtered.value.devices.find((d) => d.device_id === source).latest_reading.readings
+        .active_energy_kwh,
+      '321.000001',
+    );
+    assert.equal((await call('/api/iot-readings', { actor: stranger })).value.devices.length, 0);
+    for (const action of ['rotate', 'revoke'])
+      assert.equal((await registry({ action, device_id: source }, stranger)).status, 404);
+    const replaced = await registry({ action: 'rotate', device_id: source });
+    assert.equal(replaced.status, 200);
+    assert.notEqual(replaced.value.credential, key);
+    assert.equal((await upload(key)).status, 401);
+    assert.equal((await upload(replaced.value.credential)).status, 200);
+    const revoked = await registry({ action: 'revoke', device_id: source });
+    assert.equal(revoked.status, 200);
+    assert.equal(revoked.value.credential, undefined);
+    assert.equal((await upload(replaced.value.credential)).status, 401);
+    assert.equal(
+      (await call('/api/iot-readings?device_id=' + source, { actor })).value.readings.length,
+      2,
+    );
+    await db.query(
+      `INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash)
+      SELECT $1||'_quota_'||n,$2,'JRE','meter','profile',repeat('0',64) FROM generate_series(1,98) n`,
+      [source, actor.id],
+    );
+    const limited = await registry({ ...body, device_id: source + '_over' });
+    assert.equal(limited.status, 409);
+    assert.equal(limited.value.error, 'DEVICE_LIMIT_REACHED');
+    assert.deepEqual(await inventory(), before);
+  } finally {
+    await db.query(
+      'DELETE FROM meter_app.iot_readings WHERE device_id IN (SELECT device_id FROM meter_app.iot_devices WHERE owner_id=$1)',
+      [actor.id],
+    );
+    await db.query('DELETE FROM meter_app.iot_devices WHERE owner_id=$1', [actor.id]);
   }
 });
 
@@ -580,6 +742,7 @@ test('working drafts replace partial entries without report revisions and reject
 });
 let server, origin, admin, operator, other, reportId;
 const routes = {
+  '/api/iot-devices': iotDevicesHandler(() => runtime, env),
   '/api/iot-ingest': iotIngestHandler(() => runtime, env),
   '/api/iot-readings': iotReadingsHandler(() => runtime, env),
   '/api/auth': authHandler(() => runtime, env),

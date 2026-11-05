@@ -81,6 +81,7 @@ const clock = new NetworkClock();
 const panelEffects = createPanelEffects();
 const iotReading = createIotReading({
   request: (...args) => accounts.request(...args),
+  getUser: () => accounts.getUser(),
   opened: (view) => navigation?.opened(view),
 });
 fitResultsColumn(document.querySelector('.result-column'));

@@ -72,7 +72,7 @@ for (const file of PUBLIC_FILES) {
 }
 // Bound total allowlisted static bytes, including calibration tables and optional effects.
 // Keep historical footprint changes in CHANGELOG.md; review any increase to this limit.
-// Pending owner-scoped browser recovery adds no runtime dependency or new public module.
-assert.ok(size < 1130000, `Static assets grew to ${size} bytes; review the footprint.`);
+// Diagnostic meter controls/cards add translations and UI without a browser dependency.
+assert.ok(size < 1160000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

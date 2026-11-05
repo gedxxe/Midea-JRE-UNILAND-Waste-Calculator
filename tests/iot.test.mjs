@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateIotEvent as validateEvent } from '../iot-contract.js';
 const validateIotEvent = (value) => validateEvent(value, Date.parse('2026-11-05T02:00:00Z'));
-import { iotIngestHandler } from '../server/iot.js';
+import { iotIngestHandler, iotDevicesHandler } from '../server/iot.js';
 const event = () => ({
   schema_version: 1,
   event_id: 'sample_1',
@@ -67,4 +67,55 @@ test('device ingestion fails closed before database access when disabled or unau
     assert.equal(res.statusCode, status);
     assert.equal(called, false);
   }
+});
+
+test('IoT current remains optional and exact, with explicit phases and stable retry serialization', () => {
+  const e = event();
+  const readings = {
+    current_l3_a: '0',
+    current_l1_a: '12.000001',
+    active_energy_kwh: '123.000001',
+    current_l2_a: '11.4',
+  };
+  const normalized = validateIotEvent({ ...e, readings });
+  assert.deepEqual(normalized.readings, {
+    active_energy_kwh: '123.000001',
+    current_l1_a: '12.000001',
+    current_l2_a: '11.4',
+    current_l3_a: '0',
+  });
+  assert.equal(
+    JSON.stringify(normalized),
+    JSON.stringify(
+      validateIotEvent({ ...e, readings: Object.fromEntries(Object.entries(readings).reverse()) }),
+    ),
+  );
+  assert.equal(
+    validateIotEvent({ ...e, readings: { active_energy_kwh: '123', current_a: '0.000001' } })
+      .readings.current_a,
+    '0.000001',
+  );
+  assert.deepEqual(validateIotEvent(e).readings, e.readings);
+  for (const patch of [
+    { current_a: 12 },
+    { current_a: '' },
+    { current_a: '-1' },
+    { current_a: null },
+    { voltage_v: '220' },
+    { current_a: '1', current_l1_a: '1' },
+  ])
+    assert.throws(() => validateIotEvent({ ...e, readings: { ...e.readings, ...patch } }));
+});
+
+test('device management rejects unsupported methods before connecting', async () => {
+  const res = {
+    setHeader() {},
+    end(body) {
+      this.body = JSON.parse(body);
+    },
+  };
+  await iotDevicesHandler(() => {
+    throw Error('must not connect');
+  })({ method: 'GET' }, res);
+  assert.equal(res.statusCode, 405);
 });
