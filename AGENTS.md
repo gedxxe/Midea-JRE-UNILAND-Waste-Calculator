@@ -4,7 +4,16 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.44-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.45-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+
+## IoT website foundation, requested 2026-11-05
+
+- Add protected /iot-power-meter-reading, linked beside Graphs/History. Firmware repository is reference only; do not copy its GPL implementation or change firmware from this website task.
+- Device uploads POST JSON to /api/iot-ingest using dedicated per-source credentials; browser GET /api/iot-readings uses existing owner-scoped sessions. Keep telemetry/checkpoints separate from operator autosaves, immutable reports and ratios. No automatic Apply or guessed mapping.
+- Phase 1 binds each credential/source ID to one registered meter/profile. Use normalized primary cumulative kWh as exact decimal text, with CT/PT already applied once by firmware. Ten firmware WIB checkpoints and the 5-second capture/2-second sample windows were verified against checkpoint_log.h. Missing/invalid captures are not fabricated.
+- IOT_ENABLED defaults off. Migration 009 is staged only; no production activation/migration/device creation is authorized by this code implementation. Provision/rotate/revoke with local maintenance CLI; never print keys or copy them into browser/docs/Git. Record actual validation and hardware limits, not industrial certification.
+- Migration 009 and ingestion were exercised only in a fresh disposable development database with synthetic accounts/events, then that database was removed. Deduplication/concurrency, conflict rejection, owner isolation, revocation and upload budgets passed. No persistent development or production migration/provisioning was performed. Firmware/hardware commissioning and managed encryption/access configuration still require verification before production activation.
+- PR #117 CI follow-up: the full integration suite reproduced a Warehouse Lighting setup login returning 429 because independent scenarios exhausted the shared loopback IP budget after the IoT accounts were added. Isolate only that synthetic IP counter between scenarios; retain production limits and username throttling, with explicit 60/61 IP boundary coverage across handlers/accounts and forged forwarding headers. Run the full integration suite for API additions; a targeted new test alone missed this interaction.
 
 ## Import and light workspace revision, requested 2026-11-04
 

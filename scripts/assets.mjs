@@ -1,4 +1,7 @@
 export const PUBLIC_FILES = [
+  'iot-contract.js',
+  'ui/iot.js',
+  'iot.css',
   'index.html',
   'raw-meter-export.js',
   'ui/date-entry.js',
@@ -106,6 +109,10 @@ export const PUBLIC_FILES = [
   'asset/Midea.webp',
 ];
 export const RUNTIME_FILES = [
+  'api/iot-ingest.js',
+  'api/iot-readings.js',
+  'server/iot.js',
+  'migrations/009_iot_readings.sql',
   ...PUBLIC_FILES,
   'api/time.js',
   'api/auth.js',

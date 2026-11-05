@@ -8,6 +8,52 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  iotTitle: ['Power Meter Reading', '电表读数', 'Power Meter Reading'],
+  iotIntro: [
+    'Device observations are separate from operator reports. Nothing is applied automatically.',
+    '设备读数独立于人工报告，不会自动覆盖输入。',
+    'Reading perangkat terpisah dari laporan operator. Tidak ada pengisian otomatis.',
+  ],
+  iotKind: ['Reading type', '读数类型', 'Jenis reading'],
+  iotAll: ['All readings', '全部读数', 'Semua reading'],
+  iotCheckpoint: ['Scheduled checkpoint', '定时记录', 'Reading terjadwal'],
+  iotTelemetry: ['Telemetry', '遥测', 'Telemetry'],
+  iotRefresh: ['Refresh', '刷新', 'Perbarui'],
+  iotAuto: ['Refresh every 30 seconds', '每30秒刷新', 'Perbarui setiap 30 detik'],
+  iotSchedule: ['Firmware checkpoints', '固件记录时间', 'Jadwal firmware'],
+  iotLimit: [
+    'Latest 100 observations, ordered by capture time. Receipt time is not proof of a live connection. Mapping to reports is not enabled.',
+    '按采集时间显示最近100条记录。接收时间不能证明设备在线，尚未启用报告映射。',
+    '100 observasi terbaru menurut waktu pengambilan. Waktu diterima bukan bukti koneksi aktif. Mapping laporan belum diaktifkan.',
+  ],
+  iotLoading: ['Loading readings…', '正在读取…', 'Memuat reading…'],
+  iotNotConfigured: [
+    'Device ingestion is not enabled. Complete the development setup first.',
+    '设备接收尚未启用，请先完成开发环境配置。',
+    'Penerimaan perangkat belum aktif. Selesaikan konfigurasi development dahulu.',
+  ],
+  iotNoDevices: [
+    'No devices registered to this account.',
+    '本账户尚无已注册设备。',
+    'Belum ada perangkat untuk akun ini.',
+  ],
+  iotNoReadings: ['No readings received yet.', '尚未收到读数。', 'Belum ada reading diterima.'],
+  iotUpdated: [
+    'Showing received observations.',
+    '显示已接收记录。',
+    'Menampilkan observasi yang diterima.',
+  ],
+  iotLoadFailed: [
+    'Readings could not be loaded. Retry when connected.',
+    '无法加载读数，请联网后重试。',
+    'Reading belum dapat dimuat. Coba lagi saat terhubung.',
+  ],
+  iotReceived: ['Received', '接收时间', 'Diterima'],
+  iotCaptured: ['Captured', '采集时间', 'Diambil'],
+  iotDevice: ['Device', '设备', 'Perangkat'],
+  iotEnergy: ['Cumulative energy', '累计电量', 'Energi kumulatif'],
+  iotRevoked: ['Credential revoked', '凭证已撤销', 'Kredensial dicabut'],
+  iotNeverReceived: ['No accepted upload yet', '尚无已接受上传', 'Belum ada upload yang diterima'],
   ...excelMessages,
   reportHelp: ['Report options', '报告选项说明', 'Tentang pilihan laporan'],
   gasReference: ['Tank reference', '储罐参考', 'Referensi tangki'],

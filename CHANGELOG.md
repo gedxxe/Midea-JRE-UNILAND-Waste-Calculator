@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.45-alpha - 2026-11-05
+
+- Add the authenticated Power Meter Reading route and separate owner-scoped IoT observations, with optional visible-page refresh. No automatic report or autosave mapping.
+- Add opt-in HTTPS device ingestion, per-source credentials, validation, deduplication, conflict detection and persisted upload budgets. Separate telemetry from firmware-timed checkpoints.
+- Stage additive migration 009 and local device provisioning; activation and database migration remain explicit deployment steps. No existing readings are changed.
+
 ## v0.11.44-alpha - 2026-11-05
 
 - Accept complete raw sharing snapshots in Import readings, including native gas units, T1–T4, Water, refills, manual totals and notes. Validate sections against the sharing formatter before applying; keep electricity-only imports compatible. Full imports require matching observation dates/times and period context.

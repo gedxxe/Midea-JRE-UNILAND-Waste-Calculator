@@ -2,6 +2,7 @@
 export const APP_ROUTES = [
   { view: 'welcome', path: '/', title: 'routeWelcome' },
   { view: 'reading', path: '/app', title: 'routeReading' },
+  { view: 'iot', path: '/iot-power-meter-reading', title: 'iotTitle', dialog: 'iot-dialog' },
   {
     view: 'monitoring',
     path: '/app/monitoring',

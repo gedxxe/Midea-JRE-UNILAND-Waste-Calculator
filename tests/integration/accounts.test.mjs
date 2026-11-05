@@ -1,4 +1,6 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
+import { iotIngestHandler, iotReadingsHandler } from '../../server/iot.js';
+import { tokenHash } from '../../server/password.js';
 import { gasCalibration, GAS_TABLE_VERSION, JRE_GAS_INPUT_VERSION } from '../../gas.js';
 import {
   layout2Draft,
@@ -18,7 +20,7 @@ import { emptyNightShifts } from '../../shifts.js';
 import { emptyWorkingHours } from '../../storage.js';
 import { importHistory } from '../../server/history-import.js';
 import { graphsHandler } from '../../server/graphs.js';
-import { test, before, after } from 'node:test';
+import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { randomUUID, randomBytes } from 'node:crypto';
@@ -38,12 +40,74 @@ const runtime = process.env.TEST_RUNTIME_DATABASE_URL
   ? createPool(process.env.TEST_RUNTIME_DATABASE_URL)
   : db;
 const env = {
+  IOT_ENABLED: '1',
   DATABASE_URL: process.env.TEST_DATABASE_URL,
   AUTH_SECRET: randomBytes(32).toString('hex'),
 };
 const ids = [];
 const names = [];
 const password = 'Test-only initial passphrase 123';
+
+test('IoT ingestion deduplicates atomically, isolates owners and rejects revoked or conflicting uploads without report writes', async () => {
+  const actor = await login(await seed()),
+    stranger = await login(await seed()),
+    id = 'test_' + randomBytes(8).toString('hex'),
+    key = randomBytes(32).toString('base64url');
+  const body = {
+    schema_version: 1,
+    event_id: 'reading_1',
+    device_id: id,
+    meter_id: 'meter_1',
+    meter_profile: 'fort',
+    event_type: 'telemetry',
+    captured_at: '2026-11-01T01:00:00Z',
+    quality: 'valid',
+    readings: { active_energy_kwh: '123.000001' },
+  };
+  const headers = { 'X-Device-ID': id, Authorization: 'Bearer ' + key };
+  await db.query(
+    'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6)',
+    [id, actor.id, 'JRE', 'meter_1', 'fort', tokenHash(key)],
+  );
+  try {
+    assert.equal((await call('/api/iot-ingest', { body })).status, 401);
+    const results = await Promise.all([
+      call('/api/iot-ingest', { body, headers }),
+      call('/api/iot-ingest', { body, headers }),
+    ]);
+    assert.deepEqual(results.map((x) => x.status).sort(), [200, 201]);
+    assert.equal(
+      (
+        await call('/api/iot-ingest', {
+          body: { ...body, readings: { active_energy_kwh: '124' } },
+          headers,
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (await call('/api/iot-ingest', { body: { ...body, meter_id: 'forged' }, headers })).status,
+      403,
+    );
+    assert.equal((await call('/api/iot-readings', { actor })).value.readings.length, 1);
+    assert.equal(
+      (await call('/api/iot-readings?device_id=' + id, { actor: stranger })).value.readings.length,
+      0,
+    );
+    assert.equal((await call('/api/iot-readings')).status, 401);
+    assert.equal((await call('/api/reports', { actor })).value.reports.length, 0);
+    await db.query(
+      'UPDATE meter_app.iot_devices SET hits=120,window_start=now() WHERE device_id=$1',
+      [id],
+    );
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 429);
+    await db.query('UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1', [id]);
+    assert.equal((await call('/api/iot-ingest', { body, headers })).status, 401);
+  } finally {
+    await db.query('DELETE FROM meter_app.iot_readings WHERE device_id=$1', [id]);
+    await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
+  }
+});
 
 test('work reports persist times and private revisions separately from daily reports and graphs', async () => {
   const actor = await login(await seed());
@@ -409,6 +473,32 @@ test('login throttling persists across handler instances and canonical username 
   );
 });
 
+test('authentication IP budget is shared across accounts and handlers and ignores forged forwarded addresses', async () => {
+  const key = rateKey('auth:ip:127.0.0.1', env);
+  const probes = [await seed(), await seed()];
+  for (const [index, hits] of [59, 60].entries()) {
+    // Place this synthetic counter ahead of the boundary to avoid a clock rollover.
+    await db.query(
+      `INSERT INTO meter_app.rate_limits(key_hash,window_start,hits)
+       VALUES($1,now()+interval '15 minutes',$2)
+       ON CONFLICT(key_hash) DO UPDATE SET window_start=EXCLUDED.window_start,hits=EXCLUDED.hits`,
+      [key, hits],
+    );
+    const result = await call(index ? '/api/auth-replica' : '/api/auth', {
+      body: { action: 'login', username: probes[index].name, password: 'wrong synthetic password' },
+      headers: { 'X-Forwarded-For': '203.0.113.' + (index + 1) },
+    });
+    assert.equal(result.status, index ? 429 : 401);
+    assert.equal(result.value.error, index ? 'RATE_LIMITED' : 'INVALID_CREDENTIALS');
+    assert.equal(result.cookie, undefined);
+    assert.equal(
+      (await db.query('SELECT hits FROM meter_app.rate_limits WHERE key_hash=$1', [key])).rows[0]
+        .hits,
+      hits + 1,
+    );
+  }
+});
+
 test('working drafts replace partial entries without report revisions and reject stale or foreign writes', async () => {
   const workspace = {
     version: 4,
@@ -490,6 +580,8 @@ test('working drafts replace partial entries without report revisions and reject
 });
 let server, origin, admin, operator, other, reportId;
 const routes = {
+  '/api/iot-ingest': iotIngestHandler(() => runtime, env),
+  '/api/iot-readings': iotReadingsHandler(() => runtime, env),
   '/api/auth': authHandler(() => runtime, env),
   '/api/auth-replica': authHandler(() => runtime, env),
   '/api/users': usersHandler(() => runtime, env),
@@ -555,6 +647,14 @@ before(async () => {
   operator = await login(await seed());
   other = await login(await seed('operator', true));
 });
+beforeEach(async () => {
+  // Independent scenarios share a loopback server, not one user's 15-minute login budget.
+  // Keep the real limiter active within every scenario, including the boundary test above.
+  await db.query('DELETE FROM meter_app.rate_limits WHERE key_hash=$1', [
+    rateKey('auth:ip:127.0.0.1', env),
+  ]);
+});
+
 after(async () => {
   if (server) {
     server.closeAllConnections();

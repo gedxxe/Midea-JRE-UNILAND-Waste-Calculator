@@ -1,4 +1,5 @@
 import { periodKey } from './draft-records.js';
+import { createIotReading } from './ui/iot.js';
 import { fitResultsColumn } from './ui/result-layout.js';
 import { createPanelEffects } from './ui/panel-effects.js';
 import { createDateEntry } from './ui/date-entry.js';
@@ -78,6 +79,10 @@ const table = createMeterTable({
 const filterTable = () => table.filter();
 const clock = new NetworkClock();
 const panelEffects = createPanelEffects();
+const iotReading = createIotReading({
+  request: (...args) => accounts.request(...args),
+  opened: (view) => navigation?.opened(view),
+});
 fitResultsColumn(document.querySelector('.result-column'));
 let plant = 'JRE';
 let drafts = { JRE: createDraft('JRE'), UNILAND: createDraft('UNILAND') };
@@ -333,6 +338,7 @@ let firstIdentity = true;
 const draftKey = () => (accountUser ? STORAGE_KEY + '_' + accountUser.id : STORAGE_KEY);
 const draftStorage = () => (accountUser ? sessionStorage : localStorage);
 function accountChanged(user) {
+  iotReading.reset();
   // Preserve the previous owner's pending input before clearing its form or tab recovery.
   autosave?.reset(null);
   dateEntries.forEach((entry) => entry.reset());
@@ -450,6 +456,7 @@ graphs = createGraphs({
 navigation = createNavigation({
   getState: () => ({ ready: accounts.isReady(), user: accounts.getUser() }),
   open(view) {
+    if (view === 'iot') return iotReading.open();
     if (view === 'monitoring') graphs.open();
     else if (view === 'history') accounts.openHistory();
     else if (view === 'accounts') accounts.openUsers();

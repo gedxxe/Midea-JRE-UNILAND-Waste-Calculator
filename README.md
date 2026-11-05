@@ -47,6 +47,8 @@ The signed-in panel uses a soft blue background, compact glass navigation and re
 
 All recording modes use the default light workspace. Night Shift changes the recording period only; there is no dark-theme toggle or circular theme animation.
 
+**Power Meter Reading** opens `/iot-power-meter-reading` beside Graphs. Device telemetry and scheduled observations stay separate from reports. It is disabled by default; see [development setup and firmware contract](docs/iot.md).
+
 Autosave keeps incomplete readings in the same dated documents without manual Save. Pending input also has owner-scoped browser recovery for tab closure or session expiry. Different browser copies require review; storage/network failures remain visible. Browser recovery is private, unencrypted device data and cannot survive clearing browser storage. See [autosave and recovery](docs/autosave.md).
 
 ### Navigation
@@ -183,6 +185,8 @@ WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示�
 
 所有记录模式均使用默认浅色面板。夜班仅改变记录时段，不再切换深色主题或播放圆形主题动画。
 
+**电表读数**位于 Graphs 旁，地址为 `/iot-power-meter-reading`。设备遥测及定时记录独立于人工报告，不会自动覆盖输入。默认未启用上传，请先完成[开发配置与固件接口](docs/iot.md)。
+
 面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.39-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
@@ -271,6 +275,8 @@ Slogan welcome tetap “Capek mencatat meter secara manual? Coba Catatan Energi.
 Panel setelah login memakai latar biru lembut, navigasi glass yang ringkas, dan kolom reading dengan latar solid. Angka utama lebih tegas; label, satuan, dan petunjuk memakai warna slate yang tetap terbaca. Transisi singkat mengikuti pengaturan reduced motion; data-panel-motion="off" pada #application-surface mematikan animasi panel. Perhitungan, autosave, dan laporan tersimpan tetap sama.
 
 Semua mode memakai panel terang yang sama. Night Shift hanya mengubah periode pencatatan, tanpa dark mode atau animasi pergantian tema.
+
+**Power Meter Reading** di sebelah Graphs membuka `/iot-power-meter-reading`. Telemetry dan reading terjadwal terpisah dari laporan. Upload belum aktif sebelum konfigurasi development dan migration 009; lihat [kontrak firmware](docs/iot.md).
 
 Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.39-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 

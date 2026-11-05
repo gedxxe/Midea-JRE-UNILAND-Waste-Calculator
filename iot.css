@@ -1,0 +1,53 @@
+#iot-dialog {
+  overflow: auto;
+  width: min(1200px, 96vw);
+  max-width: none;
+  max-height: 94dvh;
+  padding: clamp(16px, 3vw, 32px);
+  background: #f7faff;
+  color: #24374b;
+  border: 1px solid #dce5ef;
+  border-radius: 24px;
+}
+#iot-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.iot-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+.iot-devices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.iot-scroll {
+  overflow: auto;
+  max-height: 50dvh;
+  border: 1px solid #dce5ef;
+  border-radius: 14px;
+  background: white;
+}
+.iot-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+.iot-table :is(th, td) {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #dce5ef;
+  font-size: 0.95rem;
+}
+.iot-scroll th {
+  position: sticky;
+  top: 0;
+  background: #edf3fa;
+}

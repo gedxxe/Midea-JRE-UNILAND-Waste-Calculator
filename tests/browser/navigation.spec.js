@@ -6,6 +6,81 @@ const operator = {
   role: 'operator',
   mustChangePassword: false,
 };
+
+test('Power Meter Reading supports a protected direct URL and a clear disabled state without device credentials', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  let reads = 0;
+  await page.route('**/api/iot-readings?**', (route) => {
+    reads++;
+    return route.fulfill({ json: { enabled: false, devices: [], readings: [] } });
+  });
+  await page.goto('/iot-power-meter-reading');
+  await expect(page.locator('#iot-dialog')).toBeVisible();
+  await expect(page.locator('#iot-status')).toContainText('not enabled');
+  await expect(page.locator('#iot-auto')).not.toBeChecked();
+  await expect(page.locator('#iot-schedule')).toContainText('08:00');
+  await expect(page.locator('#iot-data')).toHaveText('');
+  await page.locator('[data-close-dialog="iot-dialog"]').click();
+  await expect(page).toHaveURL(/\/app$/);
+  expect(reads).toBe(1);
+  expect(state.errors).toEqual([]);
+});
+
+test('Power Meter Reading never fetches private telemetry before login', async ({ page }) => {
+  await setup(page, { signedIn: false });
+  let reads = 0;
+  await page.route('**/api/iot-readings?**', (r) => {
+    reads++;
+    return r.fulfill({ json: { enabled: true, devices: [], readings: [] } });
+  });
+  await page.goto('/iot-power-meter-reading');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('#iot-dialog')).not.toBeVisible();
+  expect(reads).toBe(0);
+});
+
+test('Power Meter Reading renders exact received values as text and filters event kinds', async ({
+  page,
+}) => {
+  const state = await setup(page);
+  const requests = [];
+  await page.route('**/api/iot-readings?**', (route) => {
+    requests.push(new URL(route.request().url()).searchParams.get('event_type'));
+    return route.fulfill({
+      json: {
+        enabled: true,
+        devices: [
+          {
+            device_id: 'test-source',
+            plant: 'JRE',
+            meter_id: 'meter-1',
+            meter_profile: 'fort',
+            active: true,
+            last_received_at: '2026-11-01T01:00:03Z',
+          },
+        ],
+        readings: [
+          {
+            device_id: 'test-source',
+            event_id: 'sample-1',
+            captured_at: '2026-11-01T01:00:00Z',
+            received_at: '2026-11-01T01:00:03Z',
+            event_type: 'checkpoint',
+            payload: { readings: { active_energy_kwh: '123.000001' } },
+          },
+        ],
+      },
+    });
+  });
+  await page.goto('/iot-power-meter-reading');
+  await expect(page.locator('#iot-data')).toContainText('123.000001 kWh');
+  await page.locator('#iot-kind').selectOption('checkpoint');
+  await expect.poll(() => requests.at(-1)).toBe('checkpoint');
+  expect(await page.locator('#iot-data input[type="password"]').count()).toBe(0);
+  expect(state.errors).toEqual([]);
+});
 async function setup(
   page,
   { signedIn = true, role = 'operator', passwordRequired = false, delayHistory = false } = {},
