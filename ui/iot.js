@@ -1,11 +1,18 @@
 import { $, node } from './dom.js';
 import { t, getLanguage } from '../i18n/index.js';
-import { IOT_SCHEDULE_WIB, IOT_CURRENT_FIELDS } from '../iot-contract.js';
+import {
+  IOT_SCHEDULE_WIB,
+  IOT_CURRENT_FIELDS,
+  IOT_NODE_PROFILES,
+  iotNodeConfig,
+} from '../iot-contract.js';
 
 export function createIotReading({ request, opened, getUser }) {
   let identity = 0,
     scope = 0,
     managing = false,
+    provisioning = null,
+    cloudEndpoint = null,
     writeController,
     controller,
     timer;
@@ -18,20 +25,25 @@ export function createIotReading({ request, opened, getUser }) {
       )
       .join(' · ') || t('iotNotSent');
   function clearCredential() {
+    provisioning = null;
     $('iot-key').value = '';
     $('iot-endpoint').value = '';
     $('iot-key-device').textContent = '';
+    $('iot-config-download').disabled = true;
     $('iot-credential').hidden = true;
   }
   function clearManagement() {
     scope++;
     writeController?.abort();
     managing = false;
+    cloudEndpoint = null;
+    $('iot-add').disabled = true;
     clearCredential();
     $('iot-management').hidden = true;
     $('iot-device-form').hidden = true;
     $('iot-device-form').reset();
     $('iot-manage-status').textContent = '';
+    $('iot-cloud-status').textContent = '';
   }
   function reset() {
     clearManagement();
@@ -69,6 +81,11 @@ export function createIotReading({ request, opened, getUser }) {
       const data = await request('/api/iot-readings?' + query, { signal: controller.signal });
       if (epoch !== identity || !dialog.open) return;
       $('iot-management').hidden = !data.enabled || getUser()?.role !== 'admin';
+      cloudEndpoint = data.connection?.endpoint || null;
+      $('iot-add').disabled = managing || !cloudEndpoint;
+      $('iot-cloud-status').textContent = t(
+        data.connection?.endpoint ? 'iotCloudReady' : 'iotCloudMissing',
+      );
       const host = $('iot-data');
       host.replaceChildren();
       $('iot-status').textContent = t(
@@ -196,7 +213,13 @@ export function createIotReading({ request, opened, getUser }) {
       $('iot-device-form').hidden = true;
       if (result.credential) {
         $('iot-key').value = result.credential;
-        $('iot-endpoint').value = new URL('/api/iot-ingest', location.origin).href;
+        $('iot-endpoint').value = result.connection?.endpoint || '';
+        provisioning = result.device;
+        $('iot-config-download').disabled = !iotNodeConfig(
+          provisioning,
+          result.credential,
+          $('iot-endpoint').value,
+        );
         $('iot-key-device').textContent =
           result.device.device_id +
           ' · ' +
@@ -215,6 +238,7 @@ export function createIotReading({ request, opened, getUser }) {
             INVALID_INPUT: 'iotInvalidIds',
             FORBIDDEN: 'iotAdminOnly',
             RATE_LIMITED: 'iotManageLimited',
+            IOT_CLOUD_NOT_CONFIGURED: 'iotCloudMissing',
           }[error.message] || 'iotManageFailed',
         );
     } finally {
@@ -223,6 +247,7 @@ export function createIotReading({ request, opened, getUser }) {
         managing = false;
         for (const button of $('iot-management').querySelectorAll('button'))
           button.disabled = false;
+        $('iot-add').disabled = !cloudEndpoint;
         void refresh();
       }
     }
@@ -253,6 +278,22 @@ export function createIotReading({ request, opened, getUser }) {
     });
   });
   $('iot-key-dismiss').addEventListener('click', clearCredential);
+  for (const profile of IOT_NODE_PROFILES) {
+    const option = node('option');
+    option.value = profile;
+    $('iot-node-profiles').append(option);
+  }
+  $('iot-config-download').addEventListener('click', () => {
+    if (!dialog.open || getUser()?.role !== 'admin') return;
+    const text = iotNodeConfig(provisioning, $('iot-key').value, $('iot-endpoint').value);
+    if (!text) return;
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const link = node('a');
+    link.href = url;
+    link.download = 'iot_credentials.local.h';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
   $('iot-key-copy').addEventListener('click', async () => {
     const epoch = scope;
     if (!$('iot-key').value || !dialog.open) return;

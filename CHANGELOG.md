@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.47-alpha - 2026-11-05
+
+- Add a private node configuration download matching the existing ESP32-S3 uploader macros and supported meter profile IDs. Use the server-configured stable HTTPS origin instead of the browser's localhost or temporary preview URL.
+- Block website registration when HTTPS provisioning is missing. Keep custom source identities, one-time keys, owner checks and existing kWh-only wire compatibility.
+- Document direct node Wi-Fi uplink, exact ACK/retry semantics, remaining current telemetry changes and physical commissioning checks. Diagnostics remain separate from operator reports and autosave. No dependency or migration change.
+
 ## v0.11.46-alpha - 2026-11-05
 
 - Let admins register diagnostic power meters with configurable factory, device, meter and firmware profile IDs, generate one-time keys, replace keys and disable uploads without deleting observations.

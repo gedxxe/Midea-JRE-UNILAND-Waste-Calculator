@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateIotEvent as validateEvent } from '../iot-contract.js';
+import { iotCloudEndpoint, iotNodeConfig, IOT_NODE_PROFILES } from '../iot-contract.js';
 const validateIotEvent = (value) => validateEvent(value, Date.parse('2026-11-05T02:00:00Z'));
 import { iotIngestHandler, iotDevicesHandler } from '../server/iot.js';
 const event = () => ({
@@ -118,4 +119,79 @@ test('device management rejects unsupported methods before connecting', async ()
     throw Error('must not connect');
   })({ method: 'GET' }, res);
   assert.equal(res.statusCode, 405);
+});
+
+test('node provisioning emits the reviewed firmware macros only for stable HTTPS and a supported profile', () => {
+  const origin = 'https://iot.example.com';
+  const device = { device_id: 'dev_source', meter_id: 'meter_1', meter_profile: 'fort' };
+  const key = 'k'.repeat(43);
+  const config = iotNodeConfig(device, key, iotCloudEndpoint(origin));
+  for (const name of [
+    'IOT_DEV_ENABLED',
+    'IOT_DEV_ENDPOINT',
+    'IOT_DEV_DEVICE_ID',
+    'IOT_DEV_METER_ID',
+    'IOT_DEV_METER_PROFILE',
+    'IOT_DEV_BEARER',
+  ])
+    assert.ok(config.includes('#define ' + name + ' '));
+  assert.ok(config.includes('"https://iot.example.com/api/iot-ingest"'));
+  assert.ok(config.includes('"' + key + '"'));
+  for (const profile of IOT_NODE_PROFILES)
+    assert.ok(iotNodeConfig({ ...device, meter_profile: profile }, key, iotCloudEndpoint(origin)));
+  for (const bad of [
+    'http://127.0.0.1:3000',
+    'https://localhost',
+    'https://192.168.1.1',
+    'https://test.local',
+    'https://test.internal',
+    origin + '/',
+    origin + '?secret=x',
+    'https://user:password@iot.example.com',
+  ])
+    assert.equal(iotCloudEndpoint(bad), null);
+  for (const bad of [
+    origin + '/api/iot-ingest?key=x',
+    origin + '/elsewhere',
+    'http://iot.example.com/api/iot-ingest',
+  ])
+    assert.equal(iotNodeConfig(device, key, bad), null);
+  assert.equal(
+    iotNodeConfig({ ...device, device_id: 'id"\n#define OTHER 1' }, key, iotCloudEndpoint(origin)),
+    null,
+  );
+  assert.equal(
+    iotNodeConfig({ ...device, meter_profile: 'custom-profile' }, key, iotCloudEndpoint(origin)),
+    null,
+  );
+  assert.equal(iotNodeConfig(device, 'wrong', iotCloudEndpoint(origin)), null);
+});
+
+test('reference node wire examples are accepted with exact six-decimal readings and UTC capture windows', () => {
+  const checkpoint = {
+    schema_version: 1,
+    event_id: 'cp_20762_04',
+    device_id: 'dev_source',
+    meter_id: 'meter_1',
+    meter_profile: 'fort',
+    event_type: 'checkpoint',
+    captured_at: '2026-11-05T01:00:02Z',
+    quality: 'valid',
+    readings: { active_energy_kwh: '123.000001' },
+    scheduled_at: '2026-11-05T01:00:00Z',
+    started_at: '2026-11-05T01:00:01Z',
+  };
+  assert.equal(validateIotEvent(checkpoint).readings.active_energy_kwh, '123.000001');
+  const telemetry = {
+    schema_version: 1,
+    event_id: 'live_12345678_00000001',
+    device_id: 'dev_source',
+    meter_id: 'meter_1',
+    meter_profile: 'acrel-adl400',
+    event_type: 'telemetry',
+    captured_at: '2026-11-05T01:00:00Z',
+    quality: 'valid',
+    readings: { active_energy_kwh: '0.000000' },
+  };
+  assert.equal(validateIotEvent(telemetry).readings.active_energy_kwh, '0.000000');
 });

@@ -1018,11 +1018,13 @@
               ><span data-i18n="iotProfile">Firmware profile ID</span
               ><input
                 id="iot-profile"
+                list="iot-node-profiles"
                 required
                 maxlength="64"
                 pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,63}"
                 autocomplete="off"
             /></label>
+            <datalist id="iot-node-profiles"></datalist>
           </div>
           <p data-i18n="iotBindingHelp">
             Use the exact IDs configured in firmware. These identify a source, not a report row.
@@ -1049,9 +1051,21 @@
           ><span data-i18n="iotKeyTitle">Device key</span
           ><input id="iot-key" type="password" readonly autocomplete="off"
         /></label>
+        <p data-i18n="iotConfigHelp">
+          For the ESP32-S3 node, place the private header in firmware/include and rebuild. Select
+          the actual meter profile. Wi-Fi needs internet access. Current (A) requires the firmware
+          extension in the integration guide.
+        </p>
         <div class="iot-actions">
           <button id="iot-key-copy" type="button" class="button" data-i18n="iotCopyKey">
             Copy key</button
+          ><button
+            id="iot-config-download"
+            type="button"
+            class="button secondary"
+            data-i18n="iotDownloadConfig"
+          >
+            Download node config</button
           ><button
             id="iot-key-dismiss"
             type="button"
@@ -1062,6 +1076,7 @@
           </button>
         </div>
       </section>
+      <p id="iot-cloud-status" class="iot-meta"></p>
       <p id="iot-manage-status" role="status" aria-live="polite"></p>
       <div class="iot-controls">
         <label

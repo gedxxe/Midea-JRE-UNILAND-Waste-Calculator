@@ -79,6 +79,22 @@ export const catalog = {
   ],
   iotEndpoint: ['Upload endpoint', '上传地址', 'Endpoint upload'],
   iotCopyKey: ['Copy key', '复制密钥', 'Salin key'],
+  iotDownloadConfig: ['Download node config', '下载节点配置', 'Unduh konfigurasi node'],
+  iotConfigHelp: [
+    'For the ESP32-S3 node, place the private header in firmware/include and rebuild. Select the actual meter profile. Wi-Fi needs internet access. Current (A) requires the firmware extension in the integration guide; custom profiles cannot use this reference-node export.',
+    'ESP32-S3节点需将私有配置头文件放入firmware/include后重新编译，并选择实际电表型号。Wi-Fi需能访问互联网。电流(A)需按集成指南扩展固件；自定义配置不支持此参考节点导出。',
+    'Untuk node ESP32-S3, letakkan header privat di firmware/include lalu build ulang. Pilih profil meter yang sebenarnya. Wi-Fi harus terhubung ke internet. Arus (A) memerlukan tambahan firmware sesuai panduan; profil kustom tidak memakai ekspor node referensi ini.',
+  ],
+  iotCloudReady: [
+    'HTTPS provisioning is configured. Register a device, install its private config, then wait for its first accepted upload.',
+    'HTTPS配置已就绪。注册设备并安装私有配置后，等待首次上传成功。',
+    'Provisioning HTTPS sudah dikonfigurasi. Daftarkan perangkat, pasang konfigurasi privatnya, lalu tunggu upload pertama diterima.',
+  ],
+  iotCloudMissing: [
+    'No stable HTTPS endpoint is configured for device provisioning. Contact your admin before flashing a node.',
+    '尚未配置稳定的HTTPS地址。刷写节点前请联系管理员。',
+    'Endpoint HTTPS stabil belum dikonfigurasi. Hubungi admin sebelum mem-flash node.',
+  ],
   iotDismissKey: ['Hide key', '隐藏密钥', 'Sembunyikan key'],
   iotLatest: ['Latest capture', '最新采集', 'Pembacaan terakhir'],
   iotCurrent: ['Current (A)', '电流 (A)', 'Arus (A)'],

@@ -134,32 +134,57 @@ test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on 
     return route.fulfill({ json: { reports: [] } });
   });
   await page.route('**/api/iot-readings?**', (route) =>
-    route.fulfill({ json: { enabled: true, devices: device ? [device] : [], readings: [] } }),
+    route.fulfill({
+      json: {
+        enabled: true,
+        devices: device ? [device] : [],
+        readings: [],
+        connection: { schema_version: 1, endpoint: 'https://iot.example.com/api/iot-ingest' },
+      },
+    }),
   );
   await page.route('**/api/iot-devices', (route) => {
     const body = route.request().postDataJSON();
     requests.push(body);
     device = { ...body, active: true, last_received_at: null };
-    return route.fulfill({ status: 201, json: { device, credential: key } });
+    return route.fulfill({
+      status: 201,
+      json: {
+        device,
+        credential: key,
+        connection: { schema_version: 1, endpoint: 'https://iot.example.com/api/iot-ingest' },
+      },
+    });
   });
   await page.goto('/iot-power-meter-reading');
   await page.locator('#iot-add').click();
   await page.locator('#iot-plant').selectOption('UNILAND');
   await page.locator('#iot-source-id').fill('custom-lora-source');
   await page.locator('#iot-meter-id').fill('custom-warehouse');
-  await page.locator('#iot-profile').fill('custom-profile');
+  await page.locator('#iot-profile').fill('fort');
   await page.locator('#iot-device-form button[type="submit"]').click();
   await expect(page.locator('#iot-credential')).toBeVisible();
   await expect(page.locator('#iot-key')).toHaveValue(key);
-  await expect(page.locator('#iot-endpoint')).toHaveValue('http://127.0.0.1:4173/api/iot-ingest');
-  await expect(page.locator('.iot-device-card')).toContainText('custom-warehouse / custom-profile');
+  await expect(page.locator('#iot-endpoint')).toHaveValue('https://iot.example.com/api/iot-ingest');
+  await expect(page.locator('.iot-device-card')).toContainText('custom-warehouse / fort');
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#iot-config-download').click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('iot_credentials.local.h');
+  const stream = await download.createReadStream();
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  const config = Buffer.concat(chunks).toString('utf8');
+  expect(config).toContain('#define IOT_DEV_ENDPOINT "https://iot.example.com/api/iot-ingest"');
+  expect(config).toContain('#define IOT_DEV_BEARER "' + key + '"');
   expect(requests).toEqual([
     {
       action: 'create',
       plant: 'UNILAND',
       device_id: 'custom-lora-source',
       meter_id: 'custom-warehouse',
-      meter_profile: 'custom-profile',
+      meter_profile: 'fort',
     },
   ]);
   expect(
@@ -167,6 +192,7 @@ test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on 
   ).not.toContain(key);
   await page.locator('#iot-key-dismiss').click();
   await expect(page.locator('#iot-key')).toHaveValue('');
+  await expect(page.locator('#iot-config-download')).toBeDisabled();
   await page.screenshot({ path: '.vercel/iot-management-' + testInfo.project.name + '.png' });
   await page.locator('[data-close-dialog="iot-dialog"]').click();
   await page.locator('#open-iot').click();
@@ -185,7 +211,14 @@ test('closing diagnostics while a key request is pending discards late private r
     release = resolve;
   });
   await page.route('**/api/iot-readings?**', (route) =>
-    route.fulfill({ json: { enabled: true, devices: [], readings: [] } }),
+    route.fulfill({
+      json: {
+        enabled: true,
+        devices: [],
+        readings: [],
+        connection: { schema_version: 1, endpoint: 'https://iot.example.com/api/iot-ingest' },
+      },
+    }),
   );
   await page.route('**/api/iot-devices', async (route) => {
     started = true;

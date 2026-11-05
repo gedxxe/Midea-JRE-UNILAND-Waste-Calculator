@@ -41,6 +41,7 @@ const runtime = process.env.TEST_RUNTIME_DATABASE_URL
   : db;
 const env = {
   IOT_ENABLED: '1',
+  IOT_PUBLIC_ORIGIN: 'https://iot.example.com',
   DATABASE_URL: process.env.TEST_DATABASE_URL,
   AUTH_SECRET: randomBytes(32).toString('hex'),
 };
@@ -150,6 +151,15 @@ test('diagnostic meter management enforces admin ownership, one-time keys, lates
     assert.equal((await registry({ ...body, owner_id: stranger.id })).status, 400);
     assert.equal((await registry({ ...body, endpoint: 'http://127.0.0.1/internal' })).status, 400);
     assert.equal((await registry({ ...body, device_id: '../bad' })).status, 400);
+    const configuredOrigin = env.IOT_PUBLIC_ORIGIN;
+    try {
+      env.IOT_PUBLIC_ORIGIN = 'http://127.0.0.1:3000';
+      const missingCloud = await registry(body);
+      assert.equal(missingCloud.status, 503);
+      assert.equal(missingCloud.value.error, 'IOT_CLOUD_NOT_CONFIGURED');
+    } finally {
+      env.IOT_PUBLIC_ORIGIN = configuredOrigin;
+    }
     const draft = exampleDraft('JRE');
     assert.equal((await call('/api/reports', { actor, body: { draft } })).status, 201);
     assert.equal(
@@ -168,6 +178,10 @@ test('diagnostic meter management enforces admin ownership, one-time keys, lates
     const created = await Promise.all([registry(body), registry(body)]);
     assert.deepEqual(created.map((r) => r.status).sort(), [201, 409]);
     const key = created.find((r) => r.status === 201).value.credential;
+    assert.equal(
+      created.find((r) => r.status === 201).value.connection.endpoint,
+      'https://iot.example.com/api/iot-ingest',
+    );
     assert.match(key, /^[A-Za-z0-9_-]{43}$/);
     assert.equal(created.find((r) => r.status === 201).value.device.plant, 'UNILAND');
     assert.equal(
@@ -220,6 +234,8 @@ test('diagnostic meter management enforces admin ownership, one-time keys, lates
     );
     const list = await call('/api/iot-readings', { actor });
     assert.equal(list.value.readings.length, 100);
+    assert.equal(list.value.connection.schema_version, 1);
+    assert.equal(list.value.connection.endpoint, 'https://iot.example.com/api/iot-ingest');
     assert.ok(list.value.readings.every((r) => r.device_id !== source));
     const device = list.value.devices.find((d) => d.device_id === source);
     assert.equal(device.latest_reading.readings.active_energy_kwh, '321.000001');
