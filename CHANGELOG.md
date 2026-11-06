@@ -2,12 +2,15 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
-## v0.11.50-alpha - 2026-11-06
+## v0.11.50-alpha - 2026-11-07
 
 - Add JRE Outdoor meter 3 x40 and deduct its consumption once from Window. Use 6 November 2026 at 17:00 WIB as the first baseline; periods starting earlier retain their previous calculation.
 - Preserve old reading strings when upgrading editable copies to layout 7. Accept previous two-meter Outdoor imports and retain same-time observations. An unavailable new meter contributes zero with a notice, without fabricating a raw reading; invalid or decreasing values still require review.
 - Protect archived period autosaves against older-layout writers. Keep historical report output unchanged; no database migration or automatic data repair.
 - Suggest the firmware's `schneider-pm5100` profile while retaining custom profile registration and private configuration export. No firmware implementation or dependency is added.
+- Add owner-scoped admin card naming, reversible removal and restore. Keep device bindings and reading history intact; restored cards require a replacement key before uploads resume. Stage additive migration 011 with metadata-only grants and old-schema compatibility.
+- Allow connection JSON to be downloaded again without exposing a device key. Keep the private firmware header available only with its one-time key, and explain when hiding the page has cleared it.
+- Fix the browser gate's outdated meter-input count by deriving it from the schema and checking the newly added legacy slots remain blank. Review the static budget at 1,185,000 bytes for card controls and translations; no browser dependency is added.
 
 ## v0.11.49-alpha - 2026-11-06
 

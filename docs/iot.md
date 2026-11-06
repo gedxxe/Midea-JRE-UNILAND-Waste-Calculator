@@ -1,5 +1,13 @@
 # Power Meter Reading
 
+## Card management
+
+After migration 011 and its limited runtime grants, an admin can edit a card's display name, remove it from the default list, and restore it through **Show removed cards**. Removal stops uploads and retains observations. Restoring a card leaves uploads disabled; use **Replace key** to reconnect it. Names support up to 80 characters and are rendered as text. Firmware device/meter/profile IDs remain stable so renaming a card does not disconnect a node or relabel historical payloads. The existing 100-source quota includes removed cards.
+
+**Connection JSON** can be downloaded again from an owned card. It contains the HTTPS endpoint, transport IDs and intervals, without a bearer key. The **Private firmware header (.h)** includes the one-time key only while that key is visible after registration or rotation. Closing, hiding or changing account clears the key; replace it if another private header is needed. The downloaded connection JSON is a reference for setup, not an automatic import format for firmware.
+
+Migration 011 adds only `display_name` and `archived_at` to the registry, plus metadata-update grants. It does not rewrite telemetry, reports, autosaves or account credentials. Until it is explicitly applied, existing reads/create/key operations continue; edit/remove/restore show a setup notice. Production migration/deployment is a separate approved step. Rollback cannot reactivate an archived card through the old key-rotation path because the database requires archived cards to remain inactive.
+
 This optional page is for LoRa power-monitoring diagnostics, not a control system or completed hardware commissioning. Device observations do not populate operator tables, autosaves, consumption graphs or reports. Each source binds to one factory, meter and firmware profile ID. The first intended physical source is JRE Warehouse, configured through registration rather than hardcoded in the application. Fleet sharing, additional metrics and retention policies remain separate work. There is no automatic filling or report Apply feature.
 
 ## Transport and security

@@ -614,12 +614,105 @@ test('diagnostic meter management enforces admin ownership, one-time keys, lates
     const replaced = await registry({ action: 'rotate', device_id: source });
     assert.equal(replaced.status, 200);
     assert.notEqual(replaced.value.credential, key);
+    assert.equal(
+      (
+        await db.query('SELECT last_received_at FROM meter_app.iot_devices WHERE device_id=$1', [
+          source,
+        ])
+      ).rows[0].last_received_at,
+      null,
+    );
     assert.equal((await upload(key)).status, 401);
     assert.equal((await upload(replaced.value.credential)).status, 200);
     const revoked = await registry({ action: 'revoke', device_id: source });
     assert.equal(revoked.status, 200);
     assert.equal(revoked.value.credential, undefined);
     assert.equal((await upload(replaced.value.credential)).status, 401);
+    const immutableReadings = (
+      await db.query(
+        'SELECT to_jsonb(t) AS row FROM meter_app.iot_readings t WHERE device_id=$1 ORDER BY event_id',
+        [source],
+      )
+    ).rows;
+    for (const action of ['update', 'delete', 'restore']) {
+      const payload = {
+        action,
+        device_id: source,
+        ...(action === 'update' ? { display_name: 'Other account' } : {}),
+      };
+      assert.equal((await registry(payload, stranger)).status, 404);
+      assert.equal((await registry(payload, operator)).status, 403);
+    }
+    assert.equal(
+      (await registry({ action: 'update', device_id: source, display_name: 'a'.repeat(81) }))
+        .status,
+      400,
+    );
+    assert.equal(
+      (
+        await registry({
+          action: 'update',
+          device_id: source,
+          display_name: 'Warehouse',
+          meter_id: 'changed',
+        })
+      ).status,
+      400,
+    );
+    const renamed = await registry({
+      action: 'update',
+      device_id: source,
+      display_name: '仓库 Warehouse',
+    });
+    assert.equal(renamed.status, 200);
+    assert.equal(renamed.value.device.display_name, '仓库 Warehouse');
+    assert.equal(renamed.value.device.meter_profile, body.meter_profile);
+    const removed = await registry({ action: 'delete', device_id: source });
+    assert.equal(removed.status, 200);
+    assert.ok(removed.value.device.archived_at);
+    assert.equal(removed.value.device.active, false);
+    await assert.rejects(
+      db.query('UPDATE meter_app.iot_devices SET active=true WHERE device_id=$1', [source]),
+      (error) => error.code === '23514',
+    );
+    assert.ok(
+      !(await call('/api/iot-readings', { actor })).value.devices.some(
+        (d) => d.device_id === source,
+      ),
+    );
+    assert.equal(
+      (await call('/api/iot-readings?include_archived=1', { actor: operator })).status,
+      403,
+    );
+    const archived = (await call('/api/iot-readings?include_archived=1', { actor })).value;
+    assert.equal(archived.connection.card_management_ready, true);
+    assert.ok(archived.devices.some((d) => d.device_id === source));
+    assert.equal((await registry({ action: 'rotate', device_id: source })).status, 409);
+    assert.equal(
+      (await registry({ action: 'restore', device_id: source })).value.device.active,
+      false,
+    );
+    assert.equal((await upload(replaced.value.credential)).status, 401);
+    const restoredKey = await registry({ action: 'rotate', device_id: source });
+    assert.equal(restoredKey.status, 200);
+    assert.equal(
+      (
+        await db.query('SELECT last_received_at FROM meter_app.iot_devices WHERE device_id=$1', [
+          source,
+        ])
+      ).rows[0].last_received_at,
+      null,
+    );
+    assert.equal((await upload(restoredKey.value.credential)).status, 200);
+    assert.deepEqual(
+      (
+        await db.query(
+          'SELECT to_jsonb(t) AS row FROM meter_app.iot_readings t WHERE device_id=$1 ORDER BY event_id',
+          [source],
+        )
+      ).rows,
+      immutableReadings,
+    );
     assert.equal(
       (await call('/api/iot-readings?device_id=' + source, { actor })).value.readings.length,
       2,
@@ -639,6 +732,55 @@ test('diagnostic meter management enforces admin ownership, one-time keys, lates
       [actor.id],
     );
     await db.query('DELETE FROM meter_app.iot_devices WHERE owner_id=$1', [actor.id]);
+  }
+});
+
+test('pre-011 schema keeps reads and key operations available while metadata writes fail clearly', async () => {
+  const actor = await login(await seed('admin'));
+  const source = 'staged_' + randomBytes(8).toString('hex');
+  await db.query(
+    'ALTER TABLE meter_app.iot_devices RENAME COLUMN display_name TO display_name_staged',
+  );
+  try {
+    await db.query(
+      'ALTER TABLE meter_app.iot_devices RENAME COLUMN archived_at TO archived_at_staged',
+    );
+    try {
+      const created = await call('/api/iot-devices', {
+        actor,
+        body: {
+          action: 'create',
+          device_id: source,
+          plant: 'JRE',
+          meter_id: 'm1',
+          meter_profile: 'custom',
+        },
+      });
+      assert.equal(created.status, 201);
+      const read = await call('/api/iot-readings', { actor });
+      assert.equal(read.status, 200);
+      assert.equal(read.value.connection.card_management_ready, false);
+      assert.equal(
+        (await call('/api/iot-devices', { actor, body: { action: 'rotate', device_id: source } }))
+          .status,
+        200,
+      );
+      const blocked = await call('/api/iot-devices', {
+        actor,
+        body: { action: 'update', device_id: source, display_name: 'New name' },
+      });
+      assert.equal(blocked.status, 503);
+      assert.equal(blocked.value.error, 'IOT_MANAGEMENT_NOT_READY');
+    } finally {
+      await db.query(
+        'ALTER TABLE meter_app.iot_devices RENAME COLUMN archived_at_staged TO archived_at',
+      );
+    }
+  } finally {
+    await db.query(
+      'ALTER TABLE meter_app.iot_devices RENAME COLUMN display_name_staged TO display_name',
+    );
+    await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [source]);
   }
 });
 

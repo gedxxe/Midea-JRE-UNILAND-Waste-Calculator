@@ -53,6 +53,8 @@ Autosave keeps incomplete readings in the same dated documents without manual Sa
 
 ### Navigation
 
+Admins can edit an IoT card's display name, remove it from the list, and restore it without deleting readings. These controls require migration 011 and its runtime grants. **Connection JSON** can be downloaded again without a secret; the private firmware header is available only while its one-time key is visible. Firmware IDs remain unchanged when renaming a card.
+
 Use /app for reading entry, /app/monitoring for charts/monthly tables, /app/history for saved reports, and /app/accounts for admin account management. Back/Forward and direct-link refresh work without reloading on menu changes. Protected links resolve the current session first; unknown paths return 404. Navigation keeps the existing workspace and drafts. See [routing](docs/navigation.md).
 
 ### Everyday features
@@ -197,6 +199,8 @@ JRE 新增第 32 项 **Warehouse Lighting**，倍率 x40；Warehouse Area 扣除
 
 ### 操作流程与功能
 
+管理员可编辑IoT卡片显示名称、移除或恢复卡片，读数不会被删除。这些功能需要迁移011及运行权限。连接JSON可再次下载且不含密钥；固件私有头文件仅在一次性密钥可见时提供。更改名称不会改变固件ID。
+
 **保存**用于提交待同步更改并核实服务器数据，不创建新副本或修订。核实立即开始；自动保存继续。登录按钮使用可选的 Specular 边缘光效，关闭动画或不支持 WebGL 时仍可正常登录。
 
 Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。小提示可关闭，指南随时可重新打开。支持上一步、下一步、Escape/关闭、暂停动画及减少动态效果。示意图不会改动读数或保存数据；指南代码、样式和详细翻译按需加载，关闭提示的偏好仅按账户保存在本浏览器。
@@ -315,6 +319,8 @@ Isian belum lengkap tetap tersimpan otomatis, termasuk listrik, gas, Water dan c
 Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berhenti mengetik atau dalam 15 detik saat terus mengedit, dengan jarak percobaan latar minimal 5 detik. Periksa “Semua perubahan tersimpan di akun” sebelum menutup. Gangguan koneksi dicoba ulang dengan jeda bertahap; konflik perangkat memerlukan pilihan, termasuk saat angka dikembalikan ke nilai lokal lama. Tanggal belum valid tetap tersimpan sebagai draft aktif tanpa membuat titik grafik. Nilai kosong tidak menjadi nol. Backup privat format 5 juga menyimpan antrean periode sebelumnya.
 
 ### Alur dan fitur operator
+
+Admin dapat mengubah nama tampilan card IoT, menghapusnya dari daftar, dan memulihkannya tanpa menghapus reading. Fitur ini memerlukan migration 011 dan hak runtime. **JSON koneksi** bisa diunduh ulang tanpa key; header firmware privat tersedia selama key sekali tampil masih terlihat. ID firmware tetap sama saat nama diubah.
 
 **Panduan singkat** di panel Account menjelaskan delapan alur utama dengan ilustrasi kursor animasi. Ajakan kecil bisa ditutup; panduan dapat dibuka ulang kapan saja. Ada Back/Next, Escape/Close, jeda animasi dan dukungan reduced motion. Ilustrasi tidak mengubah reading atau menyimpan data. Kode, gaya dan terjemahan panjang dimuat saat dibuka; preferensi menutup ajakan hanya disimpan per akun di browser ini.
 
