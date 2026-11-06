@@ -270,6 +270,17 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
   );
   try {
     const ask = () => call('/api/iot-refresh', { actor, body: { device_id: id } });
+    assert.equal((await call('/api/iot-refresh', { body: { device_id: id } })).status, 401);
+    assert.equal(
+      (
+        await call('/api/iot-refresh', {
+          actor,
+          body: { device_id: id },
+          headers: { Origin: 'https://evil.example' },
+        })
+      ).status,
+      403,
+    );
     assert.equal((await call('/api/iot-refresh', { actor, method: 'GET' })).status, 405);
     assert.equal(
       (await call('/api/iot-refresh', { actor: stranger, body: { device_id: id } })).status,
@@ -279,7 +290,9 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
       (await call('/api/iot-refresh', { actor, body: { device_id: id, force: true } })).status,
       400,
     );
-    const queued = await ask();
+    const firstRequests = await Promise.all([ask(), ask(), ask()]);
+    assert.deepEqual(firstRequests.map((r) => r.status).sort(), [202, 409, 409]);
+    const queued = firstRequests.find((r) => r.status === 202);
     assert.equal(queued.status, 202);
     assert.equal(queued.value.queued, true);
     const parallel = await Promise.all([ask(), ask(), ask()]);
@@ -290,6 +303,12 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
     assert.equal(list.connection.telemetry_interval_seconds, 600);
     assert.equal(list.connection.manual_cooldown_seconds, 10);
     assert.equal(list.devices.find((d) => d.device_id === id).refresh_pending, true);
+    const statusOnly = (await call('/api/iot-readings?status_only=1', { actor })).value;
+    assert.equal(statusOnly.status_only, true);
+    assert.deepEqual(statusOnly.readings, []);
+    assert.equal(Object.hasOwn(statusOnly.devices[0], 'latest_reading'), false);
+    assert.equal(statusOnly.devices[0].refresh_pending, true);
+    assert.equal((await call('/api/iot-readings?status_only=yes', { actor })).status, 400);
     const pulse = await call('/api/iot-ingest', { body: beat, headers });
     assert.equal(pulse.status, 200);
     assert.equal(typeof pulse.value.refresh_after_utc, 'number');
@@ -318,8 +337,19 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
         .refresh_pending,
       true,
     );
+    telemetry.event_id = 'manual_sample_future';
+    telemetry.captured_at = new Date(Date.now() + 60000).toISOString().slice(0, 19) + 'Z';
+    assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
+    assert.equal(
+      (await call('/api/iot-readings?status_only=1', { actor })).value.devices[0].refresh_pending,
+      true,
+    );
+    await db.query(
+      "UPDATE meter_app.iot_refresh_requests SET requested_at=clock_timestamp()-interval '3 seconds' WHERE device_id=$1",
+      [id],
+    );
     telemetry.event_id = 'manual_sample_new';
-    telemetry.captured_at = new Date(Date.now() + 2000).toISOString().slice(0, 19) + 'Z';
+    telemetry.captured_at = new Date().toISOString().slice(0, 19) + 'Z';
     assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
     list = (await call('/api/iot-readings', { actor })).value;
     assert.equal(list.devices.find((d) => d.device_id === id).refresh_pending, false);
@@ -327,15 +357,109 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
       (await call('/api/iot-ingest', { body: beat, headers })).value.refresh_after_utc,
       undefined,
     );
-    assert.equal((await ask()).status, 429); // completed, but 10-second cooldown persists
+    // Set an exact recent completion rather than relying on network timings for cooldown.
+    await db.query(
+      "UPDATE meter_app.iot_refresh_requests SET requested_at=clock_timestamp()-interval '1 second',completed_at=clock_timestamp() WHERE device_id=$1",
+      [id],
+    );
+    assert.equal((await ask()).status, 429);
     await db.query(
       "UPDATE meter_app.iot_refresh_requests SET requested_at=now()-interval '11 seconds',completed_at=now()-interval '10 seconds' WHERE device_id=$1",
       [id],
     );
     assert.equal((await ask()).status, 202);
     assert.equal((await ask()).status, 409);
+    await db.query(
+      "UPDATE meter_app.iot_refresh_requests SET requested_at=clock_timestamp()-interval '121 seconds',completed_at=NULL WHERE device_id=$1",
+      [id],
+    );
+    assert.equal((await ask()).status, 202);
+    await db.query('UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1', [id]);
+    assert.equal((await ask()).status, 409);
+    await db.query('UPDATE meter_app.iot_devices SET active=true WHERE device_id=$1', [id]);
+    // A queued ingest transaction can be older than the request it later completes.
+    const blocker = await db.connect();
+    let upload;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query(
+        'SELECT device_id FROM meter_app.iot_devices WHERE device_id=$1 FOR UPDATE',
+        [id],
+      );
+      const captured = new Date(Date.now() + 2500).toISOString().slice(0, 19) + 'Z';
+      upload = call('/api/iot-ingest', {
+        body: { ...telemetry, event_id: 'queued_transaction', captured_at: captured },
+        headers,
+      });
+      let waiting = false;
+      for (let i = 0; i < 40; i++) {
+        waiting = (
+          await db.query(
+            "SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT d.* FROM meter_app.iot_devices%') AS waiting",
+          )
+        ).rows[0].waiting;
+        if (waiting) break;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      assert.equal(waiting, true);
+      await blocker.query(
+        'UPDATE meter_app.iot_refresh_requests SET requested_at=clock_timestamp(),completed_at=NULL WHERE device_id=$1',
+        [id],
+      );
+      await new Promise((resolve) => setTimeout(resolve, 2600));
+      await blocker.query('COMMIT');
+      assert.equal((await upload).status, 201);
+      assert.equal(
+        (await call('/api/iot-readings?status_only=1', { actor })).value.devices[0].refresh_pending,
+        false,
+      );
+    } finally {
+      await blocker.query('ROLLBACK').catch(() => {});
+      blocker.release();
+      if (upload) await upload;
+    }
   } finally {
     await db.query('DELETE FROM meter_app.iot_readings WHERE device_id=$1', [id]);
+    await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
+  }
+});
+
+test('manual refresh flag off keeps ingest and status reads working without migration 010 schema', async () => {
+  const actor = await login(await seed()),
+    id = 'old_schema_' + randomBytes(8).toString('hex'),
+    key = randomBytes(32).toString('base64url');
+  const flag = env.IOT_MANUAL_REFRESH_ENABLED;
+  let renamed = false;
+  await db.query(
+    'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6)',
+    [id, actor.id, 'JRE', 'meter_1', 'fort', tokenHash(key)],
+  );
+  try {
+    env.IOT_MANUAL_REFRESH_ENABLED = '0';
+    await db.query(
+      'ALTER TABLE meter_app.iot_refresh_requests RENAME TO iot_refresh_requests_hidden_test',
+    );
+    renamed = true;
+    const headers = { 'X-Device-ID': id, Authorization: 'Bearer ' + key };
+    const beat = {
+      schema_version: 1,
+      event_type: 'heartbeat',
+      device_id: id,
+      meter_id: 'meter_1',
+      meter_profile: 'fort',
+    };
+    assert.equal((await call('/api/iot-ingest', { body: beat, headers })).status, 200);
+    const read = await call('/api/iot-readings?status_only=1', { actor });
+    assert.equal(read.status, 200);
+    assert.equal(read.value.connection.manual_refresh_enabled, false);
+    assert.equal((await call('/api/iot-readings', { actor })).status, 200);
+    assert.equal((await call('/api/iot-refresh', { actor, body: { device_id: id } })).status, 503);
+  } finally {
+    if (renamed)
+      await db.query(
+        'ALTER TABLE meter_app.iot_refresh_requests_hidden_test RENAME TO iot_refresh_requests',
+      );
+    env.IOT_MANUAL_REFRESH_ENABLED = flag;
     await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
   }
 });

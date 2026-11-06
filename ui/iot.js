@@ -1,4 +1,4 @@
-import { $, node } from './dom.js';
+import { $, node, svgNode } from './dom.js';
 import { t, getLanguage } from '../i18n/index.js';
 import {
   IOT_SCHEDULE_WIB,
@@ -9,6 +9,7 @@ import {
   IOT_DASHBOARD_POLL_MS,
   IOT_MANUAL_COOLDOWN_SECONDS,
   IOT_MANUAL_TIMEOUT_SECONDS,
+  formatIotReading,
 } from '../iot-contract.js';
 
 export function createIotReading({ request, opened, getUser }) {
@@ -22,18 +23,33 @@ export function createIotReading({ request, opened, getUser }) {
     timer,
     presenceTimer,
     buttonTimer,
+    statusTimer,
+    statusController,
+    reloadTimer,
+    controls = [],
+    checked = false,
+    serverMillis = NaN,
+    clockStarted = 0,
+    manualEnabled = false,
+    readNotice = '',
+    requestLocks = new Map(),
     manualController,
     manualBusy = false,
     lastReloadAt = -Infinity,
     hasPending = false,
     presenceBadges = [];
   const dialog = $('iot-dialog');
+  const clockNow = () => serverMillis + performance.now() - clockStarted;
+  function setClock(time) {
+    serverMillis = Date.parse(time);
+    clockStarted = performance.now();
+  }
   function stopPresence() {
     clearTimeout(presenceTimer);
     presenceBadges = [];
   }
   function paintPresence(now) {
-    for (const { device, badge } of presenceBadges) {
+    for (const { device, badge, contact, date } of presenceBadges) {
       const status = iotPresence(device, now);
       badge.dataset.state = status;
       badge.textContent = t(
@@ -44,13 +60,18 @@ export function createIotReading({ request, opened, getUser }) {
           unknown: 'iotUnknown',
         }[status],
       );
+      if (contact)
+        contact.textContent = !device.active
+          ? t('iotRevoked')
+          : device.last_received_at
+            ? t('iotLastContact') + ': ' + date(device.last_received_at)
+            : t('iotNeverReceived');
     }
   }
   function watchPresence(serverTime) {
-    const serverNow = Date.parse(serverTime);
-    const started = performance.now();
+    setClock(serverTime);
     const tick = () => {
-      paintPresence(serverNow + performance.now() - started);
+      paintPresence(clockNow());
       if (dialog.open && !document.hidden && presenceBadges.length)
         presenceTimer = setTimeout(tick, 5000);
     };
@@ -60,46 +81,186 @@ export function createIotReading({ request, opened, getUser }) {
     IOT_CURRENT_FIELDS.filter((key) => readings[key] !== undefined)
       .map(
         (key) =>
-          (key === 'current_a' ? '' : key.slice(8, 10).toUpperCase() + ' ') + readings[key] + ' A',
+          (key === 'current_a' ? '' : key.slice(8, 10).toUpperCase() + ' ') +
+          formatIotReading(readings[key]) +
+          ' A',
       )
       .join(' · ') || t('iotNotSent');
   function stopButtons() {
     clearInterval(buttonTimer);
     buttonTimer = null;
   }
+  // React Bits FuseButton outline adapted for a cooldown, not a delayed action/Undo.
+  // David Haz, MIT + Commons Clause: asset/licenses/react-bits.txt.
+  function fuse(button) {
+    const svg = svgNode('svg', { class: 'iot-read-rim', 'aria-hidden': 'true' });
+    svg.append(
+      svgNode('rect', {
+        x: 1,
+        y: 1,
+        width: 'calc(100% - 2px)',
+        height: 'calc(100% - 2px)',
+        rx: 13,
+        pathLength: 1,
+      }),
+    );
+    button.append(svg);
+  }
+  function paintButtons() {
+    hasPending = false;
+    const now = clockNow();
+    for (const { d, read, label, count } of controls) {
+      const requested = Date.parse(d.refresh_requested_at);
+      const remaining = Math.max(0, requested + IOT_MANUAL_COOLDOWN_SECONDS * 1000 - now);
+      const localRemaining = Math.max(0, (requestLocks.get(d.device_id) || 0) - performance.now());
+      const cooldown = Math.max(Number.isFinite(remaining) ? remaining : 0, localRemaining) / 1000;
+      const pending =
+        !!d.refresh_pending &&
+        Number.isFinite(now) &&
+        now - requested < IOT_MANUAL_TIMEOUT_SECONDS * 1000;
+      hasPending ||= pending;
+      const connected = checked && iotPresence(d, now) === 'connected';
+      const state = manualBusy
+        ? 'requesting'
+        : pending
+          ? 'pending'
+          : cooldown > 0
+            ? 'cooldown'
+            : !connected
+              ? 'offline'
+              : 'ready';
+      read.dataset.state = state;
+      read.disabled = managing || !manualEnabled || state !== 'ready';
+      read.setAttribute('aria-busy', String(state === 'requesting' || pending));
+      read.style.setProperty(
+        '--iot-progress',
+        String(Math.min(1, cooldown / IOT_MANUAL_COOLDOWN_SECONDS)),
+      );
+      label.textContent = t(
+        state === 'requesting' ? 'iotRequesting' : pending ? 'iotWaiting' : 'iotReadNow',
+      );
+      count.textContent = cooldown > 0 ? Math.ceil(cooldown) + 's' : '';
+      read.title = t(
+        pending ? 'iotWaiting' : !checked ? 'iotUnknown' : !connected ? 'iotOffline' : 'iotReadNow',
+      );
+      read.setAttribute(
+        'aria-label',
+        read.title + (cooldown > 0 ? ' ' + Math.ceil(cooldown) + 's' : ''),
+      );
+    }
+  }
+  function scheduleStatus() {
+    clearTimeout(statusTimer);
+    if (dialog.open && !document.hidden && (hasPending || $('iot-auto').checked))
+      statusTimer = setTimeout(refreshStatus, hasPending ? 7500 : 60000);
+  }
+  async function refreshStatus() {
+    if (!dialog.open || document.hidden) return;
+    statusController?.abort();
+    const active = new AbortController();
+    statusController = active;
+    const epoch = identity;
+    const timeout = setTimeout(() => active.abort(), 20000);
+    try {
+      const data = await request('/api/iot-readings?status_only=1', { signal: active.signal });
+      if (
+        epoch !== identity ||
+        statusController !== active ||
+        active.signal.aborted ||
+        !dialog.open
+      )
+        return;
+      const wasPending = presenceBadges.some(({ device }) => device.refresh_pending);
+      let completed = false;
+      if (!data.enabled) throw Error('IOT_NOT_CONFIGURED');
+      checked = true;
+      manualEnabled = !!data.connection?.manual_refresh_enabled;
+      for (const { device } of presenceBadges) {
+        const latest = data.devices.find((item) => item.device_id === device.device_id);
+        if (latest) {
+          completed ||=
+            !!device.refresh_pending && !!latest.refresh_completed_at && !latest.refresh_pending;
+          Object.assign(device, latest);
+        } else device.active = false;
+      }
+      clearTimeout(presenceTimer);
+      watchPresence(data.server_time);
+      paintButtons();
+      if (completed) {
+        readNotice = '';
+        void refresh();
+      } else if (wasPending && !hasPending) {
+        readNotice = 'iotReadExpired';
+        $('iot-status').textContent = t(readNotice);
+      }
+    } catch {
+      if (epoch === identity && statusController === active && dialog.open) {
+        checked = false;
+        clearTimeout(presenceTimer);
+        paintPresence(NaN);
+        paintButtons();
+        $('iot-status').textContent = t('iotLoadFailed');
+      }
+    } finally {
+      clearTimeout(timeout);
+      if (statusController === active) {
+        statusController = null;
+        scheduleStatus();
+      }
+    }
+  }
   // The browser queues one command. A database GET is not a meter reading.
   async function requestNow(deviceId) {
-    if (manualBusy || !dialog.open || !getUser()) return;
+    const control = controls.find(({ d }) => d.device_id === deviceId);
+    paintButtons();
+    if (manualBusy || managing || !control || control.read.disabled || !dialog.open || !getUser())
+      return;
     const generation = scope;
     manualBusy = true;
+    requestLocks.set(deviceId, performance.now() + IOT_MANUAL_COOLDOWN_SECONDS * 1000);
+    readNotice = '';
+    paintButtons();
     manualController = new AbortController();
     const active = manualController;
     const timeout = setTimeout(() => active.abort(), 20000);
     $('iot-status').textContent = t('iotRequesting');
     try {
-      await request('/api/iot-refresh', {
+      const result = await request('/api/iot-refresh', {
         body: { device_id: deviceId },
         signal: active.signal,
       });
-      if (scope === generation && dialog.open) {
+      if (
+        scope === generation &&
+        manualController === active &&
+        !active.signal.aborted &&
+        dialog.open
+      ) {
+        if (result.queued !== true || !Number.isFinite(Date.parse(result.requested_at)))
+          throw Error('INVALID_ACK');
+        control.d.refresh_requested_at = result.requested_at;
+        control.d.refresh_completed_at = null;
+        control.d.refresh_pending = true;
+        readNotice = 'iotQueued';
         $('iot-status').textContent = t('iotQueued');
-        void refresh();
       }
     } catch (error) {
-      if (scope === generation && dialog.open && !active.signal.aborted) {
-        $('iot-status').textContent = t(
+      if (scope === generation && manualController === active && dialog.open) {
+        readNotice =
           {
             REFRESH_PENDING: 'iotWaiting',
             REFRESH_COOLDOWN: 'iotCooling',
             DEVICE_OFFLINE: 'iotOffline',
-          }[error.message] || 'iotRequestFailed',
-        );
-        void refresh();
+          }[error.message] || 'iotRequestUnconfirmed';
+        $('iot-status').textContent = t(readNotice);
       }
     } finally {
       clearTimeout(timeout);
-      if (manualController === active) manualController = null;
-      manualBusy = false;
+      if (manualController === active) {
+        manualController = null;
+        manualBusy = false;
+        paintButtons();
+        if (scope === generation && dialog.open) void refreshStatus();
+      }
     }
   }
   function clearCredential() {
@@ -113,8 +274,15 @@ export function createIotReading({ request, opened, getUser }) {
   function clearManagement() {
     scope++;
     manualController?.abort();
+    manualController = null;
+    statusController?.abort();
+    statusController = null;
+    clearTimeout(statusTimer);
+    clearTimeout(reloadTimer);
     manualBusy = false;
     stopButtons();
+    controls = [];
+    checked = false;
     writeController?.abort();
     managing = false;
     cloudEndpoint = null;
@@ -129,6 +297,8 @@ export function createIotReading({ request, opened, getUser }) {
   function reset() {
     stopButtons();
     hasPending = false;
+    readNotice = '';
+    requestLocks.clear();
     lastReloadAt = -Infinity;
     stopPresence();
     clearManagement();
@@ -141,6 +311,10 @@ export function createIotReading({ request, opened, getUser }) {
     dialog.close();
   }
   async function refresh() {
+    statusController?.abort();
+    statusController = null;
+    clearTimeout(statusTimer);
+    clearTimeout(reloadTimer);
     stopButtons();
     clearTimeout(presenceTimer);
     clearTimeout(timer);
@@ -169,6 +343,8 @@ export function createIotReading({ request, opened, getUser }) {
       if (epoch !== identity || !dialog.open) return;
       $('iot-management').hidden = !data.enabled || getUser()?.role !== 'admin';
       cloudEndpoint = data.connection?.endpoint || null;
+      manualEnabled = !!data.connection?.manual_refresh_enabled;
+      checked = true;
       $('iot-add').disabled = managing || !cloudEndpoint;
       $('iot-cloud-status').textContent = t(
         data.connection?.endpoint ? 'iotCloudReady' : 'iotCloudMissing',
@@ -178,44 +354,40 @@ export function createIotReading({ request, opened, getUser }) {
       stopPresence();
       host.replaceChildren();
       $('iot-status').textContent = t(
-        !data.enabled
-          ? 'iotNotConfigured'
-          : !data.devices.length
-            ? 'iotNoDevices'
-            : !data.readings.length
-              ? data.devices.some((device) => device.latest_reading)
-                ? 'iotNoMatches'
-                : 'iotNoReadings'
-              : 'iotUpdated',
+        readNotice ||
+          (!data.enabled
+            ? 'iotNotConfigured'
+            : !data.devices.length
+              ? 'iotNoDevices'
+              : !data.readings.length
+                ? data.devices.some((device) => device.latest_reading)
+                  ? 'iotNoMatches'
+                  : 'iotNoReadings'
+                : 'iotUpdated'),
       );
       if (data.enabled) {
         const list = node('div', null, 'iot-devices');
-        const refreshButtons = [];
-        const serverMillis = Date.parse(data.server_time) || Date.now();
-        const started = performance.now();
-        const clockNow = () => serverMillis + performance.now() - started;
+        controls = [];
         for (const d of data.devices) {
           const card = node('section', null, 'iot-device-card');
           const badge = node('span', null, 'iot-presence');
-          presenceBadges.push({ device: d, badge });
+          const contact = node('p');
+          presenceBadges.push({ device: d, badge, contact, date });
           card.append(
             node('strong', d.device_id + ' · ' + d.plant),
             node('p', d.meter_id + ' / ' + d.meter_profile),
             badge,
-            node(
-              'p',
-              !d.active
-                ? t('iotRevoked')
-                : d.last_received_at
-                  ? t('iotLastContact') + ': ' + date(d.last_received_at)
-                  : t('iotNeverReceived'),
-            ),
+            contact,
           );
           if (d.latest_reading) {
             const latest = d.latest_reading;
             card.append(
               node('p', t('iotLatest'), 'iot-meta'),
-              node('strong', latest.readings.active_energy_kwh + ' kWh', 'iot-reading'),
+              node(
+                'strong',
+                formatIotReading(latest.readings.active_energy_kwh) + ' kWh',
+                'iot-reading',
+              ),
             );
             card.append(
               node('p', t('iotCurrent') + ': ' + currentText(latest.readings)),
@@ -233,10 +405,11 @@ export function createIotReading({ request, opened, getUser }) {
           const count = node('span', '', 'iot-read-count');
           count.setAttribute('aria-hidden', 'true');
           read.append(glyph, label, count);
+          fuse(read);
           read.addEventListener('click', () => void requestNow(d.device_id));
           if (data.connection?.manual_refresh_enabled) {
             card.append(read);
-            refreshButtons.push({ d, read, label, count });
+            controls.push({ d, read, label, count });
             if (d.refresh_pending) hasPending = true;
           }
           if (getUser()?.role === 'admin') {
@@ -285,7 +458,7 @@ export function createIotReading({ request, opened, getUser }) {
             date(r.captured_at),
             date(r.received_at),
             t(r.event_type === 'checkpoint' ? 'iotCheckpoint' : 'iotTelemetry'),
-            r.payload.readings.active_energy_kwh + ' kWh',
+            formatIotReading(r.payload.readings.active_energy_kwh) + ' kWh',
             currentText(r.payload.readings),
           ])
             tr.append(node('td', v));
@@ -295,45 +468,14 @@ export function createIotReading({ request, opened, getUser }) {
         wrap.append(table);
         if (data.readings.length) host.append(wrap);
         watchPresence(data.server_time);
-        const paintButtons = () => {
-          const now = clockNow();
-          for (const { d, read, label, count } of refreshButtons) {
-            const requestedAt = Date.parse(d.refresh_requested_at) || 0;
-            const cooldown = Math.max(
-              0,
-              (requestedAt + IOT_MANUAL_COOLDOWN_SECONDS * 1000 - now) / 1000,
-            );
-            const pending =
-              !!d.refresh_pending && now - requestedAt < IOT_MANUAL_TIMEOUT_SECONDS * 1000;
-            const connected = iotPresence(d, now) === 'connected';
-            const state = pending
-              ? 'pending'
-              : cooldown > 0
-                ? 'cooldown'
-                : !connected
-                  ? 'offline'
-                  : 'ready';
-            read.dataset.state = state;
-            read.disabled = manualBusy || state !== 'ready';
-            read.style.setProperty(
-              '--iot-progress',
-              String(Math.min(100, Math.max(0, (cooldown / IOT_MANUAL_COOLDOWN_SECONDS) * 100))),
-            );
-            label.textContent = pending ? t('iotWaiting') : t('iotReadNow');
-            count.textContent = !pending && cooldown > 0 ? Math.ceil(cooldown) + 's' : '';
-            read.title = t(pending ? 'iotWaiting' : !connected ? 'iotOffline' : 'iotReadNow');
-            read.setAttribute(
-              'aria-label',
-              read.title + (cooldown > 0 ? ' ' + Math.ceil(cooldown) + 's' : ''),
-            );
-          }
-        };
         paintButtons();
-        if (refreshButtons.length && !document.hidden) buttonTimer = setInterval(paintButtons, 250);
+        if (controls.length && !document.hidden) buttonTimer = setInterval(paintButtons, 1000);
       }
     } catch (error) {
       if (epoch === identity && (error.name !== 'AbortError' || timedOut)) {
+        checked = false;
         paintPresence(NaN);
+        paintButtons();
         stopPresence();
         $('iot-status').textContent = t('iotLoadFailed');
       }
@@ -346,12 +488,13 @@ export function createIotReading({ request, opened, getUser }) {
         );
         $('iot-refresh').disabled = remaining > 0;
         if (dialog.open && !document.hidden) {
-          if (hasPending) timer = setTimeout(refresh, 7500);
-          else if ($('iot-auto').checked) timer = setTimeout(refresh, IOT_DASHBOARD_POLL_MS);
+          if ($('iot-auto').checked) timer = setTimeout(refresh, IOT_DASHBOARD_POLL_MS);
+          scheduleStatus();
         }
         if (remaining > 0)
-          setTimeout(() => {
+          reloadTimer = setTimeout(() => {
             if (
+              epoch === identity &&
               dialog.open &&
               !document.hidden &&
               performance.now() - lastReloadAt >= IOT_MANUAL_COOLDOWN_SECONDS * 1000
@@ -365,6 +508,7 @@ export function createIotReading({ request, opened, getUser }) {
     if (managing || getUser()?.role !== 'admin' || !dialog.open) return;
     const epoch = scope;
     managing = true;
+    paintButtons();
     clearCredential();
     clearTimeout(timer);
     $('iot-auto').checked = false;
@@ -479,6 +623,7 @@ export function createIotReading({ request, opened, getUser }) {
   $('iot-kind').addEventListener('change', refresh);
   $('iot-auto').addEventListener('change', () => {
     clearTimeout(timer);
+    clearTimeout(statusTimer);
     if ($('iot-auto').checked) void refresh();
   });
   dialog.addEventListener('close', () => {
@@ -494,8 +639,13 @@ export function createIotReading({ request, opened, getUser }) {
   document.addEventListener('visibilitychange', () => {
     clearTimeout(timer);
     if (document.hidden) {
+      statusController?.abort();
+      statusController = null;
+      clearTimeout(statusTimer);
+      clearTimeout(reloadTimer);
       stopButtons();
       manualController?.abort();
+      manualController = null;
       manualBusy = false;
       hasPending = false;
       paintPresence(NaN);

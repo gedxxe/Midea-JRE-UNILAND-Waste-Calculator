@@ -11,6 +11,7 @@ CREATE TABLE meter_app.iot_refresh_requests (
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='meter_app_runtime') THEN
-    GRANT SELECT, INSERT, UPDATE ON meter_app.iot_refresh_requests TO meter_app_runtime;
+    GRANT SELECT, INSERT ON meter_app.iot_refresh_requests TO meter_app_runtime;
+    GRANT UPDATE(requested_at,completed_at) ON meter_app.iot_refresh_requests TO meter_app_runtime;
   END IF;
 END $$;

@@ -90,7 +90,7 @@ export function iotIngestHandler(database = getPool, env = process.env) {
               await client.query(
                 `SELECT floor(extract(epoch FROM requested_at))::bigint AS refresh_after_utc
                  FROM meter_app.iot_refresh_requests
-                 WHERE device_id=$1 AND requested_at>now()-interval '120 seconds'
+                 WHERE device_id=$1 AND requested_at>clock_timestamp()-interval '120 seconds'
                  AND (completed_at IS NULL OR completed_at<requested_at)`,
                 [id],
               )
@@ -123,9 +123,10 @@ export function iotIngestHandler(database = getPool, env = process.env) {
       );
       if (manualEnabled(env) && payload.event_type === 'telemetry')
         await client.query(
-          `UPDATE meter_app.iot_refresh_requests SET completed_at=now()
-           WHERE device_id=$1 AND requested_at<=$2::timestamptz
-           AND requested_at>now()-interval '120 seconds'
+          `UPDATE meter_app.iot_refresh_requests SET completed_at=clock_timestamp()
+           WHERE device_id=$1 AND requested_at<$2::timestamptz
+           AND $2::timestamptz<=clock_timestamp()
+           AND requested_at>clock_timestamp()-interval '120 seconds'
            AND (completed_at IS NULL OR completed_at<requested_at)`,
           [id, payload.captured_at],
         );
@@ -150,44 +151,55 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
     if (env.IOT_ENABLED !== '1')
       return send(res, 200, { enabled: false, devices: [], readings: [] });
     const params = new URL(req.url, appOrigin(env)).searchParams;
-    if ([...params.keys()].some((k) => !['device_id', 'event_type'].includes(k)))
+    if ([...params.keys()].some((k) => !['device_id', 'event_type', 'status_only'].includes(k)))
       fail(400, 'INVALID_INPUT');
+    if (params.has('status_only') && params.get('status_only') !== '1') fail(400, 'INVALID_INPUT');
+    const statusOnly = params.get('status_only') === '1';
     const id = params.get('device_id'),
       kind = params.get('event_type');
     if ((id && !iotIdentifier(id)) || (kind && !['telemetry', 'checkpoint'].includes(kind)))
       fail(400, 'INVALID_INPUT');
     const refreshFields = manualEnabled(env)
       ? `q.requested_at AS refresh_requested_at, q.completed_at AS refresh_completed_at,
-         (q.requested_at>now()-interval '120 seconds' AND
+         (q.requested_at>clock_timestamp()-interval '120 seconds' AND
           (q.completed_at IS NULL OR q.completed_at<q.requested_at)) AS refresh_pending`
       : `NULL::timestamptz AS refresh_requested_at,
          NULL::timestamptz AS refresh_completed_at,FALSE AS refresh_pending`;
     const refreshJoin = manualEnabled(env)
       ? 'LEFT JOIN meter_app.iot_refresh_requests q ON q.device_id=d.device_id'
       : '';
+    const latestField = statusOnly
+      ? ''
+      : `CASE WHEN latest.event_id IS NULL THEN NULL ELSE jsonb_build_object('captured_at',latest.captured_at,'received_at',latest.received_at,'readings',latest.payload->'readings') END AS latest_reading,`;
+    const latestJoin = statusOnly
+      ? ''
+      : `LEFT JOIN LATERAL (
+           SELECT event_id,captured_at,received_at,payload FROM meter_app.iot_readings
+           WHERE device_id=d.device_id ORDER BY captured_at DESC,received_at DESC,event_id DESC LIMIT 1
+         ) latest ON true`;
     const devices = (
       await db.query(
         `SELECT d.device_id,d.plant,d.meter_id,d.meter_profile,d.active,d.last_received_at,
-         CASE WHEN latest.event_id IS NULL THEN NULL ELSE jsonb_build_object('captured_at',latest.captured_at,'received_at',latest.received_at,'readings',latest.payload->'readings') END AS latest_reading,
+         ${latestField}
          ${refreshFields}
          FROM meter_app.iot_devices d
          ${refreshJoin}
-         LEFT JOIN LATERAL (
-           SELECT event_id,captured_at,received_at,payload FROM meter_app.iot_readings
-           WHERE device_id=d.device_id ORDER BY captured_at DESC,received_at DESC,event_id DESC LIMIT 1
-         ) latest ON true WHERE d.owner_id=$1 ORDER BY d.device_id LIMIT 100`,
+         ${latestJoin} WHERE d.owner_id=$1 ORDER BY d.device_id LIMIT 100`,
         [user.id],
       )
     ).rows;
-    const readings = (
-      await db.query(
-        `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
-        [user.id, id, kind],
-      )
-    ).rows;
+    const readings = statusOnly
+      ? []
+      : (
+          await db.query(
+            `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
+            [user.id, id, kind],
+          )
+        ).rows;
     const serverTime = (await db.query('SELECT clock_timestamp() AS time')).rows[0].time;
     send(res, 200, {
       enabled: true,
+      status_only: statusOnly,
       devices: devices.map((device) => ({
         ...device,
         connection_status: iotPresence(device, new Date(serverTime).getTime()),
@@ -308,17 +320,13 @@ export function iotRefreshHandler(database = getPool, env = process.env) {
       // Serialize per-device changes even when multiple tabs/users request together.
       const device = (
         await client.query(
-          'SELECT active,last_received_at FROM meter_app.iot_devices WHERE device_id=$1 AND owner_id=$2 FOR UPDATE',
+          'SELECT active,last_received_at,clock_timestamp() AS server_time FROM meter_app.iot_devices WHERE device_id=$1 AND owner_id=$2 FOR UPDATE',
           [body.device_id, user.id],
         )
       ).rows[0];
       if (!device) fail(404, 'NOT_FOUND');
-      if (
-        !device.active ||
-        !device.last_received_at ||
-        Date.now() - new Date(device.last_received_at).getTime() >
-          IOT_PRESENCE_TIMEOUT_SECONDS * 1000
-      )
+      await lockUser(client, user);
+      if (iotPresence(device, new Date(device.server_time).getTime()) !== 'connected')
         return { status: 409, error: 'DEVICE_OFFLINE' };
       const queued = await client.query(
         `INSERT INTO meter_app.iot_refresh_requests(device_id,requested_at)
@@ -330,11 +338,10 @@ export function iotRefreshHandler(database = getPool, env = process.env) {
                   meter_app.iot_refresh_requests.requested_at
                 OR meter_app.iot_refresh_requests.requested_at <=
                   clock_timestamp()-interval '120 seconds')
-         RETURNING requested_at`,
+         RETURNING requested_at,clock_timestamp() AS server_time`,
         [body.device_id],
       );
-      if (queued.rowCount)
-        return { status: 202, queued: true, requested_at: queued.rows[0].requested_at };
+      if (queued.rowCount) return { status: 202, queued: true, ...queued.rows[0] };
       const state = (
         await client.query(
           `SELECT requested_at,completed_at,

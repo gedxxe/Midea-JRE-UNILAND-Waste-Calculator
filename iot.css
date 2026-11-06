@@ -176,6 +176,21 @@
     box-shadow 0.22s ease,
     filter 0.22s ease;
 }
+.iot-read-rim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  pointer-events: none;
+}
+.iot-read-rim rect {
+  stroke: #b9e8ff;
+  stroke-width: 2;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--iot-progress, 0));
+  transition: stroke-dashoffset 1s linear;
+}
 .iot-read-now:not(:disabled):hover {
   transform: translateY(-2px);
   box-shadow: 0 11px 22px #2352a548;
@@ -202,7 +217,7 @@
 .iot-read-now:hover:not(:disabled) .iot-read-glyph {
   transform: rotate(125deg);
 }
-.iot-read-now[data-state='pending'] .iot-read-glyph {
+.iot-read-now:is([data-state='pending'], [data-state='requesting']) .iot-read-glyph {
   animation: iot-read-spin 2s linear infinite;
 }
 .iot-read-now[data-state='cooldown'] .iot-read-glyph {
@@ -218,7 +233,6 @@
 }
 .iot-read-now[data-state='cooldown'] {
   background: linear-gradient(125deg, #4164a8, #637ba9);
-  background-image: conic-gradient(#2b61bb calc(var(--iot-progress) * 1%), #6a82b0 0);
 }
 .iot-read-now[data-state='offline'] {
   background: #64748b;
@@ -231,12 +245,18 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .iot-read-now,
-  .iot-read-glyph {
+  .iot-read-glyph,
+  .iot-read-rim rect {
     transition: none !important;
   }
-  .iot-read-now[data-state='pending'] .iot-read-glyph {
+  .iot-read-now:is([data-state='pending'], [data-state='requesting']) .iot-read-glyph {
     animation: none;
   }
+}
+[data-panel-motion='off'] .iot-read-glyph,
+[data-panel-motion='off'] .iot-read-rim rect {
+  animation: none !important;
+  transition: none !important;
 }
 @media (forced-colors: active) {
   .iot-read-now {

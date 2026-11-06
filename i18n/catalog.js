@@ -26,6 +26,16 @@ export const catalog = {
   iotWaiting: ['Waiting for meter', '等待电表', 'Menunggu meter'],
   iotCooling: ['Cooldown active', '冷却中', 'Jeda aktif'],
   iotRequestFailed: ['Request failed', '请求失败', 'Permintaan gagal'],
+  iotRequestUnconfirmed: [
+    'Request not confirmed. Check again before retrying.',
+    '请求尚未确认。重试前请检查。',
+    'Permintaan belum terkonfirmasi. Periksa sebelum mencoba lagi.',
+  ],
+  iotReadExpired: [
+    'No new reading received. Check the meter connection.',
+    '未收到新读数，请检查电表连接。',
+    'Belum ada reading baru. Periksa koneksi meter.',
+  ],
   iotSchedule: ['Firmware checkpoints', '固件记录时间', 'Jadwal firmware'],
   iotLimit: [
     'Connected means authenticated contact within 3 minutes, not a working Modbus meter. Firmware must send heartbeats even without readings. Refresh to check for new contact. Latest 100 readings are ordered by capture time.',

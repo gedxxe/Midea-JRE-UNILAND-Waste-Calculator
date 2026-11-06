@@ -1,4 +1,4 @@
-import { decimalText } from './numbers.js';
+import { decimalText, scaledReading } from './numbers.js';
 
 export const IOT_SCHEDULE_WIB = [
   '06:00',
@@ -21,6 +21,16 @@ export const IOT_MANUAL_COOLDOWN_SECONDS = 10;
 export const IOT_MANUAL_TIMEOUT_SECONDS = 120;
 export const IOT_HEARTBEAT_INTERVAL_SECONDS = 60;
 export const IOT_PRESENCE_TIMEOUT_SECONDS = 180;
+// Display only: keep exact wire strings and immutable retry hashes unchanged.
+export function formatIotReading(value) {
+  const scaled = scaledReading(value);
+  if (scaled === null) return '-';
+  const rounded = (scaled + 500n) / 1000n;
+  const fraction = String(rounded % 1000n)
+    .padStart(3, '0')
+    .replace(/0+$/, '');
+  return String(rounded / 1000n) + (fraction ? '.' + fraction : '');
+}
 // Presence means recent authenticated HTTPS contact, not a working Modbus meter.
 export function iotPresence(device, now) {
   if (!device.active) return 'disabled';

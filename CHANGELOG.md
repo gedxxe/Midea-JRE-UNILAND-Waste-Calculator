@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.49-alpha - 2026-11-06
+
+- Add on-demand meter readings with a server-enforced ten-second cooldown, one pending request per source and a two-minute request lifetime. Deliver the request through authenticated heartbeat acknowledgments; cached or future captures do not confirm completion.
+- Use ten-minute reading-view sync and lightweight presence checks. Show a compact animated waiting/cooldown rim with reduced-motion support, and round monitoring values to at most three decimals without changing stored precision.
+- Stage feature-gated migration 010, retain old-schema compatibility with the flag off, and include the new API in local routing and build checks. No operator autosave/report mapping or production activation is implied.
+- Bound static assets to 1,175,000 bytes for the command controls, lightweight status handling and translations; no browser dependency is added.
+
 ## v0.11.48-alpha - 2026-11-05
 
 - Show Connected, Offline, Unverified and Disabled per device, independently of meter readings. Use authenticated server contact and expire stale badges after three minutes, including when automatic refresh is off.

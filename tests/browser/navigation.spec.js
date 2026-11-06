@@ -91,6 +91,132 @@ test('Power Meter Reading never fetches private telemetry before login', async (
   expect(reads).toBe(0);
 });
 
+test('ten-minute reading sync uses lightweight status checks and a completed request loads fresh values', async ({
+  page,
+}, testInfo) => {
+  await setup(page);
+  await page.clock.install({ time: new Date('2026-11-06T01:00:00Z') });
+  let now = Date.parse('2026-11-06T01:00:00Z');
+  let full = 0,
+    status = 0,
+    posts = 0,
+    pending = false,
+    completed = false,
+    requested = null;
+  const device = () => ({
+    device_id: 'timed-node',
+    plant: 'JRE',
+    meter_id: 'warehouse',
+    meter_profile: 'fort',
+    active: true,
+    last_received_at: new Date(now).toISOString(),
+    refresh_pending: pending,
+    refresh_requested_at: requested,
+    refresh_completed_at: completed ? new Date(now).toISOString() : null,
+  });
+  await page.route('**/api/iot-readings?**', (route) => {
+    const light = new URL(route.request().url()).searchParams.has('status_only');
+    if (light) status++;
+    else full++;
+    const d = device();
+    if (!light)
+      d.latest_reading = {
+        captured_at: new Date(now).toISOString(),
+        readings: {
+          active_energy_kwh: completed ? '456.789999' : '123.456789',
+          current_a: '1.234567',
+        },
+      };
+    return route.fulfill({
+      json: {
+        enabled: true,
+        status_only: light,
+        server_time: new Date(now).toISOString(),
+        connection: { manual_refresh_enabled: true },
+        devices: [d],
+        readings: [],
+      },
+    });
+  });
+  await page.route('**/api/iot-refresh', (route) => {
+    posts++;
+    pending = true;
+    requested = new Date(now).toISOString();
+    return route.fulfill({ status: 202, json: { queued: true, requested_at: requested } });
+  });
+  await page.goto('/iot-power-meter-reading');
+  await expect(page.locator('.iot-reading')).toHaveText('123.457 kWh');
+  await expect(page.locator('.iot-device-card')).toContainText('1.235 A');
+  await page.locator('#iot-auto').check();
+  await expect.poll(() => full).toBe(2);
+  now += 61000;
+  await page.clock.fastForward(61000);
+  await expect.poll(() => status).toBeGreaterThan(0);
+  expect(full).toBe(2);
+  await page.locator('.iot-read-now').click();
+  await expect(page.locator('.iot-read-now')).toBeDisabled();
+  await expect(page.locator('.iot-read-rim')).toHaveCount(1);
+  await page.locator('.iot-read-now').evaluate((b) => {
+    for (let i = 0; i < 8; i++) b.click();
+  });
+  expect(posts).toBe(1);
+  await page.screenshot({ path: '.vercel/iot-readnow-' + testInfo.project.name + '.png' });
+  pending = false;
+  completed = true;
+  now += 11000;
+  await page.clock.fastForward(11000);
+  await expect(page.locator('.iot-reading')).toHaveText('456.79 kWh');
+  await expect(page.locator('.iot-read-now')).toBeEnabled();
+  await page.locator('[data-close-dialog="iot-dialog"]').click();
+  const requests = full + status;
+  await page.clock.fastForward(700000);
+  expect(full + status).toBe(requests);
+});
+
+test('unconfirmed read requests retain a local cooldown and do not claim a received measurement', async ({
+  page,
+}) => {
+  await setup(page);
+  await page.clock.install({ time: new Date('2026-11-06T01:00:00Z') });
+  let posts = 0;
+  await page.route('**/api/iot-readings?**', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        server_time: new Date().toISOString(),
+        connection: { manual_refresh_enabled: true },
+        readings: [],
+        devices: [
+          {
+            device_id: 'uncertain',
+            plant: 'JRE',
+            meter_id: 'test',
+            meter_profile: 'fort',
+            active: true,
+            last_received_at: new Date().toISOString(),
+            refresh_pending: false,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route('**/api/iot-refresh', (route) => {
+    posts++;
+    return route.abort('failed');
+  });
+  await page.goto('/iot-power-meter-reading');
+  const button = page.locator('.iot-read-now');
+  await button.click();
+  await expect(page.locator('#iot-status')).toContainText('not confirmed');
+  await expect(button).toBeDisabled();
+  await expect(button).toContainText('10s');
+  await expect(page.locator('.iot-reading')).toHaveCount(0);
+  await button.evaluate((b) => b.click());
+  expect(posts).toBe(1);
+  await page.clock.fastForward(11000);
+  await expect(button).toBeEnabled();
+});
+
 test('Power Meter Reading renders exact received values as text and filters event kinds', async ({
   page,
 }) => {
@@ -125,7 +251,7 @@ test('Power Meter Reading renders exact received values as text and filters even
     });
   });
   await page.goto('/iot-power-meter-reading');
-  await expect(page.locator('#iot-data')).toContainText('123.000001 kWh');
+  await expect(page.locator('#iot-data')).toContainText('123 kWh');
   await page.locator('#iot-kind').selectOption('checkpoint');
   await expect.poll(() => requests.at(-1)).toBe('checkpoint');
   expect(await page.locator('#iot-data input[type="password"]').count()).toBe(0);
@@ -163,7 +289,7 @@ test('diagnostic meter cards show latest kWh and phase currents while operator c
     }),
   );
   await page.goto('/iot-power-meter-reading');
-  await expect(page.locator('.iot-device-card')).toContainText('123.000001 kWh');
+  await expect(page.locator('.iot-device-card')).toContainText('123 kWh');
   await expect(page.locator('.iot-device-card')).toContainText('L1 12.01 A · L2 11.9 A · L3 0 A');
   await expect(page.locator('#iot-management')).not.toBeVisible();
   await expect(page.locator('.iot-device-card button')).toHaveCount(0);
@@ -238,6 +364,7 @@ test('device presence is independent of readings, expires without refreshing and
   await page.locator('#iot-refresh').click();
   await expect(connected.locator('.iot-presence')).toHaveText('Connected');
   fail = true;
+  await page.clock.fastForward(10010);
   await page.locator('#iot-refresh').click();
   await expect(page.locator('#iot-status')).toContainText('could not be loaded');
   await expect(connected.locator('.iot-presence')).toHaveText('Unverified');

@@ -3,6 +3,24 @@ import assert from 'node:assert/strict';
 import { validateIotEvent as validateEvent } from '../iot-contract.js';
 import { iotCloudEndpoint, iotNodeConfig, IOT_NODE_PROFILES } from '../iot-contract.js';
 import { validateIotHeartbeat, iotPresence } from '../iot-contract.js';
+import { formatIotReading } from '../iot-contract.js';
+test('monitoring rounds to at most three decimals without changing exact stored input', () => {
+  for (const [input, expected] of [
+    ['123.000001', '123'],
+    ['12.345499', '12.345'],
+    ['12.345500', '12.346'],
+    ['0.000499', '0'],
+    ['0.000500', '0.001'],
+    ['999999999999.999999', '1000000000000'],
+    ['0', '0'],
+    ['', '-'],
+    [null, '-'],
+  ])
+    assert.equal(formatIotReading(input), expected);
+  const raw = '123.456789';
+  assert.equal(formatIotReading(raw), '123.457');
+  assert.equal(raw, '123.456789');
+});
 const validateIotEvent = (value) => validateEvent(value, Date.parse('2026-11-05T02:00:00Z'));
 import { iotIngestHandler, iotDevicesHandler, iotRefreshHandler } from '../server/iot.js';
 const event = () => ({
