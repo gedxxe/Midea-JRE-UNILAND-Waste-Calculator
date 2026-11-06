@@ -28,7 +28,9 @@ test('Power Meter Reading supports a protected direct URL and a clear disabled s
   expect(state.errors).toEqual([]);
 });
 
-test('manual meter read has compact pending feedback and cannot be spammed from UI', async ({ page }) => {
+test('manual meter read has compact pending feedback and cannot be spammed from UI', async ({
+  page,
+}) => {
   await setup(page);
   let requests = 0;
   let pending = false;
@@ -39,13 +41,20 @@ test('manual meter read has compact pending feedback and cannot be spammed from 
         enabled: true,
         server_time: new Date().toISOString(),
         connection: { manual_refresh_enabled: true, telemetry_interval_seconds: 600 },
-        devices: [{
-          device_id: 'sample-source', plant: 'JRE', meter_id: 'meter-1',
-          meter_profile: 'fort', active: true,
-          last_received_at: new Date().toISOString(),
-          latest_reading: null, refresh_pending: pending,
-          refresh_requested_at: requestedAt, refresh_completed_at: null,
-        }],
+        devices: [
+          {
+            device_id: 'sample-source',
+            plant: 'JRE',
+            meter_id: 'meter-1',
+            meter_profile: 'fort',
+            active: true,
+            last_received_at: new Date().toISOString(),
+            latest_reading: null,
+            refresh_pending: pending,
+            refresh_requested_at: requestedAt,
+            refresh_completed_at: null,
+          },
+        ],
         readings: [],
       },
     }),

@@ -299,27 +299,37 @@ export function createIotReading({ request, opened, getUser }) {
           const now = clockNow();
           for (const { d, read, label, count } of refreshButtons) {
             const requestedAt = Date.parse(d.refresh_requested_at) || 0;
-            const cooldown = Math.max(0, (requestedAt +
-              IOT_MANUAL_COOLDOWN_SECONDS * 1000 - now) / 1000);
-            const pending = !!d.refresh_pending &&
-              now - requestedAt < IOT_MANUAL_TIMEOUT_SECONDS * 1000;
+            const cooldown = Math.max(
+              0,
+              (requestedAt + IOT_MANUAL_COOLDOWN_SECONDS * 1000 - now) / 1000,
+            );
+            const pending =
+              !!d.refresh_pending && now - requestedAt < IOT_MANUAL_TIMEOUT_SECONDS * 1000;
             const connected = iotPresence(d, now) === 'connected';
-            const state = pending ? 'pending' : cooldown > 0 ? 'cooldown' :
-              !connected ? 'offline' : 'ready';
+            const state = pending
+              ? 'pending'
+              : cooldown > 0
+                ? 'cooldown'
+                : !connected
+                  ? 'offline'
+                  : 'ready';
             read.dataset.state = state;
             read.disabled = manualBusy || state !== 'ready';
-            read.style.setProperty('--iot-progress',
-              String(Math.min(100, Math.max(0, cooldown / IOT_MANUAL_COOLDOWN_SECONDS * 100))));
+            read.style.setProperty(
+              '--iot-progress',
+              String(Math.min(100, Math.max(0, (cooldown / IOT_MANUAL_COOLDOWN_SECONDS) * 100))),
+            );
             label.textContent = pending ? t('iotWaiting') : t('iotReadNow');
             count.textContent = !pending && cooldown > 0 ? Math.ceil(cooldown) + 's' : '';
             read.title = t(pending ? 'iotWaiting' : !connected ? 'iotOffline' : 'iotReadNow');
-            read.setAttribute('aria-label', read.title +
-              (cooldown > 0 ? ' ' + Math.ceil(cooldown) + 's' : ''));
+            read.setAttribute(
+              'aria-label',
+              read.title + (cooldown > 0 ? ' ' + Math.ceil(cooldown) + 's' : ''),
+            );
           }
         };
         paintButtons();
-        if (refreshButtons.length && !document.hidden)
-          buttonTimer = setInterval(paintButtons, 250);
+        if (refreshButtons.length && !document.hidden) buttonTimer = setInterval(paintButtons, 250);
       }
     } catch (error) {
       if (epoch === identity && (error.name !== 'AbortError' || timedOut)) {
@@ -330,8 +340,10 @@ export function createIotReading({ request, opened, getUser }) {
     } finally {
       clearTimeout(timeout);
       if (epoch === identity) {
-        const remaining = Math.max(0, IOT_MANUAL_COOLDOWN_SECONDS * 1000 -
-          (performance.now() - lastReloadAt));
+        const remaining = Math.max(
+          0,
+          IOT_MANUAL_COOLDOWN_SECONDS * 1000 - (performance.now() - lastReloadAt),
+        );
         $('iot-refresh').disabled = remaining > 0;
         if (dialog.open && !document.hidden) {
           if (hasPending) timer = setTimeout(refresh, 7500);
@@ -339,8 +351,12 @@ export function createIotReading({ request, opened, getUser }) {
         }
         if (remaining > 0)
           setTimeout(() => {
-            if (dialog.open && !document.hidden && performance.now() - lastReloadAt >=
-              IOT_MANUAL_COOLDOWN_SECONDS * 1000) $('iot-refresh').disabled = false;
+            if (
+              dialog.open &&
+              !document.hidden &&
+              performance.now() - lastReloadAt >= IOT_MANUAL_COOLDOWN_SECONDS * 1000
+            )
+              $('iot-refresh').disabled = false;
           }, remaining + 10);
       }
     }

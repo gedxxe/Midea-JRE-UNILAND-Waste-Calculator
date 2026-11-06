@@ -12,7 +12,6 @@ Events are append-only through the API. `(device_id,event_id)` is the deduplicat
 
 HTTPS protects transport and the existing PostgreSQL client verifies remote TLS certificates. Database/platform encryption at rest and access policy require deployment verification; this code does not add a second custom encryption scheme or certify the installation.
 
-
 ## Ten-minute telemetry and on-demand reads
 
 - The ESP32 emits a fresh eligible live telemetry event at startup and then **at most once per 10 minutes after an accepted upload**, with the existing retry/backoff behavior. Previously queued checkpoint records still upload independently at the established WIB schedule. The 60-second authenticated heartbeat remains independent of kWh uploads to preserve node-presence monitoring.

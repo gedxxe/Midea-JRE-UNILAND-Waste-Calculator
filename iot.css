@@ -164,46 +164,88 @@
   padding: 10px 15px;
   border: 1px solid #a9c7ee;
   border-radius: 14px;
-  background: linear-gradient(125deg,#225abd,#3c82e0);
+  background: linear-gradient(125deg, #225abd, #3c82e0);
   color: #fff;
   font: inherit;
-  font-size: .87rem;
+  font-size: 0.87rem;
   font-weight: 650;
   cursor: pointer;
   box-shadow: 0 7px 17px #2352a52a;
-  transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    filter 0.22s ease;
 }
 .iot-read-now:not(:disabled):hover {
   transform: translateY(-2px);
   box-shadow: 0 11px 22px #2352a548;
   filter: saturate(1.12);
 }
-.iot-read-now:not(:disabled):active { transform: translateY(0) scale(.97); }
-.iot-read-now:focus-visible { outline: 3px solid #a3d6ff; outline-offset: 3px; }
-.iot-read-now:disabled { cursor: not-allowed; opacity: .7; }
+.iot-read-now:not(:disabled):active {
+  transform: translateY(0) scale(0.97);
+}
+.iot-read-now:focus-visible {
+  outline: 3px solid #a3d6ff;
+  outline-offset: 3px;
+}
+.iot-read-now:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
 .iot-read-glyph {
   display: inline-block;
   font-size: 1.23rem;
   line-height: 1;
   transform-origin: center;
-  transition: transform .38s cubic-bezier(.2,.9,.2,1);
+  transition: transform 0.38s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
-.iot-read-now:hover:not(:disabled) .iot-read-glyph { transform: rotate(125deg); }
-.iot-read-now[data-state="pending"] .iot-read-glyph { animation: iot-read-spin 2s linear infinite; }
-.iot-read-now[data-state="cooldown"] .iot-read-glyph { opacity: .45; }
-.iot-read-count { min-width: 1.7rem; font-variant-numeric: tabular-nums; text-align: end; }
-.iot-read-count:empty { display: none; }
-.iot-read-now[data-state="cooldown"] {
-  background: linear-gradient(125deg,#4164a8,#637ba9);
-  background-image: conic-gradient(#2b61bb calc(var(--iot-progress) * 1%),#6a82b0 0);
+.iot-read-now:hover:not(:disabled) .iot-read-glyph {
+  transform: rotate(125deg);
 }
-.iot-read-now[data-state="offline"] { background: #64748b; border-color: #94a3b8; }
-@keyframes iot-read-spin { to { transform: rotate(360deg); } }
+.iot-read-now[data-state='pending'] .iot-read-glyph {
+  animation: iot-read-spin 2s linear infinite;
+}
+.iot-read-now[data-state='cooldown'] .iot-read-glyph {
+  opacity: 0.45;
+}
+.iot-read-count {
+  min-width: 1.7rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.iot-read-count:empty {
+  display: none;
+}
+.iot-read-now[data-state='cooldown'] {
+  background: linear-gradient(125deg, #4164a8, #637ba9);
+  background-image: conic-gradient(#2b61bb calc(var(--iot-progress) * 1%), #6a82b0 0);
+}
+.iot-read-now[data-state='offline'] {
+  background: #64748b;
+  border-color: #94a3b8;
+}
+@keyframes iot-read-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .iot-read-now, .iot-read-glyph { transition: none !important; }
-  .iot-read-now[data-state="pending"] .iot-read-glyph { animation: none; }
+  .iot-read-now,
+  .iot-read-glyph {
+    transition: none !important;
+  }
+  .iot-read-now[data-state='pending'] .iot-read-glyph {
+    animation: none;
+  }
 }
 @media (forced-colors: active) {
-  .iot-read-now { border: 1px solid ButtonText; color: ButtonText; background: ButtonFace; }
-  .iot-read-now:disabled { opacity: 1; border-style: dashed; }
+  .iot-read-now {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+  .iot-read-now:disabled {
+    opacity: 1;
+    border-style: dashed;
+  }
 }

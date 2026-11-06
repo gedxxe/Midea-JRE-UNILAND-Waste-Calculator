@@ -243,7 +243,9 @@ test('manual refresh endpoint fails closed for GET and is unavailable until enab
   const result = async (req, env = {}) => {
     const res = {
       setHeader() {},
-      end(payload) { this.payload = JSON.parse(payload); },
+      end(payload) {
+        this.payload = JSON.parse(payload);
+      },
     };
     await iotRefreshHandler(() => {
       used = true;

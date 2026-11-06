@@ -1,5 +1,10 @@
 import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
-import { iotIngestHandler, iotReadingsHandler, iotDevicesHandler, iotRefreshHandler } from '../../server/iot.js';
+import {
+  iotIngestHandler,
+  iotReadingsHandler,
+  iotDevicesHandler,
+  iotRefreshHandler,
+} from '../../server/iot.js';
 import { tokenHash } from '../../server/password.js';
 import { gasCalibration, GAS_TABLE_VERSION, JRE_GAS_INPUT_VERSION } from '../../gas.js';
 import {
@@ -253,8 +258,11 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
     key = randomBytes(32).toString('base64url');
   const headers = { 'X-Device-ID': id, Authorization: 'Bearer ' + key };
   const beat = {
-    schema_version: 1, event_type: 'heartbeat',
-    device_id: id, meter_id: 'meter_1', meter_profile: 'fort',
+    schema_version: 1,
+    event_type: 'heartbeat',
+    device_id: id,
+    meter_id: 'meter_1',
+    meter_profile: 'fort',
   };
   await db.query(
     'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash,last_received_at) VALUES($1,$2,$3,$4,$5,$6,now())',
@@ -263,13 +271,21 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
   try {
     const ask = () => call('/api/iot-refresh', { actor, body: { device_id: id } });
     assert.equal((await call('/api/iot-refresh', { actor, method: 'GET' })).status, 405);
-    assert.equal((await call('/api/iot-refresh', { actor: stranger, body: { device_id: id } })).status, 404);
-    assert.equal((await call('/api/iot-refresh', { actor, body: { device_id: id, force: true } })).status, 400);
+    assert.equal(
+      (await call('/api/iot-refresh', { actor: stranger, body: { device_id: id } })).status,
+      404,
+    );
+    assert.equal(
+      (await call('/api/iot-refresh', { actor, body: { device_id: id, force: true } })).status,
+      400,
+    );
     const queued = await ask();
     assert.equal(queued.status, 202);
     assert.equal(queued.value.queued, true);
     const parallel = await Promise.all([ask(), ask(), ask()]);
-    assert.ok(parallel.every((result) => result.status === 409 && result.value.error === 'REFRESH_PENDING'));
+    assert.ok(
+      parallel.every((result) => result.status === 409 && result.value.error === 'REFRESH_PENDING'),
+    );
     let list = (await call('/api/iot-readings', { actor })).value;
     assert.equal(list.connection.telemetry_interval_seconds, 600);
     assert.equal(list.connection.manual_cooldown_seconds, 10);
@@ -277,22 +293,40 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
     const pulse = await call('/api/iot-ingest', { body: beat, headers });
     assert.equal(pulse.status, 200);
     assert.equal(typeof pulse.value.refresh_after_utc, 'number');
-    assert.equal(pulse.value.refresh_after_utc, Math.floor(Date.parse(queued.value.requested_at) / 1000));
-    assert.equal((await call('/api/iot-readings', { actor: stranger })).value.devices.some((d) => d.device_id === id), false);
+    assert.equal(
+      pulse.value.refresh_after_utc,
+      Math.floor(Date.parse(queued.value.requested_at) / 1000),
+    );
+    assert.equal(
+      (await call('/api/iot-readings', { actor: stranger })).value.devices.some(
+        (d) => d.device_id === id,
+      ),
+      false,
+    );
     // A cached pre-request telemetry event must not complete the command.
     const telemetry = {
-      ...beat, event_type: 'telemetry', event_id: 'manual_sample_old',
-      captured_at: '2026-11-01T01:00:00Z', quality: 'valid',
+      ...beat,
+      event_type: 'telemetry',
+      event_id: 'manual_sample_old',
+      captured_at: '2026-11-01T01:00:00Z',
+      quality: 'valid',
       readings: { active_energy_kwh: '19.000000' },
     };
     assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
-    assert.equal((await call('/api/iot-readings', { actor })).value.devices.find((d) => d.device_id === id).refresh_pending, true);
+    assert.equal(
+      (await call('/api/iot-readings', { actor })).value.devices.find((d) => d.device_id === id)
+        .refresh_pending,
+      true,
+    );
     telemetry.event_id = 'manual_sample_new';
     telemetry.captured_at = new Date(Date.now() + 2000).toISOString().slice(0, 19) + 'Z';
     assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
     list = (await call('/api/iot-readings', { actor })).value;
     assert.equal(list.devices.find((d) => d.device_id === id).refresh_pending, false);
-    assert.equal((await call('/api/iot-ingest', { body: beat, headers })).value.refresh_after_utc, undefined);
+    assert.equal(
+      (await call('/api/iot-ingest', { body: beat, headers })).value.refresh_after_utc,
+      undefined,
+    );
     assert.equal((await ask()).status, 429); // completed, but 10-second cooldown persists
     await db.query(
       "UPDATE meter_app.iot_refresh_requests SET requested_at=now()-interval '11 seconds',completed_at=now()-interval '10 seconds' WHERE device_id=$1",

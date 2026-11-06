@@ -343,9 +343,14 @@ export function iotRefreshHandler(database = getPool, env = process.env) {
           [body.device_id],
         )
       ).rows[0];
-      return state.completed_at === null || new Date(state.completed_at) < new Date(state.requested_at)
+      return state.completed_at === null ||
+        new Date(state.completed_at) < new Date(state.requested_at)
         ? { status: 409, error: 'REFRESH_PENDING', requested_at: state.requested_at }
-        : { status: 429, error: 'REFRESH_COOLDOWN', retry_after_seconds: state.retry_after_seconds };
+        : {
+            status: 429,
+            error: 'REFRESH_COOLDOWN',
+            retry_after_seconds: state.retry_after_seconds,
+          };
     });
     if (result.status === 429) res.setHeader('Retry-After', String(result.retry_after_seconds));
     const { status, ...value } = result;
