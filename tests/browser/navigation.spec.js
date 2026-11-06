@@ -28,6 +28,47 @@ test('Power Meter Reading supports a protected direct URL and a clear disabled s
   expect(state.errors).toEqual([]);
 });
 
+test('manual meter read has compact pending feedback and cannot be spammed from UI', async ({ page }) => {
+  await setup(page);
+  let requests = 0;
+  let pending = false;
+  let requestedAt = null;
+  await page.route('**/api/iot-readings?**', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        server_time: new Date().toISOString(),
+        connection: { manual_refresh_enabled: true, telemetry_interval_seconds: 600 },
+        devices: [{
+          device_id: 'sample-source', plant: 'JRE', meter_id: 'meter-1',
+          meter_profile: 'fort', active: true,
+          last_received_at: new Date().toISOString(),
+          latest_reading: null, refresh_pending: pending,
+          refresh_requested_at: requestedAt, refresh_completed_at: null,
+        }],
+        readings: [],
+      },
+    }),
+  );
+  await page.route('**/api/iot-refresh', (route) => {
+    requests++;
+    pending = true;
+    requestedAt = new Date().toISOString();
+    return route.fulfill({ status: 202, json: { queued: true, requested_at: requestedAt } });
+  });
+  await page.goto('/iot-power-meter-reading');
+  const read = page.locator('.iot-read-now');
+  await expect(read).toBeEnabled();
+  await expect(read).toContainText('Read now');
+  await read.click();
+  await expect(read).toHaveAttribute('data-state', 'pending');
+  await expect(read).toBeDisabled();
+  await read.click({ force: true });
+  expect(requests).toBe(1);
+  await page.locator('[data-close-dialog="iot-dialog"]').click();
+  await expect(page.locator('#iot-data')).toHaveText('');
+});
+
 test('Power Meter Reading never fetches private telemetry before login', async ({ page }) => {
   await setup(page, { signedIn: false });
   let reads = 0;
