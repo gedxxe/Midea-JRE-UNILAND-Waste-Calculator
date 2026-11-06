@@ -1,11 +1,15 @@
 import { createDraft } from './engine.js';
 import { PLANT_SCHEMAS } from './schema.js';
-import { beforeMeterReporting } from './meter-activation.js';
+import { beforeMeterReporting, beforeMeterSlotReporting } from './meter-activation.js';
 
 export function exampleDraft(plant) {
   const draft = createDraft(plant, '2026-09-16', '2026-09-17');
   draft.rows.forEach((input, ri) => {
     PLANT_SCHEMAS[plant].rows[ri].factors.forEach((factor, mi) => {
+      if (beforeMeterSlotReporting(PLANT_SCHEMAS[plant].rows[ri], draft, mi)) {
+        input.start[mi] = input.end[mi] = '';
+        return;
+      }
       if (beforeMeterReporting(PLANT_SCHEMAS[plant].rows[ri], draft.startDate)) {
         input.start[mi] = input.end[mi] = '0';
         return;

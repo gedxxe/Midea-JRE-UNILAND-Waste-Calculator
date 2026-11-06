@@ -57,8 +57,15 @@ test('layout 4 upgrades add only a blank Forklift pair, retaining incomplete uti
     workspace[collection].JRE = old;
     const original = structuredClone(old),
       next = migrateMeterLayout(old);
-    assert.equal(next.meterLayout, 6);
-    assert.deepEqual(next.rows.slice(0, 30), old.rows);
+    assert.equal(next.meterLayout, 7);
+    assert.deepEqual(
+      next.rows
+        .slice(0, 30)
+        .map((row, i) =>
+          i === 2 ? { ...row, start: row.start.slice(0, 2), end: row.end.slice(0, 2) } : row,
+        ),
+      old.rows,
+    );
     assert.deepEqual(next.rows[30], { start: [''], end: [''], inactive: false });
     assert.deepEqual(next.water, old.water);
     assert.equal(next.startTime, old.startTime);
@@ -86,7 +93,7 @@ test('older JRE text may omit added meters while required original rows stay man
     assert.equal(parsed.success, true);
     assert.deepEqual(
       parsed.values.slice(0, 30),
-      old.rows.map((row) => row[side]),
+      old.rows.map((row, i) => (i === 2 ? [...row[side], ''] : row[side])),
     );
     assert.deepEqual(parsed.values[30], ['']);
     assert.deepEqual(parsed.suppliedMeters[30], [false]);

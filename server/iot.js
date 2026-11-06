@@ -7,6 +7,7 @@ import {
   validateIotEvent,
   validateIotHeartbeat,
   iotIdentifier,
+  validIotName,
   iotCloudEndpoint,
   iotPresence,
   IOT_HEARTBEAT_INTERVAL_SECONDS,
@@ -19,6 +20,16 @@ import {
 // Staged rollout: old databases and production remain usable until migration 010
 // is explicitly applied and the optional cloud command channel is enabled.
 const manualEnabled = (env) => env.IOT_MANUAL_REFRESH_ENABLED === '1';
+async function cardManagementReady(db) {
+  return (
+    await db.query(`SELECT count(*)=2 AND bool_and(has_column_privilege(current_user,'meter_app.iot_devices',attname,'UPDATE')) AS ready
+    FROM pg_attribute WHERE attrelid='meter_app.iot_devices'::regclass
+    AND attname IN ('display_name','archived_at') AND attnum>0 AND NOT attisdropped`)
+  ).rows[0].ready;
+}
+const publicDevice = `device_id,plant,meter_id,meter_profile,active,
+  to_jsonb(iot_devices)->>'display_name' AS display_name,
+  to_jsonb(iot_devices)->>'archived_at' AS archived_at`;
 const connection = (env) => ({
   schema_version: 1,
   endpoint: iotCloudEndpoint(env.IOT_PUBLIC_ORIGIN || env.APP_ORIGIN),
@@ -151,8 +162,16 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
     if (env.IOT_ENABLED !== '1')
       return send(res, 200, { enabled: false, devices: [], readings: [] });
     const params = new URL(req.url, appOrigin(env)).searchParams;
-    if ([...params.keys()].some((k) => !['device_id', 'event_type', 'status_only'].includes(k)))
+    if (
+      [...params.keys()].some(
+        (k) => !['device_id', 'event_type', 'status_only', 'include_archived'].includes(k),
+      )
+    )
       fail(400, 'INVALID_INPUT');
+    if (params.has('include_archived') && params.get('include_archived') !== '1')
+      fail(400, 'INVALID_INPUT');
+    const includeArchived = params.has('include_archived');
+    if (includeArchived && user.role !== 'admin') fail(403, 'FORBIDDEN');
     if (params.has('status_only') && params.get('status_only') !== '1') fail(400, 'INVALID_INPUT');
     const statusOnly = params.get('status_only') === '1';
     const id = params.get('device_id'),
@@ -180,20 +199,21 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
     const devices = (
       await db.query(
         `SELECT d.device_id,d.plant,d.meter_id,d.meter_profile,d.active,d.last_received_at,
+         to_jsonb(d)->>'display_name' AS display_name, to_jsonb(d)->>'archived_at' AS archived_at,
          ${latestField}
          ${refreshFields}
          FROM meter_app.iot_devices d
          ${refreshJoin}
-         ${latestJoin} WHERE d.owner_id=$1 ORDER BY d.device_id LIMIT 100`,
-        [user.id],
+         ${latestJoin} WHERE d.owner_id=$1 AND ($2::boolean OR to_jsonb(d)->>'archived_at' IS NULL) ORDER BY d.device_id LIMIT 100`,
+        [user.id, includeArchived],
       )
     ).rows;
     const readings = statusOnly
       ? []
       : (
           await db.query(
-            `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
-            [user.id, id, kind],
+            `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) AND ($4::boolean OR to_jsonb(d)->>'archived_at' IS NULL) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
+            [user.id, id, kind, includeArchived],
           )
         ).rows;
     const serverTime = (await db.query('SELECT clock_timestamp() AS time')).rows[0].time;
@@ -206,7 +226,10 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
       })),
       readings,
       server_time: serverTime,
-      connection: connection(env),
+      connection: {
+        ...connection(env),
+        card_management_ready: user.role === 'admin' && (await cardManagementReady(db)),
+      },
     });
   });
 }
@@ -227,12 +250,19 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
     const body = await readBody(req, 4096);
     const fields =
       body.action === 'create'
-        ? ['action', 'device_id', 'plant', 'meter_id', 'meter_profile']
-        : ['action', 'device_id'];
+        ? ['action', 'device_id', 'plant', 'meter_id', 'meter_profile', 'display_name']
+        : body.action === 'update'
+          ? ['action', 'device_id', 'display_name']
+          : ['action', 'device_id'];
     if (
-      !['create', 'rotate', 'revoke'].includes(body.action) ||
+      !['create', 'rotate', 'revoke', 'update', 'delete', 'restore'].includes(body.action) ||
       !iotIdentifier(body.device_id) ||
       Object.keys(body).some((key) => !fields.includes(key))
+    )
+      fail(400, 'INVALID_INPUT');
+    if (
+      (body.action === 'update' || body.display_name !== undefined) &&
+      !validIotName(body.display_name)
     )
       fail(400, 'INVALID_INPUT');
     if (
@@ -244,13 +274,16 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
       fail(400, 'INVALID_INPUT');
     if (body.action === 'create' && !connection(env).endpoint)
       fail(503, 'IOT_CLOUD_NOT_CONFIGURED');
-    const credential = body.action === 'revoke' ? null : secretToken();
+    const credential = ['create', 'rotate'].includes(body.action) ? secretToken() : null;
     const result = await transaction(db, async (client) => {
       // Serialize this owner's registry changes, including the 100-source quota.
       await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [
         'iot:devices:' + user.id,
       ]);
       if ((await lockUser(client, user)).role !== 'admin') fail(403, 'FORBIDDEN');
+      const ready = await cardManagementReady(client);
+      if ((['update', 'delete', 'restore'].includes(body.action) || body.display_name) && !ready)
+        fail(503, 'IOT_MANAGEMENT_NOT_READY');
       if (body.action === 'create') {
         const count = (
           await client.query(
@@ -261,7 +294,7 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
         if (count >= 100) fail(409, 'DEVICE_LIMIT_REACHED');
         const device = (
           await client.query(
-            'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6) RETURNING device_id,plant,meter_id,meter_profile,active',
+            `INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6) RETURNING ${publicDevice}`,
             [
               body.device_id,
               user.id,
@@ -272,17 +305,49 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
             ],
           )
         ).rows[0];
+        if (body.display_name) {
+          await client.query(
+            'UPDATE meter_app.iot_devices SET display_name=$2 WHERE device_id=$1',
+            [body.device_id, body.display_name],
+          );
+          device.display_name = body.display_name;
+        }
         await audit(client, user.id, 'iot.device.create', user.id);
         return device;
+      }
+      const existing = (
+        await client.query(
+          'SELECT * FROM meter_app.iot_devices WHERE device_id=$1 AND owner_id=$2 FOR UPDATE',
+          [body.device_id, user.id],
+        )
+      ).rows[0];
+      if (!existing) fail(404, 'NOT_FOUND');
+      if (body.action === 'restore' && !existing.archived_at) fail(409, 'DEVICE_NOT_ARCHIVED');
+      if (existing.archived_at && !['restore', 'delete'].includes(body.action))
+        fail(409, 'DEVICE_ARCHIVED');
+      if (['update', 'delete', 'restore'].includes(body.action)) {
+        const sql = {
+          update: 'display_name=$3',
+          delete: 'active=false,archived_at=COALESCE(archived_at,now())',
+          restore: 'active=false,archived_at=NULL',
+        }[body.action];
+        const values = [body.device_id, user.id];
+        if (body.action === 'update') values.push(body.display_name);
+        const changed = await client.query(
+          `UPDATE meter_app.iot_devices SET ${sql} WHERE device_id=$1 AND owner_id=$2 RETURNING ${publicDevice}`,
+          values,
+        );
+        await audit(client, user.id, 'iot.device.' + body.action, user.id);
+        return changed.rows[0];
       }
       const changed =
         body.action === 'rotate'
           ? await client.query(
-              'UPDATE meter_app.iot_devices SET token_hash=$3,active=true WHERE device_id=$1 AND owner_id=$2 RETURNING device_id,plant,meter_id,meter_profile,active',
+              `UPDATE meter_app.iot_devices SET token_hash=$3,active=true,last_received_at=NULL WHERE device_id=$1 AND owner_id=$2 RETURNING ${publicDevice}`,
               [body.device_id, user.id, tokenHash(credential)],
             )
           : await client.query(
-              'UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1 AND owner_id=$2 RETURNING device_id,plant,meter_id,meter_profile,active',
+              `UPDATE meter_app.iot_devices SET active=false WHERE device_id=$1 AND owner_id=$2 RETURNING ${publicDevice}`,
               [body.device_id, user.id],
             );
       if (!changed.rowCount) fail(404, 'NOT_FOUND');

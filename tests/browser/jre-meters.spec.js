@@ -4,13 +4,14 @@ import {
   layout2Draft,
   layout3JreDraft,
   layout4JreDraft,
+  layout6JreDraft,
   legacyText,
 } from '../fixtures/legacy-layout.mjs';
 const cell = (page, row, side = 'start', meter = 0) =>
   page.locator(`.meter-input[data-row="${row}"][data-side="${side}"][data-meter="${meter}"]`);
-async function setup(page, legacy = false) {
-  const j = reportPeriods(),
-    u = reportPeriods('UNILAND');
+async function setup(page, legacy = false, date = '2026-09-16') {
+  const j = reportPeriods('JRE', date),
+    u = reportPeriods('UNILAND', date);
   const state = {
     version: 1,
     workspace: {
@@ -23,7 +24,13 @@ async function setup(page, legacy = false) {
   if (legacy)
     for (const collection of ['drafts', 'workingHours', 'nightShifts'])
       state.workspace[collection].JRE = (
-        legacy === 4 ? layout4JreDraft : legacy === 3 ? layout3JreDraft : layout2Draft
+        legacy === 6
+          ? layout6JreDraft
+          : legacy === 4
+            ? layout4JreDraft
+            : legacy === 3
+              ? layout3JreDraft
+              : layout2Draft
       )(state.workspace[collection].JRE);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -72,6 +79,45 @@ async function setup(page, legacy = false) {
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   return { state, errors };
 }
+
+test('new Outdoor slot shares the evening baseline, saves incomplete input and keeps old import values at the same timestamp', async ({
+  page,
+}, info) => {
+  const { state, errors } = await setup(page, 6, '2026-11-06');
+  const note = page.locator('.ratio .meter-start-note');
+  await expect(note).toContainText('2026-11-06 17:00 WIB');
+  await expect(note).toHaveCSS('display', 'block');
+  const noteBox = await note.boundingBox();
+  const ratioBox = await page.locator('tr[data-row="2"] .ratio strong').nth(2).boundingBox();
+  expect(noteBox.y).toBeGreaterThanOrEqual(ratioBox.y + ratioBox.height);
+  expect(noteBox.height).toBeLessThan(68);
+  await expect(cell(page, 2, 'start', 2)).toHaveValue('');
+  await expect(cell(page, 2, 'end', 2)).toHaveValue('');
+  await page.locator('#reading-mode').selectOption('workingHours');
+  await cell(page, 2, 'end', 2).fill('0010.125001');
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(cell(page, 2, 'start', 2)).toHaveValue('0010.125001');
+  await expect(page.locator('[data-meter-usage="2-2"] strong')).toHaveText('0 kWh');
+  await cell(page, 2, 'end', 2).fill('0010.250002');
+  await expect(page.locator('[data-meter-usage="2-2"] strong')).toHaveText('5.00 kWh');
+  const old = layout6JreDraft(state.workspace.nightShifts.JRE);
+  await page.locator('#open-import').click();
+  await page.locator('#import-side').selectOption('end');
+  await page.locator('#import-text').fill(legacyText(old, 'end'));
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(cell(page, 2, 'end', 2)).toHaveValue('0010.250002');
+  await page.keyboard.press('Control+s');
+  await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
+  expect(state.workspace.nightShifts.JRE.rows[2].end[2]).toBe('0010.250002');
+  await page.reload();
+  await page.locator('#reading-mode').selectOption('nightShift');
+  await expect(cell(page, 2, 'start', 2)).toHaveValue('0010.125001');
+  await expect(cell(page, 2, 'end', 2)).toHaveValue('0010.250002');
+  await page.locator('#search-meter').fill('Outdoor');
+  await page.locator('#meter-table').screenshot({ path: info.outputPath('outdoor-meter3.png') });
+  expect(errors).toEqual([]);
+});
 test('JRE names the Vacuum Box, uses converted branch deductions and keeps all periods readable', async ({
   page,
 }, info) => {
@@ -236,7 +282,7 @@ test('layout 4 adds a blank direct Forklift meter and shares only exact observat
   await expect(cell(page, 30, 'end')).toHaveValue('225');
   await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-  expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(7);
   expect(state.workspace.nightShifts.JRE.rows[30].start).toEqual(['210']);
   await page.reload();
   await page.locator('#search-meter').fill('Charging Forklift Building 2');
@@ -274,7 +320,7 @@ test('old JRE drafts keep new readings blank, then retain entered values through
   await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
   for (const key of ['drafts', 'workingHours', 'nightShifts']) {
-    expect(state.workspace[key].JRE.meterLayout).toBe(6);
+    expect(state.workspace[key].JRE.meterLayout).toBe(7);
     expect(state.workspace[key].JRE.rows).toHaveLength(32);
   }
   await page.reload();
@@ -424,7 +470,7 @@ test('layout 3 Piping upgrades with a blank third meter and old imports preserve
   await cell(page, 15, 'end', 2).fill('2000');
   await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-  expect(state.workspace.drafts.JRE.meterLayout).toBe(6);
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(7);
   await page.reload();
   await expect(cell(page, 15, 'end', 2)).toHaveValue('2000');
   const old = layout3JreDraft(reportPeriods()[0]);

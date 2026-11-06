@@ -188,6 +188,12 @@ export function draftsHandler(database = getPool, env = process.env) {
                 d.gas?.version,
               ]),
             ),
+            meterLayouts: Object.fromEntries(
+              [...(body.periods || []), ...workspaceDrafts(body.workspace)].map((d) => [
+                periodKey(d),
+                d.meterLayout || 1,
+              ]),
+            ),
           })
         : { changes: [], records: [] };
       if (stale && plan.changes.length) fail(409, 'DRAFT_CONFLICT');

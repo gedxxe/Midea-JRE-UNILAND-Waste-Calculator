@@ -7,12 +7,19 @@ export const PLANT_SCHEMAS = {
     rows: [
       { name: 'Total', unit: 'kWh', isTotal: true },
       { name: 'Indoor', unit: 'kWh', factors: [250, 40] },
-      { name: 'Outdoor', unit: 'kWh', factors: [1, 40] },
+      {
+        name: 'Outdoor',
+        unit: 'kWh',
+        factors: [1, 40, 40],
+        meterReportFrom: { 2: '2026-11-06T17:00' },
+        zeroWhenUnavailable: [2],
+      },
       {
         name: 'Window',
         unit: 'kWh',
         factors: [1, 90, 90, 40, 40, 40],
         meterNames: ['Meter 1', 'Meter 2', 'Meter 3', 'Meter 4', 'Meter 5', 'Vacuum Box'],
+        deductMeters: [{ name: 'Outdoor', meter: 2 }],
       },
       {
         name: 'Dehumidifier',

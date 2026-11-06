@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.49-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.50-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -53,6 +53,8 @@ Autosave keeps incomplete readings in the same dated documents without manual Sa
 
 ### Navigation
 
+Admins can edit an IoT card's display name, remove it from the list, and restore it without deleting readings. These controls require migration 011 and its runtime grants. **Connection JSON** can be downloaded again without a secret; the private firmware header is available only while its one-time key is visible. Firmware IDs remain unchanged when renaming a card.
+
 Use /app for reading entry, /app/monitoring for charts/monthly tables, /app/history for saved reports, and /app/accounts for admin account management. Back/Forward and direct-link refresh work without reloading on menu changes. Protected links resolve the current session first; unknown paths return 404. Navigation keeps the existing workspace and drafts. See [routing](docs/navigation.md).
 
 ### Everyday features
@@ -78,9 +80,11 @@ Gas stock increases stay visible as **+amount (measured stock increase)**, with 
 
 JRE **Warehouse Lighting** is row 32, ratio x40. Warehouse Area now excludes its consumption in all three modes. Reports starting before **25 October 2026** use Lighting consumption 0, including 24 morning to 25 morning. Actual readings dated 25 October remain available for the next report. Saved historical output stays unchanged.
 
-Current electricity layouts: **JRE 32 equipment rows / 62 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 retains its defined deductions. Structural is max(0, its direct usage minus Piping 1 meter 1 usage x40), only when both readings are valid. The main Total stays independent. JRE T1–T4 are optional notes outside totals and electricity-only exports; All readings includes them. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
+Current electricity layouts: **JRE 32 equipment rows / 63 meters**, **UNILAND 34 rows / 48 reading slots**. JRE Window meter 6 is x40. Piping 1 meter 3 uses its direct delta minus Window meter 6 usage; the corrected component is included in Piping totals. Building 3 retains its defined deductions. Structural is max(0, its direct usage minus Piping 1 meter 1 usage x40), only when both readings are valid. The main Total stays independent. JRE T1–T4 are optional notes outside totals and electricity-only exports; All readings includes them. UNILAND Trafo readings are already MWh. Missing readings are never silently zero. New releases do not recalculate saved history. See [meter rules](docs/meter-rules.md), [gas calibration](docs/gas.md) and [graph mapping](docs/graphs.md).
 
 ### Copy into Daily Monitoring Excel
+
+JRE Outdoor meter 3 uses x40, with its first baseline at **6 November 2026, 17:00 WIB**. Its consumption is included in Outdoor and deducted once from Window. Periods starting earlier exclude it. A missing pair contributes zero with an explicit notice; the raw cells stay blank or unavailable, and invalid readings are still checked. Previous two-meter Outdoor imports remain supported. Historical saved output is unchanged.
 
 Choose 24 HOURS, Day/AFTER PRODUCTION or NIGHT SHIFT, then **Copy Excel row**. Paste from **E for JRE through AY (47 cells)** or **BE for UNILAND through CV (44 cells)** on the matching row. The clipboard contains values only, without a date. AP and CO remain empty separators. The Excel preview lists every destination column; unknown columns stay blank for manual entry. Use an empty, unmerged row because paste replaces values/formulas within the range.
 
@@ -187,13 +191,15 @@ WIB 时钟和三个摘要数值使用简短的数字滚动动画，原始显示�
 
 **电表读数**打开 `/iot-power-meter-reading`，仅用于设备诊断。已连接/离线依据三分钟内的认证通信，与读数分开；需要固件支持心跳。管理员可添加设备、电表与固件配置ID，生成或更换密钥并停用上传。卡片显示最新kWh和设备发送的电流(A)，支持分相。不会填入人工表格、自动保存、能耗图表或报告。立即读取会请求新采集值，间隔至少十秒；常规读数同步为十分钟。监控数值最多显示三位小数。密钥仅显示一次。见[配置与固件协议](docs/iot.md)。
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.49-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.50-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
 JRE 新增第 32 项 **Warehouse Lighting**，倍率 x40；Warehouse Area 扣除其用量，适用于三个时段。起始日期早于 **2026年10月25日** 的报表中照明用量为 0，包括24日早晨至25日早晨。保留25日的实际读数供下一份报表使用，不改写已保存历史。
 
 ### 操作流程与功能
+
+管理员可编辑IoT卡片显示名称、移除或恢复卡片，读数不会被删除。这些功能需要迁移011及运行权限。连接JSON可再次下载且不含密钥；固件私有头文件仅在一次性密钥可见时提供。更改名称不会改变固件ID。
 
 **保存**用于提交待同步更改并核实服务器数据，不创建新副本或修订。核实立即开始；自动保存继续。登录按钮使用可选的 Specular 边缘光效，关闭动画或不支持 WebGL 时仍可正常登录。
 
@@ -226,13 +232,15 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 
 燃气换算库存增加时显示 **+数值（测得库存增加）**，并提示检查读数、温度及是否漏记补充，仍可保存和复制。正常用量格式不变；无效读数或补充量下降仍需修正。库存增加不作为正用量绘图，不推断物理原因，也不重算旧报表。
 
-JRE 为 32 项设备 / 62 个电表，UNILAND 为 34 项 / 48 个读数位置。JRE Window 电表 6 为 x40；Piping 1 电表 3 的直读差值扣除 Window 电表 6 用量后计入 Piping 合计。Building 3 保留既定扣减。Structural 为 max(0, 本表用量减去 Piping 1 电表 1 用量 x40)，两者读数均须有效；主表 Total 独立。T1–T4 仅为 JRE 可选备注；UNILAND Trafo 原始读数已是 MWh。旧报表不会因更新而重算。见[电表规则](docs/meter-rules.md)、[燃气](docs/gas.md)、[图表](docs/graphs.md)。
+JRE 为 32 项设备 / 63 个电表，UNILAND 为 34 项 / 48 个读数位置。JRE Window 电表 6 为 x40；Piping 1 电表 3 的直读差值扣除 Window 电表 6 用量后计入 Piping 合计。Building 3 保留既定扣减。Structural 为 max(0, 本表用量减去 Piping 1 电表 1 用量 x40)，两者读数均须有效；主表 Total 独立。T1–T4 仅为 JRE 可选备注；UNILAND Trafo 原始读数已是 MWh。旧报表不会因更新而重算。见[电表规则](docs/meter-rules.md)、[燃气](docs/gas.md)、[图表](docs/graphs.md)。
 
 已记录修复的复现、兼容性和限制见[问题审查](docs/reliability.md)。
 
 未完成读数也会自动保存在同一日期文档，无需手动 Save。未同步输入另有按账户隔离的浏览器恢复副本，以应对标签页关闭或会话过期。不同副本需核对，存储及网络失败会显示提示。浏览器副本未加密，清除浏览器数据会删除它。详见[自动保存与恢复](docs/autosave.md)。
 
 ### 架构、安全与维护
+
+JRE Outdoor 新增第3块电表，倍率x40，起始读数时间为 **2026年11月6日17:00 WIB**。其用量计入Outdoor，并从Window扣除一次；此前开始的时段不计入。读数不完整时以0计入并提示，原始空白或不可用状态保留，错误读数仍需检查。旧版Outdoor两表格式仍可导入，已保存的历史结果不重算。
 
 [模块与重构边界](docs/architecture.md)说明共用渲染和导出工具、兼容规则与验证范围。
 
@@ -278,7 +286,7 @@ Semua mode memakai panel terang yang sama. Night Shift hanya mengubah periode pe
 
 **Power Meter Reading** di sebelah Graphs membuka `/iot-power-meter-reading` untuk diagnostik perangkat. Connected/Offline berdasarkan kontak terautentikasi dalam tiga menit, terpisah dari reading; firmware perlu mendukung heartbeat. Admin dapat menambah ID perangkat/meter/profil, membuat atau mengganti key, dan menonaktifkan upload. Card menampilkan kWh terbaru serta arus (A) yang dikirim, termasuk per fase. Tidak mengisi tabel, autosave, grafik konsumsi atau laporan operator. Baca sekarang meminta reading baru dengan jeda sepuluh detik; sinkron reading normal tiap sepuluh menit. Angka monitoring maksimal tiga desimal. Key hanya tampil sekali. Lihat [konfigurasi dan kontrak firmware](docs/iot.md).
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.49-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.50-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -312,6 +320,8 @@ Salinan tab diperbarui langsung. Sinkronisasi akun berjalan setelah 3 detik berh
 
 ### Alur dan fitur operator
 
+Admin dapat mengubah nama tampilan card IoT, menghapusnya dari daftar, dan memulihkannya tanpa menghapus reading. Fitur ini memerlukan migration 011 dan hak runtime. **JSON koneksi** bisa diunduh ulang tanpa key; header firmware privat tersedia selama key sekali tampil masih terlihat. ID firmware tetap sama saat nama diubah.
+
 **Panduan singkat** di panel Account menjelaskan delapan alur utama dengan ilustrasi kursor animasi. Ajakan kecil bisa ditutup; panduan dapat dibuka ulang kapan saja. Ada Back/Next, Escape/Close, jeda animasi dan dukungan reduced motion. Ilustrasi tidak mengubah reading atau menyimpan data. Kode, gaya dan terjemahan panjang dimuat saat dibuka; preferensi menutup ajakan hanya disimpan per akun di browser ini.
 
 1. Login memakai akun dari admin, ganti password sementara saat diminta.
@@ -339,13 +349,15 @@ Halaman awal **Energy Record** memakai latar gelap penuh, logo Midea putih yang 
 
 Kenaikan stok gas hasil konversi tetap tampil sebagai **+angka (kenaikan stok terukur)**, dengan notice untuk memeriksa reading, suhu dan refill yang mungkin belum dicatat. Laporan tetap bisa disimpan/disalin; konsumsi biasa memakai format semula. Input tidak valid atau stok yang turun saat refill tetap perlu dikoreksi. Kenaikan stok tidak diplot sebagai konsumsi positif, penyebab fisiknya tidak ditebak, dan histori tidak dihitung ulang.
 
-JRE memiliki 32 equipment / 62 meter; UNILAND 34 equipment / 48 slot. Window meter 6 JRE memakai x40. Selisih direct Piping 1 meter 3 dikurangi pemakaian Window meter 6, lalu nilai bersihnya masuk total Piping. Building 3 tetap memakai pengurangan yang dikonfirmasi. Structural = max(0, pemakaian mentahnya dikurangi Piping 1 meter 1 x40), hanya jika kedua reading valid. Total utama independen. T1–T4 hanya catatan opsional JRE; Trafo UNILAND sudah MWh. Pembaruan tidak menghitung ulang histori. Lihat [aturan meter](docs/meter-rules.md), [gas](docs/gas.md) dan [grafik](docs/graphs.md).
+JRE memiliki 32 equipment / 63 meter; UNILAND 34 equipment / 48 slot. Window meter 6 JRE memakai x40. Selisih direct Piping 1 meter 3 dikurangi pemakaian Window meter 6, lalu nilai bersihnya masuk total Piping. Building 3 tetap memakai pengurangan yang dikonfirmasi. Structural = max(0, pemakaian mentahnya dikurangi Piping 1 meter 1 x40), hanya jika kedua reading valid. Total utama independen. T1–T4 hanya catatan opsional JRE; Trafo UNILAND sudah MWh. Pembaruan tidak menghitung ulang histori. Lihat [aturan meter](docs/meter-rules.md), [gas](docs/gas.md) dan [grafik](docs/graphs.md).
 
 Lihat [bug yang direproduksi, perbaikan dan kompatibilitas](docs/reliability.md).
 
 Reading yang belum lengkap tetap tersimpan otomatis pada dokumen tanggal yang sama, tanpa Save manual. Input tertunda juga memiliki recovery browser per akun untuk tab yang tertutup atau sesi yang berakhir. Salinan berbeda perlu diperiksa; kegagalan storage/jaringan tetap ditampilkan. Recovery browser tidak terenkripsi dan akan hilang bila data browser dihapus. Lihat [autosave dan recovery](docs/autosave.md).
 
 ### Arsitektur, keamanan dan pengembangan
+
+Outdoor meter 3 JRE memakai x40, dengan baseline pertama **6 November 2026 pukul 17.00 WIB**. Konsumsinya masuk Outdoor dan dikurangkan sekali dari Window. Periode yang dimulai sebelumnya tidak memasukkannya. Pasangan belum lengkap memberi kontribusi nol dengan notice, sementara reading mentah tetap kosong/tidak tersedia dan input salah tetap diperiksa. Impor Outdoor dua meter tetap didukung; hasil histori tersimpan tidak dihitung ulang.
 
 Lihat [modul dan batas refactor](docs/architecture.md) untuk helper tampilan/ekspor, aturan kompatibilitas dan batas pengujian.
 

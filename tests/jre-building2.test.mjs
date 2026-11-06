@@ -19,7 +19,7 @@ function entered(make = createDraft) {
   });
   draft.rows[0].end[0] = '5000';
   draft.rows[1].end = ['1001', '1002'];
-  draft.rows[2].end = ['1003', '1004'];
+  draft.rows[2].end = ['1003', '1004', '1000'];
   draft.rows[3].end = ['1005', '1001', '1002', '1003', '1004', '1000'];
   draft.rows[5].start = ['20', '100', '200', '300'];
   draft.rows[5].end = ['21.25', '110', '220', '330'];

@@ -4,6 +4,7 @@ import {
   LEGACY_JRE_FACTORS,
   JRE_LAYOUT2_FACTORS,
   JRE_LAYOUT3_FACTORS,
+  JRE_LAYOUT6_FACTORS,
 } from '../../meter-layout.js';
 import { scaledReading } from '../../numbers.js';
 
@@ -32,7 +33,7 @@ export function legacyText(draft, side) {
       .map((row, i) => {
         const factors =
           (draft.meterLayout >= 4
-            ? {}
+            ? JRE_LAYOUT6_FACTORS
             : draft.meterLayout === 3
               ? JRE_LAYOUT3_FACTORS
               : draft.meterLayout === 2
@@ -53,6 +54,7 @@ export function layout2Draft(input) {
   const old = structuredClone(input);
   old.rows = old.rows.slice(0, 29);
   for (const side of ['start', 'end']) {
+    old.rows[2][side] = old.rows[2][side].slice(0, 2);
     old.rows[4][side] = old.rows[4][side].slice(0, 1);
     old.rows[15][side] = old.rows[15][side].slice(0, 2);
   }
@@ -62,13 +64,17 @@ export function layout2Draft(input) {
 export function layout3JreDraft(input) {
   const old = structuredClone(input);
   old.rows = old.rows.slice(0, 30);
-  for (const side of ['start', 'end']) old.rows[15][side] = old.rows[15][side].slice(0, 2);
+  for (const side of ['start', 'end']) {
+    old.rows[2][side] = old.rows[2][side].slice(0, 2);
+    old.rows[15][side] = old.rows[15][side].slice(0, 2);
+  }
   old.meterLayout = 3;
   return old;
 }
 export function layout4JreDraft(input) {
   const old = structuredClone(input);
   old.rows = old.rows.slice(0, 30);
+  for (const side of ['start', 'end']) old.rows[2][side] = old.rows[2][side].slice(0, 2);
   old.meterLayout = 4;
   return old;
 }
@@ -89,6 +95,14 @@ export function fillNewJreMeters(input) {
 export function layout5JreDraft(input) {
   const old = structuredClone(input);
   old.rows = old.rows.slice(0, 31);
+  for (const side of ['start', 'end']) old.rows[2][side] = old.rows[2][side].slice(0, 2);
   old.meterLayout = 5;
+  return old;
+}
+
+export function layout6JreDraft(input) {
+  const old = structuredClone(input);
+  for (const side of ['start', 'end']) old.rows[2][side] = old.rows[2][side].slice(0, 2);
+  old.meterLayout = 6;
   return old;
 }

@@ -82,6 +82,14 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
             row.ratioLabel ? `× ${row.ratioLabel}` : factor === 1 ? t('direct') : `× ${factor}`,
           ),
         );
+        if (row.meterReportFrom?.[mi])
+          ratio.append(
+            node(
+              'span',
+              t('meterSlotFromHint', { date: row.meterReportFrom[mi].replace('T', ' ') }),
+              'meter-start-note',
+            ),
+          );
         tr.append(ratio);
         inputNodes[ri][mi] = {};
         for (const side of ['start', 'end']) {

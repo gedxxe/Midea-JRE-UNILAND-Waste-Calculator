@@ -18,6 +18,7 @@ import {
   emptyAdditionalReadings,
 } from './additional-readings.js';
 import { validDate, shiftDate, decimalText } from './numbers.js';
+import { PLANT_SCHEMAS } from './schema.js';
 
 export const STORAGE_KEY = 'midea_energy_draft_v4';
 
@@ -250,9 +251,25 @@ export function nextDayDraft(draft) {
     );
   }
   if (!validDate(draft.endDate)) throw new Error('Enter a valid end date.');
-  if (draft.rows.some((row) => row.end.some((v) => !v.trim())))
+  if (
+    draft.rows.some((row, ri) =>
+      row.end.some(
+        (v, mi) =>
+          !v.trim() && !PLANT_SCHEMAS[draft.plantKey].rows[ri].zeroWhenUnavailable?.includes(mi),
+      ),
+    )
+  )
     throw new Error('Complete all end readings before moving to the next day.');
-  if (draft.rows.some((row) => row.end.some((v) => v.trim() !== '-' && decimalText(v) === null)))
+  if (
+    draft.rows.some((row, ri) =>
+      row.end.some(
+        (v, mi) =>
+          v.trim() !== '-' &&
+          decimalText(v) === null &&
+          (v.trim() || !PLANT_SCHEMAS[draft.plantKey].rows[ri].zeroWhenUnavailable?.includes(mi)),
+      ),
+    )
+  )
     throw new Error('Correct invalid end readings before moving to the next day.');
   const next = createDraft(draft.plantKey, draft.endDate, shiftDate(draft.endDate, 1));
   next.gas = nextGasDay(draft.gas, draft.plantKey);

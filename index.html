@@ -986,6 +986,10 @@
           Add power meter
         </button>
         <form id="iot-device-form" class="iot-editor" hidden>
+          <label
+            ><span data-i18n="iotDisplayName">Display name (optional)</span
+            ><input id="iot-display-name" maxlength="80" autocomplete="off"
+          /></label>
           <div class="iot-form-grid">
             <label
               ><span data-i18n="iotFactory">Factory</span
@@ -1026,11 +1030,12 @@
             /></label>
             <datalist id="iot-node-profiles"></datalist>
           </div>
-          <p data-i18n="iotBindingHelp">
+          <p id="iot-binding-help" data-i18n="iotBindingHelp">
             Use the exact IDs configured in firmware. These identify a source, not a report row.
           </p>
           <div class="iot-actions">
-            <button type="submit" class="button" data-i18n="iotCreate">Create device key</button
+            <button id="iot-submit" type="submit" class="button" data-i18n="iotCreate">
+              Create device key</button
             ><button id="iot-cancel" type="button" class="button secondary" data-i18n="iotCancel">
               Cancel
             </button>
@@ -1088,6 +1093,11 @@
           </select></label
         >
         <button id="iot-refresh" class="button secondary" data-i18n="iotRefresh">Refresh</button>
+        <label id="iot-archived-control" hidden
+          ><input id="iot-show-archived" type="checkbox" /><span data-i18n="iotShowRemoved"
+            >Show removed cards</span
+          ></label
+        >
         <label
           ><input id="iot-auto" type="checkbox" /><span data-i18n="iotAuto"
             >Refresh every 10 minutes</span

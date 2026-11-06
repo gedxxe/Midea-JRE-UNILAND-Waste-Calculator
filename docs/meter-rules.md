@@ -14,14 +14,15 @@ Blank or malformed input blocks copying. `-` explicitly marks unavailable data. 
 
 ## JRE
 
-32 equipment rows, 62 meters. Counts in template order:
+32 equipment rows, 63 meters. Counts in template order:
 
 ```text
-1,2,2,6,2,4,13,1,2,1,1,1,1,1,2,3,1,1,1,1,2,1,1,1,1,1,2,2,1,1,1,1
+1,2,3,6,2,4,13,1,2,1,1,1,1,1,2,3,1,1,1,1,2,1,1,1,1,1,2,2,1,1,1,1
 ```
 
 - Total is the direct main-meter delta, never a sub-meter sum or x1000.
-- Indoor: x250, x40. Outdoor: x1, x40. Window: x1, x90, x90, x40, x40, x40. Meter 6 is the Window Vacuum Box, previously moved from Warehouse meter 3; preserve its raw cumulative values.
+- Indoor: x250, x40. Outdoor: x1, x40, x40. Window: x1, x90, x90, x40, x40, x40. Meter 6 is the Window Vacuum Box, previously moved from Warehouse meter 3; preserve its raw cumulative values.
+- Outdoor meter 3 starts from the confirmed baseline **2026-11-06 17:00 WIB**. Only periods starting at or after that boundary use its delta x40. Add that amount to Outdoor and subtract the same amount once from Window, preserving main/sub-meter balance. A period starting earlier excludes it entirely, including a combined period; do not estimate partial consumption. Missing or unavailable pairs contribute zero with a notice, without storing a fabricated raw zero. Invalid or decreasing values retain checks; negative Window net stays unavailable. Layout 7 appends a blank third slot to editable older copies; raw imports may omit that slot and keep an existing same-time observation. Stored historical output is not recalculated. No SQL migration is needed for this layout.
 - Dehumidifier: original direct meter plus Vacuum Box x40. Electricity Building 3# net = its gross direct delta minus Vacuum Box delta x40 and Piping Building 3# delta x40. Deduct only the Vacuum Box component, not all Dehumidifier usage. Each dependency is validated independently; a missing unrelated Dehumidifier meter does not erase a valid Building 3 net. Negative net or unavailable dependencies produce a check note and no numeric result. Raw readings and gross meter detail stay unchanged.
 - Area Repair Injection Molding: direct, appended as row 30. Included in the sub-meter sum and new graph key r29. The legacy saved worksheet keeps its 19 columns; do not silently add Repair to the existing Injection column.
 - Heat Exchanger: x40, x1, x1, x1. Injection Molding: 13 direct meters.

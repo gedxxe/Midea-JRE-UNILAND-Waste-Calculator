@@ -49,6 +49,8 @@ export function formatReadingColumn(draft, side) {
     }
     const terms = values.map((value, meterIndex) => {
       const raw = typeof value === 'string' ? value.trim() : '';
+      if (!raw && row.zeroWhenUnavailable?.includes(meterIndex))
+        return '____' + ratioAnnotation(row, meterIndex);
       if (!raw || (raw !== '-' && decimalText(raw) === null))
         issues.push({ code: raw ? 'INVALID' : 'EMPTY', rowIndex, meterIndex });
       // A leading plus is redundant and would collide with the meter separator.

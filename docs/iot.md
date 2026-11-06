@@ -1,5 +1,13 @@
 # Power Meter Reading
 
+## Card management
+
+After migration 011 and its limited runtime grants, an admin can edit a card's display name, remove it from the default list, and restore it through **Show removed cards**. Removal stops uploads and retains observations. Restoring a card leaves uploads disabled; use **Replace key** to reconnect it. Names support up to 80 characters and are rendered as text. Firmware device/meter/profile IDs remain stable so renaming a card does not disconnect a node or relabel historical payloads. The existing 100-source quota includes removed cards.
+
+**Connection JSON** can be downloaded again from an owned card. It contains the HTTPS endpoint, transport IDs and intervals, without a bearer key. The **Private firmware header (.h)** includes the one-time key only while that key is visible after registration or rotation. Closing, hiding or changing account clears the key; replace it if another private header is needed. The downloaded connection JSON is a reference for setup, not an automatic import format for firmware.
+
+Migration 011 adds only `display_name` and `archived_at` to the registry, plus metadata-update grants. It does not rewrite telemetry, reports, autosaves or account credentials. Until it is explicitly applied, existing reads/create/key operations continue; edit/remove/restore show a setup notice. Production migration/deployment is a separate approved step. Rollback cannot reactivate an archived card through the old key-rotation path because the database requires archived cards to remain inactive.
+
 This optional page is for LoRa power-monitoring diagnostics, not a control system or completed hardware commissioning. Device observations do not populate operator tables, autosaves, consumption graphs or reports. Each source binds to one factory, meter and firmware profile ID. The first intended physical source is JRE Warehouse, configured through registration rather than hardcoded in the application. Fleet sharing, additional metrics and retention policies remain separate work. There is no automatic filling or report Apply feature.
 
 ## Transport and security
@@ -65,16 +73,16 @@ Set server-only `IOT_PUBLIC_ORIGIN` to the exact stable HTTPS origin, without pa
 
 On the cloud site, sign in with the development account and choose **Add power meter**. Select the actual factory/profile and enter stable source/meter IDs; no report-row mapping is created. Download **iot_credentials.local.h** while the one-time key is visible. This file contains a live private device credential, so keep it out of chat, screenshots and Git. The website emits these existing firmware configuration identifiers:
 
-| Macro                 | Meaning                                                                            |
-| --------------------- | ---------------------------------------------------------------------------------- |
-| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                          |
-| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                 |
-| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                  |
-| IOT_DEV_METER_ID      | Exact registered meter ID                                                          |
-| IOT_DEV_METER_PROFILE | fort, habuer, acrel-adl400, acrel-acr or acrel-apm, matching the actual node setup |
-| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential       |
+| Macro                 | Meaning                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                                                 |
+| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                                        |
+| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                                         |
+| IOT_DEV_METER_ID      | Exact registered meter ID                                                                                 |
+| IOT_DEV_METER_PROFILE | fort, habuer, acrel-adl400, acrel-acr, acrel-apm or schneider-pm5100; custom IDs must also match the node |
+| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential                              |
 
-Place the downloaded file in the node repository's `firmware/include/` directory, where the existing uploader includes it. Use the current node repository's normal PlatformIO build/flash workflow. Configure **Client with recovery AP** or **Dual** Wi-Fi in the node's own panel, on an approved internet-connected network; the node AP alone cannot reach the cloud. Save the correct physical meter profile and its verified scaling. Do not multiply CT/PT again on this website. Custom profiles can still be registered for compatible adapters, but this reference-node header export supports only the reviewed keys above.
+Place the downloaded file in the node repository's `firmware/include/` directory, where the existing uploader includes it. Use the current node repository's normal PlatformIO build/flash workflow. Configure **Client with recovery AP** or **Dual** Wi-Fi in the node's own panel, on an approved internet-connected network; the node AP alone cannot reach the cloud. Save the correct physical meter profile and its verified scaling. Do not multiply CT/PT again on this website. Profile suggestions are not a whitelist: valid custom IDs can be registered and exported, but the node must implement the exact same ID. Schneider PM5100 uses `schneider-pm5100` in the [firmware profile registry](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/lib/FortMeter/src/MeterProfiles.h); its normalized kWh already includes configured CT/VT scaling.
 
 Check the node's `/api/status` IoT section. `configured`/`enabled` show setup, not successful data delivery. Inspect `lastHttp`, `accepted`, `duplicates`, `failures`, `error` and the durable checkpoint cursor. Verify an accepted event on the cloud card against the physical meter, with its capture time. Existing backfill runs before live telemetry, so the first received historical checkpoint is not necessarily the current meter value. The source's newest capture remains on the card even when older events arrive later.
 

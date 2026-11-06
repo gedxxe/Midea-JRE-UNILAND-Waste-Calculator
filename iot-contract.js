@@ -14,6 +14,40 @@ export const IOT_SCHEDULE_WIB = [
 ];
 export const iotIdentifier = (value) =>
   typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value);
+export const validIotName = (value) =>
+  typeof value === 'string' &&
+  value === value.trim() &&
+  [...value].length <= 80 &&
+  !/[\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value);
+
+// Connection details can be downloaded again without retrieving a device secret.
+export function iotConnectionConfig(device, endpoint) {
+  if (
+    !device ||
+    !['device_id', 'meter_id', 'meter_profile'].every((key) => iotIdentifier(device[key]))
+  )
+    return null;
+  try {
+    if (iotCloudEndpoint(new URL(endpoint).origin) !== endpoint) return null;
+  } catch {
+    return null;
+  }
+  return (
+    JSON.stringify(
+      {
+        schema_version: 1,
+        endpoint,
+        device_id: device.device_id,
+        meter_id: device.meter_id,
+        meter_profile: device.meter_profile,
+        telemetry_interval_seconds: IOT_TELEMETRY_INTERVAL_SECONDS,
+        heartbeat_interval_seconds: IOT_HEARTBEAT_INTERVAL_SECONDS,
+      },
+      null,
+      2,
+    ) + '\n'
+  );
+}
 export const IOT_CURRENT_FIELDS = ['current_a', 'current_l1_a', 'current_l2_a', 'current_l3_a'];
 export const IOT_TELEMETRY_INTERVAL_SECONDS = 600;
 export const IOT_DASHBOARD_POLL_MS = 600000;
@@ -53,7 +87,14 @@ export function validateIotHeartbeat(value) {
   return Object.fromEntries(keys.map((key) => [key, value[key]]));
 }
 // Profile identifiers from the reference node's MeterProfiles.h; custom IDs remain valid.
-export const IOT_NODE_PROFILES = ['fort', 'habuer', 'acrel-adl400', 'acrel-acr', 'acrel-apm'];
+export const IOT_NODE_PROFILES = [
+  'fort',
+  'habuer',
+  'acrel-adl400',
+  'acrel-acr',
+  'acrel-apm',
+  'schneider-pm5100',
+];
 export function iotCloudEndpoint(origin) {
   try {
     const url = new URL(origin);
@@ -79,13 +120,12 @@ export function iotNodeConfig(device, credential, endpoint) {
   if (
     iotCloudEndpoint(origin) !== endpoint ||
     !/^[A-Za-z0-9_-]{43}$/.test(credential) ||
-    !IOT_NODE_PROFILES.includes(device?.meter_profile) ||
     !['device_id', 'meter_id', 'meter_profile'].every((key) => iotIdentifier(device?.[key]))
   )
     return null;
   const define = (key, value) => '#define ' + key + ' ' + JSON.stringify(value);
   return [
-    '// Private development provisioning. Do not commit this file.',
+    '// Private device provisioning. Do not commit this file.',
     '#pragma once',
     '#define IOT_DEV_ENABLED 1',
     define('IOT_DEV_ENDPOINT', endpoint),

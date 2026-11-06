@@ -4,6 +4,32 @@ import { validateIotEvent as validateEvent } from '../iot-contract.js';
 import { iotCloudEndpoint, iotNodeConfig, IOT_NODE_PROFILES } from '../iot-contract.js';
 import { validateIotHeartbeat, iotPresence } from '../iot-contract.js';
 import { formatIotReading } from '../iot-contract.js';
+import { validIotName, iotConnectionConfig } from '../iot-contract.js';
+
+test('card names support ordinary multilingual text and repeatable connection JSON never contains a key', () => {
+  for (const name of ['', 'Warehouse 1', '仓库电表', 'Gudang', '<img src=x>'])
+    assert.equal(validIotName(name), true);
+  for (const name of [null, ' x', 'x\n', 'x\u0000y', '\ud800', 'a'.repeat(81)])
+    assert.equal(validIotName(name), false);
+  const device = {
+    device_id: 'source_1',
+    meter_id: 'meter-1',
+    meter_profile: 'schneider-pm5100',
+    token_hash: 'private',
+    credential: 'private',
+  };
+  const config = iotConnectionConfig(device, 'https://iot.example.com/api/iot-ingest');
+  assert.equal(JSON.parse(config).meter_profile, 'schneider-pm5100');
+  assert.doesNotMatch(config, /private|credential|token_hash|bearer/);
+  assert.equal(iotConnectionConfig(device, 'http://iot.example.com/api/iot-ingest'), null);
+  assert.equal(
+    iotConnectionConfig(
+      { ...device, device_id: 'bad"id' },
+      'https://iot.example.com/api/iot-ingest',
+    ),
+    null,
+  );
+});
 test('monitoring rounds to at most three decimals without changing exact stored input', () => {
   for (const [input, expected] of [
     ['123.000001', '123'],
@@ -181,7 +207,7 @@ test('device management rejects unsupported methods before connecting', async ()
   assert.equal(res.statusCode, 405);
 });
 
-test('node provisioning emits the reviewed firmware macros only for stable HTTPS and a supported profile', () => {
+test('node provisioning emits the reviewed firmware macros for stable HTTPS and valid configurable profiles', () => {
   const origin = 'https://iot.example.com';
   const device = { device_id: 'dev_source', meter_id: 'meter_1', meter_profile: 'fort' };
   const key = 'k'.repeat(43);
@@ -220,8 +246,13 @@ test('node provisioning emits the reviewed firmware macros only for stable HTTPS
     iotNodeConfig({ ...device, device_id: 'id"\n#define OTHER 1' }, key, iotCloudEndpoint(origin)),
     null,
   );
-  assert.equal(
+  assert.match(
     iotNodeConfig({ ...device, meter_profile: 'custom-profile' }, key, iotCloudEndpoint(origin)),
+    /IOT_DEV_METER_PROFILE "custom-profile"/,
+  );
+  assert.ok(IOT_NODE_PROFILES.includes('schneider-pm5100'));
+  assert.equal(
+    iotNodeConfig({ ...device, meter_profile: 'bad\"profile' }, key, iotCloudEndpoint(origin)),
     null,
   );
   assert.equal(iotNodeConfig(device, 'wrong', iotCloudEndpoint(origin)), null);

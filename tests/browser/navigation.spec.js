@@ -374,7 +374,7 @@ test('device presence is independent of readings, expires without refreshing and
   expect(state.errors).toEqual([]);
 });
 
-test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on close without report writes', async ({
+test('admin manages card names, repeatable connection JSON and reversible removal without report writes', async ({
   page,
 }, testInfo) => {
   const state = await setup(page, { role: 'admin' });
@@ -390,27 +390,44 @@ test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on 
     route.fulfill({
       json: {
         enabled: true,
-        devices: device ? [device] : [],
+        devices:
+          device &&
+          (!device.archived_at ||
+            new URL(route.request().url()).searchParams.has('include_archived'))
+            ? [device]
+            : [],
         readings: [],
-        connection: { schema_version: 1, endpoint: 'https://iot.example.com/api/iot-ingest' },
+        connection: {
+          schema_version: 1,
+          endpoint: 'https://iot.example.com/api/iot-ingest',
+          card_management_ready: true,
+        },
       },
     }),
   );
   await page.route('**/api/iot-devices', (route) => {
     const body = route.request().postDataJSON();
     requests.push(body);
-    device = { ...body, active: true, last_received_at: null };
+    if (body.action === 'create') device = { ...body, active: true, last_received_at: null };
+    if (body.action === 'update') device.display_name = body.display_name;
+    if (body.action === 'delete') {
+      device.archived_at = '2026-11-07T01:00:00Z';
+      device.active = false;
+    }
+    if (body.action === 'restore') device.archived_at = null;
+    if (body.action === 'rotate') device.active = true;
     return route.fulfill({
-      status: 201,
+      status: body.action === 'create' ? 201 : 200,
       json: {
         device,
-        credential: key,
+        ...(['create', 'rotate'].includes(body.action) ? { credential: key } : {}),
         connection: { schema_version: 1, endpoint: 'https://iot.example.com/api/iot-ingest' },
       },
     });
   });
   await page.goto('/iot-power-meter-reading');
   await page.locator('#iot-add').click();
+  await expect(page.locator('#iot-node-profiles option[value="schneider-pm5100"]')).toHaveCount(1);
   await page.locator('#iot-plant').selectOption('UNILAND');
   await page.locator('#iot-source-id').fill('custom-lora-source');
   await page.locator('#iot-meter-id').fill('custom-warehouse');
@@ -446,6 +463,38 @@ test('admin adds arbitrary diagnostic IDs, sees a one-time key and clears it on 
   await page.locator('#iot-key-dismiss').click();
   await expect(page.locator('#iot-key')).toHaveValue('');
   await expect(page.locator('#iot-config-download')).toBeDisabled();
+  const card = page.locator('.iot-device-card');
+  await expect(card.locator('[data-iot-action="config"]')).toBeEnabled();
+  const [jsonDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    card.locator('[data-iot-action="config"]').click(),
+  ]);
+  const jsonStream = await jsonDownload.createReadStream();
+  const jsonChunks = [];
+  for await (const chunk of jsonStream) jsonChunks.push(chunk);
+  const details = Buffer.concat(jsonChunks).toString('utf8');
+  expect(JSON.parse(details).device_id).toBe('custom-lora-source');
+  expect(details).not.toContain(key);
+  await card.locator('[data-iot-action="edit"]').click();
+  await expect(page.locator('#iot-source-id')).toHaveAttribute('readonly', '');
+  await page.locator('#iot-display-name').fill('仓库 <img src=x>');
+  await page.locator('#iot-submit').click();
+  await expect(card).toContainText('仓库 <img src=x>');
+  await expect(card.locator('img')).toHaveCount(0);
+  expect(requests.at(-1)).toEqual({
+    action: 'update',
+    device_id: 'custom-lora-source',
+    display_name: '仓库 <img src=x>',
+  });
+  page.once('dialog', (d) => d.accept());
+  await card.locator('[data-iot-action="delete"]').click();
+  await expect(card).toHaveCount(0);
+  await page.locator('#iot-show-archived').check();
+  await expect(card).toContainText('仓库 <img src=x>');
+  page.once('dialog', (d) => d.accept());
+  await card.locator('[data-iot-action="restore"]').click();
+  await expect(card.locator('[data-iot-action="revoke"]')).toBeDisabled();
+  await expect(card.locator('[data-iot-action="rotate"]')).toBeEnabled();
   await page.screenshot({ path: '.vercel/iot-management-' + testInfo.project.name + '.png' });
   await page.locator('[data-close-dialog="iot-dialog"]').click();
   await page.locator('#open-iot').click();

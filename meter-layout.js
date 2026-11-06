@@ -1,16 +1,22 @@
 import { PLANT_SCHEMAS } from './schema.js';
 import { emptyMeterRow } from './meter-activation.js';
 
-export const JRE_METER_LAYOUT = 6;
+export const JRE_METER_LAYOUT = 7;
 export const UNILAND_METER_LAYOUT = 4;
+export const JRE_LAYOUT6_FACTORS = { 2: [1, 40] };
 export const LEGACY_JRE_FACTORS = {
+  ...JRE_LAYOUT6_FACTORS,
   3: [1, 90, 90, 40, 40],
   4: [1],
   15: [40],
   16: [1],
   25: [40, 1, 1],
 };
-export const JRE_LAYOUT3_FACTORS = { 3: [1, 90, 90, 40, 40, 1], 15: [40, 1] };
+export const JRE_LAYOUT3_FACTORS = {
+  ...JRE_LAYOUT6_FACTORS,
+  3: [1, 90, 90, 40, 40, 1],
+  15: [40, 1],
+};
 export const JRE_LAYOUT2_FACTORS = { ...JRE_LAYOUT3_FACTORS, 4: [1], 16: [1] };
 
 export function moveLegacyValues(values) {
@@ -100,7 +106,7 @@ export function migrateMeterLayout(input) {
   if (input?.plantKey !== 'JRE') return input;
   if (
     input.meterLayout !== undefined &&
-    ![1, 2, 3, 4, 5, JRE_METER_LAYOUT].includes(input.meterLayout)
+    ![1, 2, 3, 4, 5, 6, JRE_METER_LAYOUT].includes(input.meterLayout)
   )
     throw new Error('Unknown meter layout.');
   if (input.meterLayout === JRE_METER_LAYOUT) return input;
@@ -111,22 +117,25 @@ export function migrateMeterLayout(input) {
       ['start', 'end'].every(
         (side) =>
           Array.isArray(row?.[side]) &&
-          row[side].length === (factors[i] || PLANT_SCHEMAS.JRE.rows[i].factors).length,
+          row[side].length ===
+            (factors[i] || JRE_LAYOUT6_FACTORS[i] || PLANT_SCHEMAS.JRE.rows[i].factors).length,
       ),
     );
   const layout =
     input.meterLayout ||
-    (matches({}, 31)
-      ? 5
-      : matches({}, 30)
-        ? 4
-        : matches(JRE_LAYOUT3_FACTORS, 30)
-          ? 3
-          : matches(JRE_LAYOUT2_FACTORS)
-            ? 2
-            : matches(LEGACY_JRE_FACTORS)
-              ? 1
-              : null);
+    (matches({}, 32)
+      ? 6
+      : matches({}, 31)
+        ? 5
+        : matches({}, 30)
+          ? 4
+          : matches(JRE_LAYOUT3_FACTORS, 30)
+            ? 3
+            : matches(JRE_LAYOUT2_FACTORS)
+              ? 2
+              : matches(LEGACY_JRE_FACTORS)
+                ? 1
+                : null);
   if (!layout) return input;
   if (
     !matches(
@@ -137,7 +146,7 @@ export function migrateMeterLayout(input) {
           : layout === 3
             ? JRE_LAYOUT3_FACTORS
             : {},
-      layout >= 5 ? 31 : layout >= 3 ? 30 : 29,
+      layout >= 6 ? 32 : layout >= 5 ? 31 : layout >= 3 ? 30 : 29,
     )
   )
     throw Error('Invalid legacy meter layout.');
@@ -150,10 +159,12 @@ export function migrateMeterLayout(input) {
     });
     if (layout < 3) next.rows[4][side].push('');
     if (layout < 4) next.rows[15][side].push('');
+    next.rows[2][side].push('');
   }
   if (layout < 3) next.rows.push({ start: [''], end: [''], inactive: false });
   if (layout < 5) next.rows.push({ start: [''], end: [''], inactive: false });
-  next.rows.push(emptyMeterRow(PLANT_SCHEMAS.JRE.rows[31], input.startDate, input.endDate));
+  if (layout < 6)
+    next.rows.push(emptyMeterRow(PLANT_SCHEMAS.JRE.rows[31], input.startDate, input.endDate));
   next.meterLayout = JRE_METER_LAYOUT;
   if (layout === 1) next.importIssues = moveLegacyIssues(input.importIssues);
   return next;

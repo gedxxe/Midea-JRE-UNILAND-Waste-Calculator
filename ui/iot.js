@@ -5,6 +5,8 @@ import {
   IOT_CURRENT_FIELDS,
   IOT_NODE_PROFILES,
   iotNodeConfig,
+  iotConnectionConfig,
+  validIotName,
   iotPresence,
   IOT_DASHBOARD_POLL_MS,
   IOT_MANUAL_COOLDOWN_SECONDS,
@@ -16,6 +18,8 @@ export function createIotReading({ request, opened, getUser }) {
   let identity = 0,
     scope = 0,
     managing = false,
+    editingId = null,
+    cardReady = false,
     provisioning = null,
     cloudEndpoint = null,
     writeController,
@@ -162,7 +166,11 @@ export function createIotReading({ request, opened, getUser }) {
     const epoch = identity;
     const timeout = setTimeout(() => active.abort(), 20000);
     try {
-      const data = await request('/api/iot-readings?status_only=1', { signal: active.signal });
+      const archived =
+        $('iot-show-archived').checked && getUser()?.role === 'admin' ? '&include_archived=1' : '';
+      const data = await request('/api/iot-readings?status_only=1' + archived, {
+        signal: active.signal,
+      });
       if (
         epoch !== identity ||
         statusController !== active ||
@@ -271,6 +279,42 @@ export function createIotReading({ request, opened, getUser }) {
     $('iot-config-download').disabled = true;
     $('iot-credential').hidden = true;
   }
+  function download(text, name, type) {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const link = node('a');
+    link.href = url;
+    link.download = name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function editorControls() {
+    for (const field of $('iot-device-form').querySelectorAll('input,select,button'))
+      field.disabled = managing;
+    $('iot-plant').disabled = managing || !!editingId;
+    for (const id of ['iot-source-id', 'iot-meter-id', 'iot-profile']) $(id).readOnly = !!editingId;
+    $('iot-display-name').disabled = managing || !cardReady;
+  }
+  function edit(device = null) {
+    clearCredential();
+    editingId = device?.device_id || null;
+    $('iot-device-form').reset();
+    $('iot-display-name').value = device?.display_name || '';
+    if (device)
+      for (const [id, key] of [
+        ['iot-source-id', 'device_id'],
+        ['iot-meter-id', 'meter_id'],
+        ['iot-profile', 'meter_profile'],
+        ['iot-plant', 'plant'],
+      ])
+        $(id).value = device[key];
+    $('iot-submit').dataset.i18n = editingId ? 'iotSaveName' : 'iotCreate';
+    $('iot-submit').textContent = t($('iot-submit').dataset.i18n);
+    $('iot-binding-help').dataset.i18n = editingId ? 'iotNameHelp' : 'iotBindingHelp';
+    $('iot-binding-help').textContent = t($('iot-binding-help').dataset.i18n);
+    editorControls();
+    $('iot-device-form').hidden = false;
+    $(editingId ? 'iot-display-name' : 'iot-source-id').focus();
+  }
   function clearManagement() {
     scope++;
     manualController?.abort();
@@ -286,6 +330,10 @@ export function createIotReading({ request, opened, getUser }) {
     writeController?.abort();
     managing = false;
     cloudEndpoint = null;
+    editingId = null;
+    cardReady = false;
+    $('iot-show-archived').checked = false;
+    $('iot-archived-control').hidden = true;
     $('iot-add').disabled = true;
     clearCredential();
     $('iot-management').hidden = true;
@@ -338,17 +386,23 @@ export function createIotReading({ request, opened, getUser }) {
     $('iot-status').textContent = t('iotLoading');
     try {
       const query = new URLSearchParams();
+      if ($('iot-show-archived').checked && getUser()?.role === 'admin')
+        query.set('include_archived', '1');
       if ($('iot-kind').value) query.set('event_type', $('iot-kind').value);
       const data = await request('/api/iot-readings?' + query, { signal: controller.signal });
       if (epoch !== identity || !dialog.open) return;
       $('iot-management').hidden = !data.enabled || getUser()?.role !== 'admin';
       cloudEndpoint = data.connection?.endpoint || null;
+      cardReady = data.connection?.card_management_ready === true;
+      $('iot-archived-control').hidden = getUser()?.role !== 'admin' || !cardReady;
       manualEnabled = !!data.connection?.manual_refresh_enabled;
       checked = true;
       $('iot-add').disabled = managing || !cloudEndpoint;
       $('iot-cloud-status').textContent = t(
         data.connection?.endpoint ? 'iotCloudReady' : 'iotCloudMissing',
       );
+      if (getUser()?.role === 'admin' && !cardReady)
+        $('iot-cloud-status').textContent += ' ' + t('iotManagementNotReady');
       const host = $('iot-data');
       hasPending = false;
       stopPresence();
@@ -374,11 +428,15 @@ export function createIotReading({ request, opened, getUser }) {
           const contact = node('p');
           presenceBadges.push({ device: d, badge, contact, date });
           card.append(
-            node('strong', d.device_id + ' · ' + d.plant),
-            node('p', d.meter_id + ' / ' + d.meter_profile),
+            node('strong', (d.display_name || d.device_id) + ' · ' + d.plant),
+            node(
+              'p',
+              (d.display_name ? d.device_id + ' · ' : '') + d.meter_id + ' / ' + d.meter_profile,
+            ),
             badge,
             contact,
           );
+          if (d.archived_at) card.append(node('span', t('iotRemoved'), 'iot-presence'));
           if (d.latest_reading) {
             const latest = d.latest_reading;
             card.append(
@@ -414,18 +472,47 @@ export function createIotReading({ request, opened, getUser }) {
           }
           if (getUser()?.role === 'admin') {
             const actions = node('div', null, 'iot-actions');
-            for (const action of ['rotate', 'revoke']) {
-              const button = node(
-                'button',
-                t(action === 'rotate' ? 'iotRotate' : 'iotDisable'),
-                'button secondary',
-              );
+            const config = iotConnectionConfig(d, cloudEndpoint);
+            const connectionButton = node('button', t('iotConnectionJson'), 'button secondary');
+            connectionButton.type = 'button';
+            connectionButton.dataset.iotAction = 'config';
+            connectionButton.disabled = managing || !config;
+            connectionButton.addEventListener('click', () =>
+              download(
+                config,
+                'iot-connection-' + d.device_id + '.json',
+                'application/json;charset=utf-8',
+              ),
+            );
+            actions.append(connectionButton);
+            const editButton = node('button', t('iotEdit'), 'button secondary');
+            editButton.type = 'button';
+            editButton.dataset.iotAction = 'edit';
+            editButton.disabled = managing || !cardReady || !!d.archived_at;
+            editButton.addEventListener('click', () => edit(d));
+            actions.append(editButton);
+            for (const action of d.archived_at ? ['restore'] : ['rotate', 'revoke', 'delete']) {
+              const labels = {
+                rotate: 'iotRotate',
+                revoke: 'iotDisable',
+                delete: 'iotRemove',
+                restore: 'iotRestore',
+              };
+              const confirms = {
+                rotate: 'iotRotateConfirm',
+                revoke: 'iotDisableConfirm',
+                delete: 'iotRemoveConfirm',
+                restore: 'iotRestoreConfirm',
+              };
+              const button = node('button', t(labels[action]), 'button secondary');
               button.type = 'button';
-              button.disabled = managing || (action === 'revoke' && !d.active);
+              button.dataset.iotAction = action;
+              button.disabled =
+                managing ||
+                (action === 'revoke' && !d.active) ||
+                (['delete', 'restore'].includes(action) && !cardReady);
               button.addEventListener('click', () => {
-                if (
-                  window.confirm(t(action === 'rotate' ? 'iotRotateConfirm' : 'iotDisableConfirm'))
-                )
+                if (window.confirm(t(confirms[action])))
                   void manage({ action, device_id: d.device_id });
               });
               actions.append(button);
@@ -508,6 +595,7 @@ export function createIotReading({ request, opened, getUser }) {
     if (managing || getUser()?.role !== 'admin' || !dialog.open) return;
     const epoch = scope;
     managing = true;
+    editorControls();
     paintButtons();
     clearCredential();
     clearTimeout(timer);
@@ -522,6 +610,7 @@ export function createIotReading({ request, opened, getUser }) {
       const result = await request('/api/iot-devices', { body, signal: writeController.signal });
       if (epoch !== scope || !dialog.open) return;
       $('iot-device-form').hidden = true;
+      editingId = null;
       if (result.credential) {
         $('iot-key').value = result.credential;
         $('iot-endpoint').value = result.connection?.endpoint || '';
@@ -550,6 +639,8 @@ export function createIotReading({ request, opened, getUser }) {
             FORBIDDEN: 'iotAdminOnly',
             RATE_LIMITED: 'iotManageLimited',
             IOT_CLOUD_NOT_CONFIGURED: 'iotCloudMissing',
+            IOT_MANAGEMENT_NOT_READY: 'iotManagementNotReady',
+            DEVICE_ARCHIVED: 'iotRemoved',
           }[error.message] || 'iotManageFailed',
         );
     } finally {
@@ -558,6 +649,7 @@ export function createIotReading({ request, opened, getUser }) {
         managing = false;
         for (const button of $('iot-management').querySelectorAll('button'))
           button.disabled = false;
+        editorControls();
         $('iot-add').disabled = !cloudEndpoint;
         void refresh();
       }
@@ -571,21 +663,29 @@ export function createIotReading({ request, opened, getUser }) {
   }
   $('open-iot').addEventListener('click', open);
   $('iot-add').addEventListener('click', () => {
-    clearCredential();
-    $('iot-device-form').hidden = false;
-    $('iot-source-id').focus();
+    edit();
   });
   $('iot-cancel').addEventListener('click', () => {
     $('iot-device-form').hidden = true;
   });
   $('iot-device-form').addEventListener('submit', (event) => {
     event.preventDefault();
+    const name = $('iot-display-name').value.trim();
+    if (!validIotName(name)) {
+      $('iot-manage-status').textContent = t('iotNameInvalid');
+      return;
+    }
+    if (editingId) {
+      void manage({ action: 'update', device_id: editingId, display_name: name });
+      return;
+    }
     void manage({
       action: 'create',
       plant: $('iot-plant').value,
       device_id: $('iot-source-id').value,
       meter_id: $('iot-meter-id').value,
       meter_profile: $('iot-profile').value,
+      ...(name ? { display_name: name } : {}),
     });
   });
   $('iot-key-dismiss').addEventListener('click', clearCredential);
@@ -598,12 +698,7 @@ export function createIotReading({ request, opened, getUser }) {
     if (!dialog.open || getUser()?.role !== 'admin') return;
     const text = iotNodeConfig(provisioning, $('iot-key').value, $('iot-endpoint').value);
     if (!text) return;
-    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
-    const link = node('a');
-    link.href = url;
-    link.download = 'iot_credentials.local.h';
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    download(text, 'iot_credentials.local.h', 'text/plain;charset=utf-8');
   });
   $('iot-key-copy').addEventListener('click', async () => {
     const epoch = scope;
@@ -621,6 +716,7 @@ export function createIotReading({ request, opened, getUser }) {
     void refresh();
   });
   $('iot-kind').addEventListener('change', refresh);
+  $('iot-show-archived').addEventListener('change', refresh);
   $('iot-auto').addEventListener('change', () => {
     clearTimeout(timer);
     clearTimeout(statusTimer);
@@ -650,7 +746,9 @@ export function createIotReading({ request, opened, getUser }) {
       hasPending = false;
       paintPresence(NaN);
       clearTimeout(presenceTimer);
+      const hadKey = !!$('iot-key').value;
       clearCredential();
+      if (hadKey) $('iot-manage-status').textContent = t('iotKeyCleared');
       if (managing) {
         scope++;
         writeController?.abort();

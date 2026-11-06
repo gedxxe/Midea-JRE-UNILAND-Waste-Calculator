@@ -64,7 +64,7 @@ test('fixed schemas match every meter in the supplied templates', () => {
   assert.deepEqual(
     jre.map((r) => r.factors.length),
     [
-      1, 2, 2, 6, 2, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1,
+      1, 2, 3, 6, 2, 4, 13, 1, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1,
       1,
     ],
   );
