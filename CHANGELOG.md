@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.51-alpha - 2026-11-07
+
+- Update an open IoT card form when database/grant readiness changes. Keep typed names and firmware IDs intact while enabling or disabling the appropriate fields.
+- Cover the transition with real keyboard entry on desktop/mobile. No migration, dependency or operator-reading change.
+
 ## v0.11.50-alpha - 2026-11-07
 
 - Add JRE Outdoor meter 3 x40 and deduct its consumption once from Window. Use 6 November 2026 at 17:00 WIB as the first baseline; periods starting earlier retain their previous calculation.
