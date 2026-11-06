@@ -4,6 +4,7 @@ import { test, expect } from './fixtures.js';
 import { exampleDraft } from '../../examples.js';
 import { createDraft, calculateDraft, generateFullIndonesiaReport } from '../../engine.js';
 import { legacyDraft, legacyText } from '../fixtures/legacy-layout.mjs';
+import { PLANT_SCHEMAS } from '../../schema.js';
 
 const cell = (page, row = 0, side = 'start', meter = 0) =>
   page.locator(`.meter-input[data-row="${row}"][data-side="${side}"][data-meter="${meter}"]`);
@@ -105,7 +106,13 @@ test('legacy meters move once and show individual usage without hover, with unch
   await expect(cell(page, 3, 'start', 5)).toHaveValue('30.03');
   await expect(cell(page, 15, 'start', 1)).toHaveValue('20.02');
   await expect(page.locator('.meter-input[data-row="25"]')).toHaveCount(2);
-  await expect(page.locator('.meter-input')).toHaveCount(124);
+  const expectedInputs = PLANT_SCHEMAS.JRE.rows.reduce(
+    (sum, row) => sum + row.factors.length * 2,
+    0,
+  );
+  await expect(page.locator('.meter-input')).toHaveCount(expectedInputs);
+  await expect(cell(page, 2, 'start', 2)).toHaveValue('');
+  await expect(cell(page, 2, 'end', 2)).toHaveValue('');
   await expect(page.locator('[data-meter-usage="3-5"]')).toContainText('120.00 kWh');
   await expect(page.locator('[data-meter-usage="15-1"]')).toContainText('2.00 kWh');
   await expect(page.locator('[data-meter-usage="19-0"]')).toContainText('150.00 kWh');
@@ -134,7 +141,8 @@ test('legacy meters move once and show individual usage without hover, with unch
   await page.reload();
   await expect(cell(page, 3, 'end', 5)).toHaveValue('33.03');
   await expect(cell(page, 15, 'end', 1)).toHaveValue('22.02');
-  await expect(page.locator('.meter-input')).toHaveCount(124);
+  await expect(page.locator('.meter-input')).toHaveCount(expectedInputs);
+  await expect(cell(page, 2, 'end', 2)).toHaveValue('');
 });
 
 test('legacy historian output stays unchanged while its editable copy moves meters', async ({
