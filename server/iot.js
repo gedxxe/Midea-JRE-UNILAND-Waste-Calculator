@@ -11,12 +11,20 @@ import {
   iotPresence,
   IOT_HEARTBEAT_INTERVAL_SECONDS,
   IOT_PRESENCE_TIMEOUT_SECONDS,
+  IOT_TELEMETRY_INTERVAL_SECONDS,
+  IOT_MANUAL_COOLDOWN_SECONDS,
+  IOT_MANUAL_TIMEOUT_SECONDS,
 } from '../iot-contract.js';
 
+// Staged rollout: old databases and production remain usable until migration 010
+// is explicitly applied and the optional cloud command channel is enabled.
+const manualEnabled = (env) => env.IOT_MANUAL_REFRESH_ENABLED === '1';
 const connection = (env) => ({
   schema_version: 1,
   endpoint: iotCloudEndpoint(env.IOT_PUBLIC_ORIGIN || env.APP_ORIGIN),
-  telemetry_interval_seconds: 30,
+  telemetry_interval_seconds: IOT_TELEMETRY_INTERVAL_SECONDS,
+  manual_cooldown_seconds: IOT_MANUAL_COOLDOWN_SECONDS,
+  manual_refresh_enabled: manualEnabled(env),
   heartbeat_interval_seconds: IOT_HEARTBEAT_INTERVAL_SECONDS,
   presence_timeout_seconds: IOT_PRESENCE_TIMEOUT_SECONDS,
 });
@@ -76,14 +84,27 @@ export function iotIngestHandler(database = getPool, env = process.env) {
             [id],
           )
         ).rows[0].last_received_at;
-      if (payload.event_type === 'heartbeat')
+      if (payload.event_type === 'heartbeat') {
+        const requested = manualEnabled(env)
+          ? (
+              await client.query(
+                `SELECT floor(extract(epoch FROM requested_at))::bigint AS refresh_after_utc
+                 FROM meter_app.iot_refresh_requests
+                 WHERE device_id=$1 AND requested_at>clock_timestamp()-interval '120 seconds'
+                 AND (completed_at IS NULL OR completed_at<requested_at)`,
+                [id],
+              )
+            ).rows[0]
+          : null;
         return {
           status: 200,
           event_type: 'heartbeat',
           device_id: id,
           server_time: await touch(),
           heartbeat_interval_seconds: IOT_HEARTBEAT_INTERVAL_SECONDS,
+          ...(requested ? { refresh_after_utc: Number(requested.refresh_after_utc) } : {}),
         };
+      }
       const hash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
       const previous = (
         await client.query(
@@ -100,6 +121,15 @@ export function iotIngestHandler(database = getPool, env = process.env) {
         'INSERT INTO meter_app.iot_readings(device_id,event_id,captured_at,event_type,payload,payload_hash) VALUES($1,$2,$3,$4,$5,$6)',
         [id, payload.event_id, payload.captured_at, payload.event_type, payload, hash],
       );
+      if (manualEnabled(env) && payload.event_type === 'telemetry')
+        await client.query(
+          `UPDATE meter_app.iot_refresh_requests SET completed_at=clock_timestamp()
+           WHERE device_id=$1 AND requested_at<$2::timestamptz
+           AND $2::timestamptz<=clock_timestamp()
+           AND requested_at>clock_timestamp()-interval '120 seconds'
+           AND (completed_at IS NULL OR completed_at<requested_at)`,
+          [id, payload.captured_at],
+        );
       await touch();
       return { status: 201, event_id: payload.event_id, duplicate: false };
     });
@@ -121,32 +151,55 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
     if (env.IOT_ENABLED !== '1')
       return send(res, 200, { enabled: false, devices: [], readings: [] });
     const params = new URL(req.url, appOrigin(env)).searchParams;
-    if ([...params.keys()].some((k) => !['device_id', 'event_type'].includes(k)))
+    if ([...params.keys()].some((k) => !['device_id', 'event_type', 'status_only'].includes(k)))
       fail(400, 'INVALID_INPUT');
+    if (params.has('status_only') && params.get('status_only') !== '1') fail(400, 'INVALID_INPUT');
+    const statusOnly = params.get('status_only') === '1';
     const id = params.get('device_id'),
       kind = params.get('event_type');
     if ((id && !iotIdentifier(id)) || (kind && !['telemetry', 'checkpoint'].includes(kind)))
       fail(400, 'INVALID_INPUT');
+    const refreshFields = manualEnabled(env)
+      ? `q.requested_at AS refresh_requested_at, q.completed_at AS refresh_completed_at,
+         (q.requested_at>clock_timestamp()-interval '120 seconds' AND
+          (q.completed_at IS NULL OR q.completed_at<q.requested_at)) AS refresh_pending`
+      : `NULL::timestamptz AS refresh_requested_at,
+         NULL::timestamptz AS refresh_completed_at,FALSE AS refresh_pending`;
+    const refreshJoin = manualEnabled(env)
+      ? 'LEFT JOIN meter_app.iot_refresh_requests q ON q.device_id=d.device_id'
+      : '';
+    const latestField = statusOnly
+      ? ''
+      : `CASE WHEN latest.event_id IS NULL THEN NULL ELSE jsonb_build_object('captured_at',latest.captured_at,'received_at',latest.received_at,'readings',latest.payload->'readings') END AS latest_reading,`;
+    const latestJoin = statusOnly
+      ? ''
+      : `LEFT JOIN LATERAL (
+           SELECT event_id,captured_at,received_at,payload FROM meter_app.iot_readings
+           WHERE device_id=d.device_id ORDER BY captured_at DESC,received_at DESC,event_id DESC LIMIT 1
+         ) latest ON true`;
     const devices = (
       await db.query(
         `SELECT d.device_id,d.plant,d.meter_id,d.meter_profile,d.active,d.last_received_at,
-         CASE WHEN latest.event_id IS NULL THEN NULL ELSE jsonb_build_object('captured_at',latest.captured_at,'received_at',latest.received_at,'readings',latest.payload->'readings') END AS latest_reading
-         FROM meter_app.iot_devices d LEFT JOIN LATERAL (
-           SELECT event_id,captured_at,received_at,payload FROM meter_app.iot_readings
-           WHERE device_id=d.device_id ORDER BY captured_at DESC,received_at DESC,event_id DESC LIMIT 1
-         ) latest ON true WHERE d.owner_id=$1 ORDER BY d.device_id LIMIT 100`,
+         ${latestField}
+         ${refreshFields}
+         FROM meter_app.iot_devices d
+         ${refreshJoin}
+         ${latestJoin} WHERE d.owner_id=$1 ORDER BY d.device_id LIMIT 100`,
         [user.id],
       )
     ).rows;
-    const readings = (
-      await db.query(
-        `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
-        [user.id, id, kind],
-      )
-    ).rows;
+    const readings = statusOnly
+      ? []
+      : (
+          await db.query(
+            `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
+            [user.id, id, kind],
+          )
+        ).rows;
     const serverTime = (await db.query('SELECT clock_timestamp() AS time')).rows[0].time;
     send(res, 200, {
       enabled: true,
+      status_only: statusOnly,
       devices: devices.map((device) => ({
         ...device,
         connection_status: iotPresence(device, new Date(serverTime).getTime()),
@@ -241,5 +294,73 @@ export function iotDevicesHandler(database = getPool, env = process.env) {
       connection: connection(env),
       ...(credential ? { credential } : {}),
     });
+  });
+}
+
+// A browser cannot directly GET a private ESP32 behind factory NAT. This authenticated
+// write queues one command; the next signed heartbeat delivers it, and a *new*
+// Modbus telemetry event (not a cached GET) completes it.
+export function iotRefreshHandler(database = getPool, env = process.env) {
+  return endpoint(async (req, res) => {
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      fail(405, 'METHOD_NOT_ALLOWED');
+    }
+    if (!env.AUTH_SECRET || env.AUTH_SECRET.length < 32) fail(503, 'NOT_CONFIGURED');
+    const origin = appOrigin(env);
+    checkOrigin(req, origin);
+    const db = database();
+    const user = await requireUser(db, req, origin);
+    if (env.IOT_ENABLED !== '1' || !manualEnabled(env)) fail(503, 'IOT_NOT_CONFIGURED');
+    await limit(db, 'iot:manual:' + user.id, 300, env);
+    const body = await readBody(req, 512);
+    if (Object.keys(body).length !== 1 || !iotIdentifier(body.device_id))
+      fail(400, 'INVALID_INPUT');
+    const result = await transaction(db, async (client) => {
+      // Serialize per-device changes even when multiple tabs/users request together.
+      const device = (
+        await client.query(
+          'SELECT active,last_received_at,clock_timestamp() AS server_time FROM meter_app.iot_devices WHERE device_id=$1 AND owner_id=$2 FOR UPDATE',
+          [body.device_id, user.id],
+        )
+      ).rows[0];
+      if (!device) fail(404, 'NOT_FOUND');
+      await lockUser(client, user);
+      if (iotPresence(device, new Date(device.server_time).getTime()) !== 'connected')
+        return { status: 409, error: 'DEVICE_OFFLINE' };
+      const queued = await client.query(
+        `INSERT INTO meter_app.iot_refresh_requests(device_id,requested_at)
+         VALUES($1,clock_timestamp())
+         ON CONFLICT(device_id) DO UPDATE SET requested_at=clock_timestamp(),completed_at=NULL
+         WHERE meter_app.iot_refresh_requests.requested_at <=
+               clock_timestamp()-interval '10 seconds'
+           AND (meter_app.iot_refresh_requests.completed_at >=
+                  meter_app.iot_refresh_requests.requested_at
+                OR meter_app.iot_refresh_requests.requested_at <=
+                  clock_timestamp()-interval '120 seconds')
+         RETURNING requested_at,clock_timestamp() AS server_time`,
+        [body.device_id],
+      );
+      if (queued.rowCount) return { status: 202, queued: true, ...queued.rows[0] };
+      const state = (
+        await client.query(
+          `SELECT requested_at,completed_at,
+            greatest(1,ceil(extract(epoch FROM (requested_at + interval '10 seconds' - clock_timestamp()))))::int AS retry_after_seconds
+           FROM meter_app.iot_refresh_requests WHERE device_id=$1`,
+          [body.device_id],
+        )
+      ).rows[0];
+      return state.completed_at === null ||
+        new Date(state.completed_at) < new Date(state.requested_at)
+        ? { status: 409, error: 'REFRESH_PENDING', requested_at: state.requested_at }
+        : {
+            status: 429,
+            error: 'REFRESH_COOLDOWN',
+            retry_after_seconds: state.retry_after_seconds,
+          };
+    });
+    if (result.status === 429) res.setHeader('Retry-After', String(result.retry_after_seconds));
+    const { status, ...value } = result;
+    send(res, status, value);
   });
 }

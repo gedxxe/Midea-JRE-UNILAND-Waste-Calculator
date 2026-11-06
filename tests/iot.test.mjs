@@ -3,8 +3,26 @@ import assert from 'node:assert/strict';
 import { validateIotEvent as validateEvent } from '../iot-contract.js';
 import { iotCloudEndpoint, iotNodeConfig, IOT_NODE_PROFILES } from '../iot-contract.js';
 import { validateIotHeartbeat, iotPresence } from '../iot-contract.js';
+import { formatIotReading } from '../iot-contract.js';
+test('monitoring rounds to at most three decimals without changing exact stored input', () => {
+  for (const [input, expected] of [
+    ['123.000001', '123'],
+    ['12.345499', '12.345'],
+    ['12.345500', '12.346'],
+    ['0.000499', '0'],
+    ['0.000500', '0.001'],
+    ['999999999999.999999', '1000000000000'],
+    ['0', '0'],
+    ['', '-'],
+    [null, '-'],
+  ])
+    assert.equal(formatIotReading(input), expected);
+  const raw = '123.456789';
+  assert.equal(formatIotReading(raw), '123.457');
+  assert.equal(raw, '123.456789');
+});
 const validateIotEvent = (value) => validateEvent(value, Date.parse('2026-11-05T02:00:00Z'));
-import { iotIngestHandler, iotDevicesHandler } from '../server/iot.js';
+import { iotIngestHandler, iotDevicesHandler, iotRefreshHandler } from '../server/iot.js';
 const event = () => ({
   schema_version: 1,
   event_id: 'sample_1',
@@ -236,4 +254,24 @@ test('reference node wire examples are accepted with exact six-decimal readings 
     readings: { active_energy_kwh: '0.000000' },
   };
   assert.equal(validateIotEvent(telemetry).readings.active_energy_kwh, '0.000000');
+});
+
+test('manual refresh endpoint fails closed for GET and is unavailable until enabled', async () => {
+  let used = false;
+  const result = async (req, env = {}) => {
+    const res = {
+      setHeader() {},
+      end(payload) {
+        this.payload = JSON.parse(payload);
+      },
+    };
+    await iotRefreshHandler(() => {
+      used = true;
+      throw Error('database must not be touched');
+    }, env)(req, res);
+    return res.statusCode;
+  };
+  assert.equal(await result({ method: 'GET', headers: {} }), 405);
+  assert.equal(await result({ method: 'POST', headers: {} }), 503);
+  assert.equal(used, false);
 });
