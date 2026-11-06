@@ -234,9 +234,11 @@ export function createIotReading({ request, opened, getUser }) {
           count.setAttribute('aria-hidden', 'true');
           read.append(glyph, label, count);
           read.addEventListener('click', () => void requestNow(d.device_id));
-          card.append(read);
-          refreshButtons.push({ d, read, label, count });
-          if (d.refresh_pending) hasPending = true;
+          if (data.connection?.manual_refresh_enabled) {
+            card.append(read);
+            refreshButtons.push({ d, read, label, count });
+            if (d.refresh_pending) hasPending = true;
+          }
           if (getUser()?.role === 'admin') {
             const actions = node('div', null, 'iot-actions');
             for (const action of ['rotate', 'revoke']) {
