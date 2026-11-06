@@ -16,11 +16,15 @@ import {
   IOT_MANUAL_TIMEOUT_SECONDS,
 } from '../iot-contract.js';
 
+// Staged rollout: old databases and production remain usable until migration 010
+// is explicitly applied and the optional cloud command channel is enabled.
+const manualEnabled = (env) => env.IOT_MANUAL_REFRESH_ENABLED === '1';
 const connection = (env) => ({
   schema_version: 1,
   endpoint: iotCloudEndpoint(env.IOT_PUBLIC_ORIGIN || env.APP_ORIGIN),
   telemetry_interval_seconds: IOT_TELEMETRY_INTERVAL_SECONDS,
   manual_cooldown_seconds: IOT_MANUAL_COOLDOWN_SECONDS,
+  manual_refresh_enabled: manualEnabled(env),
   heartbeat_interval_seconds: IOT_HEARTBEAT_INTERVAL_SECONDS,
   presence_timeout_seconds: IOT_PRESENCE_TIMEOUT_SECONDS,
 });
@@ -81,15 +85,17 @@ export function iotIngestHandler(database = getPool, env = process.env) {
           )
         ).rows[0].last_received_at;
       if (payload.event_type === 'heartbeat') {
-        const requested = (
-          await client.query(
-            `SELECT floor(extract(epoch FROM requested_at))::bigint AS refresh_after_utc
-             FROM meter_app.iot_refresh_requests
-             WHERE device_id=$1 AND requested_at>now()-interval '120 seconds'
-             AND (completed_at IS NULL OR completed_at<requested_at)`,
-            [id],
-          )
-        ).rows[0];
+        const requested = manualEnabled(env)
+          ? (
+              await client.query(
+                `SELECT floor(extract(epoch FROM requested_at))::bigint AS refresh_after_utc
+                 FROM meter_app.iot_refresh_requests
+                 WHERE device_id=$1 AND requested_at>now()-interval '120 seconds'
+                 AND (completed_at IS NULL OR completed_at<requested_at)`,
+                [id],
+              )
+            ).rows[0]
+          : null;
         return {
           status: 200,
           event_type: 'heartbeat',
@@ -115,7 +121,7 @@ export function iotIngestHandler(database = getPool, env = process.env) {
         'INSERT INTO meter_app.iot_readings(device_id,event_id,captured_at,event_type,payload,payload_hash) VALUES($1,$2,$3,$4,$5,$6)',
         [id, payload.event_id, payload.captured_at, payload.event_type, payload, hash],
       );
-      if (payload.event_type === 'telemetry')
+      if (manualEnabled(env) && payload.event_type === 'telemetry')
         await client.query(
           `UPDATE meter_app.iot_refresh_requests SET completed_at=now()
            WHERE device_id=$1 AND requested_at<=$2::timestamptz
@@ -150,15 +156,22 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
       kind = params.get('event_type');
     if ((id && !iotIdentifier(id)) || (kind && !['telemetry', 'checkpoint'].includes(kind)))
       fail(400, 'INVALID_INPUT');
+    const refreshFields = manualEnabled(env)
+      ? `q.requested_at AS refresh_requested_at, q.completed_at AS refresh_completed_at,
+         (q.requested_at>now()-interval '120 seconds' AND
+          (q.completed_at IS NULL OR q.completed_at<q.requested_at)) AS refresh_pending`
+      : `NULL::timestamptz AS refresh_requested_at,
+         NULL::timestamptz AS refresh_completed_at,FALSE AS refresh_pending`;
+    const refreshJoin = manualEnabled(env)
+      ? 'LEFT JOIN meter_app.iot_refresh_requests q ON q.device_id=d.device_id'
+      : '';
     const devices = (
       await db.query(
         `SELECT d.device_id,d.plant,d.meter_id,d.meter_profile,d.active,d.last_received_at,
          CASE WHEN latest.event_id IS NULL THEN NULL ELSE jsonb_build_object('captured_at',latest.captured_at,'received_at',latest.received_at,'readings',latest.payload->'readings') END AS latest_reading,
-         q.requested_at AS refresh_requested_at, q.completed_at AS refresh_completed_at,
-         (q.requested_at>now()-interval '120 seconds' AND
-          (q.completed_at IS NULL OR q.completed_at<q.requested_at)) AS refresh_pending
+         ${refreshFields}
          FROM meter_app.iot_devices d
-         LEFT JOIN meter_app.iot_refresh_requests q ON q.device_id=d.device_id
+         ${refreshJoin}
          LEFT JOIN LATERAL (
            SELECT event_id,captured_at,received_at,payload FROM meter_app.iot_readings
            WHERE device_id=d.device_id ORDER BY captured_at DESC,received_at DESC,event_id DESC LIMIT 1
@@ -286,7 +299,7 @@ export function iotRefreshHandler(database = getPool, env = process.env) {
     checkOrigin(req, origin);
     const db = database();
     const user = await requireUser(db, req, origin);
-    if (env.IOT_ENABLED !== '1') fail(503, 'IOT_NOT_CONFIGURED');
+    if (env.IOT_ENABLED !== '1' || !manualEnabled(env)) fail(503, 'IOT_NOT_CONFIGURED');
     await limit(db, 'iot:manual:' + user.id, 300, env);
     const body = await readBody(req, 512);
     if (Object.keys(body).length !== 1 || !iotIdentifier(body.device_id))
