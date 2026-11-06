@@ -394,6 +394,7 @@ export function createIotReading({ request, opened, getUser }) {
       $('iot-management').hidden = !data.enabled || getUser()?.role !== 'admin';
       cloudEndpoint = data.connection?.endpoint || null;
       cardReady = data.connection?.card_management_ready === true;
+      if (!$('iot-device-form').hidden) editorControls();
       $('iot-archived-control').hidden = getUser()?.role !== 'admin' || !cardReady;
       manualEnabled = !!data.connection?.manual_refresh_enabled;
       checked = true;

@@ -503,6 +503,61 @@ test('admin manages card names, repeatable connection JSON and reversible remova
   expect(state.errors).toEqual([]);
 });
 
+test('an open admin editor follows database readiness and keeps real typed name input and firmware IDs', async ({
+  page,
+}) => {
+  const state = await setup(page, { role: 'admin' });
+  let ready = false,
+    writes = 0;
+  await page.route('**/api/iot-readings?**', (route) =>
+    route.fulfill({
+      json: {
+        enabled: true,
+        devices: [],
+        readings: [],
+        connection: {
+          endpoint: 'https://iot.example.com/api/iot-ingest',
+          card_management_ready: ready,
+        },
+      },
+    }),
+  );
+  await page.route('**/api/iot-devices', (route) => {
+    writes++;
+    return route.fulfill({ status: 503, json: { error: 'IOT_MANAGEMENT_NOT_READY' } });
+  });
+  await page.goto('/iot-power-meter-reading');
+  await page.locator('#iot-add').click();
+  const name = page.locator('#iot-display-name');
+  await expect(name).toBeDisabled();
+  await page.locator('#iot-source-id').fill('keyboard-source');
+  await page.locator('#iot-meter-id').fill('meter-1');
+  await page.locator('#iot-profile').fill('schneider-pm5100');
+  ready = true;
+  await page.locator('#iot-kind').selectOption('telemetry');
+  await expect(name).toBeEnabled();
+  await name.click();
+  await name.pressSequentially('Warehouse Meter 7');
+  await expect(name).toHaveValue('Warehouse Meter 7');
+  await expect(name).toBeFocused();
+  await expect(page.locator('#iot-device-form')).toBeVisible();
+  await expect(page.locator('#iot-source-id')).toHaveValue('keyboard-source');
+  await expect(page.locator('#iot-plant')).toHaveValue('JRE');
+  ready = false;
+  await page.locator('#iot-kind').selectOption('checkpoint');
+  await expect(name).toBeDisabled();
+  await expect(name).toHaveValue('Warehouse Meter 7');
+  ready = true;
+  await page.locator('#iot-kind').selectOption('');
+  await expect(name).toBeEnabled();
+  await expect(name).toHaveValue('Warehouse Meter 7');
+  await expect(page.locator('#iot-meter-id')).toHaveValue('meter-1');
+  await expect(page.locator('#iot-profile')).toHaveValue('schneider-pm5100');
+  await page.locator('#iot-cancel').click();
+  expect(writes).toBe(0);
+  expect(state.errors).toEqual([]);
+});
+
 test('closing diagnostics while a key request is pending discards late private responses', async ({
   page,
 }) => {
