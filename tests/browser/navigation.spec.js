@@ -63,7 +63,7 @@ test('manual meter read has compact pending feedback and cannot be spammed from 
   await read.click();
   await expect(read).toHaveAttribute('data-state', 'pending');
   await expect(read).toBeDisabled();
-  await read.click({ force: true });
+  await read.evaluate((button) => button.click());
   expect(requests).toBe(1);
   await page.locator('[data-close-dialog="iot-dialog"]').click();
   await expect(page.locator('#iot-data')).toHaveText('');
