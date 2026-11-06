@@ -1,0 +1,26 @@
+name: Temporary feature formatting
+on:
+  push:
+    branches:
+      - feat/iot-10min-on-demand-20261106
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feat/iot-10min-on-demand-20261106
+      - run: npm ci
+      - run: npx prettier --write docs/iot.md iot.css server/iot.js tests/browser/navigation.spec.js tests/integration/accounts.test.mjs tests/iot.test.mjs ui/iot.js
+      - name: Commit formatting only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/iot.md iot.css server/iot.js tests/browser/navigation.spec.js tests/integration/accounts.test.mjs tests/iot.test.mjs ui/iot.js
+          if ! git diff --cached --quiet; then
+            git commit -m "style(iot): apply project Prettier formatting"
+            git push origin HEAD:feat/iot-10min-on-demand-20261106
+          fi
