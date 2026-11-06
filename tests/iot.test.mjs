@@ -4,7 +4,7 @@ import { validateIotEvent as validateEvent } from '../iot-contract.js';
 import { iotCloudEndpoint, iotNodeConfig, IOT_NODE_PROFILES } from '../iot-contract.js';
 import { validateIotHeartbeat, iotPresence } from '../iot-contract.js';
 const validateIotEvent = (value) => validateEvent(value, Date.parse('2026-11-05T02:00:00Z'));
-import { iotIngestHandler, iotDevicesHandler } from '../server/iot.js';
+import { iotIngestHandler, iotDevicesHandler, iotRefreshHandler } from '../server/iot.js';
 const event = () => ({
   schema_version: 1,
   event_id: 'sample_1',
@@ -236,4 +236,22 @@ test('reference node wire examples are accepted with exact six-decimal readings 
     readings: { active_energy_kwh: '0.000000' },
   };
   assert.equal(validateIotEvent(telemetry).readings.active_energy_kwh, '0.000000');
+});
+
+test('manual refresh endpoint fails closed for GET and is unavailable until enabled', async () => {
+  let used = false;
+  const result = async (req, env = {}) => {
+    const res = {
+      setHeader() {},
+      end(payload) { this.payload = JSON.parse(payload); },
+    };
+    await iotRefreshHandler(() => {
+      used = true;
+      throw Error('database must not be touched');
+    }, env)(req, res);
+    return res.statusCode;
+  };
+  assert.equal(await result({ method: 'GET', headers: {} }), 405);
+  assert.equal(await result({ method: 'POST', headers: {} }), 503);
+  assert.equal(used, false);
 });
