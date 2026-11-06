@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.50-alpha - 2026-11-06
+
+- Add JRE Outdoor meter 3 x40 and deduct its consumption once from Window. Use 6 November 2026 at 17:00 WIB as the first baseline; periods starting earlier retain their previous calculation.
+- Preserve old reading strings when upgrading editable copies to layout 7. Accept previous two-meter Outdoor imports and retain same-time observations. An unavailable new meter contributes zero with a notice, without fabricating a raw reading; invalid or decreasing values still require review.
+- Protect archived period autosaves against older-layout writers. Keep historical report output unchanged; no database migration or automatic data repair.
+- Suggest the firmware's `schneider-pm5100` profile while retaining custom profile registration and private configuration export. No firmware implementation or dependency is added.
+
 ## v0.11.49-alpha - 2026-11-06
 
 - Add on-demand meter readings with a server-enforced ten-second cooldown, one pending request per source and a two-minute request lifetime. Deliver the request through authenticated heartbeat acknowledgments; cached or future captures do not confirm completion.

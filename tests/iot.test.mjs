@@ -181,7 +181,7 @@ test('device management rejects unsupported methods before connecting', async ()
   assert.equal(res.statusCode, 405);
 });
 
-test('node provisioning emits the reviewed firmware macros only for stable HTTPS and a supported profile', () => {
+test('node provisioning emits the reviewed firmware macros for stable HTTPS and valid configurable profiles', () => {
   const origin = 'https://iot.example.com';
   const device = { device_id: 'dev_source', meter_id: 'meter_1', meter_profile: 'fort' };
   const key = 'k'.repeat(43);
@@ -220,8 +220,13 @@ test('node provisioning emits the reviewed firmware macros only for stable HTTPS
     iotNodeConfig({ ...device, device_id: 'id"\n#define OTHER 1' }, key, iotCloudEndpoint(origin)),
     null,
   );
-  assert.equal(
+  assert.match(
     iotNodeConfig({ ...device, meter_profile: 'custom-profile' }, key, iotCloudEndpoint(origin)),
+    /IOT_DEV_METER_PROFILE "custom-profile"/,
+  );
+  assert.ok(IOT_NODE_PROFILES.includes('schneider-pm5100'));
+  assert.equal(
+    iotNodeConfig({ ...device, meter_profile: 'bad\"profile' }, key, iotCloudEndpoint(origin)),
     null,
   );
   assert.equal(iotNodeConfig(device, 'wrong', iotCloudEndpoint(origin)), null);

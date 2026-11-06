@@ -53,7 +53,14 @@ export function validateIotHeartbeat(value) {
   return Object.fromEntries(keys.map((key) => [key, value[key]]));
 }
 // Profile identifiers from the reference node's MeterProfiles.h; custom IDs remain valid.
-export const IOT_NODE_PROFILES = ['fort', 'habuer', 'acrel-adl400', 'acrel-acr', 'acrel-apm'];
+export const IOT_NODE_PROFILES = [
+  'fort',
+  'habuer',
+  'acrel-adl400',
+  'acrel-acr',
+  'acrel-apm',
+  'schneider-pm5100',
+];
 export function iotCloudEndpoint(origin) {
   try {
     const url = new URL(origin);
@@ -79,13 +86,12 @@ export function iotNodeConfig(device, credential, endpoint) {
   if (
     iotCloudEndpoint(origin) !== endpoint ||
     !/^[A-Za-z0-9_-]{43}$/.test(credential) ||
-    !IOT_NODE_PROFILES.includes(device?.meter_profile) ||
     !['device_id', 'meter_id', 'meter_profile'].every((key) => iotIdentifier(device?.[key]))
   )
     return null;
   const define = (key, value) => '#define ' + key + ' ' + JSON.stringify(value);
   return [
-    '// Private development provisioning. Do not commit this file.',
+    '// Private device provisioning. Do not commit this file.',
     '#pragma once',
     '#define IOT_DEV_ENABLED 1',
     define('IOT_DEV_ENDPOINT', endpoint),

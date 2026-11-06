@@ -12,6 +12,7 @@ import {
   layout3JreDraft,
   layout4JreDraft,
   layout5JreDraft,
+  layout6JreDraft,
 } from '../fixtures/legacy-layout.mjs';
 import { reportPeriods } from '../fixtures/report-periods.mjs';
 import { selectReport } from '../../report-options.js';
@@ -1911,7 +1912,13 @@ test('stale JRE clients cannot remove new meter fields from any electricity peri
   const saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } });
   assert.equal(saved.status, 200);
   for (const collection of ['drafts', 'workingHours', 'nightShifts'])
-    for (const legacy of [layout2Draft, layout3JreDraft, layout4JreDraft, layout5JreDraft]) {
+    for (const legacy of [
+      layout2Draft,
+      layout3JreDraft,
+      layout4JreDraft,
+      layout5JreDraft,
+      layout6JreDraft,
+    ]) {
       const old = structuredClone(workspace);
       old[collection].JRE = legacy(old[collection].JRE);
       const rejected = await call('/api/drafts', {
@@ -1943,7 +1950,7 @@ test('JRE report API stores raw Piping meter 3 while recalculating net Window an
     );
     assert.equal(loaded.status, 200);
     const saved = loaded.value.snapshot;
-    assert.equal(saved.draft.meterLayout, 6);
+    assert.equal(saved.draft.meterLayout, 7);
     assert.deepEqual(saved.draft.rows[15], draft.rows[15]);
     assert.match(
       saved.output.reportText,
@@ -2162,6 +2169,67 @@ function partialPeriod(date = '2026-11-10') {
   draft.rows[0].end[0] = '125';
   return draft;
 }
+
+test('Outdoor meter 3 remains intact when old clients revisit archived periods in every mode', async () => {
+  const actor = await autosaveActor();
+  let version = 0;
+  for (const draft of reportPeriods('JRE', '2026-11-07')) {
+    draft.rows[2].start[2] = '1000.000001';
+    draft.rows[2].end[2] = '1000.125002';
+    const workspace = autosaveWorkspace(draft);
+    let saved = await call('/api/drafts', { actor, body: { workspace, baseVersion: version } });
+    assert.equal(saved.status, 200);
+    const key = ['JRE', draft.periodKind || 'daily', draft.startDate, draft.endDate].join(':');
+    const url = '/api/drafts?period=' + encodeURIComponent(key);
+    const before = (await call(url, { actor })).value;
+    assert.deepEqual(before.draft.rows[2], draft.rows[2]);
+    const elsewhere = structuredClone(draft);
+    elsewhere.startDate = '2026-11-20';
+    elsewhere.endDate = draft.periodKind === 'workingHours' ? '2026-11-20' : '2026-11-21';
+    saved = await call('/api/drafts', {
+      actor,
+      body: { workspace: autosaveWorkspace(elsewhere), baseVersion: saved.value.version },
+    });
+    assert.equal(saved.status, 200);
+    // The active copy is no longer this period, so only its durable archive can protect it.
+    const oldWorkspace = autosaveWorkspace(layout6JreDraft(draft));
+    const rejected = await call('/api/drafts', {
+      actor,
+      body: {
+        workspace: oldWorkspace,
+        baseVersion: saved.value.version,
+        periodVersions: { [key]: before.version },
+      },
+    });
+    assert.equal(rejected.status, 409);
+    assert.equal(rejected.value.error, 'DRAFT_FORMAT_CHANGED');
+    assert.deepEqual((await call(url, { actor })).value, before);
+    // A current client with the loaded version may still save an incomplete deliberate edit.
+    draft.rows[2].end[2] = '';
+    const updated = await call('/api/drafts', {
+      actor,
+      body: {
+        workspace: autosaveWorkspace(draft),
+        baseVersion: saved.value.version,
+        periodVersions: { [key]: before.version },
+      },
+    });
+    assert.equal(updated.status, 200);
+    const after = (await call(url, { actor })).value;
+    assert.equal(after.draft.rows[2].start[2], '1000.000001');
+    assert.equal(after.draft.rows[2].end[2], '');
+    assert.equal(
+      (
+        await db.query(
+          'SELECT count(*)::int AS n FROM meter_app.report_revisions WHERE report_id IN (SELECT id FROM meter_app.reports WHERE owner_id=$1)',
+          [actor.id],
+        )
+      ).rows[0].n,
+      0,
+    );
+    version = updated.value.version;
+  }
+});
 
 test('JRE R32 kg persists with units and rejects stale clients and rollback writers without changing raw data or checkpoints', async () => {
   const actor = await autosaveActor(),

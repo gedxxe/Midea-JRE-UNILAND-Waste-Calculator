@@ -43,6 +43,11 @@ export const readingMessages = {
     '{name}，电表 {meter}：填写数字，空白填 ____，无法获取时填 -。',
     '{name}, meter {meter}: isi angka, ____ untuk kosong, atau - jika tidak tersedia.',
   ],
+  optionalMeter: [
+    '{name}, meter {meter}: no complete reading pair. Contribution is 0 kWh; this is not a measured zero.',
+    '{name}，电表 {meter}：读数不完整，计入0 kWh；并非实测用量为零。',
+    '{name}, meter {meter}: pasangan reading belum lengkap. Kontribusi 0 kWh; bukan nol hasil pengukuran.',
+  ],
   duplicate: [
     '{name}: repeated equipment line. Keep one line per equipment.',
     '{name}：设备行重复，每项设备只保留一行。',
@@ -131,6 +136,7 @@ export function readingIssueMessage(issue, plant) {
     IMPORT_SYNTAX: 'syntax',
     IMPORT_EMPTY: 'empty',
     EMPTY_READING: 'pair',
+    OPTIONAL_METER_UNAVAILABLE: 'optionalMeter',
   }[issue.code];
   if (key) return readingText(key, values);
   if (issue.code === 'RATIO_MISMATCH' && row && Number.isFinite(issue.inputRatio))

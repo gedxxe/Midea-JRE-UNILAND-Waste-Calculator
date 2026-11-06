@@ -567,6 +567,11 @@ label {
   font-size: 11px;
   margin-bottom: 3px;
 }
+.ratio .meter-start-note {
+  margin-top: 5px;
+  margin-bottom: 0;
+  line-height: 1.45;
+}
 .meter-input {
   width: 100%;
   min-width: 0;

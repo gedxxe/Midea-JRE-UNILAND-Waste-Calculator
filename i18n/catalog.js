@@ -106,9 +106,9 @@ export const catalog = {
   iotCopyKey: ['Copy key', '复制密钥', 'Salin key'],
   iotDownloadConfig: ['Download node config', '下载节点配置', 'Unduh konfigurasi node'],
   iotConfigHelp: [
-    'Place the private header in firmware/include and rebuild. Select the actual meter profile and internet-connected Wi-Fi. Heartbeats require compatible firmware; custom profiles cannot use this reference-node export.',
-    '将私有头文件放入firmware/include后重新编译。选择实际电表配置和联网Wi-Fi。心跳需要兼容固件；自定义配置不支持此参考节点导出。',
-    'Letakkan header privat di firmware/include lalu build ulang. Pilih profil meter sebenarnya dan Wi-Fi berinternet. Heartbeat memerlukan firmware yang mendukung; profil kustom tidak memakai ekspor node referensi ini.',
+    'Place the private header in firmware/include and rebuild. Use a profile ID supported by your firmware, including custom IDs, and internet-connected Wi-Fi. Heartbeats require compatible firmware.',
+    '将私有头文件放入firmware/include后重新编译。配置ID须与固件一致，也可使用自定义ID。连接联网Wi-Fi；心跳需要兼容固件。',
+    'Letakkan header privat di firmware/include lalu build ulang. ID profil, termasuk profil kustom, harus didukung firmware. Gunakan Wi-Fi berinternet dan firmware yang mendukung heartbeat.',
   ],
   iotCloudReady: [
     'HTTPS provisioning is configured. Register a device, install its private config, then wait for its first accepted upload.',
@@ -233,6 +233,7 @@ export const catalog = {
     '填写原始读数。扣除 {meters} 的用量。',
     'Isi reading asli. Pemakaian dikurangi {meters}.',
   ],
+  meterSlotFromHint: ['From {date} WIB', '起始：{date} WIB', 'Mulai {date} WIB'],
   meterReportFromHint: [
     'Usage is 0 for report dates before {date}.',
     '{date}之前的报表用量为0。',

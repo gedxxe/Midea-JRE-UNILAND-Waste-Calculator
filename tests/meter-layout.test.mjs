@@ -1,13 +1,145 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDraft, calculateDraft } from '../engine.js';
+import {
+  createDraft,
+  createWorkingHoursDraft,
+  createNightShiftDraft,
+  calculateDraft,
+} from '../engine.js';
 import { migrateMeterLayout } from '../meter-layout.js';
 import { restoreDrafts } from '../storage.js';
 import { parseReading } from '../importer.js';
 import { exportRawReading } from '../raw-export.js';
 import { reportSnapshot } from '../server/report-data.js';
 import { graphValues } from '../graph-data.js';
-import { legacyDraft, legacyText, fillNewJreMeters } from './fixtures/legacy-layout.mjs';
+import {
+  legacyDraft,
+  legacyText,
+  fillNewJreMeters,
+  layout6JreDraft,
+} from './fixtures/legacy-layout.mjs';
+import { reportPeriods } from './fixtures/report-periods.mjs';
+import { exportAllRawReadings, parseRawReading } from '../raw-meter-export.js';
+import { shareElectricityEdits } from '../observations.js';
+import { changeDraftPeriod } from '../storage.js';
+
+test('Outdoor meter 3 starts at the confirmed evening baseline and moves usage from Window exactly once', () => {
+  for (const date of ['2026-11-05', '2026-11-06', '2026-11-07']) {
+    for (const draft of reportPeriods('JRE', date)) {
+      draft.rows[2].start[2] = draft.rows[2].end[2] = '10';
+      const before = calculateDraft(draft);
+      draft.rows[2].end[2] = '10.125001';
+      const raw = structuredClone(draft),
+        result = calculateDraft(draft);
+      const active =
+        date > '2026-11-06' || (date === '2026-11-06' && draft.periodKind === 'nightShift');
+      const delta = active ? 5.00004 : 0;
+      assert.equal(
+        result.calculatedRows[2].totalEnergy,
+        before.calculatedRows[2].totalEnergy + delta,
+      );
+      assert.equal(
+        result.calculatedRows[3].totalEnergy,
+        before.calculatedRows[3].totalEnergy - delta,
+      );
+      assert.equal(result.subAreasSumKWh, before.subAreasSumKWh);
+      assert.equal(result.gapKWh, before.gapKWh);
+      assert.equal(result.totalDirectEnergy, before.totalDirectEnergy);
+      assert.deepEqual(draft, raw);
+    }
+  }
+  const early = createNightShiftDraft('JRE', '2026-11-06');
+  early.startTime = '16:59';
+  early.rows[2].start[2] = '1';
+  early.rows[2].end[2] = '2';
+  assert.equal(calculateDraft(early).calculatedRows[2].meters[2].energy, 0);
+  early.startTime = '17:00';
+  assert.equal(calculateDraft(early).calculatedRows[2].meters[2].energy, 40);
+});
+
+test('new Outdoor slot contributes zero only for unavailable pairs, with truthful provenance and invalid input protection', () => {
+  for (const pair of [
+    ['', ''],
+    ['', '12.34'],
+    ['-', '12.34'],
+    ['12.34', ''],
+  ]) {
+    const draft = reportPeriods('JRE', '2026-11-07')[0];
+    draft.rows[2].start[2] = pair[0];
+    draft.rows[2].end[2] = pair[1];
+    const raw = structuredClone(draft),
+      result = calculateDraft(draft);
+    assert.equal(result.success, true);
+    assert.equal(result.calculatedRows[2].meters[2].energy, 0);
+    assert.ok(
+      result.issues.some((i) => i.code === 'OPTIONAL_METER_UNAVAILABLE' && i.level === 'NOTICE'),
+    );
+    assert.match(result.mainText, /Outdoor, meter 3: no complete reading pair/);
+    assert.deepEqual(draft, raw);
+  }
+  for (const pair of [
+    ['bad', ''],
+    ['1', 'bad'],
+    ['3', '2'],
+  ]) {
+    const draft = reportPeriods('JRE', '2026-11-07')[0];
+    draft.rows[2].start[2] = pair[0];
+    draft.rows[2].end[2] = pair[1];
+    const result = calculateDraft(draft);
+    assert.equal(result.calculatedRows[2].totalEnergy, null);
+    assert.equal(result.calculatedRows[3].totalEnergy, null);
+    assert.ok(!result.issues.some((i) => i.code === 'OPTIONAL_METER_UNAVAILABLE'));
+  }
+});
+
+test('layout6 restores and raw old/new imports preserve every old value, including partial strings in all modes', () => {
+  for (const current of reportPeriods('JRE', '2026-11-06')) {
+    current.rows[2].start[2] = current.rows[2].end[2] = '';
+    const old = layout6JreDraft(current),
+      original = structuredClone(old);
+    const next = migrateMeterLayout(old);
+    assert.deepEqual(next, current);
+    assert.deepEqual(old, original);
+    assert.deepEqual(migrateMeterLayout(next), next);
+    for (const side of ['start', 'end']) {
+      const parsed = parseReading(legacyText(old, side), 'JRE');
+      assert.equal(parsed.success, true);
+      assert.deepEqual(
+        parsed.values,
+        current.rows.map((r) => r[side]),
+      );
+      assert.deepEqual(parsed.suppliedMeters[2], [true, true, false]);
+      const raw = exportAllRawReadings(current, side);
+      assert.deepEqual(raw.issues, []);
+      assert.match(raw.text, /Outdoor: .*\+ ____ \(Ratio 40\)/);
+      const imported = parseRawReading(raw.text, current, side);
+      assert.equal(imported.success, true);
+      assert.deepEqual(
+        imported.values,
+        current.rows.map((r) => r[side]),
+      );
+    }
+    old.rows[2].start[0] = '123,';
+    assert.equal(migrateMeterLayout(old).rows[2].start[0], '123,');
+  }
+});
+
+test('the new evening baseline shares by timestamp and date navigation preserves raw values without inventing starts', () => {
+  let periods = [
+    createWorkingHoursDraft('JRE', '2026-11-06'),
+    createNightShiftDraft('JRE', '2026-11-06'),
+  ];
+  periods[0].rows[2].end[2] = '0012,345600';
+  periods = shareElectricityEdits(periods, 'workingHours', [{ ri: 2, mi: 2, side: 'end' }]);
+  assert.equal(periods[1].rows[2].start[2], '0012,345600');
+  assert.equal(calculateDraft(periods[0]).calculatedRows[2].meters[2].energy, 0);
+  const day = createDraft('JRE', '2026-11-06', '2026-11-07');
+  day.rows[2].end[2] = '17.000001';
+  const next = changeDraftPeriod(day, '2026-11-07', '2026-11-08');
+  assert.equal(next.rows[2].start[2], '17.000001');
+  assert.equal(next.rows[2].end[2], '');
+  assert.equal(day.rows[2].end[2], '17.000001');
+});
 
 test('legacy draft remapping preserves all 57 raw meters exactly once and is idempotent', () => {
   const legacy = legacyDraft(),
@@ -21,7 +153,7 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
       },
     }),
   ).JRE;
-  assert.equal(current.meterLayout, 6);
+  assert.equal(current.meterLayout, 7);
   for (const side of ['start', 'end']) {
     assert.deepEqual(current.rows[3][side], [...legacy.rows[3][side], legacy.rows[25][side][2]]);
     assert.deepEqual(current.rows[15][side], [
@@ -38,7 +170,7 @@ test('legacy draft remapping preserves all 57 raw meters exactly once and is ide
         .sort(),
       legacy.rows.flatMap((r) => r[side]).sort(),
     );
-    assert.equal(current.rows.flatMap((r) => r[side]).length, 62);
+    assert.equal(current.rows.flatMap((r) => r[side]).length, 63);
   }
   assert.deepEqual(legacy, before);
   assert.deepEqual(migrateMeterLayout(current), current);

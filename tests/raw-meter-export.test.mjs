@@ -203,6 +203,27 @@ test('full raw snapshots round trip both factories, sides and modes without alte
       }
 });
 
+test('previous full snapshots preserve a newly added Outdoor observation at the same boundary', () => {
+  for (const mode of ['daily', 'workingHours', 'nightShift']) {
+    const draft = filled('JRE', mode);
+    for (const side of ['start', 'end']) {
+      const raw = exportAllRawReadings(draft, side).text;
+      const old = raw.replace(/^(3\. Outdoor: .*?) \+ [^+\n]+ \(Ratio 40\)$/m, '$1');
+      assert.notEqual(old, raw);
+      for (const text of [old, old.replace(/^(3\. Outdoor:.*)$/m, '$1 + ____ (Ratio 40)')]) {
+        const parsed = parseRawReading(text, draft, side);
+        assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+        assert.equal(parsed.suppliedMeters[2][2], false);
+        assert.equal(parsed.raw.rows[2][side][2], draft.rows[2][side][2]);
+      }
+      assert.equal(
+        parseRawReading(old.replace('Ratio 40', 'Ratio 99'), draft, side).success,
+        false,
+      );
+    }
+  }
+});
+
 test('legacy manual Water and absent tank observations survive full raw import', () => {
   for (const plant of ['JRE', 'UNILAND']) {
     const draft = filled(plant);

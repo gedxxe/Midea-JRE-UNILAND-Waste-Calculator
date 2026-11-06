@@ -11,7 +11,11 @@ import {
   JRE_GAS_INPUT_VERSION,
 } from './gas.js';
 import { PLANT_SCHEMAS, UTILITIES } from './schema.js';
-import { beforeMeterReporting, emptyMeterRow } from './meter-activation.js';
+import {
+  beforeMeterReporting,
+  beforeMeterSlotReporting,
+  emptyMeterRow,
+} from './meter-activation.js';
 import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
 import { calculateAdditionalReadings } from './additional-readings.js';
@@ -146,7 +150,7 @@ export function calculateDraft(draft) {
       const label = `${row.name}, meter ${mi + 1}`;
       const meter = { index: mi + 1, start, end, factor, energy: null };
       meters.push(meter);
-      if (beforeReporting) {
+      if (beforeReporting || beforeMeterSlotReporting(row, draft, mi)) {
         if ([start, end].some((value) => value && value !== '-' && scaledReading(value) === null)) {
           missing = true;
           issue(
@@ -161,6 +165,24 @@ export function calculateDraft(draft) {
           meter.energy = 0;
           scaledMeters.set(row.name + ':' + mi, 0n);
         }
+        return;
+      }
+      if (
+        row.zeroWhenUnavailable?.includes(mi) &&
+        [start, end].some((v) => !v || v === '-') &&
+        [start, end].every((v) => !v || v === '-' || scaledReading(v) !== null)
+      ) {
+        meter.energy = 0;
+        meter.unavailable = true;
+        scaledMeters.set(row.name + ':' + mi, 0n);
+        issue(
+          issues,
+          'OPTIONAL_METER_UNAVAILABLE',
+          label + ': no complete reading pair. Contribution is 0 kWh; this is not a measured zero.',
+          ri,
+          mi,
+          'NOTICE',
+        );
         return;
       }
       if (!start || !end) {
@@ -499,6 +521,8 @@ export function calculateDraft(draft) {
     );
   }
   lines.push(...utilities);
+  const excludedMeters = issues.filter((item) => item.code === 'OPTIONAL_METER_UNAVAILABLE');
+  if (excludedMeters.length) lines.push('', ...excludedMeters.map((item) => item.message));
   const additionalReadings =
     draft.plantKey === 'JRE' ? calculateAdditionalReadings(draft.additionalReadings) : [];
   const additionalNotes = [];

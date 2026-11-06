@@ -9,7 +9,7 @@ import {
   MAX_REFILLS,
   JRE_GAS_INPUT_VERSION,
 } from './gas.js';
-import { UTILITIES } from './schema.js';
+import { UTILITIES, PLANT_SCHEMAS } from './schema.js';
 import { decimalText, validDate } from './numbers.js';
 import { observationTime, validTime } from './reading-period.js';
 
@@ -170,10 +170,28 @@ export function parseRawReading(text, draft, side = 'end') {
     }
     // The source side label may differ when reusing an observation at a shared boundary.
     const regenerated = exportAllRawReadings(next, side);
-    const canonical = input.replace(
+    let canonical = input.replace(
       'Selected observation: ' + selected[1] + ',',
       'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ',',
     );
+    // A previous export may omit a newly added optional tail. Retain the existing
+    // same-time observation, but still compare all other bytes and raw sections.
+    PLANT_SCHEMAS[next.plantKey].rows.forEach((row, ri) => {
+      const mi = row.factors.length - 1;
+      if (!row.zeroWhenUnavailable?.includes(mi) || parsed.suppliedMeters[ri][mi]) return;
+      const prefix = `${ri + 1}. ${row.name}: `;
+      const expected = regenerated.text.split('\n').find((line) => line.startsWith(prefix));
+      if (!expected) return;
+      const previous = expected.split(' + ').slice(0, mi).join(' + ');
+      canonical = canonical
+        .split('\n')
+        .map((line) =>
+          line === previous || line === previous + ` + ____ (Ratio ${row.factors[mi]})`
+            ? expected
+            : line,
+        )
+        .join('\n');
+    });
     if (parts.length || regenerated.text !== canonical)
       throw Error('Raw sections do not match the current format. No data was imported.');
     parsed.raw = next;

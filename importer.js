@@ -182,7 +182,9 @@ export function parseReading(text, plantKey) {
       : expr.trim() === '-'
         ? row.factors.map(() => '-')
         : expr.split('+').map((s) => s.trim());
-    if (terms.length !== row.factors.length) {
+    const optionalTail =
+      row.zeroWhenUnavailable?.includes(terms.length) && terms.length === row.factors.length - 1;
+    if (terms.length !== row.factors.length && !optionalTail) {
       issues.push({
         level: 'ERROR',
         code: 'METER_COUNT',
@@ -247,6 +249,10 @@ export function parseReading(text, plantKey) {
     });
   const success = !issues.some((i) => i.level === 'ERROR');
   if (success) {
+    if (plantKey === 'JRE' && values[2].length < schema.rows[2].factors.length) {
+      values[2].push('');
+      suppliedMeters[2].push(false);
+    }
     schema.rows.forEach((row, ri) => {
       if (!seen.has(ri) && beforeMeterReporting(row, dates[0]))
         values[ri] = row.factors.map(() => '0');

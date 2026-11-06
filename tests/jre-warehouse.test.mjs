@@ -114,9 +114,16 @@ test('layout5 upgrades preserve old raw fields and add zeros only before the fir
       const old = layout5JreDraft(d),
         raw = structuredClone(old),
         next = migrateMeterLayout(old);
-      assert.equal(next.meterLayout, 6);
+      assert.equal(next.meterLayout, 7);
       assert.equal(next.rows.length, 32);
-      assert.deepEqual(next.rows.slice(0, 31), old.rows);
+      assert.deepEqual(
+        next.rows
+          .slice(0, 31)
+          .map((row, i) =>
+            i === 2 ? { ...row, start: row.start.slice(0, 2), end: row.end.slice(0, 2) } : row,
+          ),
+        old.rows,
+      );
       assert.deepEqual(old, raw);
       assert.deepEqual(next.rows[31].start, [date < '2026-10-25' ? '0' : '']);
       assert.deepEqual(next.rows[31].end, [d.endDate < '2026-10-25' ? '0' : '']);
@@ -175,7 +182,7 @@ test('old 31-row imports retain absent Lighting provenance and templates always 
   }
   const template = formatBlankReadingTemplate('JRE');
   assert.match(template, /32\. Warehouse Lighting: ____ \(Ratio 40\)$/);
-  assert.equal([...template.matchAll(/____/g)].length, 62);
+  assert.equal([...template.matchAll(/____/g)].length, 63);
 });
 test('saved layout5 graph output remains unchanged with no invented Lighting history', () => {
   const d = entered()[0];

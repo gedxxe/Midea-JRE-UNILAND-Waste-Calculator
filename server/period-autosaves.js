@@ -49,6 +49,11 @@ export async function planPeriodAutosaves(client, owner, drafts, guard = {}) {
   for (const row of rows) {
     const draft = candidates.get(identity(row));
     if (
+      guard.meterLayouts &&
+      (row.snapshot?.draft?.meterLayout || 0) > (guard.meterLayouts[identity(row)] || 0)
+    )
+      fail(409, 'DRAFT_FORMAT_CHANGED');
+    if (
       guard.gasVersions &&
       gasFormatDowngrade(row.snapshot?.draft?.gas, { version: guard.gasVersions[identity(row)] })
     )
