@@ -466,7 +466,7 @@ export function createIotReading({ request, opened, getUser }) {
           read.append(glyph, label, count);
           fuse(read);
           read.addEventListener('click', () => void requestNow(d.device_id));
-          if (data.connection?.manual_refresh_enabled) {
+          if (getUser()?.role === 'admin' && data.connection?.manual_refresh_enabled) {
             card.append(read);
             controls.push({ d, read, label, count });
             if (d.refresh_pending) hasPending = true;

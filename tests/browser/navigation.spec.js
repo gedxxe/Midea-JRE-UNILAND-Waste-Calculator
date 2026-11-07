@@ -31,7 +31,7 @@ test('Power Meter Reading supports a protected direct URL and a clear disabled s
 test('manual meter read has compact pending feedback and cannot be spammed from UI', async ({
   page,
 }) => {
-  await setup(page);
+  await setup(page, { role: 'admin' });
   let requests = 0;
   let pending = false;
   let requestedAt = null;
@@ -94,7 +94,7 @@ test('Power Meter Reading never fetches private telemetry before login', async (
 test('ten-minute reading sync uses lightweight status checks and a completed request loads fresh values', async ({
   page,
 }, testInfo) => {
-  await setup(page);
+  await setup(page, { role: 'admin' });
   await page.clock.install({ time: new Date('2026-11-06T01:00:00Z') });
   let now = Date.parse('2026-11-06T01:00:00Z');
   let full = 0,
@@ -176,7 +176,7 @@ test('ten-minute reading sync uses lightweight status checks and a completed req
 test('unconfirmed read requests retain a local cooldown and do not claim a received measurement', async ({
   page,
 }) => {
-  await setup(page);
+  await setup(page, { role: 'admin' });
   await page.clock.install({ time: new Date('2026-11-06T01:00:00Z') });
   let posts = 0;
   await page.route('**/api/iot-readings?**', (route) =>
@@ -265,6 +265,7 @@ test('diagnostic meter cards show latest kWh and phase currents while operator c
     route.fulfill({
       json: {
         enabled: true,
+        connection: { manual_refresh_enabled: true, card_management_ready: true },
         devices: [
           {
             device_id: 'synthetic-source',
@@ -292,6 +293,8 @@ test('diagnostic meter cards show latest kWh and phase currents while operator c
   await expect(page.locator('.iot-device-card')).toContainText('123 kWh');
   await expect(page.locator('.iot-device-card')).toContainText('L1 12.01 A · L2 11.9 A · L3 0 A');
   await expect(page.locator('#iot-management')).not.toBeVisible();
+  await expect(page.locator('#iot-archived-control')).not.toBeVisible();
+  await expect(page.locator('#iot-device-form')).not.toBeVisible();
   await expect(page.locator('.iot-device-card button')).toHaveCount(0);
   await page.screenshot({ path: '.vercel/iot-current-' + testInfo.project.name + '.png' });
   expect(state.errors).toEqual([]);
