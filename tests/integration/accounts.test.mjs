@@ -252,9 +252,9 @@ test('authenticated heartbeats show presence without a meter reading and cannot 
   }
 });
 
-test('manual read is owner-scoped, atomic and delivered by signed heartbeat until fresh telemetry', async () => {
-  const actor = await login(await seed()),
-    stranger = await login(await seed());
+test('manual read is admin-owner-scoped, atomic and delivered by signed heartbeat until fresh telemetry', async () => {
+  const actor = await login(await seed('admin')),
+    stranger = await login(await seed('admin'));
   const id = 'manual_' + randomBytes(8).toString('hex'),
     key = randomBytes(32).toString('base64url');
   const headers = { 'X-Device-ID': id, Authorization: 'Bearer ' + key };
@@ -426,7 +426,7 @@ test('manual read is owner-scoped, atomic and delivered by signed heartbeat unti
 });
 
 test('manual refresh flag off keeps ingest and status reads working without migration 010 schema', async () => {
-  const actor = await login(await seed()),
+  const actor = await login(await seed('admin')),
     id = 'old_schema_' + randomBytes(8).toString('hex'),
     key = randomBytes(32).toString('base64url');
   const flag = env.IOT_MANUAL_REFRESH_ENABLED;
@@ -462,6 +462,142 @@ test('manual refresh flag off keeps ingest and status reads working without migr
       );
     env.IOT_MANUAL_REFRESH_ENABLED = flag;
     await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=$1', [id]);
+  }
+});
+
+test('operators see admin fleet readings and presence, but cannot mutate cards or queue readings', async () => {
+  const owner = await login(await seed('admin'));
+  const viewer = await login(await seed());
+  const privateOwner = await login(await seed());
+  const prefix = 'shared_' + randomBytes(8).toString('hex');
+  const sources = [prefix + '_jre', prefix + '_uniland', prefix + '_private'];
+  const snapshot = async () => {
+    const result = {};
+    for (const table of [
+      'iot_devices',
+      'iot_readings',
+      'iot_refresh_requests',
+      'working_drafts',
+      'period_autosaves',
+      'reports',
+      'report_revisions',
+    ])
+      result[table] = (
+        await db.query(
+          `SELECT to_jsonb(t) AS row FROM meter_app.${table} t ORDER BY to_jsonb(t)::text`,
+        )
+      ).rows;
+    return result;
+  };
+  try {
+    for (const [index, id] of sources.entries()) {
+      const key = randomBytes(32).toString('base64url');
+      await db.query(
+        'INSERT INTO meter_app.iot_devices(device_id,owner_id,plant,meter_id,meter_profile,token_hash) VALUES($1,$2,$3,$4,$5,$6)',
+        [
+          id,
+          index === 2 ? privateOwner.id : owner.id,
+          index === 1 ? 'UNILAND' : 'JRE',
+          'meter_1',
+          'fort',
+          tokenHash(key),
+        ],
+      );
+      const event = {
+        schema_version: 1,
+        event_type: 'telemetry',
+        event_id: 'reading_1',
+        device_id: id,
+        meter_id: 'meter_1',
+        meter_profile: 'fort',
+        captured_at: '2026-11-01T01:00:00Z',
+        quality: 'valid',
+        readings: { active_energy_kwh: '123.000001', current_a: '1.234567' },
+      };
+      assert.equal(
+        (
+          await call('/api/iot-ingest', {
+            body: event,
+            headers: { 'X-Device-ID': id, Authorization: 'Bearer ' + key },
+          })
+        ).status,
+        201,
+      );
+    }
+    const before = await snapshot();
+    for (const suffix of ['', '?status_only=1']) {
+      const result = await call('/api/iot-readings' + suffix, { actor: viewer });
+      assert.equal(result.status, 200);
+      const cards = result.value.devices.filter((d) => sources.includes(d.device_id));
+      assert.deepEqual(cards.map((d) => d.device_id).sort(), sources.slice(0, 2).sort());
+      assert.ok(cards.every((d) => d.connection_status === 'connected'));
+      assert.equal(result.value.connection.manual_refresh_enabled, false);
+      assert.equal(result.value.connection.card_management_ready, false);
+      assert.equal(JSON.stringify(result.value).includes('token_hash'), false);
+      assert.equal(JSON.stringify(result.value).includes('owner_id'), false);
+      if (suffix) {
+        assert.deepEqual(result.value.readings, []);
+        assert.ok(cards.every((d) => !Object.hasOwn(d, 'latest_reading')));
+      } else {
+        assert.equal(cards[0].latest_reading.readings.active_energy_kwh, '123.000001');
+        assert.equal(cards[0].latest_reading.readings.current_a, '1.234567');
+        assert.equal(result.value.readings.filter((r) => sources.includes(r.device_id)).length, 2);
+      }
+    }
+    const filtered = await call(
+      '/api/iot-readings?device_id=' + sources[0] + '&event_type=telemetry',
+      { actor: viewer },
+    );
+    assert.deepEqual(
+      filtered.value.readings.map((r) => r.device_id),
+      [sources[0]],
+    );
+    assert.deepEqual(
+      (await call('/api/iot-readings?device_id=' + sources[2], { actor: viewer })).value.readings,
+      [],
+    );
+    assert.equal(
+      (await call('/api/iot-readings?include_archived=1', { actor: viewer })).status,
+      403,
+    );
+    assert.equal(
+      (await call('/api/iot-readings?owner_id=' + owner.id, { actor: viewer })).status,
+      400,
+    );
+    assert.equal((await call('/api/iot-readings')).status, 401);
+    for (const action of ['create', 'update', 'delete', 'restore', 'rotate', 'revoke'])
+      assert.equal(
+        (await call('/api/iot-devices', { actor: viewer, body: { action, device_id: sources[0] } }))
+          .status,
+        403,
+      );
+    assert.equal(
+      (await call('/api/iot-refresh', { actor: viewer, body: { device_id: sources[0] } })).status,
+      403,
+    );
+    assert.deepEqual(await snapshot(), before);
+    // Removal hides shared cards/history without deleting observations.
+    assert.equal(
+      (
+        await call('/api/iot-devices', {
+          actor: owner,
+          body: { action: 'delete', device_id: sources[0] },
+        })
+      ).status,
+      200,
+    );
+    const removed = await call('/api/iot-readings', { actor: viewer });
+    assert.ok(!removed.value.devices.some((d) => d.device_id === sources[0]));
+    assert.ok(!removed.value.readings.some((r) => r.device_id === sources[0]));
+    await db.query('UPDATE meter_app.users SET active=false WHERE id=$1', [owner.id]);
+    assert.ok(
+      !(await call('/api/iot-readings', { actor: viewer })).value.devices.some((d) =>
+        sources.includes(d.device_id),
+      ),
+    );
+  } finally {
+    await db.query('DELETE FROM meter_app.iot_readings WHERE device_id=ANY($1::text[])', [sources]);
+    await db.query('DELETE FROM meter_app.iot_devices WHERE device_id=ANY($1::text[])', [sources]);
   }
 });
 

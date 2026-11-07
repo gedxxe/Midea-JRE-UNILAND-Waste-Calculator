@@ -2,6 +2,9 @@
 
 ## Purpose and current state
 
+- Confirmed 2026-11-07, v0.11.52: operators need read-only visibility of meters registered by admins, not an empty owner-only IoT page. Share non-archived sources owned by active admins with authenticated operators, including latest kWh/current, history and lightweight presence. Keep legacy personal sources private and admin-to-admin ownership restrictions intact. Operators may GET stored data/auto-sync but cannot queue physical Read now, mutate cards/keys or download provisioning. Reports, autosaves, credentials and device ownership are unchanged. This supersedes the earlier owner-only read restriction for the admin fleet only. No migration or production data repair is needed.
+- v0.11.52 validation: local verify passed 310 unit tests and security/source/format/build checks; all 49 integration scenarios passed in a fresh disposable development database, which was then removed; all 36 desktop/mobile navigation cases passed. The shared-fleet scenario checks both factories, exact stored kWh/current, lightweight presence, filtered history, archived/inactive-owner exclusion, hidden credentials, denied operator commands/CRUD and unchanged seven-table snapshots after reads/rejected mutations. No production connection or write, firmware change or dependency was needed. Remote CI remains a separate result after push.
+
 - v0.11.51 follow-up: reproduced an already-open IoT Add form staying disabled after schema readiness becomes true, even though cards refresh correctly. Reapply editor control readiness on refresh without resetting input values or moving focus. Keep a real-keyboard regression for unavailable/available transitions. Local verify passed 310 unit tests and security/source/format/build checks; the final full navigation run passed all 36 desktop/mobile cases. The initial run had one account-route failure that passed five isolated repeats and the full rerun; no account code or assertion was changed. This is a frontend control-state fix, with no new migration or operator data changes. Production migration 011 is already complete; the pre-migration snapshots in earlier notes record prior states. Automated live-browser attachment was unavailable in this session, so do not claim live typing verification.
 
 - Follow-up 2026-11-07, PR #123: the remote Quality gate passed dependency/security/build/unit/integration checks, then failed the desktop/mobile report test because it still expected 124 inputs instead of the schema's 126. Derive that UI count from the schema and retain explicit blank-slot/raw-value assertions. This was a missed legacy browser assumption, not a rejected Git push.
@@ -15,7 +18,7 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.51-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.52-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
 
 ## IoT website foundation, requested 2026-11-05
 
