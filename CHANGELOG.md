@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.52-alpha - 2026-11-07
+
+- Let signed-in operators view admin-registered meters, latest kWh/current and connection status across JRE and UNILAND. Exclude removed cards and inactive admin owners; keep personal legacy sources and operator reports private.
+- Keep card changes, provisioning downloads and physical Read now requests with the owning admin. Operators can refresh stored readings and use view auto-sync only. No migration, credential transfer or stored-reading change.
+
 ## v0.11.51-alpha - 2026-11-07
 
 - Update an open IoT card form when database/grant readiness changes. Keep typed names and firmware IDs intact while enabling or disabling the appropriate fields.

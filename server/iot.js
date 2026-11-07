@@ -174,6 +174,11 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
     if (includeArchived && user.role !== 'admin') fail(403, 'FORBIDDEN');
     if (params.has('status_only') && params.get('status_only') !== '1') fail(400, 'INVALID_INPUT');
     const statusOnly = params.get('status_only') === '1';
+    // Operators can monitor the admin fleet, but never manage its sources or commands.
+    // Keep legacy personal sources and all non-IoT account data owner-scoped.
+    const visibleSource = `(d.owner_id=$1 OR ($2::boolean AND EXISTS (
+      SELECT 1 FROM meter_app.users owner WHERE owner.id=d.owner_id AND owner.active AND owner.role='admin'
+    )))`;
     const id = params.get('device_id'),
       kind = params.get('event_type');
     if ((id && !iotIdentifier(id)) || (kind && !['telemetry', 'checkpoint'].includes(kind)))
@@ -204,16 +209,16 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
          ${refreshFields}
          FROM meter_app.iot_devices d
          ${refreshJoin}
-         ${latestJoin} WHERE d.owner_id=$1 AND ($2::boolean OR to_jsonb(d)->>'archived_at' IS NULL) ORDER BY d.device_id LIMIT 100`,
-        [user.id, includeArchived],
+         ${latestJoin} WHERE ${visibleSource} AND ($3::boolean OR to_jsonb(d)->>'archived_at' IS NULL) ORDER BY d.device_id LIMIT 100`,
+        [user.id, user.role === 'operator', includeArchived],
       )
     ).rows;
     const readings = statusOnly
       ? []
       : (
           await db.query(
-            `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE d.owner_id=$1 AND ($2::text IS NULL OR d.device_id=$2) AND ($3::text IS NULL OR r.event_type=$3) AND ($4::boolean OR to_jsonb(d)->>'archived_at' IS NULL) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
-            [user.id, id, kind, includeArchived],
+            `SELECT r.event_id,r.device_id,r.captured_at,r.received_at,r.event_type,r.payload FROM meter_app.iot_readings r JOIN meter_app.iot_devices d USING(device_id) WHERE ${visibleSource} AND ($3::text IS NULL OR d.device_id=$3) AND ($4::text IS NULL OR r.event_type=$4) AND ($5::boolean OR to_jsonb(d)->>'archived_at' IS NULL) ORDER BY r.captured_at DESC,r.received_at DESC LIMIT 100`,
+            [user.id, user.role === 'operator', id, kind, includeArchived],
           )
         ).rows;
     const serverTime = (await db.query('SELECT clock_timestamp() AS time')).rows[0].time;
@@ -228,6 +233,7 @@ export function iotReadingsHandler(database = getPool, env = process.env) {
       server_time: serverTime,
       connection: {
         ...connection(env),
+        manual_refresh_enabled: user.role === 'admin' && manualEnabled(env),
         card_management_ready: user.role === 'admin' && (await cardManagementReady(db)),
       },
     });
@@ -375,7 +381,7 @@ export function iotRefreshHandler(database = getPool, env = process.env) {
     const origin = appOrigin(env);
     checkOrigin(req, origin);
     const db = database();
-    const user = await requireUser(db, req, origin);
+    const user = await requireUser(db, req, origin, { admin: true });
     if (env.IOT_ENABLED !== '1' || !manualEnabled(env)) fail(503, 'IOT_NOT_CONFIGURED');
     await limit(db, 'iot:manual:' + user.id, 300, env);
     const body = await readBody(req, 512);
@@ -390,7 +396,7 @@ export function iotRefreshHandler(database = getPool, env = process.env) {
         )
       ).rows[0];
       if (!device) fail(404, 'NOT_FOUND');
-      await lockUser(client, user);
+      if ((await lockUser(client, user)).role !== 'admin') fail(403, 'FORBIDDEN');
       if (iotPresence(device, new Date(device.server_time).getTime()) !== 'connected')
         return { status: 409, error: 'DEVICE_OFFLINE' };
       const queued = await client.query(
