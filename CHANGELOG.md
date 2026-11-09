@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## Unreleased - 2026-11-09
+
+- Add a dedicated Smart Energy Monitoring page with JRE/UNILAND, area, meter, date and four WIB checkpoint filters, daily/weekly energy deltas, fleet comparison, missing-data diagnostics, contact visibility and manual refresh.
+- Reuse authenticated cloud ingestion and the existing per-device command mailbox; no firmware contract or upload interval change. Do not infer LoRa gateway or Modbus health from a cloud heartbeat.
+- Add a bounded, operator-scoped checkpoint history endpoint. Optional additive migration 012 stores area labels without changing historical observations; production migration and activation require separate approval.
+- Review static size budget to 1,250,000 bytes for the isolated dashboard interface, with no additional browser dependencies.
+
 ## v0.11.52-alpha - 2026-11-07
 
 - Let signed-in operators view admin-registered meters, latest kWh/current and connection status across JRE and UNILAND. Exclude removed cards and inactive admin owners; keep personal legacy sources and operator reports private.
