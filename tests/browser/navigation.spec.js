@@ -430,10 +430,9 @@ test('admin manages card names, repeatable connection JSON and reversible remova
   });
   await page.goto('/iot-power-meter-reading');
   await page.locator('#iot-add').click();
-  await expect(
-    page.locator('#iot-node-profiles option[value="schneider-pm5100-dr"]'),
-  ).toHaveCount(1);
-  await expect(page.locator('#iot-node-profiles option[value="schneider-pm5100"]')).toHaveCount(0);
+  const profileOptions = page.locator('#iot-node-profiles');
+  await expect(profileOptions.locator('option[value="schneider-pm5100-dr"]')).toHaveCount(1);
+  await expect(profileOptions.locator('option[value="schneider-pm5100"]')).toHaveCount(0);
   await page.locator('#iot-plant').selectOption('UNILAND');
   await page.locator('#iot-source-id').fill('custom-lora-source');
   await page.locator('#iot-meter-id').fill('custom-warehouse');
