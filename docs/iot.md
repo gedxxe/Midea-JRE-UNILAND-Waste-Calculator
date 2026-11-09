@@ -178,7 +178,6 @@ Test one source/meter in development: TLS trust failure, owner isolation, invali
 
 References reviewed: [firmware overview](https://github.com/gedxxe/esp32-modbus-energy), [checkpoint engine](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/include/checkpoint_log.h). These establish a reference contract, not proof that an HTTPS uploader already exists. No firmware implementation was copied or modified here.
 
-
 ## Smart Energy Monitoring (staged)
 
 The dedicated authenticated page is `/smart-energy.html`. It displays JRE and UNILAND registered sources, last accepted primary cumulative kWh, 60-second presence checks, and separate historical analytics. Firmware and gateway ingest still use the existing `/api/iot-ingest` v1 contract, the 600-second telemetry cadence, 60-second heartbeat and four selected checkpoints at 06:30, 08:00, 17:00 and 18:00 WIB. The ten-checkpoint firmware schedule itself remains unchanged.
@@ -189,6 +188,6 @@ Daily consumption for day D = cumulative primary kWh at a selected WIB checkpoin
 
 `/api/iot-readings?status_only=1` remains the lightweight minute heartbeat/status channel. The new dashboard's read-now control reuses `POST /api/iot-refresh`, including the existing database-enforced 10-second per-device cooldown, one pending request, 120-second expiry and authenticated owner-only permissions. A queued response is not represented as successful physical meter acquisition. General dashboard data reload has its own 10-second browser cooldown plus server query rate limit; auto-sync is once every 10 minutes while the page is open.
 
-Area labels are **optional metadata**, not firmware IDs. Optional migration `012_iot_areas.sql` adds only `iot_devices.area` and a narrow runtime UPDATE grant. An admin can set areas via the dashboard after that migration; before migration, the dashboard still loads and labels areas as *Belum diatur*. The write endpoint rejects pre-migration edits without altering data. Apply migration only after recovery snapshot, privileges review and dev validation. No production migration, live device provisioning or deployment follows from a PR merge alone.
+Area labels are **optional metadata**, not firmware IDs. Optional migration `012_iot_areas.sql` adds only `iot_devices.area` and a narrow runtime UPDATE grant. An admin can set areas via the dashboard after that migration; before migration, the dashboard still loads and labels areas as _Belum diatur_. The write endpoint rejects pre-migration edits without altering data. Apply migration only after recovery snapshot, privileges review and dev validation. No production migration, live device provisioning or deployment follows from a PR merge alone.
 
 **Gateway health limitation:** the current ingestion contract exposes authenticated ESP32 contact, not a separately authenticated gateway heartbeat, LoRa RSSI/SNR, or Modbus CRC/error diagnostics. Accordingly, gateway and physical-meter link health remain **unknown / not instrumented**. A future compatible gateway-monitoring schema must be added and validated before those statuses can be upgraded to online or offline assertions.
