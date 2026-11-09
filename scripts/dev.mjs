@@ -1,6 +1,7 @@
 import drafts from '../api/drafts.js';
 import iotIngest from '../api/iot-ingest.js';
 import iotReadings from '../api/iot-readings.js';
+import iotDashboard from '../api/iot-dashboard.js';
 import iotDevices from '../api/iot-devices.js';
 import iotRefresh from '../api/iot-refresh.js';
 import graphs from '../api/graphs.js';
@@ -25,6 +26,7 @@ if (!process.env.CI && process.env.METER_SKIP_LOCAL_ENV !== '1') {
 const api = {
   '/api/iot-ingest': iotIngest,
   '/api/iot-readings': iotReadings,
+  '/api/iot-dashboard': iotDashboard,
   '/api/iot-devices': iotDevices,
   '/api/iot-refresh': iotRefresh,
   '/api/graphs': graphs,
