@@ -94,6 +94,7 @@ export const IOT_NODE_PROFILES = [
   'acrel-acr',
   'acrel-apm',
   'schneider-pm5100',
+  'schneider-pm5100-dr',
 ];
 export function iotCloudEndpoint(origin) {
   try {
