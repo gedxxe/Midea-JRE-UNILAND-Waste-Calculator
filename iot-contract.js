@@ -86,14 +86,14 @@ export function validateIotHeartbeat(value) {
     throw Error('INVALID_IOT_EVENT');
   return Object.fromEntries(keys.map((key) => [key, value[key]]));
 }
-// Profile identifiers from the reference node's MeterProfiles.h; custom IDs remain valid.
+// Currently selectable IDs from the reference node's MeterProfiles.h.
+// Legacy IDs remain valid for existing sources, but are not suggested for new provisioning.
 export const IOT_NODE_PROFILES = [
   'fort',
   'habuer',
   'acrel-adl400',
   'acrel-acr',
   'acrel-apm',
-  'schneider-pm5100',
   'schneider-pm5100-dr',
 ];
 export function iotCloudEndpoint(origin) {
