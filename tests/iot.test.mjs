@@ -14,12 +14,17 @@ test('card names support ordinary multilingual text and repeatable connection JS
   const device = {
     device_id: 'source_1',
     meter_id: 'meter-1',
-    meter_profile: 'schneider-pm5100',
+    meter_profile: 'schneider-pm5100-dr',
     token_hash: 'private',
     credential: 'private',
   };
   const config = iotConnectionConfig(device, 'https://iot.example.com/api/iot-ingest');
-  assert.equal(JSON.parse(config).meter_profile, 'schneider-pm5100');
+  assert.equal(JSON.parse(config).meter_profile, 'schneider-pm5100-dr');
+  const legacyConfig = iotConnectionConfig(
+    { ...device, meter_profile: 'schneider-pm5100' },
+    'https://iot.example.com/api/iot-ingest',
+  );
+  assert.equal(JSON.parse(legacyConfig).meter_profile, 'schneider-pm5100');
   assert.doesNotMatch(config, /private|credential|token_hash|bearer/);
   assert.equal(iotConnectionConfig(device, 'http://iot.example.com/api/iot-ingest'), null);
   assert.equal(
@@ -250,7 +255,16 @@ test('node provisioning emits the reviewed firmware macros for stable HTTPS and 
     iotNodeConfig({ ...device, meter_profile: 'custom-profile' }, key, iotCloudEndpoint(origin)),
     /IOT_DEV_METER_PROFILE "custom-profile"/,
   );
-  assert.ok(IOT_NODE_PROFILES.includes('schneider-pm5100'));
+  assert.ok(IOT_NODE_PROFILES.includes('schneider-pm5100-dr'));
+  assert.ok(!IOT_NODE_PROFILES.includes('schneider-pm5100'));
+  assert.match(
+    iotNodeConfig(
+      { ...device, meter_profile: 'schneider-pm5100-dr' },
+      key,
+      iotCloudEndpoint(origin),
+    ),
+    /#define IOT_DEV_METER_PROFILE "schneider-pm5100-dr"/,
+  );
   assert.equal(
     iotNodeConfig({ ...device, meter_profile: 'bad\"profile' }, key, iotCloudEndpoint(origin)),
     null,
