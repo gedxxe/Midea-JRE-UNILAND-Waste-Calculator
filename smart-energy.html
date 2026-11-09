@@ -1,109 +1,282 @@
 <!doctype html>
 <html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="color-scheme" content="light" />
-  <meta name="description" content="Dashboard Smart Energy Monitoring JRE–UNILAND berbasis data meter Modbus." />
-  <title>Smart Energy Monitoring · Midea JRE–UNILAND</title>
-  <link rel="icon" href="/asset/Midea.webp" />
-  <link rel="stylesheet" href="/smart-energy.css" />
-  <script type="module" src="/smart-energy.js"></script>
-</head>
-<body>
-  <div class="shell">
-    <aside class="rail">
-      <a class="brand" href="/" aria-label="Kembali ke Midea JRE">
-        <img src="/asset/Midea_White.png" alt="Midea" />
-        <span>ENGINEERING<br /><small>SMART ENERGY</small></span>
-      </a>
-      <p class="rail-label">WORKSPACE</p>
-      <nav aria-label="Navigasi monitoring">
-        <a class="active" aria-current="page" href="/smart-energy.html"><span>▤</span> Overview</a>
-        <a href="/iot-power-meter-reading"><span>◫</span> Power meter &amp; provisioning</a>
-        <a href="/app/monitoring"><span>◱</span> Laporan &amp; grafik</a>
-      </nav>
-      <div class="rail-bottom">
-        <div class="mini-label">DATA PIPELINE</div>
-        <div class="rail-flow">Modbus RS485 <span>→</span> ESP32 <span>→</span> LoRa / Wi‑Fi <span>→</span> Cloud</div>
-        <p>Nilai kWh adalah counter kumulatif. Konsumsi dihitung dari dua checkpoint valid, bukan dari penjumlahan counter.</p>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div class="crumb">MIDEA / ENGINEERING / <strong>ENERGY MONITORING</strong></div>
-        <div class="right-tools"><span id="session" class="muted">Memeriksa sesi...</span><span class="clock" id="clock">--:--:-- WIB</span></div>
-      </header>
-      <div class="content">
-        <div class="page-head">
-          <div>
-            <div class="eyebrow"><span class="pulse"></span> ENERGY INTELLIGENCE PLATFORM</div>
-            <h1>Smart Energy Monitoring</h1>
-            <p>JRE &amp; UNILAND <span class="dotsep">·</span> Engineering Power Meter Network</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="Dashboard Smart Energy Monitoring JRE–UNILAND berbasis data meter Modbus."
+    />
+    <title>Smart Energy Monitoring · Midea JRE–UNILAND</title>
+    <link rel="icon" href="/asset/Midea.webp" />
+    <link rel="stylesheet" href="/smart-energy.css" />
+    <script type="module" src="/smart-energy.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail">
+        <a class="brand" href="/" aria-label="Kembali ke Midea JRE">
+          <img src="/asset/Midea_White.png" alt="Midea" />
+          <span>ENGINEERING<br /><small>SMART ENERGY</small></span>
+        </a>
+        <p class="rail-label">WORKSPACE</p>
+        <nav aria-label="Navigasi monitoring">
+          <a class="active" aria-current="page" href="/smart-energy.html"
+            ><span>▤</span> Overview</a
+          >
+          <a href="/iot-power-meter-reading"><span>◫</span> Power meter &amp; provisioning</a>
+          <a href="/app/monitoring"><span>◱</span> Laporan &amp; grafik</a>
+        </nav>
+        <div class="rail-bottom">
+          <div class="mini-label">DATA PIPELINE</div>
+          <div class="rail-flow">
+            Modbus RS485 <span>→</span> ESP32 <span>→</span> LoRa / Wi‑Fi <span>→</span> Cloud
           </div>
-          <div class="actions">
-            <button type="button" id="refresh-data" class="button secondary"><span id="refresh-symbol">↻</span><span id="refresh-label">Refresh data</span></button>
-            <button type="button" id="read-now" class="button primary" hidden>↗ Baca meter sekarang</button>
-          </div>
+          <p>
+            Nilai kWh adalah counter kumulatif. Konsumsi dihitung dari dua checkpoint valid, bukan
+            dari penjumlahan counter.
+          </p>
         </div>
+      </aside>
 
-        <section class="filter-panel" aria-label="Filter monitoring">
-          <label>Factory <select id="plant"><option value="">Semua factory</option><option value="JRE">JRE</option><option value="UNILAND">UNILAND</option></select></label>
-          <label>Area <select id="area"><option value="">Semua area</option></select></label>
-          <label>Power meter <select id="meter"><option value="">Semua meter</option></select></label>
-          <label>Tanggal akhir <input type="date" id="date" /></label>
-          <label>Checkpoint <select id="slot"><option value="06:30">06:30 WIB</option><option value="08:00">08:00 WIB</option><option value="17:00">17:00 WIB</option><option value="18:00">18:00 WIB</option></select></label>
-          <label>Rentang <select id="days"><option value="7">7 hari</option><option value="28" selected>28 hari</option></select></label>
-        </section>
+      <main class="main">
+        <header class="topbar">
+          <div class="crumb">MIDEA / ENGINEERING / <strong>ENERGY MONITORING</strong></div>
+          <div class="right-tools">
+            <span id="session" class="muted">Memeriksa sesi...</span
+            ><span class="clock" id="clock">--:--:-- WIB</span>
+          </div>
+        </header>
+        <div class="content">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow"><span class="pulse"></span> ENERGY INTELLIGENCE PLATFORM</div>
+              <h1>Smart Energy Monitoring</h1>
+              <p>JRE &amp; UNILAND <span class="dotsep">·</span> Engineering Power Meter Network</p>
+            </div>
+            <div class="actions">
+              <button type="button" id="refresh-data" class="button secondary">
+                <span id="refresh-symbol">↻</span><span id="refresh-label">Refresh data</span>
+              </button>
+              <button type="button" id="read-now" class="button primary" hidden>
+                ↗ Baca meter sekarang
+              </button>
+            </div>
+          </div>
 
-        <div id="notice" role="status" aria-live="polite" class="notice">Memuat data checkpoint…</div>
+          <section class="filter-panel" aria-label="Filter monitoring">
+            <label
+              >Factory
+              <select id="plant">
+                <option value="">Semua factory</option>
+                <option value="JRE">JRE</option>
+                <option value="UNILAND">UNILAND</option>
+              </select></label
+            >
+            <label
+              >Area
+              <select id="area">
+                <option value="">Semua area</option>
+              </select></label
+            >
+            <label
+              >Power meter
+              <select id="meter">
+                <option value="">Semua meter</option>
+              </select></label
+            >
+            <label>Tanggal akhir <input type="date" id="date" /></label>
+            <label
+              >Checkpoint
+              <select id="slot">
+                <option value="06:30">06:30 WIB</option>
+                <option value="08:00">08:00 WIB</option>
+                <option value="17:00">17:00 WIB</option>
+                <option value="18:00">18:00 WIB</option>
+              </select></label
+            >
+            <label
+              >Rentang
+              <select id="days">
+                <option value="7">7 hari</option>
+                <option value="28" selected>28 hari</option>
+              </select></label
+            >
+          </section>
 
-        <section class="kpi-grid" aria-label="Ringkasan status">
-          <article class="kpi"><span class="kpi-title">Konsumsi 24 jam terakhir <small id="kpi-period">06:30–06:30</small></span><strong id="kpi-consumption">—</strong><span class="kpi-foot" id="kpi-consumption-note">Memerlukan 2 checkpoint valid</span></article>
-          <article class="kpi"><span class="kpi-title">Power meter terdaftar</span><strong id="kpi-meters">—</strong><span class="kpi-foot" id="kpi-meters-note">Node yang dipilih</span></article>
-          <article class="kpi"><span class="kpi-title">Kontak node aktif</span><strong id="kpi-online">—</strong><span class="kpi-foot">Heartbeat HTTPS ≤ 180 detik</span></article>
-          <article class="kpi"><span class="kpi-title">Checkpoint bermasalah</span><strong id="kpi-issues">—</strong><span class="kpi-foot" id="kpi-issues-note">Hilang / counter turun, periode terpilih</span></article>
-        </section>
+          <div id="notice" role="status" aria-live="polite" class="notice">
+            Memuat data checkpoint…
+          </div>
 
-        <section class="charts-grid">
-          <article class="panel chart-panel">
-            <div class="section-head"><div><div class="eyebrow">TREND ANALYTICS</div><h2>Konsumsi harian</h2><p>Selisih kWh dari checkpoint WIB yang sama, antarhari</p></div><div class="legend"><i></i> kWh tervalidasi</div></div>
-            <div id="daily-chart" class="chart" role="img" aria-label="Grafik konsumsi harian"></div>
-            <p id="daily-footnote" class="chart-note"></p>
-          </article>
-          <article class="panel chart-panel">
-            <div class="section-head"><div><div class="eyebrow">WEEKLY SUMMARY</div><h2>Konsumsi mingguan</h2><p>Akumulasi selisih harian; periode parsial ditandai</p></div><div class="legend"><i class="secondary-swatch"></i> Total teramati</div></div>
-            <div id="weekly-chart" class="chart" role="img" aria-label="Grafik konsumsi mingguan"></div>
-            <p id="weekly-footnote" class="chart-note"></p>
-          </article>
-        </section>
+          <section class="kpi-grid" aria-label="Ringkasan status">
+            <article class="kpi">
+              <span class="kpi-title"
+                >Konsumsi 24 jam terakhir <small id="kpi-period">06:30–06:30</small></span
+              ><strong id="kpi-consumption">—</strong
+              ><span class="kpi-foot" id="kpi-consumption-note">Memerlukan 2 checkpoint valid</span>
+            </article>
+            <article class="kpi">
+              <span class="kpi-title">Power meter terdaftar</span><strong id="kpi-meters">—</strong
+              ><span class="kpi-foot" id="kpi-meters-note">Node yang dipilih</span>
+            </article>
+            <article class="kpi">
+              <span class="kpi-title">Kontak node aktif</span><strong id="kpi-online">—</strong
+              ><span class="kpi-foot">Heartbeat HTTPS ≤ 180 detik</span>
+            </article>
+            <article class="kpi">
+              <span class="kpi-title">Checkpoint bermasalah</span><strong id="kpi-issues">—</strong
+              ><span class="kpi-foot" id="kpi-issues-note"
+                >Hilang / counter turun, periode terpilih</span
+              >
+            </article>
+          </section>
 
-        <section class="lower-grid">
-          <article class="panel">
-            <div class="section-head"><div><div class="eyebrow">METER COMPARISON</div><h2>Perbandingan antar meter</h2><p>Delta 24 jam pada tanggal dan checkpoint terpilih</p></div></div>
-            <div id="comparison" class="comparison empty">Belum ada data.</div>
-          </article>
-          <article class="panel">
-            <div class="section-head"><div><div class="eyebrow">NETWORK STATUS</div><h2>Komunikasi node &amp; gateway</h2><p>Status berdasarkan telemetri yang benar-benar tersedia</p></div></div>
-            <div class="network"><div><span class="node-dot" id="node-dot"></span><strong>ESP32 / cloud ingestion</strong><small id="node-summary">Memeriksa heartbeat…</small></div><div><span class="node-dot unknown"></span><strong>LoRa gateway</strong><small>Belum tersedia data heartbeat gateway</small></div><div><span class="node-dot unknown"></span><strong>Modbus meter</strong><small>Tidak dapat dipastikan dari heartbeat node</small></div></div>
-            <p class="chart-note">Connected berarti perangkat terautentikasi menghubungi server; bukan bukti koneksi LoRa atau Modbus sehat.</p>
-          </article>
-        </section>
+          <section class="charts-grid">
+            <article class="panel chart-panel">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">TREND ANALYTICS</div>
+                  <h2>Konsumsi harian</h2>
+                  <p>Selisih kWh dari checkpoint WIB yang sama, antarhari</p>
+                </div>
+                <div class="legend"><i></i> kWh tervalidasi</div>
+              </div>
+              <div
+                id="daily-chart"
+                class="chart"
+                role="img"
+                aria-label="Grafik konsumsi harian"
+              ></div>
+              <p id="daily-footnote" class="chart-note"></p>
+            </article>
+            <article class="panel chart-panel">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">WEEKLY SUMMARY</div>
+                  <h2>Konsumsi mingguan</h2>
+                  <p>Akumulasi selisih harian; periode parsial ditandai</p>
+                </div>
+                <div class="legend"><i class="secondary-swatch"></i> Total teramati</div>
+              </div>
+              <div
+                id="weekly-chart"
+                class="chart"
+                role="img"
+                aria-label="Grafik konsumsi mingguan"
+              ></div>
+              <p id="weekly-footnote" class="chart-note"></p>
+            </article>
+          </section>
 
-        <section class="panel table-panel">
-          <div class="section-head"><div><div class="eyebrow">FLEET INVENTORY</div><h2>Daftar power meter</h2><p>Nilai kWh utama terakhir, kontak server, area dan status device</p></div><span id="last-update" class="updated">Terakhir diterima: —</span></div>
-          <div class="table-scroll"><table><thead><tr><th>Device / Meter</th><th>Area</th><th>kWh kumulatif</th><th>Data terakhir diterima</th><th>Node</th><th>Pengaturan</th></tr></thead><tbody id="meter-rows"><tr><td colspan="6" class="center">Memuat…</td></tr></tbody></table></div>
-        </section>
+          <section class="lower-grid">
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">METER COMPARISON</div>
+                  <h2>Perbandingan antar meter</h2>
+                  <p>Delta 24 jam pada tanggal dan checkpoint terpilih</p>
+                </div>
+              </div>
+              <div id="comparison" class="comparison empty">Belum ada data.</div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">NETWORK STATUS</div>
+                  <h2>Komunikasi node &amp; gateway</h2>
+                  <p>Status berdasarkan telemetri yang benar-benar tersedia</p>
+                </div>
+              </div>
+              <div class="network">
+                <div>
+                  <span class="node-dot" id="node-dot"></span
+                  ><strong>ESP32 / cloud ingestion</strong
+                  ><small id="node-summary">Memeriksa heartbeat…</small>
+                </div>
+                <div>
+                  <span class="node-dot unknown"></span><strong>LoRa gateway</strong
+                  ><small>Belum tersedia data heartbeat gateway</small>
+                </div>
+                <div>
+                  <span class="node-dot unknown"></span><strong>Modbus meter</strong
+                  ><small>Tidak dapat dipastikan dari heartbeat node</small>
+                </div>
+              </div>
+              <p class="chart-note">
+                Connected berarti perangkat terautentikasi menghubungi server; bukan bukti koneksi
+                LoRa atau Modbus sehat.
+              </p>
+            </article>
+          </section>
 
-        <section class="panel table-panel">
-          <div class="section-head"><div><div class="eyebrow">DATA QUALITY</div><h2>Riwayat data hilang &amp; anomali</h2><p>Checkpoint tidak lengkap dan penurunan counter; bukan log CRC atau diagnostik Modbus</p></div><span id="event-count" class="updated"></span></div>
-          <div class="table-scroll"><table><thead><tr><th>Tanggal</th><th>Meter</th><th>Checkpoint</th><th>Masalah</th></tr></thead><tbody id="event-rows"><tr><td colspan="4" class="center">Menunggu checkpoint…</td></tr></tbody></table></div>
-        </section>
+          <section class="panel table-panel">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow">FLEET INVENTORY</div>
+                <h2>Daftar power meter</h2>
+                <p>Nilai kWh utama terakhir, kontak server, area dan status device</p>
+              </div>
+              <span id="last-update" class="updated">Terakhir diterima: —</span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Device / Meter</th>
+                    <th>Area</th>
+                    <th>kWh kumulatif</th>
+                    <th>Data terakhir diterima</th>
+                    <th>Node</th>
+                    <th>Pengaturan</th>
+                  </tr>
+                </thead>
+                <tbody id="meter-rows">
+                  <tr>
+                    <td colspan="6" class="center">Memuat…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-        <footer class="footer">Smart Energy Monitoring · Midea JRE–UNILAND <span>WIB (UTC+7) · Tidak ada data simulasi dalam mode operasional.</span></footer>
-      </div>
-    </main>
-  </div>
-</body>
+          <section class="panel table-panel">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow">DATA QUALITY</div>
+                <h2>Riwayat data hilang &amp; anomali</h2>
+                <p>
+                  Checkpoint tidak lengkap dan penurunan counter; bukan log CRC atau diagnostik
+                  Modbus
+                </p>
+              </div>
+              <span id="event-count" class="updated"></span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Meter</th>
+                    <th>Checkpoint</th>
+                    <th>Masalah</th>
+                  </tr>
+                </thead>
+                <tbody id="event-rows">
+                  <tr>
+                    <td colspan="4" class="center">Menunggu checkpoint…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <footer class="footer">
+            Smart Energy Monitoring · Midea JRE–UNILAND
+            <span>WIB (UTC+7) · Tidak ada data simulasi dalam mode operasional.</span>
+          </footer>
+        </div>
+      </main>
+    </div>
+  </body>
 </html>
