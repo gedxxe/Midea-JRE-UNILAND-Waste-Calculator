@@ -75,6 +75,7 @@ for (const file of PUBLIC_FILES) {
 // Diagnostic meter controls/cards add translations and UI without a browser dependency.
 // On-demand meter controls add a bounded status channel and cooldown animation.
 // Reversible card management adds bounded forms and three-language labels.
-assert.ok(size < 1185000, `Static assets grew to ${size} bytes; review the footprint.`);
+// Dedicated dashboard (HTML/CSS/JS) adds no browser dependency; reviewed new static bound.
+assert.ok(size < 1250000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);
