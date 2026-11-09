@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.53-alpha - 2026-11-09
+
+- Align new-device profile suggestions with the firmware's selectable profiles. Replace the legacy Schneider Delivered-only suggestion with the active PM5110 D+R profile.
+- Document exact Modbus-profile/uplink-binding matching and safe source re-registration. Preserve existing device bindings and historical readings; no migration or firmware change.
+
 ## v0.11.52-alpha - 2026-11-07
 
 - Let signed-in operators view admin-registered meters, latest kWh/current and connection status across JRE and UNILAND. Exclude removed cards and inactive admin owners; keep personal legacy sources and operator reports private.

@@ -430,7 +430,9 @@ test('admin manages card names, repeatable connection JSON and reversible remova
   });
   await page.goto('/iot-power-meter-reading');
   await page.locator('#iot-add').click();
-  await expect(page.locator('#iot-node-profiles option[value="schneider-pm5100"]')).toHaveCount(1);
+  const profileOptions = page.locator('#iot-node-profiles');
+  await expect(profileOptions.locator('option[value="schneider-pm5100-dr"]')).toHaveCount(1);
+  await expect(profileOptions.locator('option[value="schneider-pm5100"]')).toHaveCount(0);
   await page.locator('#iot-plant').selectOption('UNILAND');
   await page.locator('#iot-source-id').fill('custom-lora-source');
   await page.locator('#iot-meter-id').fill('custom-warehouse');
@@ -535,7 +537,7 @@ test('an open admin editor follows database readiness and keeps real typed name 
   await expect(name).toBeDisabled();
   await page.locator('#iot-source-id').fill('keyboard-source');
   await page.locator('#iot-meter-id').fill('meter-1');
-  await page.locator('#iot-profile').fill('schneider-pm5100');
+  await page.locator('#iot-profile').fill('schneider-pm5100-dr');
   ready = true;
   await page.locator('#iot-kind').selectOption('telemetry');
   await expect(name).toBeEnabled();
@@ -555,7 +557,7 @@ test('an open admin editor follows database readiness and keeps real typed name 
   await expect(name).toBeEnabled();
   await expect(name).toHaveValue('Warehouse Meter 7');
   await expect(page.locator('#iot-meter-id')).toHaveValue('meter-1');
-  await expect(page.locator('#iot-profile')).toHaveValue('schneider-pm5100');
+  await expect(page.locator('#iot-profile')).toHaveValue('schneider-pm5100-dr');
   await page.locator('#iot-cancel').click();
   expect(writes).toBe(0);
   expect(state.errors).toEqual([]);

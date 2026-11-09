@@ -75,16 +75,22 @@ Set server-only `IOT_PUBLIC_ORIGIN` to the exact stable HTTPS origin, without pa
 
 On the cloud site, sign in with the development account and choose **Add power meter**. Select the actual factory/profile and enter stable source/meter IDs; no report-row mapping is created. Download **iot_credentials.local.h** while the one-time key is visible. This file contains a live private device credential, so keep it out of chat, screenshots and Git. The website emits these existing firmware configuration identifiers:
 
-| Macro                 | Meaning                                                                                                   |
-| --------------------- | --------------------------------------------------------------------------------------------------------- |
-| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                                                 |
-| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                                        |
-| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                                         |
-| IOT_DEV_METER_ID      | Exact registered meter ID                                                                                 |
-| IOT_DEV_METER_PROFILE | fort, habuer, acrel-adl400, acrel-acr, acrel-apm or schneider-pm5100; custom IDs must also match the node |
-| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential                              |
+| Macro                 | Meaning                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                                                    |
+| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                                           |
+| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                                            |
+| IOT_DEV_METER_ID      | Exact registered meter ID                                                                                    |
+| IOT_DEV_METER_PROFILE | fort, habuer, acrel-adl400, acrel-acr, acrel-apm or schneider-pm5100-dr; custom IDs must also match the node |
+| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential                                 |
 
-Place the downloaded file in the node repository's `firmware/include/` directory, where the existing uploader includes it. Use the current node repository's normal PlatformIO build/flash workflow. Configure **Client with recovery AP** or **Dual** Wi-Fi in the node's own panel, on an approved internet-connected network; the node AP alone cannot reach the cloud. Save the correct physical meter profile and its verified scaling. Do not multiply CT/PT again on this website. Profile suggestions are not a whitelist: valid custom IDs can be registered and exported, but the node must implement the exact same ID. Schneider PM5100 uses `schneider-pm5100` in the [firmware profile registry](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/lib/FortMeter/src/MeterProfiles.h); its normalized kWh already includes configured CT/VT scaling.
+Place the downloaded file in the node repository's `firmware/include/` directory, where the existing uploader includes it. Use the current node repository's normal PlatformIO build/flash workflow. Configure **Client with recovery AP** or **Dual** Wi-Fi in the node's own panel, on an approved internet-connected network; the node AP alone cannot reach the cloud. Save the correct physical meter profile and its verified scaling. Do not multiply CT/PT again on this website. Profile suggestions are not a whitelist: valid custom IDs can be registered and exported, but the node must implement the exact same ID. The current selectable Schneider PM5110 profile is `schneider-pm5100-dr` (Delivered + Received active energy, register 2704); `schneider-pm5100` is a legacy Delivered-only profile retained for old records and is not selectable for new meter configurations. Both are defined in the [firmware profile registry](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/lib/FortMeter/src/MeterProfiles.h).
+
+### Schneider D+R profile and a Connected card with no readings
+
+For a new Schneider PM5110 source, the node's actual `profile` in local `/api/status`, the private header's `IOT_DEV_METER_PROFILE`, and the cloud card's `meter_profile` must all be exactly `schneider-pm5100-dr`. The firmware intentionally queues live telemetry only when the selected Modbus profile key equals the uploader binding. Its authenticated heartbeat is independent of meter acquisition, so a card can remain **Connected** while no kWh reading is queued when those two profile identities differ.
+
+The cloud source's device ID, meter ID and meter profile are immutable after creation. **Replace key** only rotates its bearer credential; it does not change the profile. If an existing card was registered as legacy `schneider-pm5100` but the node is configured for `schneider-pm5100-dr`, create a new card with a new unique `device_id`, keep the same logical `meter_id`, choose `schneider-pm5100-dr`, download its new private header, and rebuild/flash the node. Keep the old card until the new source has an accepted reading, then archive the old card. Do not relabel historical D-only records as D+R.
 
 Check the node's `/api/status` IoT section. `configured`/`enabled` show setup, not successful data delivery. Inspect `lastHttp`, `accepted`, `duplicates`, `failures`, `error` and the durable checkpoint cursor. Verify an accepted event on the cloud card against the physical meter, with its capture time. Existing backfill runs before live telemetry, so the first received historical checkpoint is not necessarily the current meter value. The source's newest capture remains on the card even when older events arrive later.
 
