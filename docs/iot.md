@@ -75,14 +75,14 @@ Set server-only `IOT_PUBLIC_ORIGIN` to the exact stable HTTPS origin, without pa
 
 On the cloud site, sign in with the development account and choose **Add power meter**. Select the actual factory/profile and enter stable source/meter IDs; no report-row mapping is created. Download **iot_credentials.local.h** while the one-time key is visible. This file contains a live private device credential, so keep it out of chat, screenshots and Git. The website emits these existing firmware configuration identifiers:
 
-| Macro                 | Meaning                                                                                                   |
-| --------------------- | --------------------------------------------------------------------------------------------------------- |
-| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                                                 |
-| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                                        |
-| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                                         |
-| IOT_DEV_METER_ID      | Exact registered meter ID                                                                                 |
+| Macro                 | Meaning                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| IOT_DEV_ENABLED       | Explicit opt-in to the reference uploader                                                                    |
+| IOT_DEV_ENDPOINT      | Stable HTTPS URL ending exactly in /api/iot-ingest                                                           |
+| IOT_DEV_DEVICE_ID     | Exact registered device/source ID                                                                            |
+| IOT_DEV_METER_ID      | Exact registered meter ID                                                                                    |
 | IOT_DEV_METER_PROFILE | fort, habuer, acrel-adl400, acrel-acr, acrel-apm or schneider-pm5100-dr; custom IDs must also match the node |
-| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential                              |
+| IOT_DEV_BEARER        | One-time private device key, never a website password or database credential                                 |
 
 Place the downloaded file in the node repository's `firmware/include/` directory, where the existing uploader includes it. Use the current node repository's normal PlatformIO build/flash workflow. Configure **Client with recovery AP** or **Dual** Wi-Fi in the node's own panel, on an approved internet-connected network; the node AP alone cannot reach the cloud. Save the correct physical meter profile and its verified scaling. Do not multiply CT/PT again on this website. Profile suggestions are not a whitelist: valid custom IDs can be registered and exported, but the node must implement the exact same ID. The current selectable Schneider PM5110 profile is `schneider-pm5100-dr` (Delivered + Received active energy, register 2704); `schneider-pm5100` is a legacy Delivered-only profile retained for old records and is not selectable for new meter configurations. Both are defined in the [firmware profile registry](https://github.com/gedxxe/esp32-modbus-energy/blob/main/firmware/lib/FortMeter/src/MeterProfiles.h).
 
