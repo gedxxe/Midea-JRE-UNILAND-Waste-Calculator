@@ -1,6 +1,9 @@
 export const PUBLIC_FILES = [
   'iot-contract.js',
   'ui/iot.js',
+  'smart-energy.html',
+  'smart-energy.css',
+  'smart-energy.js',
   'iot.css',
   'index.html',
   'raw-meter-export.js',
@@ -111,6 +114,9 @@ export const PUBLIC_FILES = [
 export const RUNTIME_FILES = [
   'api/iot-ingest.js',
   'api/iot-readings.js',
+  'api/iot-dashboard.js',
+  'server/iot-dashboard.js',
+  'migrations/012_iot_areas.sql',
   'api/iot-devices.js',
   'api/iot-refresh.js',
   'server/iot.js',
