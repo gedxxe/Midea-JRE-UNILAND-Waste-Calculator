@@ -18,7 +18,9 @@
 
 Build a lightweight daily energy reporting website for Midea JRE and UNILAND. Operators enter cumulative readings in a table, review consumption, and copy factory reports or Excel worksheet rows. This is an alpha reporting tool, not a control system or certified industrial product.
 
-Current development milestone: v0.11.52-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+Current development milestone: v0.11.53-alpha in package.json. Preserved baseline: v0.1.0-alpha at 8e5bb21aa97344dff5d1c29826f71566b6f870f2. The old package value 2.0.0 was not a tracked stable release. Read CHANGELOG.md and git status before editing; do not assume work in progress is disposable.
+
+- v0.11.53 follow-up: keep website provisioning suggestions aligned with the reference firmware's currently selectable profiles. Use `schneider-pm5100-dr` for new PM5110 D+R sources; `schneider-pm5100` is legacy Delivered-only and remains only for existing records. Heartbeat can keep a source Connected while live telemetry is gated by an exact selected-profile/uplink-binding match. Source device_id, meter_id and meter_profile are immutable; migrate to D+R using a new unique device_id and newly provisioned key/header, never by relabeling historical readings.
 
 ## IoT website foundation, requested 2026-11-05
 
