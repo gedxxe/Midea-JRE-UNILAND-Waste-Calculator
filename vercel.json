@@ -33,6 +33,9 @@
     },
     "api/iot-devices.js": {
       "maxDuration": 30
+    },
+    "api/iot-dashboard.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
