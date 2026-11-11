@@ -29,6 +29,7 @@ import { createRawExport } from './ui/raw-export.js';
 import { initRawTemplate } from './ui/raw-template.js';
 import { createImportEditor } from './ui/import.js';
 import { createWaterPanel } from './ui/water.js';
+import { calculateAirCompressor } from './air-compressor.js';
 import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
 import { createWelcome } from './ui/welcome.js';
 import { createGuideLauncher } from './ui/guide-launcher.js';
@@ -138,6 +139,7 @@ function putPeriods(key, periods) {
     });
     existing[i].gas.version = next.gas.version;
     if (next.water) existing[i].water = { ...next.water };
+    if (next.airCompressor) existing[i].airCompressor = { ...next.airCompressor };
   });
 }
 function seedSharedReadings() {
@@ -269,12 +271,18 @@ const importEditor = createImportEditor({
       }),
     );
     const utilityEdits = [];
+    if (plant === 'JRE' && parsed.flowSupplied) {
+      current().airCompressor ??= { start: '', end: '' };
+      current().airCompressor[side] = parsed.flowReading;
+      utilityEdits.push({ kind: 'airCompressor', side });
+    }
     if (parsed.raw) {
-      for (const field of ['additionalReadings', 'gas', 'water', 'utilities'])
+      for (const field of ['additionalReadings', 'gas', 'water', 'airCompressor', 'utilities'])
         current()[field] = structuredClone(parsed.raw[field]);
       if (plant === 'JRE')
         current().additionalReadings.forEach((_, index) => edits.push({ index, side }));
       if (current().water !== undefined) utilityEdits.push({ kind: 'water', side });
+      if (current().airCompressor !== undefined) utilityEdits.push({ kind: 'airCompressor', side });
       current().gas.entries.forEach((_, index) => {
         for (const field of ['reading', 'temperature', 'unit'])
           utilityEdits.push({ kind: 'gas', index, side, field });
@@ -293,6 +301,16 @@ const gasPanel = createGasPanel({
   rebuildUtilities: () => table.buildUtilities(),
 });
 const waterPanel = createWaterPanel({ current, changed, rememberUndo });
+const airPanel = createWaterPanel({
+  current,
+  changed,
+  rememberUndo,
+  field: 'airCompressor',
+  prefix: 'air-flow',
+  unit: 'Nm³',
+  utilityIndex: 5,
+  calculate: calculateAirCompressor,
+});
 const additionalPanel = createAdditionalReadingsPanel({ current, changed });
 const backupControls = createBackupControls({
   read: () => autosave?.workspace() || { version: 4, drafts, workingHours, nightShifts },
@@ -625,6 +643,7 @@ function mountPlant() {
   });
   gasPanel.rebuild();
   waterPanel.rebuild();
+  airPanel.rebuild();
   additionalPanel.rebuild();
   table.rebuild();
   workPicker.sync({ preserveDate: keepDateEntry });
@@ -741,6 +760,7 @@ function renderResults() {
       filterTable();
       if (i.target?.kind === 'gas') gasPanel.focusIssue(i.target);
       else if (i.target?.kind === 'water') waterPanel.focusIssue();
+      else if (i.target?.kind === 'airCompressor') airPanel.focusIssue();
       else if (i.target?.kind === 'utility') {
         const input = document.querySelector('[data-utility="' + i.target.index + '"]');
         input?.scrollIntoView({ block: 'center' });
@@ -874,6 +894,7 @@ function renderResults() {
   rawExport.render();
   gasPanel.update();
   waterPanel.update();
+  airPanel.update();
   additionalPanel.update();
   autosave?.render();
 }

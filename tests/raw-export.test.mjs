@@ -13,7 +13,7 @@ test('blank templates contain every current meter slot and can be filled then im
     assert.equal(template.split('\n').filter((line) => /^\d+\./.test(line)).length, rows.length);
     assert.equal(
       [...template.matchAll(/____/g)].length,
-      rows.reduce((n, row) => n + row.factors.length, 0),
+      rows.reduce((n, row) => n + row.factors.length, 0) + (plant === 'JRE' ? 1 : 0),
     );
     assert.equal(parseReading(template, plant).success, false);
     assert.equal(parseReading(template.replace('DD/MM/YYYY', '07/10/2026'), plant).success, false);

@@ -27,7 +27,7 @@ The bootstrap command refuses to create a second admin or overwrite a credential
 Migrations/bootstrap use a privileged database connection. For the API, create a dedicated login role and grant only:
 
 - USAGE on schema meter_app.
-- SELECT, INSERT, UPDATE on users, reports and working_drafts (migration 003).
+- SELECT, INSERT, UPDATE on users, reports and working_drafts (migration 003), and period_autosaves (migration 007).
 - SELECT, INSERT, UPDATE, DELETE on sessions and rate_limits.
 - SELECT, INSERT on report_revisions and audit_events.
 - SELECT only on consumption_history and consumption_imports after migration 002. Maintenance imports use a separate privileged connection; no web import or runtime write grant is added.
@@ -50,9 +50,9 @@ The site already uses Vercel's Git integration. Push a feature branch for previe
 
 Each report is owned by an immutable user UUID. Ownership is checked for every list, read, and update. The client account header detects a browser tab using the wrong current session; it does not grant identity. There is no shared factory historian in this release. Admins manage accounts but cannot read other users' reports through the application.
 
-A report is unique per owner, factory, kind, start date, and end date. Saving requires valid, complete readings under the existing engine rules; explicit unavailable readings and warnings remain allowed. Raw decimal strings, calculated English output, and engine version are saved together in a JSON snapshot. Each correction appends a revision in the same transaction that advances the current revision. Optimistic revision checks prevent silent overwrites.
+A current document is identified by account, factory, mode and reading dates. Autosave stores unfinished and invalid entries as well as complete readings; validation still controls calculated output. Save flushes pending edits and verifies that same server copy. It creates no extra document, checkpoint or revision. Version checks prevent silent overwrites. See [autosave and recovery](autosave.md).
 
-The stored output remains available even if future calculation rules change. Loading historical readings into the editor recalculates with the currently deployed engine. The old saved output is not changed. Saving older readings creates a new revision against the latest revision observed when opening them.
+Existing historical checkpoints remain readable. Loading one into the editor recalculates the editable copy with current rules; it does not rewrite that checkpoint. Legacy checkpoint API operations retain their append-only revisions, separately from the routine Save button.
 
 Sessions use random tokens in HttpOnly, SameSite=Strict cookies. HTTPS adds Secure and the __Host- prefix. Only token hashes are stored in PostgreSQL. Sessions expire after eight hours. Password reset/change and account disable revoke prior sessions. There is no remember-me or email recovery flow.
 

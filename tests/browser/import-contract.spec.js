@@ -64,6 +64,10 @@ for (const plant of ['JRE', 'UNILAND']) {
       const { errors } = await setup(page);
       await page.locator('[data-plant="' + plant + '"]').click();
       await page.selectOption('#reading-mode', mode);
+      const meterCount = PLANT_SCHEMAS[plant].rows.reduce(
+        (count, row) => count + row.factors.length,
+        0,
+      );
       for (const side of ['start', 'end']) {
         const date = mode === 'workingHours' || side === 'start' ? '27/10/2026' : '28/10/2026';
         const time =
@@ -84,13 +88,24 @@ for (const plant of ['JRE', 'UNILAND']) {
             values.push(value);
             return value;
           });
+        const otherFlow =
+          plant === 'JRE'
+            ? await page.locator('#air-flow-' + (side === 'start' ? 'end' : 'start')).inputValue()
+            : null;
+        expect(values).toHaveLength(meterCount + (plant === 'JRE' ? 1 : 0));
         await apply(page, text, side);
         await expect(page.locator('#import-dialog')).toBeHidden();
         expect(
           await page
             .locator('.meter-input[data-side="' + side + '"]')
             .evaluateAll((inputs) => inputs.map((i) => i.value)),
-        ).toEqual(values);
+        ).toEqual(values.slice(0, meterCount));
+        if (plant === 'JRE') {
+          await expect(page.locator('#air-flow-' + side)).toHaveValue(values[meterCount]);
+          await expect(
+            page.locator('#air-flow-' + (side === 'start' ? 'end' : 'start')),
+          ).toHaveValue(otherFlow);
+        }
       }
       expect(errors).toEqual([]);
     });

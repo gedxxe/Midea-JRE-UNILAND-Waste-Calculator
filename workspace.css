@@ -677,7 +677,7 @@ body:not(.login-page) .icon-gas {
   color: #7150ae;
   background: #efe9fb;
 }
-body:not(.login-page) .icon-water {
+body:not(.login-page) :is(.icon-water, .icon-air) {
   color: #08768a;
   background: #e0f4f6;
 }

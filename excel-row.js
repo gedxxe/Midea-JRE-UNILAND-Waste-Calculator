@@ -16,8 +16,8 @@ const utility = (column, name, unit, index, gas) => ({
 export const EXCEL_LAYOUTS = {
   JRE: {
     start: 'E',
-    end: 'AY',
-    separator: 'AP',
+    end: 'BA',
+    separator: 'AR',
     columns: [
       ...['T1', 'T2', 'T3', 'T4'].map((name, index) => ({
         column: String.fromCharCode(69 + index),
@@ -45,30 +45,37 @@ export const EXCEL_LAYOUTS = {
       row('Y', 'New Air Compressor 2#'),
       row('Z', 'Dryer and Cooling Tower New Air Compressor'),
       row('AA', 'Air Compressor 1#'),
-      row('AB', 'Structural Laboratory'),
-      row('AC', 'Test Control Room'),
-      row('AD', 'IQC and OQC Room'),
-      row('AE', 'New Laboratory'),
-      row('AF', 'Crane Hoist Building 3#'),
-      row('AG', 'Charging Forklift Building 3#'),
-      row('AH', 'Electricity Building 2#'),
-      row('AI', 'Charging Forklift Building 2'),
-      row('AJ', 'All Office Building'),
-      row('AK', 'Warehouse Area'),
-      row('AL', 'Warehouse Lighting'),
-      row('AM', 'Server Room'),
-      row('AN', 'Utility Area'),
-      row('AO', 'Heater LPG'),
-      blank('AP', '', 'separator'),
-      utility('AQ', 'LPG', 'kg', 0, 'LPG'),
-      utility('AR', 'Oxygen', 'kg', 1, 'O2'),
-      utility('AS', 'Nitrogen', 'kg', 2, 'N2'),
-      utility('AT', 'Refrigerant R32', 'kg', 3, 'R32'),
-      blank('AU', 'Helium Indoor'),
-      blank('AV', 'Helium Outdoor'),
-      blank('AW', 'Helium Dehumidifier'),
-      blank('AX', 'Helium Window'),
-      { column: 'AY', name: 'Clean Water Total', unit: 'm³', source: 'water', index: 4 },
+      { column: 'AB', name: 'Flow Meter Air Compressor', unit: 'Nm³', source: 'airFlow' },
+      {
+        column: 'AC',
+        name: 'Air Compressor electricity / flow',
+        unit: 'kWh/Nm³',
+        source: 'airRatio',
+      },
+      row('AD', 'Structural Laboratory'),
+      row('AE', 'Test Control Room'),
+      row('AF', 'IQC and OQC Room'),
+      row('AG', 'New Laboratory'),
+      row('AH', 'Crane Hoist Building 3#'),
+      row('AI', 'Charging Forklift Building 3#'),
+      row('AJ', 'Electricity Building 2#'),
+      row('AK', 'Charging Forklift Building 2'),
+      row('AL', 'All Office Building'),
+      row('AM', 'Warehouse Area'),
+      row('AN', 'Warehouse Lighting'),
+      row('AO', 'Server Room'),
+      row('AP', 'Utility Area'),
+      row('AQ', 'Heater LPG'),
+      blank('AR', '', 'separator'),
+      utility('AS', 'LPG', 'kg', 0, 'LPG'),
+      utility('AT', 'Oxygen', 'kg', 1, 'O2'),
+      utility('AU', 'Nitrogen', 'kg', 2, 'N2'),
+      utility('AV', 'Refrigerant R32', 'kg', 3, 'R32'),
+      blank('AW', 'Helium Indoor'),
+      blank('AX', 'Helium Outdoor'),
+      blank('AY', 'Helium Dehumidifier'),
+      blank('AZ', 'Helium Window'),
+      { column: 'BA', name: 'Clean Water Total', unit: 'm³', source: 'water', index: 4 },
     ],
   },
   UNILAND: {
@@ -188,6 +195,8 @@ export function buildExcelRow(draft, report) {
       }
       return found && !found.missing ? number(found.totalEnergy) : '-';
     }
+    if (column.source === 'airFlow') return number(report.airCompressorResult?.value);
+    if (column.source === 'airRatio') return number(report.airCompressorResult?.ratio);
     if (column.source === 'additional')
       return number(report.additionalReadings[column.index]?.value);
     if (column.source === 'water')

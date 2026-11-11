@@ -5,6 +5,57 @@ import { exportAllRawReadings, parseRawReading } from '../raw-meter-export.js';
 import { exportRawReading } from '../raw-export.js';
 import { parseReading } from '../importer.js';
 
+test('JRE full raw flow snapshots accept whitespace changes and retain exact notes and readings', () => {
+  const draft = filled('JRE');
+  draft.airCompressor = { start: '0010.000001', end: '0020,000002' };
+  const text = exportAllRawReadings(draft).text;
+  assert.match(text, /Air Compressor: 0020,000002 Nm³/);
+  assert.equal(text.match(/^Air Compressor:.*Nm³$/gm)?.length, 1);
+  const [body, notes] = text.split('\n\nNotes:\n');
+  const loose =
+    body.replace(/\n\n/g, '\n').replace(/: /g, ':    ') +
+    (notes === undefined ? '' : '\nNotes:\n' + notes);
+  const parsed = parseRawReading(loose, draft);
+  assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+  assert.deepEqual(parsed.raw.airCompressor, draft.airCompressor);
+  assert.deepEqual(parsed.raw.gas, draft.gas);
+  assert.deepEqual(parsed.raw.utilities, draft.utilities);
+  const blankFlow = text.replace('Air Compressor: 0020,000002 Nm³', 'Air Compressor: ____ Nm³');
+  assert.deepEqual(parseRawReading(blankFlow, draft).raw.airCompressor, draft.airCompressor);
+  const legacy = text.replace(/\n\nCumulative Air Compressor reading:\nAir Compressor: [^\n]+/, '');
+  assert.equal(parseRawReading(legacy, draft).success, true);
+  const duplicate = text.replace(
+    'Cumulative Air Compressor reading:',
+    'Cumulative Air Compressor reading:\nAir Compressor: 5 Nm³',
+  );
+  const rejected = parseRawReading(duplicate, draft);
+  assert.equal(rejected.success, false);
+  assert.match(rejected.issues.at(-1).message, /Air Compressor.*Nothing was changed/);
+});
+
+test('plain flow imports accept unit and spacing variants but identify wrong units and duplicates', () => {
+  const draft = filled('JRE');
+  const text = exportRawReading(draft).text;
+  for (const suffix of [
+    '\nAir Compressor Flow:0010,2500 Nm3',
+    '\n\nFlow Meter Air Compressor : 0010,2500 Nm^3',
+  ]) {
+    const parsed = parseReading(text + suffix, 'JRE');
+    assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+    assert.equal(parsed.flowReading, '0010,2500');
+  }
+  for (const suffix of [
+    '\nAir Compressor Flow: 10 kg',
+    '\nAir Compressor Flow: 10 Nm³\nAir Compressor Flow: 11 Nm³',
+  ]) {
+    const parsed = parseReading(text + suffix, 'JRE');
+    assert.equal(parsed.success, false);
+    const issue = parsed.issues.find((i) => i.code === 'IMPORT_FLOW');
+    assert.ok(issue.sourceLine > 0);
+    assert.match(issue.message, /Line \d+.*Nm³.*Use/);
+  }
+});
+
 function filled(plant, kind = 'daily') {
   const d =
     kind === 'daily'

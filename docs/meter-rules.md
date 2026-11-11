@@ -1,6 +1,6 @@
 # Meter rules
 
-The supplied factory templates and the operator's confirmed date/unit decisions are authoritative. Names, aliases, fixed factors, and output units live in schema.js. Reports stay in their canonical English format regardless of UI language.
+The supplied factory templates and the operator's confirmed date/unit decisions are authoritative. Names, aliases, fixed factors, and output units live in schema.js. Copied factory reports keep their official English names and format regardless of UI language.
 
 ## Dates and numbers
 
@@ -10,7 +10,7 @@ Use nonnegative cumulative numbers with at most six decimal places and a maximum
 
 The maximum is checked exactly before floating-point conversion. A nonzero fractional part above the maximum is invalid, even when JavaScript would round it down to the boundary. This applies to validation of new inputs; saved report output is not recalculated.
 
-Blank or malformed input blocks copying. `-` explicitly marks unavailable data. A decreasing reading is unavailable and produces a check note; reset/rollover is not guessed. A missing component invalidates the equipment total. An increase over both 100 raw units and 50% of the starting value produces a warning without changing the reading. This is a simple threshold, not a historical anomaly model.
+Incomplete required electricity readings block a finished factory report. Excel keeps available values and blank slots; it does not invent missing values. `-` explicitly marks unavailable data. A decreasing reading is unavailable and produces a check note; reset/rollover is not guessed. A missing component invalidates the equipment total. An increase over both 100 raw units and 50% of the starting value produces a warning without changing the reading. This is a simple threshold, not a historical anomaly model.
 
 ## JRE
 
@@ -116,3 +116,11 @@ Warehouse Lighting is row 32, one x40 cumulative meter. From report START date 2
 For report starts before 2026-10-25, Lighting consumption is exactly 0, including Daily/Night on 24 October ending on the 25th and combined periods starting before the cutoff. This is a reporting policy, not an inferred installation time. Existing raw readings remain unchanged. Newly created/migrated slots with an actual reading date before the cutoff default to zero; October 25 and later slots stay blank until entered. The first October 25 observation can be stored on a pre-cutoff report and reused by exact timestamp as the following report Start. Unknown dates do not qualify for zero. Invalid supplied raw text still fails validation.
 
 Layout 6 adds only this pair to layout 5; layouts 1–4 retain their existing upgrades. Old complete imports may omit Lighting, keeping only matching-date/time observations, with pre-cutoff defaults when absent. Raw exports keep the selected column's original numbers and date; blank templates always use placeholders, including Lighting x40. The worksheet retains its date plus 18 values and uses net Warehouse; new graph r31 supplies Lighting. Stored report/revision/import output is never recalculated. Current-server saves reject stale layout writers after layout 6 is stored. Keep a full private backup before code rollback; no SQL migration is required.
+
+## JRE Air Compressor flow
+
+From 12 November 2026 at 08:00 WIB, record cumulative Air Compressor readings in Nm³. Consumption is End minus Start for the selected daily, after-production or night period. Earlier-starting periods leave this result unused and retain their raw readings. Matching factory/date/time observations are shared; manual notes remain with their period.
+
+Compressor electricity is the sum of New Air Compressor 1#, New Air Compressor 2#, Dryer and Cooling Tower New Air Compressor, and Air Compressor 1#, after their existing electrical ratios. Divide that sum by flow consumption to obtain kWh/Nm³. A zero electricity component is valid; all-zero electricity over positive flow gives zero. Zero, missing, unavailable or invalid flow leaves the ratio blank. A missing electricity component also leaves it blank. Other Excel columns remain available for copying.
+
+For example, 120 + 0 + 30 + 10 kWh over 200 Nm³ gives 0.8 kWh/Nm³. This describes electricity per delivered air volume, not a certified equipment efficiency rating. Raw counters keep their decimal strings; subtraction and division use scaled integers, with the ratio rounded to six decimal places. See [Excel columns](excel-export.md).

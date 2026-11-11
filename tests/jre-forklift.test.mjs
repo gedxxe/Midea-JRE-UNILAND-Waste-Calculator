@@ -57,7 +57,7 @@ test('layout 4 upgrades add only a blank Forklift pair, retaining incomplete uti
     workspace[collection].JRE = old;
     const original = structuredClone(old),
       next = migrateMeterLayout(old);
-    assert.equal(next.meterLayout, 7);
+    assert.equal(next.meterLayout, 8);
     assert.deepEqual(
       next.rows
         .slice(0, 30)

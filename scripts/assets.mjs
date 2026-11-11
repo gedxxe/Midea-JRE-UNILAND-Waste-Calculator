@@ -45,6 +45,7 @@ export const PUBLIC_FILES = [
   'meter-activation.js',
   'meter-checks.js',
   'water.js',
+  'air-compressor.js',
   'additional-readings.js',
   'ui/additional-readings.js',
   'ui/water.js',

@@ -59,7 +59,7 @@ for (const plant of ['JRE', 'UNILAND']) {
         await expect(page.locator('#copy-worksheet')).toBeEnabled();
         await page.locator('#copy-worksheet').click();
         await expect.poll(() => read(page)).toBe(expected);
-        expect((await read(page)).split('\t').length).toBe(plant === 'JRE' ? 47 : 44);
+        expect((await read(page)).split('\t').length).toBe(plant === 'JRE' ? 49 : 44);
         await page.selectOption('#report-view', 'worksheet');
         await expect(page.locator('#copy-worksheet')).toBeHidden();
         await expect(page.locator('#copy-note')).toContainText(model.separator + ' stays blank');
@@ -141,6 +141,6 @@ test('Excel manual-copy fallback preserves blank slots and rejects a delayed cal
     await page.locator('#report-preview').evaluate((el) => [el.selectionStart, el.selectionEnd]),
   ).toEqual([0, expected.length]);
   expect(expected.startsWith('\t\t\t\t')).toBe(true);
-  expect(expected.split('\t').length).toBe(47);
+  expect(expected.split('\t').length).toBe(49);
   expect(errors).toEqual([]);
 });

@@ -11,7 +11,7 @@ for (const plant of ['JRE', 'UNILAND']) {
   test(plant + ' exports every fixed workbook position and preserves its separator', () => {
     const layout = EXCEL_LAYOUTS[plant],
       first = colNumber(layout.start);
-    assert.equal(layout.columns.length, plant === 'JRE' ? 47 : 44);
+    assert.equal(layout.columns.length, plant === 'JRE' ? 49 : 44);
     layout.columns.forEach((c, i) => assert.equal(colNumber(c.column), first + i));
     for (const c of layout.columns.filter((c) => c.source === 'row'))
       assert.ok(
@@ -49,14 +49,14 @@ test('JRE copies T1-T4 consumption, current net rows, gap and Water with no date
   assert.equal(get(row, 'J'), String(report.subAreasSumKWh));
   for (const [column, index] of [
     ['P', 15],
-    ['AB', 19],
-    ['AH', 18],
-    ['AK', 25],
+    ['AD', 19],
+    ['AJ', 18],
+    ['AM', 25],
   ])
     assert.equal(get(row, column), String(report.calculatedRows[index].totalEnergy));
-  assert.equal(get(row, 'AY'), '2');
-  assert.equal(get(row, 'AU'), '');
-  assert.equal(get(row, 'AX'), '');
+  assert.equal(get(row, 'BA'), '2');
+  assert.equal(get(row, 'AW'), '');
+  assert.equal(get(row, 'AZ'), '');
   assert.ok(excelRowPreview(row).startsWith('E: T1 (kWh) = 0'));
   const empty = buildExcelRow(
     reportPeriods('JRE', '2026-10-27')[0],
@@ -136,10 +136,10 @@ test('UNILAND exports refill-corrected raw units while JRE exports converted sig
   report = calculateDraft(draft);
   row = buildExcelRow(draft, report);
   for (const [column, id] of [
-    ['AQ', 'LPG'],
-    ['AR', 'O2'],
-    ['AS', 'N2'],
-    ['AT', 'R32'],
+    ['AS', 'LPG'],
+    ['AT', 'O2'],
+    ['AU', 'N2'],
+    ['AV', 'R32'],
   ])
     assert.equal(get(row, column), gasMassText(report.gasResults.find((g) => g.gas === id).kg));
 });
@@ -195,8 +195,8 @@ test('missing and unavailable readings keep slots and never produce false zero',
   draft.gas.entries[0].end.reading = '-';
   draft.water.end = '-';
   const row = buildExcelRow(draft, calculateDraft(draft));
-  for (const column of ['K', 'I', 'J', 'AQ', 'AY']) assert.equal(get(row, column), '-');
-  assert.equal(get(row, 'AP'), '');
+  for (const column of ['K', 'I', 'J', 'AS', 'BA']) assert.equal(get(row, column), '-');
+  assert.equal(get(row, 'AR'), '');
 });
 
 test('Excel uses exact first matches and refreshes its lookup on every export', () => {
@@ -214,7 +214,7 @@ test('Excel uses exact first matches and refreshes its lookup on every export', 
   const before = structuredClone({ draft, report });
   const exported = buildExcelRow(draft, report);
   assert.equal(get(exported, 'K'), '0');
-  assert.equal(get(exported, 'AQ'), '1.000001');
+  assert.equal(get(exported, 'AS'), '1.000001');
   assert.deepEqual({ draft, report }, before);
   indoor.missing = true;
   assert.equal(get(buildExcelRow(draft, report), 'K'), '-');

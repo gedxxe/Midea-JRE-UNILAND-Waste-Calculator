@@ -51,6 +51,7 @@ export function hasEnteredData(draft) {
     ) ||
       draft.utilities?.some((item) => entered(item.value) || entered(item.note)) ||
       [draft.water?.start, draft.water?.end].some(entered) ||
+      [draft.airCompressor?.start, draft.airCompressor?.end].some(entered) ||
       draft.additionalReadings?.some((item) => entered(item.start) || entered(item.end)) ||
       draft.gas?.entries?.some(
         (entry) =>

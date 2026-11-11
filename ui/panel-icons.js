@@ -1,6 +1,14 @@
 // Lucide geometry pinned to be09619c1c1124ad09c19fc3e87ee3b939409bbd; full ISC/MIT notices: asset/licenses/lucide.txt.
 import { svgNode } from './dom.js';
 const geometry = {
+  // Original compressor illustration: receiver, motor, gauge, wheels and air outlet.
+  compressor: [
+    ['rect', { x: '3', y: '10', width: '17', height: '9', rx: '4' }],
+    ['rect', { x: '5', y: '5', width: '6', height: '5', rx: '1' }],
+    ['path', { d: 'M7 5V3h3M15 10V7h4m1 7h3M6 19v2m11-2v2' }],
+    ['circle', { cx: '15', cy: '7', r: '3' }],
+    ['path', { d: 'm15 7 1-1' }],
+  ],
   cylinder: [
     ['ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }],
     ['path', { d: 'M3 5v14a9 3 0 0 0 18 0V5' }],

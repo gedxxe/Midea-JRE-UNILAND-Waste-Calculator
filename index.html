@@ -751,6 +751,58 @@
                   ><span data-i18n="note">Note, if any</span><input id="water-note" maxlength="500"
                 /></label>
               </section>
+              <section id="air-flow-section" class="card gas-card" aria-labelledby="air-flow-title">
+                <div class="utility-section-heading">
+                  <span
+                    class="section-icon icon-air"
+                    data-panel-icon="compressor"
+                    aria-hidden="true"
+                  ></span>
+                  <h2 id="air-flow-title" data-i18n="airFlowTitle">Air Compressor consumption</h2>
+                </div>
+                <p data-i18n="airFlowHint">
+                  Enter cumulative flow-meter readings in Nm³. End minus start gives consumption for
+                  the starting date or combined period.
+                </p>
+                <div id="air-flow-legacy" hidden>
+                  <p id="air-flow-legacy-text"></p>
+                  <button
+                    id="air-flow-use-readings"
+                    class="button secondary"
+                    data-i18n="waterUseReadings"
+                  >
+                    Use flow-meter readings
+                  </button>
+                </div>
+                <div id="air-flow-readings" class="gas-pair">
+                  <label
+                    ><span><span data-i18n="startReading">Start reading</span> (Nm³)</span
+                    ><span id="air-flow-start-date"></span
+                    ><input
+                      id="air-flow-start"
+                      inputmode="decimal"
+                      maxlength="50"
+                      autocomplete="off"
+                      aria-describedby="air-flow-status"
+                  /></label>
+                  <label
+                    ><span><span data-i18n="endReading">End reading</span> (Nm³)</span
+                    ><span id="air-flow-end-date"></span
+                    ><input
+                      id="air-flow-end"
+                      inputmode="decimal"
+                      maxlength="50"
+                      autocomplete="off"
+                      aria-describedby="air-flow-status"
+                  /></label>
+                </div>
+                <output id="air-flow-total" class="gas-total"></output>
+                <p id="air-flow-status" role="status"></p>
+                <label
+                  ><span data-i18n="note">Note, if any</span
+                  ><input id="air-flow-note" maxlength="500"
+                /></label>
+              </section>
               <section id="additional-section" class="card gas-card" hidden>
                 <div class="utility-section-heading">
                   <span

@@ -56,6 +56,122 @@ const ids = [];
 const names = [];
 const password = 'Test-only initial passphrase 123';
 
+test('JRE air flow autosaves incomplete readings in every mode and rollback writers cannot discard them', async () => {
+  for (const draft of reportPeriods('JRE', '2026-11-12')) {
+    const actor = await autosaveActor();
+    draft.airCompressor = { start: '0010.000001', end: '0015,000002' };
+    const initial = structuredClone(draft);
+    initial.rows.forEach((r) => {
+      r.start.fill('');
+      r.end.fill('');
+    });
+    initial.utilities.forEach((u) => {
+      u.value = '';
+      u.note = '';
+    });
+    delete initial.water;
+    initial.airCompressor = { start: '0010.', end: '' };
+    const first = await call('/api/drafts', {
+      actor,
+      body: { workspace: autosaveWorkspace(initial), baseVersion: 0 },
+    });
+    assert.equal(first.status, 200);
+    const firstRow = (
+      await db.query('SELECT snapshot FROM meter_app.period_autosaves WHERE owner_id=$1', [
+        actor.id,
+      ])
+    ).rows[0].snapshot;
+    assert.equal(firstRow.draft.airCompressor.start, '0010.');
+    assert.equal(firstRow.complete, false);
+    const workspace = autosaveWorkspace(draft);
+    const saved = await call('/api/drafts', {
+      actor,
+      body: { workspace, baseVersion: first.value.version },
+    });
+    assert.equal(saved.status, 200);
+    const record = (
+      await db.query('SELECT snapshot FROM meter_app.period_autosaves WHERE owner_id=$1', [
+        actor.id,
+      ])
+    ).rows[0].snapshot;
+    assert.deepEqual(record.draft.airCompressor, draft.airCompressor);
+    assert.equal(record.output.airCompressor.value, '5.000001');
+    const report = await call('/api/reports', {
+      actor,
+      body: { draft, autosaveLayout: 1, baseRevision: 0, workspaceVersion: saved.value.version },
+    });
+    assert.equal(report.status, 201);
+    const oldCheckpoint = structuredClone(report.value.snapshot);
+    oldCheckpoint.draft.meterLayout = 7;
+    delete oldCheckpoint.draft.airCompressor;
+    await assert.rejects(
+      runtime.query(
+        'INSERT INTO meter_app.report_revisions(report_id,revision,actor_id,snapshot) VALUES($1,2,$2,$3::jsonb)',
+        [report.value.id, actor.id, JSON.stringify(oldCheckpoint)],
+      ),
+      (e) => e.code === '23514',
+    );
+    let active = (await call('/api/drafts', { actor })).value;
+    const oldWorkspace = structuredClone(active.workspace);
+    for (const collection of ['drafts', 'workingHours', 'nightShifts']) {
+      oldWorkspace[collection].JRE.meterLayout = 7;
+      delete oldWorkspace[collection].JRE.airCompressor;
+      oldWorkspace[collection].JRE.utilities = oldWorkspace[collection].JRE.utilities.slice(0, 5);
+    }
+    assert.equal(
+      (
+        await call('/api/drafts', {
+          actor,
+          body: { workspace: oldWorkspace, baseVersion: active.version },
+        })
+      ).status,
+      409,
+    );
+    await assert.rejects(
+      runtime.query('UPDATE meter_app.working_drafts SET workspace=$2::jsonb WHERE owner_id=$1', [
+        actor.id,
+        JSON.stringify(oldWorkspace),
+      ]),
+      (e) => e.code === '23514',
+    );
+    await assert.rejects(
+      runtime.query('UPDATE meter_app.period_autosaves SET snapshot=$2::jsonb WHERE owner_id=$1', [
+        actor.id,
+        JSON.stringify(oldCheckpoint),
+      ]),
+      (e) => e.code === '23514',
+    );
+    draft.airCompressor.end = '';
+    active = (await call('/api/drafts', { actor })).value;
+    const partial = await call('/api/drafts', {
+      actor,
+      body: { workspace: autosaveWorkspace(draft), baseVersion: active.version },
+    });
+    assert.equal(partial.status, 200);
+    const after = (
+      await db.query('SELECT snapshot FROM meter_app.period_autosaves WHERE owner_id=$1', [
+        actor.id,
+      ])
+    ).rows[0].snapshot;
+    assert.deepEqual(after.draft.airCompressor, { start: '0010.000001', end: '' });
+    assert.equal(after.complete, false);
+    assert.equal(after.output.airCompressor.ratio, '');
+    assert.deepEqual(
+      (
+        await call(
+          '/api/reports?id=' +
+            report.value.id +
+            '&kind=' +
+            (draft.periodKind || 'daily') +
+            '&revision=1',
+          { actor },
+        )
+      ).value.snapshot,
+      report.value.snapshot,
+    );
+  }
+});
+
 test('IoT ingestion deduplicates atomically, isolates owners and rejects revoked or conflicting uploads without report writes', async () => {
   const actor = await login(await seed()),
     stranger = await login(await seed()),
@@ -339,7 +455,12 @@ test('manual read is admin-owner-scoped, atomic and delivered by signed heartbea
       true,
     );
     telemetry.event_id = 'manual_sample_future';
-    telemetry.captured_at = new Date(Date.now() + 60000).toISOString().slice(0, 19) + 'Z';
+    telemetry.captured_at =
+      new Date(
+        (await db.query("SELECT clock_timestamp()+interval '60 seconds' AS stamp")).rows[0].stamp,
+      )
+        .toISOString()
+        .slice(0, 19) + 'Z';
     assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
     assert.equal(
       (await call('/api/iot-readings?status_only=1', { actor })).value.devices[0].refresh_pending,
@@ -350,7 +471,10 @@ test('manual read is admin-owner-scoped, atomic and delivered by signed heartbea
       [id],
     );
     telemetry.event_id = 'manual_sample_new';
-    telemetry.captured_at = new Date().toISOString().slice(0, 19) + 'Z';
+    telemetry.captured_at =
+      new Date((await db.query('SELECT clock_timestamp() AS stamp')).rows[0].stamp)
+        .toISOString()
+        .slice(0, 19) + 'Z';
     assert.equal((await call('/api/iot-ingest', { body: telemetry, headers })).status, 201);
     list = (await call('/api/iot-readings', { actor })).value;
     assert.equal(list.devices.find((d) => d.device_id === id).refresh_pending, false);
@@ -387,7 +511,13 @@ test('manual read is admin-owner-scoped, atomic and delivered by signed heartbea
         'SELECT device_id FROM meter_app.iot_devices WHERE device_id=$1 FOR UPDATE',
         [id],
       );
-      const captured = new Date(Date.now() + 2500).toISOString().slice(0, 19) + 'Z';
+      const captured =
+        new Date(
+          (await db.query("SELECT clock_timestamp()+interval '2500 milliseconds' AS stamp")).rows[0]
+            .stamp,
+        )
+          .toISOString()
+          .slice(0, 19) + 'Z';
       upload = call('/api/iot-ingest', {
         body: { ...telemetry, event_id: 'queued_transaction', captured_at: captured },
         headers,
@@ -2228,7 +2358,7 @@ test('JRE report API stores raw Piping meter 3 while recalculating net Window an
     );
     assert.equal(loaded.status, 200);
     const saved = loaded.value.snapshot;
-    assert.equal(saved.draft.meterLayout, 7);
+    assert.equal(saved.draft.meterLayout, 8);
     assert.deepEqual(saved.draft.rows[15], draft.rows[15]);
     assert.match(
       saved.output.reportText,

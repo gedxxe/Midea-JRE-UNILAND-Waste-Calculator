@@ -240,6 +240,7 @@ export const UTILITIES = {
     ['Nitrogen', 'Kg'],
     ['Refrigerant R32', 'Kg'],
     ['Water', 'm³'],
+    ['Air Compressor', 'Nm³'],
   ],
   UNILAND: [
     ['LPG', 'Nm3'],

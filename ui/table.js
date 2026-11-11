@@ -185,7 +185,7 @@ export function createMeterTable({ getPlant, current, getReport, changed, rememb
   function buildUtilities() {
     $('utility-fields').replaceChildren();
     UTILITIES[getPlant()].forEach(([name, unit], i) => {
-      if (i === 4) return;
+      if (i === 4 || (getPlant() === 'JRE' && i === 5)) return;
       const gasIndex = gasCalibration(getPlant()).gases.findIndex((gas) => gas.utilityIndex === i);
       const calculated = gasIndex >= 0 && current().gas?.entries[gasIndex]?.enabled;
       const wrapper = node('div', undefined, 'utility-entry');

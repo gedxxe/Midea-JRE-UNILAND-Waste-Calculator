@@ -6,6 +6,109 @@ import { exampleDraft } from '../examples.js';
 import { restoreDrafts, nextDayDraft, changeDraftPeriod } from '../storage.js';
 import { reportSnapshot } from '../server/report-data.js';
 import { graphValues } from '../graph-data.js';
+import { reportPeriods } from './fixtures/report-periods.mjs';
+import { buildExcelRow } from '../excel-row.js';
+import { shareUtilityEdits, utilityConflicts, moveUtilityPeriod } from '../utility-periods.js';
+import { hasEnteredData } from '../draft-records.js';
+
+test('JRE air flow and compressor efficiency use the confirmed boundary in all modes', () => {
+  for (const draft of reportPeriods('JRE', '2026-11-12')) {
+    draft.airCompressor = { start: '999999999.123456', end: '1000000099.123456' };
+    const report = calculateDraft(draft);
+    const factor =
+      draft.periodKind === 'workingHours' ? 4 : draft.periodKind === 'nightShift' ? 6 : 10;
+    assert.equal(report.airCompressorResult.value, '100');
+    assert.equal(report.airCompressorResult.electricity, String(factor * 44));
+    assert.equal(report.airCompressorResult.ratio, String((factor * 44) / 100));
+    assert.match(report.reportSectionText, /Air Compressor: 100 Nm³/);
+    assert.equal(graphValues(reportSnapshot(draft), 'JRE').u5, 100);
+    const excel = buildExcelRow(draft, report);
+    assert.equal(excel.values[excel.columns.findIndex((c) => c.column === 'AB')], '100');
+    assert.equal(
+      excel.values[excel.columns.findIndex((c) => c.column === 'AC')],
+      String((factor * 44) / 100),
+    );
+  }
+  for (const draft of reportPeriods('JRE', '2026-11-11')) {
+    draft.airCompressor = { start: '10', end: '20' };
+    const result = calculateDraft(draft);
+    assert.equal(result.airCompressorResult.applicable, false);
+    assert.doesNotMatch(result.reportSectionText, /Air Compressor: 10 Nm³/);
+    assert.deepEqual(draft.airCompressor, { start: '10', end: '20' });
+  }
+  const uniland = reportPeriods('UNILAND', '2026-11-12')[0];
+  assert.equal(calculateDraft(uniland).airCompressorResult.applicable, false);
+});
+
+test('zero compressor inputs are valid; missing energy or zero flow never fabricates an efficiency', () => {
+  const draft = reportPeriods('JRE', '2026-11-12')[0];
+  for (const index of [11, 12, 13, 14]) draft.rows[index].end = [...draft.rows[index].start];
+  draft.airCompressor = { start: '1', end: '101' };
+  assert.equal(calculateDraft(draft).airCompressorResult.ratio, '0');
+  draft.rows[12].end[0] = '';
+  assert.equal(calculateDraft(draft).airCompressorResult.ratio, '');
+  draft.airCompressor.end = '1';
+  const report = calculateDraft(draft),
+    excel = buildExcelRow(draft, report);
+  assert.equal(report.airCompressorResult.value, '0');
+  assert.equal(excel.values[excel.columns.findIndex((c) => c.column === 'AC')], '');
+  assert.equal(excel.values.length, 49);
+  for (const end of ['', '-', '0', 'bad']) {
+    draft.airCompressor.end = end;
+    assert.equal(calculateDraft(draft).airCompressorResult.ratio, '');
+    assert.equal(reportSnapshot(draft, { allowPartial: true }).draft.airCompressor.end, end);
+  }
+});
+
+test('air-only partial input is entered data and retains raw strings through restore and date movement', () => {
+  const draft = createDraft('JRE', '2026-11-12', '2026-11-13');
+  draft.airCompressor = { start: '0010,000001', end: '0020.000002' };
+  assert.equal(hasEnteredData(draft), true);
+  const saved = restoreDrafts(
+    JSON.stringify({ version: 4, drafts: { JRE: draft, UNILAND: createDraft('UNILAND') } }),
+  ).JRE;
+  assert.deepEqual(saved.airCompressor, draft.airCompressor);
+  assert.equal(calculateDraft(saved).airCompressorResult.value, '10.000001');
+  assert.deepEqual(changeDraftPeriod(saved, '2026-11-13', '2026-11-14').airCompressor, {
+    start: '0020.000002',
+    end: '',
+  });
+  saved.rows.forEach((row) => row.end.fill('100'));
+  assert.deepEqual(nextDayDraft(saved).airCompressor, { start: '0020.000002', end: '' });
+  const old = structuredClone(draft);
+  old.meterLayout = 7;
+  delete old.airCompressor;
+  old.utilities.pop();
+  const restored = restoreDrafts(
+    JSON.stringify({ version: 4, drafts: { JRE: old, UNILAND: createDraft('UNILAND') } }),
+  ).JRE;
+  assert.deepEqual(restored.rows, old.rows);
+  assert.deepEqual(restored.utilities.slice(0, 5), old.utilities);
+  assert.deepEqual(restored.airCompressor, { start: '', end: '' });
+  delete draft.airCompressor;
+  assert.throws(
+    () =>
+      restoreDrafts(
+        JSON.stringify({ version: 4, drafts: { JRE: draft, UNILAND: createDraft('UNILAND') } }),
+      ),
+    /Air Compressor/,
+  );
+});
+
+test('air observations share only matching timestamps and conflicting values remain conflicts', () => {
+  const periods = reportPeriods('JRE', '2026-11-12');
+  periods[1].airCompressor = { start: '10', end: '14' };
+  const shared = shareUtilityEdits(periods, 'workingHours', [
+    { kind: 'airCompressor', side: 'end' },
+  ]);
+  assert.equal(shared[2].airCompressor.start, '14');
+  assert.equal(shared[0].airCompressor.end, '');
+  shared[2].airCompressor.start = '15';
+  assert.ok(utilityConflicts(shared).some((c) => c.kind === 'airCompressor'));
+  const next = createDraft('JRE', '2026-11-13', '2026-11-14');
+  shared[0].airCompressor.end = '20';
+  assert.equal(moveUtilityPeriod(next, shared[0], []).airCompressor.start, '20');
+});
 
 for (const plant of ['JRE', 'UNILAND']) {
   test(

@@ -2,6 +2,11 @@ import { getLanguage } from './index.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { formatNumber } from '../numbers.js';
 export const readingMessages = {
+  flow: [
+    'Line {line}: enter Air Compressor flow once, in Nm³. Use a nonnegative number, ____ for blank or - for unavailable.',
+    '第{line}行：压缩空气流量只能填写一次，单位为Nm³。使用非负数，空白写____，不可用写-。',
+    'Baris {line}: isi flow Air Compressor sekali, dalam Nm³. Gunakan angka nonnegatif, ____ untuk kosong atau - jika tidak tersedia.',
+  ],
   size: [
     'Text is too long. Paste one reading column only.',
     '文本过长，请仅粘贴一列读数。',
@@ -126,6 +131,7 @@ export function readingIssueMessage(issue, plant) {
   }
   const key = {
     IMPORT_SIZE: 'size',
+    IMPORT_FLOW: 'flow',
     IMPORT_DATE: 'date',
     IMPORT_TIME: 'time',
     IMPORT_FACTORY: 'factory',
