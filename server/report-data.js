@@ -48,6 +48,7 @@ export function reportSnapshot(input, { allowPartial = false } = {}) {
       checks: result.checks,
       gas: result.gasResults,
       water: result.waterResult,
+      ...(plant === 'JRE' ? { airCompressor: result.airCompressorResult } : {}),
       additionalReadings: result.additionalReadings,
     },
   };

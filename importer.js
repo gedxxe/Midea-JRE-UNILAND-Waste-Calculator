@@ -37,12 +37,38 @@ export function parseReading(text, plantKey) {
   let active = null;
   const entries = [];
   let labOccurrence = 0;
+  let flowReading,
+    flowSupplied = false,
+    flowSeen = false;
   for (const [lineIndex, raw] of String(text).split(/\r?\n/).entries()) {
     const line = raw
       .trim()
       .replace(/[：＋（）]/g, (c) => ({ '：': ':', '＋': '+', '（': '(', '）': ')' })[c]);
     const sourceLine = lineIndex + 1;
     if (!line) continue;
+    if (/^(?:flow\s*meter\s*)?air\s*compressor(?:\s*flow)?\s*:/i.test(line)) {
+      const match = line.match(/:\s*(.*?)\s*Nm(?:³|3|\^3)\s*$/i);
+      const rawValue = match?.[1]?.trim();
+      if (
+        plantKey !== 'JRE' ||
+        flowSeen ||
+        !match ||
+        (rawValue !== '____' && rawValue !== '-' && decimalText(rawValue) === null)
+      )
+        issues.push({
+          level: 'ERROR',
+          code: 'IMPORT_FLOW',
+          sourceLine,
+          message: `Line ${sourceLine}: Air Compressor flow must appear once, in Nm³. Use a nonnegative number, ____ for blank, or - for unavailable.`,
+        });
+      else {
+        flowReading = rawValue === '____' ? '' : rawValue;
+        flowSupplied = rawValue !== '____';
+      }
+      flowSeen = true;
+      active = null;
+      continue;
+    }
     if (/^(JRE|UNILAND)$/i.test(line)) {
       if (line.toUpperCase() !== plantKey)
         return {
@@ -281,6 +307,7 @@ export function parseReading(text, plantKey) {
     time: times[0],
     issues: legacy && success ? moveLegacyIssues(issues) : issues,
     success,
+    ...(flowSeen ? { flowReading, flowSupplied } : {}),
   };
 }
 

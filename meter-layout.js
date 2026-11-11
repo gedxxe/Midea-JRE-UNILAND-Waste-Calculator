@@ -1,7 +1,7 @@
 import { PLANT_SCHEMAS } from './schema.js';
 import { emptyMeterRow } from './meter-activation.js';
 
-export const JRE_METER_LAYOUT = 7;
+export const JRE_METER_LAYOUT = 8;
 export const UNILAND_METER_LAYOUT = 4;
 export const JRE_LAYOUT6_FACTORS = { 2: [1, 40] };
 export const LEGACY_JRE_FACTORS = {
@@ -106,7 +106,7 @@ export function migrateMeterLayout(input) {
   if (input?.plantKey !== 'JRE') return input;
   if (
     input.meterLayout !== undefined &&
-    ![1, 2, 3, 4, 5, 6, JRE_METER_LAYOUT].includes(input.meterLayout)
+    ![1, 2, 3, 4, 5, 6, 7, JRE_METER_LAYOUT].includes(input.meterLayout)
   )
     throw new Error('Unknown meter layout.');
   if (input.meterLayout === JRE_METER_LAYOUT) return input;
@@ -123,19 +123,21 @@ export function migrateMeterLayout(input) {
     );
   const layout =
     input.meterLayout ||
-    (matches({}, 32)
-      ? 6
-      : matches({}, 31)
-        ? 5
-        : matches({}, 30)
-          ? 4
-          : matches(JRE_LAYOUT3_FACTORS, 30)
-            ? 3
-            : matches(JRE_LAYOUT2_FACTORS)
-              ? 2
-              : matches(LEGACY_JRE_FACTORS)
-                ? 1
-                : null);
+    (matches({ 2: PLANT_SCHEMAS.JRE.rows[2].factors }, 32)
+      ? 7
+      : matches({}, 32)
+        ? 6
+        : matches({}, 31)
+          ? 5
+          : matches({}, 30)
+            ? 4
+            : matches(JRE_LAYOUT3_FACTORS, 30)
+              ? 3
+              : matches(JRE_LAYOUT2_FACTORS)
+                ? 2
+                : matches(LEGACY_JRE_FACTORS)
+                  ? 1
+                  : null);
   if (!layout) return input;
   if (
     !matches(
@@ -145,7 +147,9 @@ export function migrateMeterLayout(input) {
           ? JRE_LAYOUT2_FACTORS
           : layout === 3
             ? JRE_LAYOUT3_FACTORS
-            : {},
+            : layout === 7
+              ? { 2: PLANT_SCHEMAS.JRE.rows[2].factors }
+              : {},
       layout >= 6 ? 32 : layout >= 5 ? 31 : layout >= 3 ? 30 : 29,
     )
   )
@@ -159,13 +163,15 @@ export function migrateMeterLayout(input) {
     });
     if (layout < 3) next.rows[4][side].push('');
     if (layout < 4) next.rows[15][side].push('');
-    next.rows[2][side].push('');
+    if (layout < 7) next.rows[2][side].push('');
   }
   if (layout < 3) next.rows.push({ start: [''], end: [''], inactive: false });
   if (layout < 5) next.rows.push({ start: [''], end: [''], inactive: false });
   if (layout < 6)
     next.rows.push(emptyMeterRow(PLANT_SCHEMAS.JRE.rows[31], input.startDate, input.endDate));
   next.meterLayout = JRE_METER_LAYOUT;
+  if (next.utilities?.length === 5) next.utilities.push({ value: '', note: '' });
+  next.airCompressor ??= { start: '', end: '' };
   if (layout === 1) next.importIssues = moveLegacyIssues(input.importIssues);
   return next;
 }

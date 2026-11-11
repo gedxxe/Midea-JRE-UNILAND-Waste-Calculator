@@ -18,6 +18,7 @@ import {
 } from './meter-activation.js';
 import { JRE_METER_LAYOUT, UNILAND_METER_LAYOUT } from './meter-layout.js';
 import { calculateWater } from './water.js';
+import { calculateAirCompressor } from './air-compressor.js';
 import { calculateAdditionalReadings } from './additional-readings.js';
 import { currentRatioIssues } from './import-ratios.js';
 import {
@@ -41,6 +42,7 @@ export function createDraft(plantKey, startDate = '', endDate = '') {
     endDate,
     rows: PLANT_SCHEMAS[plantKey].rows.map((row) => emptyMeterRow(row, startDate, endDate)),
     utilities: UTILITIES[plantKey].map(() => ({ value: '', note: '' })),
+    ...(plantKey === 'JRE' ? { airCompressor: { start: '', end: '' } } : {}),
   };
 }
 
@@ -347,6 +349,7 @@ export function calculateDraft(draft) {
 
   const gasResults = [];
   const waterResult = calculateWater(draft.water);
+  const airCompressorResult = calculateAirCompressor(draft, calculatedRows);
   const utilities = [];
   const calibration = gasCalibration(draft.plantKey);
   if (
@@ -364,6 +367,35 @@ export function calculateDraft(draft) {
   UTILITIES[draft.plantKey].forEach(([name, unit], i) => {
     let { value = '', note = '' } = draft.utilities?.[i] || {};
     let stockIncrease = false;
+    if (draft.plantKey === 'JRE' && i === 5) {
+      if (!airCompressorResult.applicable) return;
+      value = airCompressorResult.value;
+      if (airCompressorResult.error)
+        issue(
+          issues,
+          'AIR_FLOW_READING',
+          'Air Compressor: ' +
+            {
+              waterIncomplete: 'enter both cumulative readings in Nm³.',
+              waterInvalid: 'use nonnegative readings with up to six decimal places.',
+              waterDecreased: 'the flow reading decreased. Check the readings or a meter reset.',
+            }[airCompressorResult.error],
+          null,
+          null,
+          'ERROR',
+          { kind: 'airCompressor' },
+        );
+      if (value === '-')
+        issue(
+          issues,
+          'AIR_FLOW_UNAVAILABLE',
+          'Air Compressor: a flow reading is unavailable. Enter both readings to calculate consumption.',
+          null,
+          null,
+          'WARNING',
+          { kind: 'airCompressor' },
+        );
+    }
     if (i === 4 && waterResult.active) {
       value = waterResult.value;
       if (waterResult.error) {
@@ -576,6 +608,7 @@ export function calculateDraft(draft) {
     calculatedRows,
     gasResults,
     waterResult,
+    airCompressorResult,
     additionalReadings,
     mainText,
     reportSectionText: [mainText, crossCheckText, checks].filter(Boolean).join('\n\n'),

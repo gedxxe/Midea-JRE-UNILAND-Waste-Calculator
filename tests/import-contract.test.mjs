@@ -23,7 +23,8 @@ for (const plant of ['JRE', 'UNILAND']) {
             });
           const r = parseReading(text, plant);
           assert.equal(r.success, true, JSON.stringify(r.issues));
-          assert.deepEqual(r.values.flat(), values);
+          assert.deepEqual(r.values.flat(), plant === 'JRE' ? values.slice(0, -1) : values);
+          if (plant === 'JRE') assert.equal(r.flowReading, values.at(-1));
           assert.deepEqual(r.issues, []);
           assert.equal(r.values.length, PLANT_SCHEMAS[plant].rows.length);
         }

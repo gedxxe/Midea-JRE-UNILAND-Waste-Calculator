@@ -309,9 +309,9 @@ export const catalog = {
   exportRaw: ['Export Raw Table Data', '导出原始表格数据', 'Ekspor Data Mentah Tabel'],
   rawTemplate: ['Blank reading template', '空白读数模板', 'Template reading kosong'],
   rawTemplateHint: [
-    'Copy or download a blank electricity reading sheet.',
-    '复制或下载电表空白读数表。',
-    'Salin atau unduh template reading listrik kosong.',
+    'Copy or download a blank reading sheet.',
+    '复制或下载空白读数表。',
+    'Salin atau unduh template reading kosong.',
   ],
   rawTemplateHelp: [
     'Fill in the date and known readings. Keep ____ for blanks and use - for unavailable meters. Keep names, + separators and ratios, then paste into Import readings and choose Start or End.',

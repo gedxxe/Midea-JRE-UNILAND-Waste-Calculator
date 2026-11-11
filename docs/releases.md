@@ -4,10 +4,12 @@
 
 package.json is the version source; package-lock.json must match it. Use v0.MINOR.PATCH-alpha. Continue PATCH for the current alpha improvements. Patch numbers are integers: 0.9.9 is followed by 0.9.10, then 0.9.11. A future minor milestone requires a deliberate scope decision. Beta and stable 1.0.0 require explicit release decisions. Do not infer stability from successful tests.
 
-- Work branch: codex/v0.3.0-alpha (or a short fix branch for an existing milestone).
+- Work branch: codex/v0.MINOR.PATCH-alpha (matching package.json).
 - Preserved baseline: release/v0.1.0-alpha and annotated tag v0.1.0-alpha, both at 8e5bb21aa97344dff5d1c29826f71566b6f870f2.
 - Milestone branch: release/vX.Y.Z-alpha. Tag: vX.Y.Z-alpha. Create these only for the tested commit. Never move an existing milestone to a newer commit.
 - main is the production source. Feature pushes create Vercel previews; merging main triggers production through the existing Git integration.
+
+The versioned notes below record past changes. Use the current README and feature documentation for present behavior.
 
 ## Pull request and deployment
 
@@ -149,3 +151,11 @@ Reuse existing DOM helpers and per-call export/date lookups without changing the
 No SQL migration or API/format adoption. Pending localStorage recovery uses owner/writer-specific keys while retaining the existing tab copy, workspace and period API. A compatible client can read pending copies after tab closure or account reauthentication. A rollback to v0.11.42 leaves these keys intact but cannot recover them through that older UI; keep the browser data and return to compatible code. Do not clear recovery as a rollback step. Original stored reports, raw strings, units, queued-period versions and migration guards remain unchanged.
 
 The pre-edit production recovery archive was specifically approved for encrypted local storage and verified by local read-back/hashes. That permission did not authorize transferring production data to development. Browser and database regressions use synthetic data. No production repair or deployment is part of the local test evidence; the earlier missing-reading incident is not proven recovered.
+
+## JRE Air Compressor flow (v0.11.54-alpha)
+
+JRE layout 8 adds cumulative air flow without changing electrical meter identities. Restore layout 7 and older copies into an editable layout 8 copy, retaining every original reading and adding only blank fields. The first applicable period starts at 12 November 2026, 08:00 WIB. Stored historical output stays unchanged.
+
+Before production merge, explicitly apply migration 012_jre_air_flow.sql with the maintenance connection after a fresh encrypted backup and read-back verification, final checks, and specific production approval. It adds preservation functions/triggers for working copies, archived period autosaves and historical checkpoints; no data is rewritten. The runtime still uses existing JSON storage and grants. Builds never migrate.
+
+A revert must retain migration 012 and the recorded data. Old writers are rejected rather than allowed to drop flow readings; return to compatible code to edit protected records. Do not delete a workspace, browser recovery or observations as a rollback step. The earlier missing-reading incident is not established as recovered by these tests.

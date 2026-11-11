@@ -43,6 +43,18 @@ assert.deepEqual(
 for (const version of Object.values(pkg.dependencies)) assert.match(version, /^\d+\.\d+\.\d+$/);
 const changelog = await readFile(resolve(root, 'CHANGELOG.md'), 'utf8');
 assert.ok(changelog.includes(`## v${pkg.version}`), 'Add release notes when bumping the version.');
+const readme = await readFile(resolve(root, 'README.md'), 'utf8');
+const readmeVersions = [...readme.matchAll(/\*\*v(0\.\d+\.\d+-alpha)\*\*/g)].map((m) => m[1]);
+assert.equal(readmeVersions.length, 3, 'Keep one current release label in each README language.');
+assert.ok(
+  readmeVersions.every((version) => version === pkg.version),
+  'README release labels must match package.json.',
+);
+const agents = await readFile(resolve(root, 'AGENTS.md'), 'utf8');
+assert.ok(
+  agents.includes(`Current development milestone: v${pkg.version}`),
+  'Update the AGENTS milestone with the package version.',
+);
 for (const [key, messages] of Object.entries({
   ...catalog,
   ...guideMessages,
@@ -75,6 +87,7 @@ for (const file of PUBLIC_FILES) {
 // Diagnostic meter controls/cards add translations and UI without a browser dependency.
 // On-demand meter controls add a bounded status channel and cooldown animation.
 // Reversible card management adds bounded forms and three-language labels.
-assert.ok(size < 1185000, `Static assets grew to ${size} bytes; review the footprint.`);
+// Cumulative air flow, shared utility UI and import feedback add no browser dependency.
+assert.ok(size < 1205000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

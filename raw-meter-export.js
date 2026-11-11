@@ -24,10 +24,40 @@ function rawEndpoint(draft, side) {
   );
 }
 
+// Formatting tolerance applies to structural lines only; note text remains literal.
+function normalizeSnapshot(text) {
+  const result = [];
+  let notes = false;
+  const header =
+    /^(Selected observation:|Additional cumulative electricity readings:|Trafo 1, 2 and 3 cumulative readings|Gas readings:|Cumulative Water reading:|Cumulative Air Compressor reading:|Refill observations for |Manual period totals for |Notes:)/;
+  for (const raw of text.replaceAll('\r\n', '\n').split('\n')) {
+    if (notes) {
+      result.push(raw);
+      continue;
+    }
+    let line = raw
+      .trim()
+      .replace(/[ \t]+/g, ' ')
+      .replace(/^([A-Za-z][A-Za-z 0-9#&()–-]*):\s*/, '$1: ');
+    if (!line) continue;
+    line = line.trimEnd().replace(/Nm(?:3|\^3)\b/g, 'Nm³');
+    if (/^(Before:|After:|Tank entry off;)/.test(line)) line = '  ' + line;
+    if (header.test(line) && result.length) result.push('');
+    result.push(line);
+    if (line === 'Notes:') notes = true;
+  }
+  return result.join('\n').trim();
+}
+const sameFormatting = (text) => {
+  const [body, notes] = text.split('\n\nNotes:');
+  return body.replace(/[ \t]+/g, '') + (notes === undefined ? '' : '\nNotes:' + notes);
+};
+
 // Parse a complete sharing snapshot without mutating the current document.
 // Regenerating it catches unknown, duplicate or misplaced fields rather than dropping them.
 export function parseRawReading(text, draft, side = 'end') {
-  const input = String(text).replaceAll('\r\n', '\n').trim();
+  const original = String(text).replaceAll('\r\n', '\n').trim();
+  const input = original.includes('Selected observation') ? normalizeSnapshot(original) : original;
   if (input.length > 131072) return parseReading(input, draft.plantKey);
   if (!input.includes('\nSelected observation:')) return parseReading(input, draft.plantKey);
   const boundary = input.indexOf('\n\nSelected observation:');
@@ -59,7 +89,7 @@ export function parseRawReading(text, draft, side = 'end') {
       return v;
     };
     if (next.plantKey === 'JRE') {
-      const lines = parts.shift().split('\n');
+      const lines = (parts.shift() || '').split('\n');
       if (lines.shift() !== 'Additional cumulative electricity readings:' || lines.length !== 4)
         throw Error('Invalid additional readings.');
       next.additionalReadings ??= ADDITIONAL_METERS.map(() => ({ start: '', end: '' }));
@@ -77,7 +107,7 @@ export function parseRawReading(text, draft, side = 'end') {
       if (!line.startsWith(prefix)) throw Error('Unknown gas reading.');
       const match = line
         .slice(prefix.length)
-        .match(/^(\S+) (kg|mm|%|mmWC|mmH2O)(?:; temperature: (\S+) °C)?$/);
+        .match(/^(\S+?)\s*(kg|mmWC|mmH2O|mm|%)(?:;\s*temperature:\s*(\S+)\s*°C)?$/);
       if (
         !match ||
         (gas.id !== 'R32' && match[2] !== gas.unit) ||
@@ -91,7 +121,7 @@ export function parseRawReading(text, draft, side = 'end') {
         ...(next.plantKey === 'JRE' && gas.id === 'R32' ? { unit: match[2] } : {}),
       };
     };
-    const gasLines = parts.shift().split('\n');
+    const gasLines = (parts.shift() || '').split('\n');
     if (gasLines.shift() !== 'Gas readings:' || gasLines.length !== gases.length)
       throw Error('Invalid gas section.');
     gasLines.forEach((line, i) => {
@@ -101,15 +131,27 @@ export function parseRawReading(text, draft, side = 'end') {
       entry[side] = point(off ? line.slice(0, -17) : line, gases[i].name + ': ', gases[i]);
       entry.refills = [];
     });
-    const water = parts.shift().match(/^Cumulative Water reading:\nWater: (\S+) m³$/);
+    const water = (parts.shift() || '').match(/^Cumulative Water reading:\nWater: (\S+)\s*m³$/);
     if (!water) throw Error('Invalid Water reading.');
     if (next.water !== undefined || water[1] !== '____') {
       next.water ??= { start: '', end: '' };
       next.water[side] = value(water[1]);
     }
+    const hasAirFlow = parts[0]?.startsWith('Cumulative Air Compressor reading:');
+    let blankAirFlow = false;
+    if (hasAirFlow) {
+      const flow = parts
+        .shift()
+        .match(/^Cumulative Air Compressor reading:\nAir Compressor: (\S+) Nm(?:³|3|\^3)$/);
+      if (next.plantKey !== 'JRE' || !flow)
+        throw Error('Air Compressor: use one cumulative reading in Nm³.');
+      next.airCompressor ??= { start: '', end: '' };
+      blankAirFlow = flow[1] === '____';
+      if (!blankAirFlow) next.airCompressor[side] = value(flow[1]);
+    }
     const period = endpoint('start') + ' to ' + endpoint('end');
     if (parts[0]?.startsWith('Refill observations for ')) {
-      const lines = parts.shift().split('\n');
+      const lines = (parts.shift() || '').split('\n');
       if (
         lines.shift() !== 'Refill observations for ' + period ||
         lines.shift() !== 'Event times not recorded.'
@@ -135,7 +177,7 @@ export function parseRawReading(text, draft, side = 'end') {
       }
     }
     if (parts[0]?.startsWith('Manual period totals for ')) {
-      const lines = parts.shift().split('\n');
+      const lines = (parts.shift() || '').split('\n');
       if (
         lines.shift() !== 'Manual period totals for ' + period ||
         lines.shift() !== 'Entered values, not cumulative meter readings.'
@@ -174,6 +216,11 @@ export function parseRawReading(text, draft, side = 'end') {
       'Selected observation: ' + selected[1] + ',',
       'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ',',
     );
+    if (blankAirFlow)
+      canonical = canonical.replace(
+        'Air Compressor: ____ Nm³',
+        'Air Compressor: ' + (next.airCompressor?.[side] || '____') + ' Nm³',
+      );
     // A previous export may omit a newly added optional tail. Retain the existing
     // same-time observation, but still compare all other bytes and raw sections.
     PLANT_SCHEMAS[next.plantKey].rows.forEach((row, ri) => {
@@ -192,7 +239,17 @@ export function parseRawReading(text, draft, side = 'end') {
         )
         .join('\n');
     });
-    if (parts.length || regenerated.text !== canonical)
+    const expectedText =
+      hasAirFlow || next.plantKey !== 'JRE'
+        ? regenerated.text
+        : regenerated.text.replace(
+            /\n\nCumulative Air Compressor reading:\nAir Compressor: [^\n]+/,
+            '',
+          );
+    if (
+      parts.length ||
+      sameFormatting(normalizeSnapshot(expectedText)) !== sameFormatting(canonical)
+    )
       throw Error('Raw sections do not match the current format. No data was imported.');
     parsed.raw = next;
     return parsed;
@@ -200,7 +257,18 @@ export function parseRawReading(text, draft, side = 'end') {
     return {
       ...parsed,
       success: false,
-      issues: [...parsed.issues, { level: 'ERROR', code: 'RAW_IMPORT', message: error.message }],
+      issues: [
+        ...parsed.issues,
+        {
+          level: 'ERROR',
+          code: 'RAW_IMPORT',
+          message:
+            (error instanceof TypeError
+              ? 'A required raw section is missing or misplaced.'
+              : error.message) +
+            ' Check the named section, units and duplicate lines; select the matching period before trying again. Nothing was changed.',
+        },
+      ],
     };
   }
 }
@@ -321,6 +389,12 @@ export function exportAllRawReadings(draft, side = 'end') {
   )
     shape();
   sections.push('Cumulative Water reading:\nWater: ' + raw(draft.water?.[side], 'Water') + ' m³');
+  if (draft.plantKey === 'JRE')
+    sections.push(
+      'Cumulative Air Compressor reading:\nAir Compressor: ' +
+        raw(draft.airCompressor?.[side], 'Air Compressor') +
+        ' Nm³',
+    );
   const period = endpoint('start') + ' to ' + endpoint('end');
   if (refillLines.length)
     sections.push(
@@ -347,7 +421,11 @@ export function exportAllRawReadings(draft, side = 'end') {
     const gasIndex = gases.findIndex((gas) => gas.utilityIndex === index);
     const activeTank = gasIndex >= 0 && draft.gas?.entries?.[gasIndex]?.enabled;
     // Preserve the current UI distinction between raw Water and legacy manual Water.
-    if (!activeTank && !(index === 4 && draft.water !== undefined))
+    if (
+      !activeTank &&
+      !(index === 4 && draft.water !== undefined) &&
+      !(draft.plantKey === 'JRE' && index === 5 && draft.airCompressor !== undefined)
+    )
       manual.push(
         name +
           ': ' +

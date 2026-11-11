@@ -28,7 +28,12 @@ export function createImportEditor({ current, apply, toast }) {
     const draft = current();
     const side = $('import-side').value;
     lastParsed = null;
-    $('import-text').value = texts[side] ?? formatReadingColumn(draft, side).text;
+    $('import-text').value =
+      texts[side] ??
+      formatReadingColumn(draft, side).text +
+        (draft.plantKey === 'JRE'
+          ? '\n\nAir Compressor Flow: ' + (draft.airCompressor?.[side] || '____') + ' Nm³'
+          : '');
     $('import-text').scrollTop = 0;
     $('import-feedback').textContent = '';
   }

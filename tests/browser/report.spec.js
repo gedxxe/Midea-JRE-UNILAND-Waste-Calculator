@@ -48,6 +48,40 @@ test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
 });
 
+test('JRE cumulative air flow stays readable, shares shift boundaries and is absent from UNILAND', async ({
+  page,
+}, info) => {
+  await page.locator('#start-date').fill('2026-11-12');
+  await page.locator('#end-date').fill('2026-11-13');
+  await page.locator('#end-date').press('Enter');
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
+  const section = page.locator('#air-flow-section');
+  await expect(section).toBeVisible();
+  await expect(section.locator('[data-panel-icon="compressor"] svg')).toBeVisible();
+  await expect(page.locator('#utility-fields [data-utility="5"]')).toHaveCount(0);
+  await page.locator('#air-flow-start').fill('10.000001');
+  await page.locator('#air-flow-end').fill('20.000002');
+  await expect(page.locator('#air-flow-total')).toHaveText('Consumption: 10.000001 Nm³');
+  await page.selectOption('#reading-mode', 'workingHours');
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('#air-flow-start')).toHaveValue('10.000001');
+  await page.locator('#air-flow-end').fill('14.000001');
+  await expect(page.locator('#air-flow-total')).toHaveText('Consumption: 4 Nm³');
+  await page.selectOption('#reading-mode', 'nightShift');
+  await expect(page.locator('.entry-column')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('#air-flow-start')).toHaveValue('14.000001');
+  await expect(page.locator('#air-flow-end')).toHaveValue('20.000002');
+  await expect(page.locator('#air-flow-total')).toHaveText('Consumption: 6.000001 Nm³');
+  await page.locator('#air-flow-end').fill('');
+  await expect(page.locator('#air-flow-status')).toContainText('Enter both Air Compressor');
+  await page.screenshot({ path: info.outputPath('jre-air-flow.png') });
+  await page.locator('[data-plant="UNILAND"]').click();
+  await expect(section).toBeHidden();
+  await page.locator('[data-plant="JRE"]').click();
+  await expect(page.locator('#air-flow-start')).toHaveValue('14.000001');
+  await expect(page.locator('#air-flow-end')).toHaveValue('');
+});
+
 test('start and end readings stay aligned with individual usage in both plants and all languages', async ({
   page,
 }, info) => {
@@ -332,8 +366,9 @@ test('import editor follows the chosen column and keeps edits separate until val
     await page.locator(`[data-plant="${plant}"]`).click();
     await page.locator('#load-example').click();
     const d = exampleDraft(plant);
-    const start = exportRawReading(d, 'start').text,
-      end = exportRawReading(d, 'end').text;
+    const flow = plant === 'JRE' ? '\n\nAir Compressor Flow: ____ Nm³' : '';
+    const start = exportRawReading(d, 'start').text + flow,
+      end = exportRawReading(d, 'end').text + flow;
     await page.locator('#open-import').click();
     await page.locator('#import-side').selectOption('start');
     await expect(page.locator('#import-text')).toHaveValue(start);
@@ -347,13 +382,16 @@ test('import editor follows the chosen column and keeps edits separate until val
     await page.locator('#import-side').selectOption('start');
     await expect(page.locator('#import-text')).toHaveValue('invalid unfinished paste');
     await page.locator('#import-side').selectOption('end');
-    const replacement = end.replace(`1. Total: ${d.rows[0].end[0]}`, '1. Total: 999999');
+    const replacement = end
+      .replace(`1. Total: ${d.rows[0].end[0]}`, '1. Total: 999999')
+      .replace('Air Compressor Flow: ____', 'Air Compressor Flow: 20,000001');
     await page.locator('#import-text').fill(replacement);
     await page.screenshot({ path: info.outputPath(`import-column-${plant}.png`) });
     await expect(cell(page, 0, 'end')).toHaveValue(d.rows[0].end[0]);
     await page.locator('#apply-import').click();
     await expect(page.locator('#import-dialog')).not.toBeVisible();
     await expect(cell(page, 0, 'end')).toHaveValue('999999');
+    if (plant === 'JRE') await expect(page.locator('#air-flow-end')).toHaveValue('20,000001');
     await expect(cell(page)).toHaveValue(d.rows[0].start[0]);
     await page.locator('#open-import').click();
     await expect(page.locator('#import-text')).toHaveValue(replacement);
@@ -362,6 +400,7 @@ test('import editor follows the chosen column and keeps edits separate until val
     await page.locator('#import-dialog form button').click();
     await page.locator('#undo-change').click();
     await expect(cell(page, 0, 'end')).toHaveValue(d.rows[0].end[0]);
+    if (plant === 'JRE') await expect(page.locator('#air-flow-end')).toHaveValue('');
   }
 });
 

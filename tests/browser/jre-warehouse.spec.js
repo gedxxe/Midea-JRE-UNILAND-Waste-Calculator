@@ -97,7 +97,7 @@ test('JRE row32 uses x40 and net Warehouse in every mode with aligned inputs, ra
   await expect(page.locator('tr[data-row="25"] .energy > span')).toHaveText('-');
   await page.keyboard.press('Control+s');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-  expect(state.workspace.drafts.JRE.meterLayout).toBe(7);
+  expect(state.workspace.drafts.JRE.meterLayout).toBe(8);
   expect(state.workspace.drafts.JRE.rows[31].end).toEqual(['']);
   await page.reload();
   await page.locator('#search-meter').fill('Warehouse');

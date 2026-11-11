@@ -2,6 +2,14 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.54-alpha - 2026-11-11
+
+- Add JRE cumulative Air Compressor flow in Nm³ below Water, effective for periods starting 12 November 2026 at 08:00 WIB. Save partial readings and share matching timestamps across 24-hour, after-production and night periods without changing older saved output.
+- Insert flow and compressor kWh/Nm³ at Excel AB:AC after the four compressor electricity columns. JRE now spans E:BA (49 cells), with AR blank; UNILAND remains BE:CV. Zero electricity is valid; zero or unavailable flow leaves the ratio blank and does not block copying other cells.
+- Include flow in JRE blank templates and full raw sharing/import. Accept spacing and blank-line variations while retaining note text, unit checks, duplicate detection and matching-period checks. Import errors give a correction without applying partial changes.
+- Upgrade editable JRE copies to layout 8. Stage migration 012 to protect flow data during application rollback; builds do not migrate or rewrite production data.
+- Align README release labels and add checks against package.json and the AGENTS milestone. Keep the architecture diagram, badges and existing icons; add an original compressor SVG and reuse the cumulative utility panel. Review the static budget at 1,205,000 bytes, with no new dependency.
+
 ## v0.11.53-alpha - 2026-11-09
 
 - Align new-device profile suggestions with the firmware's selectable profiles. Replace the legacy Schneider Delivered-only suggestion with the active PM5110 D+R profile.

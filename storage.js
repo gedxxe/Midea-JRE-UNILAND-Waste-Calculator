@@ -12,6 +12,7 @@ import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from './e
 import { currentRatioIssues } from './import-ratios.js';
 import { migrateMeterLayout } from './meter-layout.js';
 import { restoreWater, nextWaterDay } from './water.js';
+import { restoreAirCompressor, nextAirCompressorDay } from './air-compressor.js';
 import {
   restoreAdditionalReadings,
   nextAdditionalReadings,
@@ -195,6 +196,10 @@ export function restoreDrafts(raw) {
       throw new Error('Draft meter layout does not match.');
     draft.gas = restoreGasDraft(input.gas, plant);
     if (input.water !== undefined) draft.water = restoreWater(input.water);
+    if (plant === 'JRE') {
+      if (input.airCompressor === undefined) throw Error('Missing Air Compressor readings.');
+      draft.airCompressor = restoreAirCompressor(input.airCompressor);
+    }
     // Retain legacy UNILAND pairs for recovery, without using them in new reports.
     if (input.additionalReadings !== undefined)
       draft.additionalReadings = restoreAdditionalReadings(input.additionalReadings);
@@ -274,6 +279,7 @@ export function nextDayDraft(draft) {
   const next = createDraft(draft.plantKey, draft.endDate, shiftDate(draft.endDate, 1));
   next.gas = nextGasDay(draft.gas, draft.plantKey);
   if (draft.water) next.water = nextWaterDay(draft.water);
+  if (draft.airCompressor) next.airCompressor = nextAirCompressorDay(draft.airCompressor);
   if (draft.additionalReadings)
     next.additionalReadings =
       draft.plantKey === 'JRE'
@@ -301,6 +307,7 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
   if (draft.additionalReadings || origin.additionalReadings)
     next.additionalReadings = emptyAdditionalReadings();
   if (draft.water || origin.water) next.water = { start: '', end: '' };
+  if (draft.airCompressor || origin.airCompressor) next.airCompressor = { start: '', end: '' };
   for (const side of ['start', 'end']) {
     const date = next[side + 'Date'];
     let source;
@@ -321,6 +328,8 @@ export function changeDraftPeriod(draft, startDate, endDate, origin = draft) {
         row[side] = source.draft.additionalReadings?.[i]?.[source.side] || '';
       });
       if (next.water) next.water[side] = source.draft.water?.[source.side] || '';
+      if (next.airCompressor)
+        next.airCompressor[side] = source.draft.airCompressor?.[source.side] || '';
       for (const issue of source.draft.importIssues || []) {
         if (
           !next.importIssues.some((existing) => JSON.stringify(existing) === JSON.stringify(issue))

@@ -300,5 +300,5 @@ test('R32 kg survives backup, snapshots, raw sharing and Excel without temperatu
   assert.match(text, /Refrigerant R32: 1200.025 kg/);
   assert.doesNotMatch(text, /Refrigerant R32:.*temperature/);
   const row = buildExcelRow(d, result);
-  assert.equal(row.values[row.columns.findIndex((c) => c.column === 'AT')], '300.1');
+  assert.equal(row.values[row.columns.findIndex((c) => c.column === 'AV')], '300.1');
 });

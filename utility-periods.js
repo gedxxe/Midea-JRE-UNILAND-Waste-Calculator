@@ -5,9 +5,10 @@ import { gasPoint, gasPointUnit, syncGasVersion, copyGasPoint } from './gas.js';
 export const UTILITY_LAYOUT = 1;
 export const hasUtilityData = (d) =>
   d.utilities.some((v) => v.value.trim() || v.note.trim()) ||
-  Boolean(d.water?.start.trim() || d.water?.end.trim()) ||
+  flowFields.some((field) => Boolean(d[field]?.start.trim() || d[field]?.end.trim())) ||
   d.gas.entries.some((e) => e.enabled || e.refills.length || hasPoint(e.start) || hasPoint(e.end));
 const sides = ['start', 'end'];
+const flowFields = ['water', 'airCompressor'];
 const stamp = (d, side) =>
   validDate(d[side + 'Date']) && validTime(observationTime(d, side))
     ? [d.plantKey, d[side + 'Date'], observationTime(d, side)].join('|')
@@ -40,10 +41,11 @@ export function seedUtilityReadings(periods) {
   for (const target of next)
     for (const side of sides) {
       const sources = matches(periods, target, side);
-      if (target.water && !target.water[side].trim()) {
-        const values = sources.map((s) => s.draft.water?.[s.side] || '').filter((v) => v.trim());
-        if (new Set(values.map((v) => numeric(v))).size === 1) target.water[side] = values[0];
-      }
+      for (const field of flowFields)
+        if (target[field] && !target[field][side].trim()) {
+          const values = sources.map((s) => s.draft[field]?.[s.side] || '').filter((v) => v.trim());
+          if (new Set(values.map((v) => numeric(v))).size === 1) target[field][side] = values[0];
+        }
       target.gas.entries.forEach((entry, index) => {
         if (hasPoint(entry[side])) return;
         const points = sources
@@ -66,9 +68,13 @@ export function shareUtilityEdits(periods, kind, edits) {
   for (const edit of edits) {
     if (!sides.includes(edit.side)) continue;
     for (const { draft: target, side } of matches(next, source, edit.side)) {
-      if (edit.kind === 'water' && !legacyWater(target)) {
-        target.water ??= { start: '', end: '' };
-        target.water[side] = source.water?.[edit.side] || '';
+      if (
+        flowFields.includes(edit.kind) &&
+        (edit.kind !== 'water' || !legacyWater(target)) &&
+        (edit.kind !== 'airCompressor' || target.plantKey === 'JRE')
+      ) {
+        target[edit.kind] ??= { start: '', end: '' };
+        target[edit.kind][side] = source[edit.kind]?.[edit.side] || '';
       } else if (edit.kind === 'gas' && ['reading', 'temperature', 'unit'].includes(edit.field)) {
         const from = source.gas.entries[edit.index][edit.side],
           to = target.gas.entries[edit.index][side];
@@ -103,8 +109,10 @@ export function utilityConflicts(periods) {
       if (!time || seen.has(time)) continue;
       seen.add(time);
       const sources = matches(periods, draft, side);
-      const water = sources.map((s) => s.draft.water?.[s.side] || '').filter((v) => v.trim());
-      if (new Set(water.map((v) => numeric(v))).size > 1) conflicts.push({ kind: 'water', side });
+      for (const field of flowFields) {
+        const values = sources.map((s) => s.draft[field]?.[s.side] || '').filter((v) => v.trim());
+        if (new Set(values.map((v) => numeric(v))).size > 1) conflicts.push({ kind: field, side });
+      }
       draft.gas.entries.forEach((_, index) => {
         const points = sources
           .filter((s) => s.draft.gas.entries[index].enabled)
@@ -147,13 +155,14 @@ export function moveUtilityPeriod(target, previous, sources) {
   );
   if (periodSource) {
     target.utilities = structuredClone(periodSource.utilities);
-    if (periodSource.water) target.water = { ...periodSource.water };
+    for (const field of flowFields)
+      if (periodSource[field]) target[field] = { ...periodSource[field] };
     target.gas = structuredClone(periodSource.gas);
   } else {
     target.gas.entries.forEach((entry, i) => {
       entry.enabled = previous.gas.entries[i].enabled;
     });
-    if (previous.water) target.water = { start: '', end: '' };
+    for (const field of flowFields) if (previous[field]) target[field] = { start: '', end: '' };
   }
   for (const side of sides) {
     const candidates = matches([previous, ...sources], target, side);
@@ -162,20 +171,26 @@ export function moveUtilityPeriod(target, previous, sources) {
       observationTime(previous, side) === observationTime(target, side)
     )
       candidates.unshift({ draft: previous, side });
-    if (
-      !target.water &&
-      !legacyWater(previous) &&
-      candidates.some((s) => s.draft.water?.[s.side]?.trim())
-    )
-      target.water = { start: '', end: '' };
-    if (target.water) {
-      const own = candidates.find((s) => s.draft === previous && s.draft.water?.[s.side]?.trim());
-      const values = candidates.map((s) => s.draft.water?.[s.side] || '').filter((v) => v.trim());
-      target.water[side] = own
-        ? own.draft.water[own.side]
-        : new Set(values.map((v) => numeric(v))).size === 1
-          ? values[0]
-          : '';
+    for (const field of flowFields) {
+      if (
+        !target[field] &&
+        (field !== 'water' || !legacyWater(previous)) &&
+        candidates.some((s) => s.draft[field]?.[s.side]?.trim())
+      )
+        target[field] = { start: '', end: '' };
+      if (target[field]) {
+        const own = candidates.find(
+          (s) => s.draft === previous && s.draft[field]?.[s.side]?.trim(),
+        );
+        const values = candidates
+          .map((s) => s.draft[field]?.[s.side] || '')
+          .filter((v) => v.trim());
+        target[field][side] = own
+          ? own.draft[field][own.side]
+          : new Set(values.map((v) => numeric(v))).size === 1
+            ? values[0]
+            : '';
+      }
     }
     target.gas.entries.forEach((entry, i) => {
       const points = candidates

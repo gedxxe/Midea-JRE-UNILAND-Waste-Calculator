@@ -18,7 +18,7 @@ export function formatBlankReadingTemplate(plantKey, working = false) {
     (row) =>
       `${row.no}. ${row.name}: ${row.factors.map((_, mi) => '____' + ratioAnnotation(row, mi)).join(' + ')}`,
   );
-  return `${schema.name}\n\nDD/MM/YYYY${working ? '\nReading time: HH:MM WIB' : ''}\n\n${lines.join('\n')}`;
+  return `${schema.name}\n\nDD/MM/YYYY${working ? '\nReading time: HH:MM WIB' : ''}\n\n${lines.join('\n')}${plantKey === 'JRE' ? '\n\nAir Compressor Flow: ____ Nm³' : ''}`;
 }
 
 // Export one cumulative reading column. Never apply factors or compare endpoints.
