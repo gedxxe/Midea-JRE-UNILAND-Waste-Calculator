@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.58-alpha - 2026-11-16
+
+- Recognize full raw copies from their named sections even when older exports omit Selected observation. Use the reading header and time, keeping the confirmed daily 08:00 boundary and strict checks for explicit malformed metadata, unknown/duplicate sections and units.
+- Preserve omitted optional flow readings at matching observations and leave new-period fields blank. Cover all factories/modes plus the older morning-copy browser flow without changing stock calculations or saved output.
+- Keep operational gap recovery separate from application changes: verify the owner, encrypted backup and supplied/stored differences; preserve existing documents and shift modes. No database migration.
+
 ## v0.11.57-alpha - 2026-11-16
 
 - Default daily imports to the adjacent Start/End pair instead of retaining an unrelated opposite date. Preview the destination and require an explicit choice to keep a multi-day range. Preserve destination loading, Undo and autosave.

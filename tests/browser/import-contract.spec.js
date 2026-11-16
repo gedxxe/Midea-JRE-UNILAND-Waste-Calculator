@@ -535,3 +535,24 @@ test('daily import previews an adjacent pair; a combined range needs an explicit
   await expect(page.locator('#end-date')).toHaveValue('2026-10-27');
   expect(errors).toEqual([]);
 });
+
+test('an older morning copy imports all named fields without selection metadata or a flow section', async ({
+  page,
+}) => {
+  const { errors, workspace } = await setup(page, true);
+  const text = observation('2026-11-12', false, 1234)
+    .replace(/\n\nSelected observation:[^\n]+/, '')
+    .replace(/\n\nCumulative Air Compressor reading:\nAir Compressor: [^\n]+/, '');
+  await apply(page, text, 'start');
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  const draft = workspace().drafts.JRE;
+  expect([draft.startDate, draft.endDate]).toEqual(['2026-11-12', '2026-11-13']);
+  expect(draft.rows[0].start[0]).toBe('1234');
+  expect(draft.rows[0].end[0]).toBe('');
+  expect(draft.additionalReadings[3].start).toBe('1234');
+  expect(draft.gas.entries[3].start).toEqual({ reading: '1234', temperature: '', unit: 'kg' });
+  expect(draft.water.start).toBe('1234');
+  expect(draft.airCompressor).toEqual({ start: '', end: '' });
+  expect(errors).toEqual([]);
+});
