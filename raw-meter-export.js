@@ -124,9 +124,12 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
   if (original.length > 131072) return parseReading(original, draft.plantKey);
   const input = normalizeSnapshot(original);
   if (input.length > 131072) return parseReading(input, draft.plantKey);
-  if (!input.includes('\nSelected observation:'))
-    return readingSlot(parseReading(input, draft.plantKey), draft);
-  const boundary = input.indexOf('\n\nSelected observation:');
+  const boundaryMatch =
+    /\n\n(?=Selected observation:|Additional cumulative electricity readings:|Trafo 1, 2 and 3 cumulative readings|Gas readings:|Cumulative Water reading:|Cumulative Air Compressor reading:|Refill observations for |Manual period totals for |Notes:)/.exec(
+      input,
+    );
+  if (!boundaryMatch) return readingSlot(parseReading(input, draft.plantKey), draft);
+  const boundary = boundaryMatch.index;
   const parts = input.slice(boundary + 2).split('\n\n');
   const parsed = readingSlot(parseReading(input.slice(0, boundary), draft.plantKey), draft);
   if (!parsed.success) return parsed;
@@ -135,16 +138,25 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
       throw Error(
         'Electricity ratios do not match. Use the ratios from the current blank template.',
       );
-    const selected = (parts.shift() || '').match(/^Selected observation: (Start|End)\s*,\s*(.+)$/i);
-    if (!selected)
+    const hasSelected = parts[0]?.startsWith('Selected observation:');
+    const selected = hasSelected
+      ? parts.shift().match(/^Selected observation: (Start|End)\s*,\s*(.+)$/i)
+      : null;
+    if (hasSelected && !selected)
       throw Error('Selected observation: use Start or End followed by a valid date and time.');
-    const stamp = selected[2].match(
+    const stamp = selected?.[2].match(
       /^(\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*20\d{2}|20\d{2}-\d{2}-\d{2})\s+(.*)$/,
     );
-    const sourceDate = stamp && importDate(stamp[1]),
-      sourceTime = stamp && importTime(stamp[2]);
-    if (!sourceDate?.valid || !sourceTime)
-      throw Error('Selected observation: enter a valid date and HH:MM WIB time.');
+    const sourceDate = hasSelected
+        ? stamp && importDate(stamp[1])
+        : { date: parsed.date, valid: validDate(parsed.date) },
+      sourceTime = hasSelected
+        ? stamp && importTime(stamp[2])
+        : { time: parsed.time || observationTime(draft, side) };
+    if (!sourceDate?.valid || !sourceTime || !validTime(sourceTime.time))
+      throw Error(
+        'Use a valid reading date and Reading time, or a valid Selected observation timestamp.',
+      );
     parsed.time ||= sourceTime.time;
     readingSlot(parsed, draft);
     const next = structuredClone(prepare ? prepare(parsed, side) : draft);
@@ -267,6 +279,7 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
         parsed.timeRange &&
         legacy &&
         heading === prefix + legacy.join(' to ') &&
+        selected &&
         sourceEndpoint === legacy[selected[1].toLowerCase() === 'start' ? 0 : 1];
       if (
         heading !== expected &&
@@ -377,15 +390,15 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
     }
     // The source side label may differ when reusing an observation at a shared boundary.
     const regenerated = exportAllRawReadings(next, side);
+    const selection =
+      'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ', ' + endpoint(side);
+    const body = input.slice(boundary + 2);
     let canonical =
       exportRawReading(next, side).text +
       '\n\n' +
-      input
-        .slice(boundary + 2)
-        .replace(
-          /^Selected observation:[^\n]+/,
-          'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ', ' + endpoint(side),
-        );
+      (hasSelected
+        ? body.replace(/^Selected observation:[^\n]+/, selection)
+        : selection + '\n\n' + body);
     if (manualReplacement) canonical = canonical.replace(...manualReplacement);
     for (const replacement of contextReplacements) canonical = canonical.replace(...replacement);
     if (blankAirFlow)

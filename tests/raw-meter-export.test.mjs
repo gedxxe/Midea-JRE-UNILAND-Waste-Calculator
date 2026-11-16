@@ -78,12 +78,12 @@ function filled(plant, kind = 'daily') {
     g.start = {
       reading: '0010.000001',
       temperature: i === 3 ? '-10,125000' : '',
-      ...(i === 3 ? { unit: 'mm' } : {}),
+      ...(i === 3 && plant === 'JRE' ? { unit: 'mm' } : {}),
     };
     g.end = {
       reading: '0025,250000',
       temperature: i === 3 ? '+33.500000' : '',
-      ...(i === 3 ? { unit: 'mm' } : {}),
+      ...(i === 3 && plant === 'JRE' ? { unit: 'mm' } : {}),
     };
   });
   return d;
@@ -448,4 +448,38 @@ test('misspelled date notes, encoded indentation and legacy refill metadata reta
   assert.deepEqual(parsed.raw.gas.entries[3].refills, source.gas.entries[3].refills);
   assert.ok(parsed.issues.some((i) => i.code === 'IMPORT_CONTEXT'));
   assert.deepEqual(destination, before);
+});
+
+test('legacy full copies without Selected observation use their header and keep an omitted flow reading', () => {
+  for (const plant of ['JRE', 'UNILAND'])
+    for (const mode of ['daily', 'workingHours', 'nightShift']) {
+      const draft = filled(plant, mode);
+      if (plant === 'JRE') draft.airCompressor = { start: '0010.123456', end: '0020,654321' };
+      const before = structuredClone(draft);
+      let text = exportAllRawReadings(draft)
+        .text.replace(/\n\nSelected observation:[^\n]+/, '')
+        .replace(/\n\nCumulative Air Compressor reading:\nAir Compressor: [^\n]+/, '');
+      if (mode === 'daily')
+        text = text.replace(
+          /^(\d{2}\/\d{2}\/\d{4})$/m,
+          '$1 (Morning)\nReading time: 07:00-08:00 WIB',
+        );
+      const parsed = parseRawReading(text, draft);
+      assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+      assert.equal(parsed.date, draft.endDate);
+      assert.equal(parsed.time, mode === 'workingHours' ? '17:00' : '08:00');
+      assert.deepEqual(parsed.raw.rows, draft.rows);
+      assert.deepEqual(parsed.raw.additionalReadings, draft.additionalReadings);
+      assert.deepEqual(parsed.raw.water, draft.water);
+      assert.deepEqual(parsed.raw.gas, draft.gas);
+      if (plant === 'JRE') assert.deepEqual(parsed.raw.airCompressor, draft.airCompressor);
+      assert.equal(parseRawReading(text.replace(/\n\n/g, '\n'), draft).success, true);
+      const malformed = exportAllRawReadings(draft).text.replace(
+        /Selected observation:[^\n]+/,
+        'Selected observation: End, invalid timestamp',
+      );
+      assert.equal(parseRawReading(malformed, draft).success, false);
+      assert.deepEqual(draft, before);
+      assert.equal(parseRawReading(text + '\n\nUnknown: 7', draft).success, false);
+    }
 });
