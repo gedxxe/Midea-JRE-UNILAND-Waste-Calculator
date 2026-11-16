@@ -16,6 +16,13 @@
     <link rel="icon" type="image/webp" href="/asset/Midea.webp" />
     <link rel="stylesheet" href="/style.css" />
     <link rel="stylesheet" href="/logo.css" />
+    <link
+      rel="preload"
+      href="/asset/fonts/OverusedGrotesk-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="stylesheet" href="/welcome.css" />
     <link rel="stylesheet" href="/signin-effects.css" />
     <link rel="stylesheet" href="/glass.css" />
@@ -163,6 +170,14 @@
         </div>
       </header>
       <main class="workspace">
+        <div id="signin-greeting" class="signin-greeting" hidden>
+          <p class="signin-greeting-eyebrow">JRE / UNILAND</p>
+          <h2 id="signin-greeting-label">
+            <span class="signin-greeting-line">HEY 👋, YOU!</span>
+            <span class="signin-greeting-line">ENGINEERS CAN’T BE TIRED, RIGHT? 😂</span>
+            <span class="signin-greeting-line">WELCOME ABOARD!</span>
+          </h2>
+        </div>
         <div class="page-heading">
           <div>
             <p class="eyebrow">JRE / UNILAND</p>

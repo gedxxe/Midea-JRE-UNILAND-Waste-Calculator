@@ -1,4 +1,11 @@
-/* Centered sign-in only. Authenticated reporting styles remain in style.css. */
+/* Sign-in only. Authenticated reporting styles remain in style.css. */
+@font-face {
+  font-family: 'Overused Grotesk';
+  src: url('/asset/fonts/OverusedGrotesk-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 body.login-page {
   background: #f1f5f8;
   color: #131d25;
@@ -21,16 +28,72 @@ body.login-page {
   display: none;
 }
 .login-page .workspace {
-  max-width: 560px;
+  max-width: 1600px;
   min-height: calc(100svh - 100px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+  align-items: center;
+  gap: clamp(40px, 7vw, 128px);
   margin: 0 auto;
-  padding: 36px 24px 64px;
+  padding: 44px clamp(24px, 4vw, 72px) 72px;
+}
+.login-page .workspace:has(#signin-greeting[hidden]) {
+  grid-template-columns: minmax(0, 460px);
+  justify-content: center;
+}
+.signin-greeting {
+  min-width: 0;
+  padding: 24px 0 40px;
+}
+.signin-greeting-eyebrow {
+  margin-bottom: clamp(32px, 4vw, 64px);
+  color: #5c707c;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+#signin-greeting-label {
+  font-family: 'Overused Grotesk', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  font-size: clamp(42px, 4.8vw, 78px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #0015ff;
+}
+.signin-greeting-line {
+  display: block;
+}
+.signin-greeting-line + .signin-greeting-line {
+  margin-top: 0.12em;
+}
+.signin-greeting-line:last-child {
+  margin-top: 0.65em;
+  max-width: 18ch;
+  font-size: 0.62em;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+.signin-reveal-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.signin-reveal-cut {
+  display: inline-block;
+  overflow: clip;
+  vertical-align: bottom;
+  padding-block: 0.12em;
+  margin-block: -0.12em;
+}
+.signin-reveal-character {
+  display: inline-block;
+}
+.signin-greeting-line [data-emoji] {
+  letter-spacing: 0;
+  padding-inline: 0.04em;
 }
 .login-page .account-card {
   width: 100%;
+  margin-bottom: 0;
   padding: 38px 40px 32px;
   border: 1px solid #ffffffd9;
   border-radius: 30px;
@@ -130,6 +193,28 @@ body.login-page {
 .login-page #retry-account {
   margin-top: 8px;
 }
+@media (max-width: 900px) {
+  .login-page .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+    max-width: 600px;
+    align-content: center;
+    padding-top: 24px;
+  }
+  .signin-greeting {
+    padding: 0;
+  }
+  .signin-greeting-eyebrow {
+    display: none;
+  }
+  #signin-greeting-label {
+    font-size: clamp(32px, 6vw, 48px);
+  }
+  .signin-greeting-line:last-child {
+    margin-top: 0.35em;
+    max-width: none;
+  }
+}
 @media (max-width: 560px) {
   .login-page .site-header {
     padding: 16px 22px;
@@ -147,6 +232,22 @@ body.login-page {
   }
   .login-page .account-form {
     margin-top: 24px;
+  }
+}
+@media (max-height: 520px) and (min-width: 720px) {
+  .login-page .workspace {
+    max-width: 1400px;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    align-items: start;
+    gap: 28px;
+  }
+  .signin-greeting {
+    padding-top: 36px;
+  }
+}
+@media (forced-colors: active) {
+  #signin-greeting-label {
+    color: CanvasText;
   }
 }
 @supports not (backdrop-filter: blur(1px)) {

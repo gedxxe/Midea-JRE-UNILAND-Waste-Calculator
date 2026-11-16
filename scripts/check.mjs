@@ -89,6 +89,7 @@ for (const file of PUBLIC_FILES) {
 // Reversible card management adds bounded forms and three-language labels.
 // Cumulative air flow, shared utility UI and import feedback add no browser dependency.
 // Adjacent import previews and recorded-daily graph notices reuse existing modules.
-assert.ok(size < 1212000, `Static assets grew to ${size} bytes; review the footprint.`);
+// One locally hosted 106 KB OFL font supplies the sign-in greeting; no animation runtime.
+assert.ok(size < 1360000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

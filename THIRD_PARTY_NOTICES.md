@@ -40,3 +40,9 @@ These files use **MIT + Commons Clause License Condition v1.0**, not the reposit
 The small inline icon set in ui/panel-icons.js is adapted from [Lucide](https://github.com/lucide-icons/lucide), pinned to be09619c1c1124ad09c19fc3e87ee3b939409bbd. Full upstream ISC and Feather-derived MIT notices are retained in [asset/licenses/lucide.txt](asset/licenses/lucide.txt) and distributed with public builds. No Lucide runtime package or remote icon/font service is used. Midea marks are separate and are not supplied by Lucide.
 
 The N₂, O₂ and R32 formula marks are original SVG drawings in this repository, separate from the Lucide geometry.
+
+## Sign-in typography and reveal reference
+
+The locally hosted regular Overused Grotesk WOFF2 is by Bao Nguyen/RandomMaerks, copyright 2023–2026, from [Overused-Grotesk](https://github.com/RandomMaerks/Overused-Grotesk/tree/749aa2c96c43a4af2d6932607ed42a5709982c5f), pinned to 749aa2c96c43a4af2d6932607ed42a5709982c5f. It is unmodified and distributed with its full [SIL Open Font License 1.1 notice](asset/licenses/overused-grotesk.txt). Emoji use the device’s native color emoji font; their appearance varies with operating system.
+
+The character masks, alternating entrance direction and first/last/center stagger are inspired by [Fancy Components Vertical Cut Reveal](https://www.fancycomponents.dev/docs/components/text/vertical-cut-reveal). The application implements this behavior in its existing welcome controller with native DOM and finite Web Animations springs. No Fancy Components source or React/Motion runtime is copied or bundled.

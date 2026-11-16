@@ -1,6 +1,8 @@
 import { t } from '../i18n/index.js';
+import { catalog } from '../i18n/catalog.js';
 import { createLazyGlassSurface } from './dialog-motion.js';
 import { createSignInTransition } from './signin-transition.js';
+import { node } from './dom.js';
 
 // Presentation only. The account controller remains responsible for every session gate.
 export function createWelcome() {
@@ -13,6 +15,27 @@ export function createWelcome() {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const language = document.getElementById('language-select');
   const heroLanguage = document.getElementById('welcome-language');
+  const greeting = document.getElementById('signin-greeting');
+  const greetingTitle = document.getElementById('signin-greeting-label');
+  const greetingAnimations = new Set();
+  const greetingKeys = Object.keys(catalog).filter((key) => /^signinGreeting\d+$/.test(key));
+  // Only a public greeting key is remembered, so refresh can avoid an immediate repeat.
+  const greetingPreference = 'midea_signin_greeting';
+  let previousGreeting;
+  try {
+    previousGreeting = sessionStorage.getItem(greetingPreference);
+  } catch {
+    /* Optional. */
+  }
+  const choices = greetingKeys.filter((key) => key !== previousGreeting);
+  const greetingKey = choices[Math.floor(Math.random() * choices.length)];
+  try {
+    sessionStorage.setItem(greetingPreference, greetingKey);
+  } catch {
+    /* Random still works. */
+  }
+  if (greeting) greeting.dataset.greeting = greetingKey;
+  let greetingText, greetingRun;
   let stage = 'hero',
     identity,
     user,
@@ -38,6 +61,108 @@ export function createWelcome() {
   const moving = () => stage === 'hero' && !hero.hidden && !dialogOpen && motionAllowed();
   const signin = createSignInTransition({ moving: motionAllowed });
 
+  function stopGreeting() {
+    for (const animation of greetingAnimations) animation.cancel();
+    greetingAnimations.clear();
+  }
+  function syncGreeting() {
+    if (!greeting || !greetingTitle) return;
+    greeting.hidden = !!user || !['login', 'transition'].includes(stage);
+    if (greeting.hidden) {
+      stopGreeting();
+      greetingRun = undefined;
+      return;
+    }
+    const lines = [...greetingTitle.querySelectorAll('.signin-greeting-line')];
+    const copy = t(greetingKey).split('\n');
+    const text = copy.join(' ');
+    if (text !== greetingText || !greetingTitle.querySelector('.signin-reveal-character')) {
+      stopGreeting();
+      greetingText = text;
+      greetingRun = undefined;
+      greetingTitle.setAttribute('aria-label', text);
+      const segmenter =
+        typeof Intl.Segmenter === 'function'
+          ? new Intl.Segmenter(document.documentElement.lang, { granularity: 'grapheme' })
+          : null;
+      const words = segmenter
+        ? new Intl.Segmenter(document.documentElement.lang, { granularity: 'word' })
+        : null;
+      for (const [row, line] of lines.entries()) {
+        line.replaceChildren();
+        line.setAttribute('aria-hidden', 'true');
+        if (!segmenter) {
+          line.textContent = copy[row];
+          continue;
+        }
+        for (const { segment: word } of words.segment(copy[row])) {
+          if (!word) continue;
+          if (/^\s+$/u.test(word)) {
+            line.append(document.createTextNode(word));
+            continue;
+          }
+          const group = node('span', undefined, 'signin-reveal-word');
+          const characters = [...segmenter.segment(word)].map((s) => s.segment);
+          for (const character of characters) {
+            const cut = node('span', undefined, 'signin-reveal-cut');
+            const glyph = node('span', character, 'signin-reveal-character');
+            if (/\p{Extended_Pictographic}/u.test(character)) glyph.dataset.emoji = '';
+            cut.append(glyph);
+            group.append(cut);
+          }
+          line.append(group);
+        }
+      }
+    }
+    if (stage !== 'login' || dialogOpen || !motionAllowed()) {
+      stopGreeting();
+      if (stage === 'login') greetingRun = text;
+      return;
+    }
+    if (greetingRun === text) return;
+    greetingRun = text;
+    // Character masks/stagger follow the reference; native sampled springs avoid a React runtime.
+    // Mass 1, stiffness 200, damping 21. A finite WAAPI entrance never gates the form.
+    const spring = Array.from({ length: 49 }, (_, i) => {
+      const seconds = (i / 48) * 0.8;
+      return i === 48
+        ? 0
+        : Math.exp(-10.5 * seconds) *
+            (Math.cos(Math.sqrt(89.75) * seconds) +
+              (10.5 / Math.sqrt(89.75)) * Math.sin(Math.sqrt(89.75) * seconds));
+    });
+    lines.forEach((line, row) => {
+      const characters = [...line.querySelectorAll('.signin-reveal-character')];
+      characters.forEach((glyph, index) => {
+        const order =
+          row === 1
+            ? characters.length - 1 - index
+            : row === 2
+              ? Math.abs(index - (characters.length - 1) / 2)
+              : index;
+        try {
+          const animation = glyph.animate(
+            spring.map((value) => ({
+              transform: `translateY(${value * (row === 1 ? -115 : 115)}%)`,
+            })),
+            {
+              duration: 800,
+              delay: [0, 280, 700][row] + order * 25,
+              fill: 'backwards',
+              easing: 'linear',
+            },
+          );
+          greetingAnimations.add(animation);
+          animation.finished.then(
+            () => greetingAnimations.delete(animation),
+            () => greetingAnimations.delete(animation),
+          );
+        } catch {
+          /* Static characters remain visible when optional animation is unavailable. */
+        }
+      });
+    });
+  }
   function syncMotion() {
     const key = hero.dataset.paused === 'true' ? 'welcomeResume' : 'welcomePause';
     pause.dataset.i18nAriaLabel = key;
@@ -49,6 +174,7 @@ export function createWelcome() {
     ascii?.sync();
     signin.sync();
     specular?.sync();
+    syncGreeting();
     if (stage === 'login' && motionAllowed() && !specular && !specularLoading) {
       specularLoading = true;
       void import('./signin-specular.js')

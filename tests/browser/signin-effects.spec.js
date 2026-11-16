@@ -11,9 +11,12 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test('one centered glass form replaces duplicate welcome content and stays usable in three languages', async ({
+test('a right-hand glass form and greeting adapt to narrow screens in three languages', async ({
   page,
 }, info) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
   await page.route('**/api/auth', (route) =>
     route.fulfill({ json: { available: true, user: null } }),
   );
@@ -31,7 +34,14 @@ test('one centered glass form replaces duplicate welcome content and stays usabl
     for (const lang of ['en', 'zh-CN', 'id']) {
       await page.selectOption('#language-select', lang);
       const box = await page.locator('.account-card').boundingBox();
-      expect(Math.abs(box.x + box.width / 2 - size.width / 2)).toBeLessThanOrEqual(2);
+      const greeting = await page.locator('#signin-greeting').boundingBox();
+      if (size.width > 900 || (size.width >= 720 && size.height <= 520))
+        expect(box.x).toBeGreaterThan(greeting.x + greeting.width);
+      else {
+        expect(box.y).toBeGreaterThan(greeting.y + greeting.height);
+        expect(Math.abs(box.x + box.width / 2 - size.width / 2)).toBeLessThanOrEqual(2);
+      }
+      await expect(page.locator('#signin-greeting-label')).toHaveAccessibleName(/👋/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
@@ -43,11 +53,103 @@ test('one centered glass form replaces duplicate welcome content and stays usabl
       await expect(page.locator('#login-submit')).toBeInViewport();
       await expect(page.locator('#login-raw-template')).toBeVisible();
     }
+    await page.selectOption('#language-select', 'en');
+    await expect
+      .poll(() =>
+        page
+          .locator('#signin-greeting')
+          .evaluate((el) => el.getAnimations({ subtree: true }).length),
+      )
+      .toBe(0);
     await page.screenshot({
       path: info.outputPath('login-' + size.width + '.png'),
       fullPage: true,
     });
   }
+});
+
+test('blocked greeting storage, unavailable segmentation and a failed font leave readable native sign-in', async ({
+  page,
+}) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/auth', (route) =>
+    route.fulfill({ json: { available: true, user: null } }),
+  );
+  await page.route('**/asset/fonts/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    const read = Storage.prototype.getItem,
+      write = Storage.prototype.setItem;
+    Storage.prototype.getItem = function (key) {
+      if (key === 'midea_signin_greeting') throw new Error('blocked');
+      return read.call(this, key);
+    };
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'midea_signin_greeting') throw new Error('blocked');
+      return write.call(this, key, value);
+    };
+    Intl.Segmenter = undefined;
+    Math.random = () => 0;
+  });
+  await page.goto('/');
+  await openSignIn(page);
+  await expect(page.locator('#signin-greeting-label')).toHaveAccessibleName(
+    /ENGINEERS CAN’T BE TIRED/,
+  );
+  await expect(page.locator('.signin-greeting-line').nth(1)).toHaveText(/ENGINEERS CAN’T BE TIRED/);
+  await expect(page.locator('.signin-reveal-character')).toHaveCount(0);
+  await page.fill('#login-username', 'test-operator');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#login-password')).toBeFocused();
+  await expect(page.locator('#login-submit')).toBeEnabled();
+  expect(errors).toEqual([]);
+});
+
+test('greetings stay stable while typing and navigating, change on refresh, and stop motion immediately', async ({
+  page,
+}) => {
+  await page.route('**/api/auth', (route) =>
+    route.fulfill({ json: { available: true, user: null } }),
+  );
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
+  await page.goto('/');
+  await openSignIn(page);
+  const greeting = page.locator('#signin-greeting');
+  await expect(greeting).toHaveAttribute('data-greeting', 'signinGreeting01');
+  await expect(page.locator('#signin-greeting-label')).toHaveAccessibleName(
+    /ENGINEERS CAN’T BE TIRED, RIGHT\? 😂/,
+  );
+  expect(
+    await greeting.evaluate((el) => el.getAnimations({ subtree: true }).length),
+  ).toBeGreaterThan(0);
+  await page.fill('#login-username', 'test-operator');
+  await page.selectOption('#language-select', 'id');
+  await expect(greeting).toHaveAttribute('data-greeting', 'signinGreeting01');
+  await expect(page.locator('#signin-greeting-label')).toHaveAccessibleName(
+    /ENGINEER NGGAK BOLEH CAPEK/,
+  );
+  await expect(page.locator('#login-username')).toHaveValue('test-operator');
+  await page.locator('#welcome-hero').evaluate((el) => (el.dataset.motion = 'off'));
+  await expect
+    .poll(() => greeting.evaluate((el) => el.getAnimations({ subtree: true }).length))
+    .toBe(0);
+  const glyph = greeting.locator('.signin-reveal-character').first();
+  await expect(glyph).toHaveCSS('transform', 'none');
+  await page.click('#back-welcome');
+  await expect(greeting).toBeHidden();
+  await openSignIn(page);
+  await expect(greeting).toHaveAttribute('data-greeting', 'signinGreeting01');
+  await page.reload();
+  await openSignIn(page);
+  await expect(greeting).toHaveAttribute('data-greeting', 'signinGreeting02');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect
+    .poll(() => greeting.evaluate((el) => el.getAnimations({ subtree: true }).length))
+    .toBe(0);
+  await expect(page.locator('#login-username')).toBeFocused();
 });
 
 test('lattice follows a pending request, clears on failure and fades into the authenticated workspace', async ({
@@ -86,6 +188,7 @@ test('lattice follows a pending request, clears on failure and fades into the au
   await expect(page.locator('#signin-transition')).toBeVisible();
   respond({ json: { available: true, user: account } });
   await expect(page.locator('#report-workspace')).toBeVisible();
+  await expect(page.locator('#signin-greeting')).toBeHidden();
   await expect(page.locator('#signin-transition')).toBeHidden();
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.locator('#login-password')).toHaveValue('');
@@ -115,6 +218,7 @@ test('required password and reduced motion never wait for decorative completion'
   await expect(page.locator('#signin-transition')).toBeHidden();
   await expect(page.locator('#current-password')).toBeFocused();
   await expect(page.locator('#back-welcome')).toBeHidden();
+  await expect(page.locator('#signin-greeting')).toBeHidden();
 });
 
 test('lost WebGL context leaves a dark static fallback, and Back creates a fresh background', async ({

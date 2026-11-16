@@ -18,6 +18,8 @@ export const PUBLIC_FILES = [
   'ui/panel-icons.js',
   'asset/licenses/lucide.txt',
   'logo.css',
+  'asset/fonts/OverusedGrotesk-Regular.woff2',
+  'asset/licenses/overused-grotesk.txt',
   'signin-effects.css',
   'ui/signin-transition.js',
   'ui/welcome-ascii.js',
