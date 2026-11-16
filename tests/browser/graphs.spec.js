@@ -2,6 +2,8 @@ import { test, expect } from './fixtures.js';
 import { readFile } from 'node:fs/promises';
 import { exampleDraft } from '../../examples.js';
 import { reportSnapshot } from '../../server/report-data.js';
+import { workingDailyRows } from '../../server/graphs.js';
+import { createDraft } from '../../engine.js';
 import { graphRecords } from '../../graph-data.js';
 import { defaultGraphs } from '../../graph-schema.js';
 
@@ -1005,4 +1007,56 @@ test('checkpoint view rejects a stale server response instead of labelling worki
   await expect(page.locator('.graph-card').first().locator('circle')).toHaveCount(0);
   await expect(page.locator('#graph-status')).not.toContainText('saved periods');
   expect(state.errors).toEqual([]);
+});
+
+test('recorded endpoints restore daily chart and monthly points while combined source copies remain reviewable', async ({
+  page,
+}, info) => {
+  const { errors } = await setup(page);
+  const rows = [13, 14, 15].map((day, i) => {
+    const draft = createDraft('JRE', `2026-11-${day}`, '2026-11-16');
+    draft.rows.forEach((row) => {
+      row.start.fill(String(1000 + i * 100));
+      row.end.fill('1300');
+    });
+    draft.water = { start: String(100 + i * 10), end: '130' };
+    draft.airCompressor = { start: String(1000 + i * 10), end: '1030' };
+    return {
+      id: 'synthetic-day-' + day,
+      revision: 1,
+      start_date: draft.startDate,
+      end_date: draft.endDate,
+      autosaved: true,
+      snapshot: reportSnapshot(draft, { allowPartial: true }),
+    };
+  });
+  const before = structuredClone(rows);
+  const data = graphRecords(workingDailyRows(rows, 'JRE'), 'JRE');
+  await page.route('**/api/graphs?**', (r) =>
+    r.fulfill({
+      json: { ...Object.fromEntries(new URL(r.request().url()).searchParams), records: data },
+    }),
+  );
+  await page.locator('#start-date').fill('2026-11-13');
+  await page.locator('#start-date').press('Enter');
+  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graph-status')).toContainText('3 daily periods');
+  await expect(page.locator('#graph-warnings')).not.toContainText(
+    'Overlapping period: not plotted',
+  );
+  await expect(page.locator('#graph-warnings')).toContainText(
+    '2 daily periods use recorded readings',
+  );
+  await page.locator('.graph-period-review summary').click();
+  await expect(page.locator('.graph-period-review')).toContainText('combined copy is retained');
+  expect(await page.locator('.graph-card circle[data-series]').count()).toBeGreaterThan(2);
+  await page.locator('#graph-view-table').click();
+  const main = page.locator('#graph-matrix tr[data-metric="r0"]');
+  for (const date of ['2026-11-13', '2026-11-14', '2026-11-15'])
+    await expect(main.locator('td[data-date="' + date + '"]')).toContainText('100');
+  await page
+    .locator('#graph-matrix')
+    .screenshot({ path: info.outputPath('recorded-daily-periods.png') });
+  expect(rows).toEqual(before);
+  expect(errors).toEqual([]);
 });

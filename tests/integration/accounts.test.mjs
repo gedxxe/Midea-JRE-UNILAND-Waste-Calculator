@@ -3171,3 +3171,60 @@ test('period navigation reads owner data before replacing an archived document a
     );
   }
 });
+
+test('working graph reads resolve nested dates from owner-scoped raw readings without changing stored application data', async () => {
+  const actor = await autosaveActor(),
+    outsider = await autosaveActor();
+  for (const plant of ['JRE', 'UNILAND']) {
+    let version = (await call('/api/drafts', { actor })).value.version;
+    for (const [i, day] of [13, 14, 15].entries()) {
+      const draft = createDraft(plant, `2026-11-${day}`, '2026-11-16');
+      draft.rows.forEach((row) => {
+        row.start.fill(String(1000 + i * 100));
+        row.end.fill('1300');
+      });
+      draft.water = { start: String(100 + i * 10), end: '130' };
+      if (plant === 'JRE') draft.airCompressor = { start: String(1000 + i * 10), end: '1030' };
+      const response = await call('/api/drafts', {
+        actor,
+        body: { workspace: autosaveWorkspace(draft), baseVersion: version },
+      });
+      assert.equal(response.status, 200);
+      version = response.value.version;
+    }
+  }
+  const read = async () =>
+    Object.fromEntries(
+      await Promise.all(
+        ['reports', 'report_revisions', 'period_autosaves', 'working_drafts'].map(async (table) => {
+          const result = await db.query(
+            'SELECT to_jsonb(t) AS row FROM meter_app.' + table + ' t ORDER BY to_jsonb(t)::text',
+          );
+          return [table, result.rows];
+        }),
+      ),
+    );
+  const before = await read();
+  for (const plant of ['JRE', 'UNILAND']) {
+    const url = '/api/graphs?plant=' + plant + '&start=2026-11-01&end=2026-11-30';
+    const response = await call(url, { actor });
+    assert.equal(response.status, 200);
+    const plotted = response.value.records.filter((r) => !r.superseded);
+    assert.deepEqual(
+      plotted.map((r) => r.startDate),
+      ['2026-11-13', '2026-11-14', '2026-11-15'],
+    );
+    assert.equal(response.value.records.filter((r) => r.overlap).length, 0);
+    assert.equal(response.value.records.filter((r) => r.dailyCoverage).length, 2);
+    assert.deepEqual(
+      plotted.map((r) => r.values.r0),
+      plant === 'JRE' ? [100, 100, 100] : [320000, 320000, 320000],
+    );
+    assert.equal(plotted[0].values.u4, 10);
+    assert.equal(JSON.stringify(response.value).includes('"draft"'), false);
+    assert.equal(JSON.stringify(response.value).includes('"gas"'), false);
+    assert.equal((await call(url, { actor: outsider })).value.records.length, 0);
+    assert.equal((await call(url + '&view=checkpoint', { actor })).value.records.length, 0);
+  }
+  assert.deepEqual(await read(), before);
+});

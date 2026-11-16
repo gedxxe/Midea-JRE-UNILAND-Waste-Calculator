@@ -23,6 +23,7 @@ async function setup(page, filled = false) {
       (key, i) => (workspace[key][plant] = periods[i]),
     );
   }
+  const savedPeriods = new Map();
   let state = modernWorkspace(workspace),
     version = 1;
   const errors = [];
@@ -45,14 +46,32 @@ async function setup(page, filled = false) {
   );
   await page.route('**/api/drafts', (r) => {
     if (r.request().method() === 'POST') {
-      state = r.request().postDataJSON().workspace;
+      const body = r.request().postDataJSON();
+      state = body.workspace;
+      for (const draft of [
+        ...(body.periods || []),
+        ...['drafts', 'workingHours', 'nightShifts'].flatMap((key) =>
+          Object.values(state[key] || {}),
+        ),
+      ])
+        if (periodKey(draft)) savedPeriods.set(periodKey(draft), structuredClone(draft));
       version++;
     }
     return r.fulfill({ json: { workspace: state, version, updated_at: '2026-10-27T01:00:00Z' } });
   });
+  await page.route('**/api/drafts?**', (r) => {
+    const key = new URL(r.request().url()).searchParams.get('period');
+    return r.fulfill({
+      json: { key, draft: savedPeriods.get(key) || null, version: savedPeriods.has(key) ? 1 : 0 },
+    });
+  });
   await page.goto('/app');
   await expect(page.locator('#save-status')).toHaveText('All changes saved to your account.');
-  return { errors, workspace: () => structuredClone(state) };
+  return {
+    errors,
+    workspace: () => structuredClone(state),
+    periods: () => structuredClone([...savedPeriods.values()]),
+  };
 }
 async function apply(page, text, side = 'end') {
   await page.locator('#open-import').click();
@@ -128,7 +147,7 @@ for (const plant of ['JRE', 'UNILAND']) {
       await expect(page.locator('#import-dialog')).toBeHidden();
       await expect(cell(page, 0, 'end')).toHaveValue('1099');
       await expect(cell(page, 1, 'end')).toHaveValue('');
-      await expect(cell(page, 1)).toHaveValue('1000');
+      await expect(cell(page, 1)).toHaveValue('1010');
       await page.locator('#open-import').click();
       await expect(page.locator('#import-format')).toContainText(
         plant + ': ' + PLANT_SCHEMAS[plant].rows.length + ' equipment',
@@ -297,7 +316,6 @@ test('import loads a stored destination before changing values and rejects a fai
 }) => {
   const { errors } = await setup(page, true);
   const target = reportPeriods('JRE', '2026-10-28')[0];
-  target.startDate = '2026-10-27';
   target.rows[0].start[0] = '5000';
   target.rows[1].end[0] = '6000';
   const before = structuredClone(target);
@@ -394,5 +412,126 @@ test('full timed import loads destination utilities, preserves the other boundar
   expect(saved.drafts.JRE.rows[0].start[0]).toBe('1000');
   expect([daily, day, night]).toEqual(originals);
   expect(pending.size).toBe(2);
+  expect(errors).toEqual([]);
+});
+
+function observation(date, afternoon, value, refill = false) {
+  const d = afternoon
+    ? createWorkingHoursDraft('JRE', date)
+    : createDraft('JRE', '2026-11-12', date);
+  d.rows.forEach((r) => {
+    r.start.fill('1000');
+    r.end.fill(String(value));
+  });
+  d.water = { start: '100', end: String(value) };
+  d.airCompressor = { start: '100', end: String(value) };
+  d.additionalReadings = Array.from({ length: 4 }, () => ({ start: '100', end: String(value) }));
+  d.gas.entries.forEach((g, i) => {
+    g.enabled = true;
+    g.end = { reading: String(value), temperature: '', ...(i === 3 ? { unit: 'kg' } : {}) };
+    if (i === 3) g.start = { reading: '1000', temperature: '', unit: 'kg' };
+  });
+  if (refill) {
+    d.gas.entries[2].refills = [
+      {
+        before: { reading: '1000.123456', temperature: '' },
+        after: { reading: '2000,654321', temperature: '' },
+      },
+    ];
+    d.gas.entries[3].refills = [
+      {
+        before: { reading: '1000.123456', temperature: '', unit: 'kg' },
+        after: { reading: '2000,654321', temperature: '', unit: 'kg' },
+      },
+    ];
+  }
+  const raw = exportAllRawReadings(d).text;
+  return raw
+    .replace(/^Reading time:.*\n/m, '')
+    .replace(
+      /^(\d{2}\/\d{2}\/\d{4})$/m,
+      '$1 (' +
+        (afternoon ? 'Afternon' : 'Morning') +
+        ')\nReading time: ' +
+        (afternoon ? '18:00-19:00' : '07:00-08:00') +
+        ' WIB',
+    )
+    .replaceAll('  Before:', '&#x20;Before:')
+    .replaceAll('  After:', '&nbsp;After:');
+}
+
+test('sequential morning imports create adjacent daily copies and afternoon refill windows retain exact events', async ({
+  page,
+}) => {
+  test.setTimeout(60000); // Multiple dated imports, autosave acknowledgments and Undo.
+  const { errors, periods, workspace } = await setup(page, true);
+  for (const [date, side, value] of [
+    ['2026-11-13', 'start', 1100],
+    ['2026-11-14', 'end', 1200],
+    ['2026-11-14', 'start', 1200],
+    ['2026-11-15', 'end', 1300],
+    ['2026-11-15', 'start', 1300],
+    ['2026-11-16', 'end', 1400],
+  ]) {
+    await apply(page, observation(date, false, value), side);
+    await expect(page.locator('#import-dialog')).toBeHidden();
+    await expect(page.locator('#save-status')).toContainText('All changes saved');
+    const daily = workspace().drafts.JRE;
+    expect(new Date(daily.endDate) - new Date(daily.startDate)).toBe(86400000);
+    await expect(cell(page, 0, side)).toHaveValue(String(value));
+  }
+  const daily = periods().filter((d) => !d.periodKind && d.startDate >= '2026-11-13');
+  expect(daily.map((d) => [d.startDate, d.endDate])).toEqual([
+    ['2026-11-13', '2026-11-14'],
+    ['2026-11-14', '2026-11-15'],
+    ['2026-11-15', '2026-11-16'],
+  ]);
+  expect(daily.map((d) => [d.rows[0].start[0], d.rows[0].end[0]])).toEqual([
+    ['1100', '1200'],
+    ['1200', '1300'],
+    ['1300', '1400'],
+  ]);
+  await page.selectOption('#reading-mode', 'workingHours');
+  await apply(page, observation('2026-11-13', false, 1100), 'start');
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await apply(page, observation('2026-11-13', true, 1150, true));
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  const shift = workspace().workingHours.JRE;
+  expect([shift.startTime, shift.endTime]).toEqual(['07:00', '18:00']);
+  expect(shift.gas.entries[2].refills[0].before.reading).toBe('1000.123456');
+  expect(shift.gas.entries[3].refills[0].after).toEqual({
+    reading: '2000,654321',
+    temperature: '',
+    unit: 'kg',
+  });
+  expect(errors).toEqual([]);
+});
+
+test('daily import previews an adjacent pair; a combined range needs an explicit choice', async ({
+  page,
+}, info) => {
+  const { errors } = await setup(page, true);
+  await page.locator('#open-import').click();
+  await page.selectOption('#import-side', 'start');
+  await page.locator('#import-text').fill(observation('2026-11-13', false, 1100));
+  await page.locator('#import-keep-period').check();
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-feedback')).toContainText('Choose a valid period');
+  await expect(cell(page, 0, 'start')).toHaveValue('1000');
+  await page.locator('#import-keep-period').uncheck();
+  await page.locator('#import-text').fill(observation('2026-10-26', false, 1100));
+  await expect(page.locator('#import-target')).toContainText('2026-10-26 08:00 → 2026-10-27 08:00');
+  await expect(page.locator('#import-side option:checked')).toContainText('2026-10-26');
+  await page.locator('#import-keep-period').check();
+  await expect(page.locator('#import-target')).toContainText('2026-10-26 08:00 → 2026-10-28 08:00');
+  await page.locator('#import-keep-period').uncheck();
+  await page
+    .locator('#import-dialog')
+    .screenshot({ path: info.outputPath('adjacent-import-preview.png') });
+  await page.locator('#apply-import').click();
+  await expect(page.locator('#import-dialog')).toBeHidden();
+  await expect(page.locator('#start-date')).toHaveValue('2026-10-26');
+  await expect(page.locator('#end-date')).toHaveValue('2026-10-27');
   expect(errors).toEqual([]);
 });

@@ -13,6 +13,7 @@ import {
 // Tolerate presentation differences without changing numeric reading strings.
 export const importLine = (value) =>
   String(value)
+    .replace(/(?:&#(?:x20|32|160);|&nbsp;)/gi, ' ')
     .replace(/\\([.()])/g, '$1')
     .replace(/\\\s*$/, '')
     .trim()
@@ -40,7 +41,7 @@ export function importDate(value) {
           date +
           ')(?:\\s*(?:[-–—]|to|s/d|sampai)\\s*(' +
           date +
-          '))?(?:\\s*\\(\\s*(?:Pagi|Sore|Morning|Afternoon|Evening|day shift|night shift|Sore\\s*/\\s*night shift)\\s*\\)|\\s+(?:day shift|night shift))?\\s*:?$',
+          '))?(?:\\s*\\([^()\\r\\n]{1,80}\\)|\\s+(?:day shift|night shift))?\\s*:?$',
         'i',
       ),
     );

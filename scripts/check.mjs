@@ -88,6 +88,7 @@ for (const file of PUBLIC_FILES) {
 // On-demand meter controls add a bounded status channel and cooldown animation.
 // Reversible card management adds bounded forms and three-language labels.
 // Cumulative air flow, shared utility UI and import feedback add no browser dependency.
-assert.ok(size < 1205000, `Static assets grew to ${size} bytes; review the footprint.`);
+// Adjacent import previews and recorded-daily graph notices reuse existing modules.
+assert.ok(size < 1212000, `Static assets grew to ${size} bytes; review the footprint.`);
 for (const file of RUNTIME_FILES) await readFile(resolve(root, file));
 console.log(`Source checks passed. Public assets: ${size} bytes; version ${pkg.version}.`);

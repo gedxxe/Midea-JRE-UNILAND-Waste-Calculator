@@ -2,6 +2,13 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.57-alpha - 2026-11-16
+
+- Default daily imports to the adjacent Start/End pair instead of retaining an unrelated opposite date. Preview the destination and require an explicit choice to keep a multi-day range. Preserve destination loading, Undo and autosave.
+- Accept descriptive date notes, including misspellings, and encoded whitespace. Correct legacy refill/manual-period metadata only when dates and the selected source boundary identify the same shift; retain exact event values/order and reject movement between dates or shifts.
+- In the working graph view, calculate daily electricity, Water and flow from unambiguous recorded endpoints. Keep saved outputs unchanged. Retain combined copies in review and replace them in plots only when a complete daily partition is available. Never divide multi-day totals, infer missing readings or allocate untimed gas refills; conflicting/missing observations retain overlap checks. Saved-version graphs are unchanged.
+- Reuse the observation seeding helpers for bounded read-only targets. Cover owner isolation, stored-data preservation, import sequences, legacy refill windows, cancellation, charts and monthly tables. No new dependency or database migration. Review the public asset budget at 1,212,000 bytes for destination controls and three-language feedback.
+
 ## v0.11.56-alpha - 2026-11-16
 
 - Import reading windows such as 07:00–08:00 WIB using the first time in shift modes. Daily reports keep their 08:00 boundary. Use the first date in a date range and show which timestamp was chosen when metadata disagrees.

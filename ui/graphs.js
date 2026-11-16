@@ -134,7 +134,14 @@ export function createGraphs({
       : status
         ? t(status)
         : data
-          ? t(data.records.length ? 'graphReady' : 'graphEmpty', { count: data.records.length })
+          ? t(
+              data.records.some((r) => r.derived)
+                ? 'graphReadyCalculated'
+                : data.records.length
+                  ? 'graphReady'
+                  : 'graphEmpty',
+              { count: data.records.filter((r) => !r.superseded).length },
+            )
           : '';
     $('graph-warnings').replaceChildren();
     if (data)
@@ -145,8 +152,9 @@ export function createGraphs({
         ],
         [
           'graphIncompletePeriods',
-          data.records.filter((r) => r.autosaved && r.complete === false).length,
+          data.records.filter((r) => !r.superseded && r.autosaved && r.complete === false).length,
         ],
+        ['graphCalculatedDays', data.records.filter((r) => r.derived).length],
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
         [
           'graphSuperseded',
@@ -158,7 +166,9 @@ export function createGraphs({
             node(
               'p',
               t(key, { count }),
-              ['graphMulti', 'graphIncompletePeriods'].includes(key) ? 'notice' : 'notice warning',
+              ['graphMulti', 'graphIncompletePeriods', 'graphCalculatedDays'].includes(key)
+                ? 'notice'
+                : 'notice warning',
             ),
           );
     if (data) {

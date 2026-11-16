@@ -568,6 +568,11 @@ export const catalog = {
     'Edit kolom ini atau tempel reading satu tanggal dari template. Pertahankan nama equipment dan pemisah +. Sel kosong mempertahankan reading hanya pada tanggal dan jam yang sama.',
   ],
   destination: ['Destination column', '目标列', 'Kolom tujuan'],
+  importKeepPeriod: [
+    'Keep the selected multi-day range',
+    '保留所选多日范围',
+    'Pertahankan rentang beberapa hari yang dipilih',
+  ],
   readingText: ['Reading text', '读数文本', 'Teks reading'],
   applyImport: ['Apply readings', '填入读数', 'Terapkan reading'],
   inactive: ['Unit inactive', '设备未运行', 'Unit tidak aktif'],
