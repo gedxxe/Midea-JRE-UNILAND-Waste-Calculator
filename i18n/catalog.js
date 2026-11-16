@@ -8,6 +8,256 @@ import { waterMessages } from './water.js';
 // Equipment names, units and copied reports are deliberately outside this catalog.
 // Columns: English, Simplified Chinese, Indonesian.
 export const catalog = {
+  signinGreeting01: [
+    'HEY 👋, YOU!\nENGINEERS CAN’T BE TIRED, RIGHT? 😂\nWELCOME ABOARD!',
+    '嘿 👋，是你呀！\n工程师不会累，对吧？😂\n欢迎回来！',
+    'HEI 👋, KAMU!\nENGINEER NGGAK BOLEH CAPEK, KAN? 😂\nSELAMAT DATANG!',
+  ],
+  signinGreeting02: [
+    'HEY 👋,\nGOOD TO SEE YOU.\nREADY WHEN YOU ARE 😊.',
+    '嗨 👋，\n很高兴见到你。\n准备好了就开始 😊。',
+    'HAI 👋,\nSENANG KETEMU LAGI.\nYUK, MULAI 😊.',
+  ],
+  signinGreeting03: [
+    'OH, HI 👋.\nCOFFEE FIRST? FAIR ENOUGH ☕.\nTHE FORM CAN WAIT.',
+    '哦，嗨 👋。\n先喝咖啡？没问题 ☕。\n表格可以等一会儿。',
+    'EH, HAI 👋.\nNGOPI DULU? BOLEH ☕.\nFORMNYA BISA NUNGGU.',
+  ],
+  signinGreeting04: [
+    'YOU AGAIN 👋!\nWE SAVED YOU A SPOT 😊.\nWELCOME BACK.',
+    '又见面了 👋！\n给你留了个位置 😊。\n欢迎回来。',
+    'KAMU LAGI 👋!\nTEMPATMU MASIH ADA 😊.\nSELAMAT DATANG LAGI.',
+  ],
+  signinGreeting05: [
+    'HELLO 👋,\nYOUR CALCULATOR GETS A BREAK 😌.\nYOU DESERVE ONE TOO.',
+    '你好 👋，\n计算器可以歇一歇 😌。\n你也一样。',
+    'HALO 👋,\nKALKULATORNYA BOLEH ISTIRAHAT 😌.\nKAMU JUGA, KOK.',
+  ],
+  signinGreeting06: [
+    'HEY 👋,\nANOTHER SHIFT, SAME YOU 😊.\nGLAD YOU’RE HERE.',
+    '嗨 👋，\n又一班，还是熟悉的你 😊。\n很高兴你来了。',
+    'HAI 👋,\nSHIFT BARU, MASIH KAMU 😊.\nSENANG KAMU DI SINI.',
+  ],
+  signinGreeting07: [
+    'HI THERE 👋.\nDECIMAL POINTS: TINY BUT LOUD 😂.\nTAKE YOUR TIME.',
+    '你好呀 👋。\n小数点虽小，存在感很强 😂。\n慢慢来。',
+    'HAI 👋.\nTITIK DESIMAL: KECIL TAPI HEBOH 😂.\nPELAN-PELAN AJA.',
+  ],
+  signinGreeting08: [
+    'HEY 👋,\nHAD SOME WATER YET? 💧\nJUST CHECKING.',
+    '嗨 👋，\n喝水了吗？💧\n只是问问。',
+    'HAI 👋,\nSUDAH MINUM AIR? 💧\nCUMA NGINGETIN.',
+  ],
+  signinGreeting09: [
+    'WELCOME 👋.\nT1, T2, T3… TEA? ☕\nCLOSE ENOUGH.',
+    '欢迎 👋。\nT1、T2、T3……TEA？☕\n听起来也差不多。',
+    'HALO 👋.\nT1, T2, T3… TEH? ☕\nMIRIP, KAN.',
+  ],
+  signinGreeting10: [
+    'HI 👋,\nLOTS OF METERS. ONE YOU 😅.\nONE AT A TIME.',
+    '嗨 👋，\n仪表很多，你只有一个 😅。\n一个一个来。',
+    'HAI 👋,\nMETERNYA BANYAK. KAMUNYA SATU 😅.\nSATU-SATU AJA.',
+  ],
+  signinGreeting11: [
+    'HEY 👋,\nLESS PRESSURE. EXCEPT IN THE TANK 😂.\nGOOD TO HAVE YOU HERE.',
+    '嗨 👋，\n压力少一点，罐子里的除外 😂。\n很高兴你来了。',
+    'HAI 👋,\nKURANGI TEKANAN. KECUALI DI TANGKI 😂.\nSENANG KAMU DATANG.',
+  ],
+  signinGreeting12: [
+    'OH, HELLO 👋.\nLONG DAY? WE HEAR YOU 😮‍💨.\nNO RUSH.',
+    '哦，你好 👋。\n今天很漫长？懂你 😮‍💨。\n不着急。',
+    'EH, HALO 👋.\nHARI PANJANG? PAHAM 😮‍💨.\nNGGAK USAH BURU-BURU.',
+  ],
+  signinGreeting13: [
+    'HI 👋,\nHOW MANY TABS IS TOO MANY? 😅\nASKING FOR A FRIEND.',
+    '嗨 👋，\n开多少标签页才算多？😅\n替朋友问问。',
+    'HAI 👋,\nBERAPA TAB BARU DISEBUT BANYAK? 😅\nNANYA BUAT TEMAN.',
+  ],
+  signinGreeting14: [
+    'HEY 👋,\nPASSWORDS. WE KNOW 🙃.\nJUST THIS LITTLE FORM.',
+    '嗨 👋，\n又要输密码，懂的 🙃。\n就这一个小表格。',
+    'HAI 👋,\nPASSWORD LAGI. IYA, PAHAM 🙃.\nTINGGAL FORM KECIL INI.',
+  ],
+  signinGreeting15: [
+    'HELLO 👋!\nNOT EVERY HELLO NEEDS A MEETING 😊.\nTHIS ONE DOESN’T.',
+    '你好 👋！\n打个招呼不用开会 😊。\n这次就不用。',
+    'HALO 👋!\nSAPAAN NGGAK HARUS JADI RAPAT 😊.\nYANG INI NGGAK, KOK.',
+  ],
+  signinGreeting16: [
+    'HEY 👋,\nTHE CLOCK KEEPS GOING. CLASSIC 🙃.\nTAKE A BREATH.',
+    '嗨 👋，\n时钟又没停，老样子 🙃。\n先喘口气。',
+    'HAI 👋,\nJAMNYA JALAN TERUS. BIASA 🙃.\nTARIK NAPAS DULU.',
+  ],
+  signinGreeting17: [
+    'HI 👋,\nMATH BEFORE COFFEE? BRAVE 😂.\nWE’RE ROOTING FOR YOU.',
+    '嗨 👋，\n没喝咖啡就算数？真勇敢 😂。\n给你加油。',
+    'HAI 👋,\nNGITUNG SEBELUM NGOPI? BERANI 😂.\nSEMANGAT, YA.',
+  ],
+  signinGreeting18: [
+    'HEY 👋, YOU.\nNO SUPERHERO CAPE REQUIRED 😊.\nJUST SHOW UP AS YOU.',
+    '嘿 👋，是你呀。\n不用披超级英雄斗篷 😊。\n做你自己就好。',
+    'HEI 👋, KAMU.\nNGGAK PERLU JADI SUPERHERO 😊.\nJADI DIRIMU AJA.',
+  ],
+  signinGreeting19: [
+    'HI 👋,\nRUNNING ON LOW BATTERY? 😴\nHUMANS NEED CHARGING TOO.',
+    '嗨 👋，\n电量不足了？😴\n人也需要充电。',
+    'HAI 👋,\nBATERAI MULAI TIPIS? 😴\nMANUSIA JUGA PERLU CAS.',
+  ],
+  signinGreeting20: [
+    'HELLO 👋.\nNUMBERS DON’T READ THEMSELVES 😅.\nTHANKS FOR BEING HERE.',
+    '你好 👋。\n数字不会自己抄下来 😅。\n谢谢你来了。',
+    'HALO 👋.\nANGKA NGGAK NYATAT DIRI SENDIRI 😅.\nMAKASIH SUDAH DATANG.',
+  ],
+  signinGreeting21: [
+    'HEY 👋,\nYES, BREAKS COUNT AS A PLAN 😌.\nA PRETTY GOOD ONE.',
+    '嗨 👋，\n休息也算计划 😌。\n而且挺不错。',
+    'HAI 👋,\nISTIRAHAT JUGA TERMASUK RENCANA 😌.\nRENCANA YANG BAGUS.',
+  ],
+  signinGreeting22: [
+    'HI 👋,\nCOFFEE IN. REPORT OUT ☕.\nIF ONLY IT WERE THAT SIMPLE.',
+    '嗨 👋，\n咖啡进，报告出 ☕。\n要真这么简单就好了。',
+    'HAI 👋,\nKOPI MASUK. LAPORAN KELUAR ☕.\nANDAI SEGAMPANG ITU.',
+  ],
+  signinGreeting23: [
+    'HEY 👋,\nCHECK THE UNITS. THEN THE SNACKS 😂.\nBOTH MATTER.',
+    '嗨 👋，\n先看单位，再看零食 😂。\n两个都重要。',
+    'HAI 👋,\nCEK SATUAN. LALU CEK CEMILAN 😂.\nDUA-DUANYA PENTING.',
+  ],
+  signinGreeting24: [
+    'WELCOME BACK 👋.\nNO GRAND SPEECH TODAY 😊.\nJUST HAPPY TO SEE YOU.',
+    '欢迎回来 👋。\n今天没有长篇致辞 😊。\n就是很高兴见到你。',
+    'SELAMAT DATANG LAGI 👋.\nNGGAK ADA PIDATO HARI INI 😊.\nCUMA SENANG KETEMU KAMU.',
+  ],
+  signinGreeting25: [
+    'HEY 👋,\nPLUS OR MINUS? GOOD QUESTION 🤔.\nWORTH A SECOND LOOK.',
+    '嗨 👋，\n加还是减？好问题 🤔。\n值得再看一眼。',
+    'HAI 👋,\nTAMBAH ATAU KURANG? NAH 🤔.\nBOLEH DICEK LAGI.',
+  ],
+  signinGreeting26: [
+    'HI 👋,\nNOT QUITE READY? THAT’S OKAY 😊.\nWE’RE NOT GOING ANYWHERE.',
+    '嗨 👋，\n还没准备好？没关系 😊。\n我们就在这里。',
+    'HAI 👋,\nBELUM SIAP? NGGAK APA-APA 😊.\nKAMI MASIH DI SINI.',
+  ],
+  signinGreeting27: [
+    'HEY 👋,\nONE SCREEN AT A TIME 😌.\nTHIS ONE’S YOURS.',
+    '嗨 👋，\n一次看一个屏幕 😌。\n这个留给你。',
+    'HAI 👋,\nSATU LAYAR DULU 😌.\nYANG INI PUNYAMU.',
+  ],
+  signinGreeting28: [
+    'HELLO 👋.\nTYPOS HAPPEN. WE’RE HUMAN 😅.\nTAKE ANOTHER LOOK.',
+    '你好 👋。\n打错字很正常，都是人嘛 😅。\n再看一眼就好。',
+    'HALO 👋.\nTYPO ITU MANUSIAWI 😅.\nCEK SEKALI LAGI AJA.',
+  ],
+  signinGreeting29: [
+    'HEY 👋,\nOFF BY ONE? BEEN THERE 😂.\nLET’S CHECK IT TOGETHER.',
+    '嗨 👋，\n差了一个？懂的 😂。\n一起再看看。',
+    'HAI 👋,\nMELESET SATU? PERNAH 😂.\nYUK, CEK LAGI.',
+  ],
+  signinGreeting30: [
+    'HI 👋,\nREPORT FIRST, THEN HOME? 🏠\nSOUNDS LIKE A PLAN.',
+    '嗨 👋，\n写完报告就回家？🏠\n这计划不错。',
+    'HAI 👋,\nLAPORAN DULU, LALU PULANG? 🏠\nBOLEH JUGA.',
+  ],
+  signinGreeting31: [
+    'HEY 👋,\nMETERS DON’T YAWN. UNFAIR 😴.\nWE STILL GET TO.',
+    '嗨 👋，\n仪表不会打哈欠，不公平 😴。\n我们还是会的。',
+    'HAI 👋,\nMETER NGGAK NGUAP. CURANG 😴.\nKITA MASIH BOLEH, KOK.',
+  ],
+  signinGreeting32: [
+    'HELLO 👋.\nCTRL+C HAS A BUSY DAY TOO 😂.\nYOU’RE IN GOOD COMPANY.',
+    '你好 👋。\nCTRL+C 今天也挺忙 😂。\n你有伴了。',
+    'HALO 👋.\nCTRL+C JUGA SIBUK HARI INI 😂.\nKAMU ADA TEMANNYA.',
+  ],
+  signinGreeting33: [
+    'HEY 👋,\nSHOULDERS DOWN. THERE YOU GO 😌.\nA SMALL REMINDER.',
+    '嗨 👋，\n肩膀放松，对，就这样 😌。\n一个小提醒。',
+    'HAI 👋,\nBAHUNYA RILEKS. NAH, GITU 😌.\nPENGINGAT KECIL AJA.',
+  ],
+  signinGreeting34: [
+    'HI 👋,\nWHERE’S THE SHORTCUT TO FRIDAY? 😂\nASKING FOR ALL OF US.',
+    '嗨 👋，\n有没有直达周五的快捷键？😂\n替大家问问。',
+    'HAI 👋,\nSHORTCUT KE JUMAT ADA NGGAK? 😂\nNANYA BUAT KITA SEMUA.',
+  ],
+  signinGreeting35: [
+    'HEY 👋,\nA QUIET MINUTE SOUNDS NICE 😌.\nTAKE ONE IF YOU CAN.',
+    '嗨 👋，\n安静一分钟也不错 😌。\n有空就歇一下。',
+    'HAI 👋,\nTENANG SEBENTAR ENAK JUGA 😌.\nKALAU SEMPAT, YA.',
+  ],
+  signinGreeting36: [
+    'OH, HI 👋.\nBRAIN STILL BOOTING? SAME 😅.\nGIVE IT A MOMENT.',
+    '哦，嗨 👋。\n大脑还在开机？我也是 😅。\n再等一会儿。',
+    'EH, HAI 👋.\nOTAK MASIH BOOTING? SAMA 😅.\nKASIH WAKTU SEBENTAR.',
+  ],
+  signinGreeting37: [
+    'HEY 👋,\nGOT YOUR NUMBERS? NICE 😊.\nLET’S FIND THEM A HOME.',
+    '嗨 👋，\n读数拿到了？不错 😊。\n给它们找个位置。',
+    'HAI 👋,\nANGKANYA SUDAH ADA? SIP 😊.\nYUK, DICATAT.',
+  ],
+  signinGreeting38: [
+    'HI THERE 👋.\nLUNCH BREAK GETS A VOTE TOO 🍜.\nJUST SAYING.',
+    '你好呀 👋。\n午饭休息也该有一票 🍜。\n随口说说。',
+    'HAI 👋.\nJAM MAKAN JUGA PUNYA SUARA 🍜.\nSEKADAR MENGINGATKAN.',
+  ],
+  signinGreeting39: [
+    'WELCOME 👋.\nTHE METER IS AWAKE. AND YOU? 😴\nWE WON’T JUDGE.',
+    '欢迎 👋。\n仪表醒着。你呢？😴\n我们不评价。',
+    'HALO 👋.\nMETERNYA MELEK. KAMU? 😴\nNGGAK MENGHAKIMI, KOK.',
+  ],
+  signinGreeting40: [
+    'HEY 👋,\nNO NEED TO RACE THE CLOCK 😌.\nSTEADY IS FINE.',
+    '嗨 👋，\n不用跟时钟赛跑 😌。\n稳稳来就好。',
+    'HAI 👋,\nNGGAK PERLU BALAPAN SAMA JAM 😌.\nSANTAI TAPI TELITI.',
+  ],
+  signinGreeting41: [
+    'HI 👋,\nHAVE YOU TRIED TAKING A BREAK? 😂\nTHE HUMAN RESTART BUTTON.',
+    '嗨 👋，\n试过休息一下吗？😂\n人类的重启键。',
+    'HAI 👋,\nSUDAH COBA ISTIRAHAT? 😂\nTOMBOL RESTART MANUSIA.',
+  ],
+  signinGreeting42: [
+    'HEY 👋,\nEXCEL MISSES YOU ALREADY 😂.\nIT CAN WAIT A MINUTE.',
+    '嗨 👋，\nEXCEL 已经想你了 😂。\n让它等一分钟。',
+    'HAI 👋,\nEXCEL SUDAH KANGEN KAMU 😂.\nBIAR NUNGGU SEBENTAR.',
+  ],
+  signinGreeting43: [
+    'HELLO 👋.\nCALCULATORS DON’T NEED COFFEE ☕.\nWE GOT THE BETTER DEAL.',
+    '你好 👋。\n计算器不喝咖啡 ☕。\n还是我们赚了。',
+    'HALO 👋.\nKALKULATOR NGGAK MINUM KOPI ☕.\nKITA LEBIH UNTUNG.',
+  ],
+  signinGreeting44: [
+    'HEY 👋, AGAIN.\nSAME FORM. FRESH CUP ☕.\nLET’S TRY THIS.',
+    '又见面了 👋。\n老表格，新咖啡 ☕。\n来试试吧。',
+    'HAI LAGI 👋.\nFORM LAMA. KOPI BARU ☕.\nYUK, DICOBA.',
+  ],
+  signinGreeting45: [
+    'HI 👋,\nZERO CAN BE A REAL NUMBER 🤓.\nBLANK IS ANOTHER STORY.',
+    '嗨 👋，\n零也是实实在在的数字 🤓。\n空白则是另一回事。',
+    'HAI 👋,\nNOL ITU ANGKA JUGA 🤓.\nKOSONG ITU BEDA CERITA.',
+  ],
+  signinGreeting46: [
+    'HEY 👋,\nSTILL THINKING ABOUT THAT BUG? 🐛\nIT OWES YOU RENT.',
+    '嗨 👋，\n还在想那个 BUG？🐛\n它该付你房租了。',
+    'HAI 👋,\nMASIH MIKIRIN BUG ITU? 🐛\nSURUH BAYAR KOS.',
+  ],
+  signinGreeting47: [
+    'YOU MADE IT 👋.\nTHAT COUNTS FOR SOMETHING 😊.\nWELCOME IN.',
+    '你来啦 👋。\n这本身就很不错 😊。\n欢迎。',
+    'KAMU SAMPAI JUGA 👋.\nITU SUDAH BAGUS 😊.\nSELAMAT DATANG.',
+  ],
+  signinGreeting48: [
+    'HEY 👋,\nWOULD ONE LESS MEETING HELP? 😂\nWE THOUGHT SO.',
+    '嗨 👋，\n少开一个会会更好吗？😂\n我们也这么想。',
+    'HAI 👋,\nKALAU RAPATNYA KURANG SATU? 😂\nNAH, SETUJU.',
+  ],
+  signinGreeting49: [
+    'HELLO 👋.\nONE SMALL BOX AT A TIME 😊.\nYOU KNOW THE DRILL.',
+    '你好 👋。\n一次填一个小格子 😊。\n老规矩，你懂的。',
+    'HALO 👋.\nSATU KOLOM DULU 😊.\nSUDAH PAHAM, KAN.',
+  ],
+  signinGreeting50: [
+    'HEY 👋, ENGINEER.\nTIRED? YEAH, THAT’S ALLOWED 😌.\nYOU’RE HUMAN TOO.',
+    '嘿 👋，工程师。\n累了？当然可以累 😌。\n你也是人呀。',
+    'HAI 👋, ENGINEER.\nCAPEK? BOLEH BANGET 😌.\nKAMU JUGA MANUSIA.',
+  ],
   iotTitle: ['Power Meter Reading', '电表读数', 'Power Meter Reading'],
   iotIntro: [
     'Device monitoring only. Readings never fill operator tables or reports.',

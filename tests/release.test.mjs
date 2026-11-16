@@ -7,6 +7,24 @@ import { timeLog } from '../server/log.js';
 import { createDraft } from '../engine.js';
 import { restoreDrafts } from '../storage.js';
 import { setLanguage, t } from '../i18n/index.js';
+import { catalog } from '../i18n/catalog.js';
+
+test('all fifty sign-in greetings have three localized lines, intact emoji and distinct copy', () => {
+  const keys = Object.keys(catalog).filter((key) => /^signinGreeting\d+$/.test(key));
+  assert.equal(keys.length, 50);
+  for (const language of [0, 1, 2]) {
+    const copies = keys.map((key) => catalog[key][language]);
+    assert.equal(new Set(copies).size, 50);
+    for (const copy of copies) {
+      assert.equal(copy.split('\n').length, 3);
+      assert.ok(copy.split('\n').every((line) => line.trim() && [...line].length <= 55));
+      assert.match(copy, /👋/u);
+      assert.doesNotMatch(copy, /[<>]/);
+    }
+  }
+  assert.match(catalog.signinGreeting01[0], /ENGINEERS CAN’T BE TIRED, RIGHT\? 😂/);
+  assert.match(catalog.signinGreeting02[0], /READY WHEN YOU ARE 😊/);
+});
 
 test('unknown language falls back to English; placeholders remain plain text', () => {
   assert.equal(setLanguage('unsupported'), 'en');

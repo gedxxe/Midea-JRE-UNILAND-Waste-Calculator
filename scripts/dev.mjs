@@ -44,6 +44,7 @@ const mime = {
   '.js': 'text/javascript; charset=utf-8',
   '.webp': 'image/webp',
   '.png': 'image/png',
+  '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
 };
