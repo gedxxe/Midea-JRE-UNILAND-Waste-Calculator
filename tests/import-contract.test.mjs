@@ -122,3 +122,52 @@ test('empty multi-meter equipment is not mistaken for an old JRE layout', () => 
   assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
   assert.deepEqual(parsed.suppliedMeters[4], [false, false]);
 });
+
+test('reading ranges use their first endpoint and accept compact presentation in both factories', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const text = formatBlankReadingTemplate(plant, true)
+      .replace('DD/MM/YYYY', '14 / 11 / 2026 – 15/11/2026 (Afternoon)')
+      .replace('HH:MM', '18.00 — 19:00')
+      .replaceAll('____', '00123,123456')
+      .replace(/Ratio /g, 'Ratio')
+      .replace(/^(\d+)\. /gm, '$1)')
+      .replace(/: /g, '：')
+      .replace(/\n+/g, '\r\n')
+      .replace('Heat Exchanger', 'HeatExchanger');
+    const parsed = parseReading(text, plant);
+    assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+    assert.equal(parsed.date, '2026-11-14');
+    assert.equal(parsed.time, '18:00');
+    assert.equal(parsed.values[0][0], '00123,123456');
+    assert.ok(parsed.issues.some((i) => i.code === 'IMPORT_TIME_RANGE'));
+    assert.ok(parsed.issues.some((i) => i.code === 'IMPORT_DATE_RANGE'));
+  }
+});
+
+test('invalid range endpoints and repeated headers never become valid imports', () => {
+  const text = formatBlankReadingTemplate('JRE', true)
+    .replace('DD/MM/YYYY', '14/11/2026')
+    .replaceAll('____', '1');
+  for (const time of ['07:00-25:00', '99:00-08:00', '07:99-08:00', '07:00-08:00 extra'])
+    assert.equal(parseReading(text.replace('HH:MM', time), 'JRE').success, false);
+  assert.equal(
+    parseReading(text.replace('14/11/2026', '14/11/2026-31/11/2026'), 'JRE').success,
+    false,
+  );
+  assert.equal(parseReading(text + '\nReading time: 08:00', 'JRE').success, true);
+  assert.equal(
+    parseReading(text.replace('HH:MM', '07:00') + '\nReading time: 08:00', 'JRE').success,
+    false,
+  );
+});
+
+test('flow-only filled templates are partial input, not empty electricity', () => {
+  const text = formatBlankReadingTemplate('JRE')
+    .replace('DD/MM/YYYY', '15/11/2026')
+    .replace('Air Compressor Flow: ____', 'Air Compressor Flow: 00123,500001');
+  const parsed = parseReading(text, 'JRE');
+  assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+  assert.equal(parsed.flowReading, '00123,500001');
+  assert.equal(parsed.valueCount, 0);
+  assert.equal(parsed.suppliedMeters.flat().some(Boolean), false);
+});

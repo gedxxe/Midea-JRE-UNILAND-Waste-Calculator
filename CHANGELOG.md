@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.56-alpha - 2026-11-16
+
+- Import reading windows such as 07:00–08:00 WIB using the first time in shift modes. Daily reports keep their 08:00 boundary. Use the first date in a date range and show which timestamp was chosen when metadata disagrees.
+- Accept common spacing, punctuation, compact equipment names and Markdown line formatting in both factories. Preserve exact values, units and note text. Omitted refill/note sections and blank manual totals retain saved context. Reject duplicates, malformed values and mismatched periods for actual refills or manual totals.
+- Load a different destination period before import and revalidate against its stored readings. Keep the opposite observation, Undo and account autosave; reject failed reads without applying the import. Allow a filled Air Compressor flow in an otherwise blank electricity template.
+
 ## v0.11.55-alpha - 2026-11-16
 
 - Keep checking an already-requested IoT reading when Auto-sync is switched off. Load the confirmed result once, then stop background checks. Preserve telemetry cadence, command cooldown and server limits.

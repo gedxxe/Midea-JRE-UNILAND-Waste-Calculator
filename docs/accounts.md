@@ -113,3 +113,9 @@ The five report-content choices affect preview and clipboard only. Save still st
 ## Latest period autosaves
 
 See [autosave storage, checkpoint rules, migration and rollback](autosave.md). Migration 007 must precede v0.11.23 deployment. Runtime can SELECT/INSERT/UPDATE period_autosaves; it cannot delete history. Production requires its own backup and explicit migration approval.
+
+### Reading import date and time windows (v0.11.56)
+
+Import accepts time windows such as `07:00–08:00 WIB` and date ranges, using the first endpoint. In 24 HOURS, a reading window is informational: the stored observation remains at 08:00 WIB. In AFTER PRODUCTION and NIGHT SHIFT, the first time is the actual observation time. The primary date/Reading time header takes precedence over redundant Selected observation metadata; a notice identifies the chosen timestamp. A full snapshot without Reading time can use its Selected observation time.
+
+Harmless spacing, blank lines, compact equipment names, common punctuation and Markdown line escapes are accepted. Numeric precision and note text remain literal. Omitted refill/note sections and blank manual totals keep the saved context. A wholly blank manual-total section may carry the old window; nonempty totals and refill events require an exact period. Unknown or repeated fields, invalid units/values and incompatible refill/manual-total periods still reject the import before applying changes. Different dates load the canonical destination first, then validate against its existing opposite observation. A failed read leaves the import dialog open. These rules do not change stored historical reports or recover earlier missing readings.
