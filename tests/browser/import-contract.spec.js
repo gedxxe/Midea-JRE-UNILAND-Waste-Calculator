@@ -9,6 +9,12 @@ const cell = (page, row, side = 'start', meter = 0) =>
   page.locator(
     '.meter-input[data-row="' + row + '"][data-side="' + side + '"][data-meter="' + meter + '"]',
   );
+// Autosave coalesces for up to five seconds before the HTTP acknowledgment can arrive.
+const autosaveAckTimeout = 10000;
+const expectSynced = (page) =>
+  expect(page.locator('#save-status')).toContainText('All changes saved', {
+    timeout: autosaveAckTimeout,
+  });
 async function setup(page, filled = false) {
   const workspace = { version: 4, drafts: {}, workingHours: {}, nightShifts: {} };
   for (const plant of ['JRE', 'UNILAND']) {
@@ -25,7 +31,8 @@ async function setup(page, filled = false) {
   }
   const savedPeriods = new Map();
   let state = modernWorkspace(workspace),
-    version = 1;
+    version = 1,
+    nextAckDelay = 0;
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.route('**/api/time', (r) =>
@@ -44,7 +51,7 @@ async function setup(page, filled = false) {
       },
     }),
   );
-  await page.route('**/api/drafts', (r) => {
+  await page.route('**/api/drafts', async (r) => {
     if (r.request().method() === 'POST') {
       const body = r.request().postDataJSON();
       state = body.workspace;
@@ -56,6 +63,9 @@ async function setup(page, filled = false) {
       ])
         if (periodKey(draft)) savedPeriods.set(periodKey(draft), structuredClone(draft));
       version++;
+      const delay = nextAckDelay;
+      nextAckDelay = 0;
+      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
     }
     return r.fulfill({ json: { workspace: state, version, updated_at: '2026-10-27T01:00:00Z' } });
   });
@@ -71,6 +81,9 @@ async function setup(page, filled = false) {
     errors,
     workspace: () => structuredClone(state),
     periods: () => structuredClone([...savedPeriods.values()]),
+    delayNextAck: (milliseconds) => {
+      nextAckDelay = milliseconds;
+    },
   };
 }
 async function apply(page, text, side = 'end') {
@@ -249,7 +262,8 @@ for (const plant of ['JRE', 'UNILAND'])
     test(`${plant} ${mode} raw range imports preserve opposite readings, Undo and reload`, async ({
       page,
     }) => {
-      const { errors, workspace } = await setup(page, true);
+      test.setTimeout(45000); // Three bounded autosave acknowledgments plus navigation/reload.
+      const { errors, workspace, delayNextAck } = await setup(page, true);
       await page.locator(`[data-plant="${plant}"]`).click();
       await page.selectOption('#reading-mode', mode);
       const before = workspace();
@@ -286,7 +300,7 @@ for (const plant of ['JRE', 'UNILAND'])
       if (mode === 'daily')
         await expect(page.locator('#toast')).toContainText('08:00 WIB boundary');
       else await expect(page.locator('#end-reading-date')).toContainText(time);
-      await expect(page.locator('#save-status')).toContainText('All changes saved');
+      await expectSynced(page);
       const saved = workspace()[collection][plant];
       expect(saved.rows[0].start).toEqual(before[collection][plant].rows[0].start);
       expect(saved.rows[0].end).toEqual(source.rows[0].end);
@@ -296,13 +310,26 @@ for (const plant of ['JRE', 'UNILAND'])
         expect(saved.additionalReadings[3].end).toBe('00200,123456');
         expect(saved.airCompressor.end).toBe('00200,123456');
       }
+      delayNextAck(600);
+      const undoAcknowledged = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/drafts' &&
+          response.request().method() === 'POST',
+        { timeout: autosaveAckTimeout },
+      );
       await page.locator('#undo-change').click();
       await expect(cell(page, 0, 'end')).toHaveValue(before[collection][plant].rows[0].end[0]);
-      await expect(page.locator('#save-status')).toContainText('All changes saved');
+      await expect(page.locator('#save-status')).not.toContainText('All changes saved');
+      const acknowledgment = await undoAcknowledged;
+      expect(acknowledgment.status()).toBe(200);
+      expect(acknowledgment.request().postDataJSON().workspace[collection][plant]).toEqual(
+        before[collection][plant],
+      );
+      await expectSynced(page);
       expect(workspace()[collection][plant]).toEqual(before[collection][plant]);
       await apply(page, text);
       await expect(page.locator('#import-dialog')).toBeHidden();
-      await expect(page.locator('#save-status')).toContainText('All changes saved');
+      await expectSynced(page);
       await page.reload();
       await page.locator(`[data-plant="${plant}"]`).click();
       await page.selectOption('#reading-mode', mode);
@@ -403,7 +430,7 @@ test('full timed import loads destination utilities, preserves the other boundar
   await expect(cell(page, 0, 'end')).toHaveValue('888.123456');
   await expect(page.locator('#water-start')).toHaveValue('123.123456');
   await expect(page.locator('#water-end')).toHaveValue('180.123456');
-  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  await expectSynced(page);
   const saved = workspace();
   expect(saved.workingHours.JRE.endTime).toBe('18:00');
   expect(saved.nightShifts.JRE.startTime).toBe('18:00');
@@ -475,7 +502,7 @@ test('sequential morning imports create adjacent daily copies and afternoon refi
   ]) {
     await apply(page, observation(date, false, value), side);
     await expect(page.locator('#import-dialog')).toBeHidden();
-    await expect(page.locator('#save-status')).toContainText('All changes saved');
+    await expectSynced(page);
     const daily = workspace().drafts.JRE;
     expect(new Date(daily.endDate) - new Date(daily.startDate)).toBe(86400000);
     await expect(cell(page, 0, side)).toHaveValue(String(value));
@@ -496,7 +523,7 @@ test('sequential morning imports create adjacent daily copies and afternoon refi
   await expect(page.locator('#import-dialog')).toBeHidden();
   await apply(page, observation('2026-11-13', true, 1150, true));
   await expect(page.locator('#import-dialog')).toBeHidden();
-  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  await expectSynced(page);
   const shift = workspace().workingHours.JRE;
   expect([shift.startTime, shift.endTime]).toEqual(['07:00', '18:00']);
   expect(shift.gas.entries[2].refills[0].before.reading).toBe('1000.123456');
@@ -545,7 +572,7 @@ test('an older morning copy imports all named fields without selection metadata 
     .replace(/\n\nCumulative Air Compressor reading:\nAir Compressor: [^\n]+/, '');
   await apply(page, text, 'start');
   await expect(page.locator('#import-dialog')).toBeHidden();
-  await expect(page.locator('#save-status')).toContainText('All changes saved');
+  await expectSynced(page);
   const draft = workspace().drafts.JRE;
   expect([draft.startDate, draft.endDate]).toEqual(['2026-11-12', '2026-11-13']);
   expect(draft.rows[0].start[0]).toBe('1234');

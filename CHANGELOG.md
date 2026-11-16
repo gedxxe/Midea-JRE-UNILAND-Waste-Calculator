@@ -8,6 +8,7 @@ Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versio
 - Choose from 50 localized greetings on each page load, including the requested engineering joke and quieter welcome. Remember only the previous public greeting key in sessionStorage to avoid repeating it on refresh; the choice stays fixed while typing, navigating Back or changing languages. Blocked storage still permits a random greeting and native login.
 - Use locally hosted Overused Grotesk with its OFL notice and native color emoji. Reveal graphemes through vertical masks with finite staggered springs; settle immediately on reduced motion, motion-off, hidden tabs, dialogs or leaving sign-in. No React/Motion runtime, auth, database or calculation change.
 - Review the static asset budget at 1,360,000 bytes for the 106 KB font, its license, greeting translations and native reveal code. No remote font service or browser package.
+- CI follow-up: bound import/Undo save assertions at ten seconds to cover the existing five-second autosave cadence plus acknowledgment latency. Exercise a delayed Undo acknowledgment in both factories and all modes, verify its exact submitted workspace and require unsaved feedback before confirmation. Preserve value, opposite-reading, Undo and reload assertions; no application autosave or timeout-policy change.
 
 ## v0.11.58-alpha - 2026-11-16
 
