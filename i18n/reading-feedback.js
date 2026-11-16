@@ -2,6 +2,11 @@ import { getLanguage } from './index.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { formatNumber } from '../numbers.js';
 export const readingMessages = {
+  loadFailed: [
+    'Could not load the destination period. Nothing was imported. Check the connection or resolve the autosave conflict, then retry.',
+    '无法加载目标时段，未导入任何数据。请检查连接或解决自动保存冲突后重试。',
+    'Periode tujuan belum bisa dimuat. Tidak ada data yang diimpor. Periksa koneksi atau selesaikan konflik autosave, lalu coba lagi.',
+  ],
   flow: [
     'Line {line}: enter Air Compressor flow once, in Nm³. Use a nonnegative number, ____ for blank or - for unavailable.',
     '第{line}行：压缩空气流量只能填写一次，单位为Nm³。使用非负数，空白写____，不可用写-。',
@@ -29,9 +34,29 @@ export const readingMessages = {
     'Isi satu tanggal reading dalam format DD/MM/YYYY.',
   ],
   time: [
-    'Use a valid HH:MM WIB time. A blank time uses the selected column.',
-    '时间格式为 HH:MM WIB；留空时使用所选列的时间。',
-    'Gunakan jam HH:MM WIB yang valid. Jam kosong mengikuti kolom pilihan.',
+    'Use HH:MM WIB or a range such as 07:00-08:00 WIB. The range start is used; a blank time follows the selected column.',
+    '请输入HH:MM WIB或07:00-08:00 WIB等时间段，使用起始时间；留空时使用所选列的时间。',
+    'Gunakan HH:MM WIB atau rentang seperti 07:00-08:00 WIB. Dipakai jam awal; jam kosong mengikuti kolom pilihan.',
+  ],
+  timeRange: [
+    'Time range uses {time} WIB.',
+    '时间段使用起始时间{time} WIB。',
+    'Rentang memakai jam awal {time} WIB.',
+  ],
+  dateRange: [
+    'Date range uses {date}.',
+    '日期段使用起始日期{date}。',
+    'Rentang memakai tanggal awal {date}.',
+  ],
+  dailyTime: [
+    '24 HOURS keeps its 08:00 WIB boundary; the reading window does not change the report time.',
+    '24 HOURS保持08:00 WIB边界，抄表时间段不改变报表时间。',
+    '24 HOURS tetap memakai batas 08.00 WIB; rentang pencatatan tidak mengubah jam laporan.',
+  ],
+  observation: [
+    'Using the reading header: {date} {time} WIB.',
+    '按读数标题使用{date} {time} WIB。',
+    'Mengikuti header reading: {date} {time} WIB.',
   ],
   factory: [
     'These readings are for {factory}. Select that factory first.',
@@ -116,6 +141,8 @@ export function readingIssueMessage(issue, plant) {
     factory: issue.factory,
     expected: issue.expected,
     found: issue.found,
+    date: issue.date,
+    time: issue.time,
   };
   if (issue.comparison) {
     const c = issue.comparison;
@@ -131,9 +158,14 @@ export function readingIssueMessage(issue, plant) {
   }
   const key = {
     IMPORT_SIZE: 'size',
+    IMPORT_LOAD: 'loadFailed',
     IMPORT_FLOW: 'flow',
     IMPORT_DATE: 'date',
     IMPORT_TIME: 'time',
+    IMPORT_TIME_RANGE: 'timeRange',
+    IMPORT_DATE_RANGE: 'dateRange',
+    IMPORT_DAILY_TIME: 'dailyTime',
+    IMPORT_OBSERVATION: 'observation',
     IMPORT_FACTORY: 'factory',
     METER_COUNT: 'count',
     INVALID_READING: 'invalid',

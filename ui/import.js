@@ -6,9 +6,10 @@ import { importFeedback, readingText } from '../i18n/reading-feedback.js';
 import { t } from '../i18n/index.js';
 import { $ } from './dom.js';
 
-export function createImportEditor({ current, apply, toast }) {
+export function createImportEditor({ current, prepare, apply, toast }) {
   let texts = {},
-    lastParsed = null;
+    lastParsed = null,
+    generation = 0;
   function refreshLabels() {
     const draft = current();
     const schema = PLANT_SCHEMAS[draft.plantKey];
@@ -38,6 +39,7 @@ export function createImportEditor({ current, apply, toast }) {
     $('import-feedback').textContent = '';
   }
   function reset() {
+    generation++;
     texts = {};
     lastParsed = null;
     $('import-text').value = '';
@@ -55,8 +57,10 @@ export function createImportEditor({ current, apply, toast }) {
     $('import-feedback').textContent = '';
   });
   $('import-dialog').addEventListener('close', reset);
-  $('apply-import').addEventListener('click', () => {
-    const parsed = parseRawReading($('import-text').value, current(), $('import-side').value);
+  $('apply-import').addEventListener('click', async () => {
+    const ticket = generation;
+    const text = $('import-text').value;
+    let parsed = parseRawReading(text, current(), $('import-side').value, prepare);
     lastParsed = parsed;
     $('import-feedback').textContent = importFeedback(parsed, current().plantKey);
     if (!parsed.success) return;
@@ -69,18 +73,35 @@ export function createImportEditor({ current, apply, toast }) {
       $('import-feedback').textContent = t('workImportTime');
       return;
     }
+    $('import-dialog').inert = true;
     try {
-      apply(parsed, side);
+      parsed = (await apply(parsed, side, text, () => ticket === generation)) || parsed;
+      if (ticket !== generation) return;
+      if (!parsed.success) {
+        lastParsed = parsed;
+        $('import-feedback').textContent = importFeedback(parsed, current().plantKey);
+        return;
+      }
     } catch (error) {
-      if (error.message !== 'shiftConflict') throw error;
-      $('import-feedback').textContent = t('shiftConflict');
+      if (ticket !== generation) return;
+      $('import-feedback').textContent =
+        error.message === 'shiftConflict' ? t('shiftConflict') : readingText('loadFailed');
       return;
+    } finally {
+      $('import-dialog').inert = false;
     }
     $('import-dialog').close();
     toast(
       readingText('imported', { count: parsed.valueCount }) +
         (parsed.emptyCount ? ' ' + readingText('kept') : '') +
-        (parsed.issues.some((i) => i.level === 'WARNING') ? ' ' + t('importedWarnings') : ''),
+        (parsed.issues.some((i) => i.level === 'WARNING') ? ' ' + t('importedWarnings') : '') +
+        (parsed.issues.some((i) => i.level === 'NOTICE')
+          ? ' ' +
+            importFeedback(
+              { issues: parsed.issues.filter((i) => i.level === 'NOTICE') },
+              current().plantKey,
+            )
+          : ''),
     );
   });
   return { reset, refreshLabels };

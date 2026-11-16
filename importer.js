@@ -10,6 +10,60 @@ import {
   moveLegacyIssues,
 } from './meter-layout.js';
 
+// Tolerate presentation differences without changing numeric reading strings.
+export const importLine = (value) =>
+  String(value)
+    .replace(/\\([.()])/g, '$1')
+    .replace(/\\\s*$/, '')
+    .trim()
+    .replace(/[：＋（）]/g, (c) => ({ '：': ':', '＋': '+', '（': '(', '）': ')' })[c]);
+export function importTime(value) {
+  const m = String(value)
+    .trim()
+    .match(
+      /^(\d{1,2})\s*[:.]\s*(\d{2})(?:\s*(?:[-–—]|to|s\/d|sampai)\s*(\d{1,2})\s*[:.]\s*(\d{2}))?\s*(?:WIB)?$/i,
+    );
+  if (!m) return null;
+  const time = m[1].padStart(2, '0') + ':' + m[2];
+  const end = m[3] ? m[3].padStart(2, '0') + ':' + m[4] : undefined;
+  return validTime(time) && (!end || validTime(end))
+    ? { time, ...(end ? { timeRange: { start: time, end } } : {}) }
+    : null;
+}
+export function importDate(value) {
+  const date = '(?:\\d{1,2}\\s*/\\s*\\d{1,2}\\s*/\\s*20\\d{2}|20\\d{2}-\\d{2}-\\d{2})';
+  const m = String(value)
+    .trim()
+    .match(
+      new RegExp(
+        '^(' +
+          date +
+          ')(?:\\s*(?:[-–—]|to|s/d|sampai)\\s*(' +
+          date +
+          '))?(?:\\s*\\(\\s*(?:Pagi|Sore|Morning|Afternoon|Evening|day shift|night shift|Sore\\s*/\\s*night shift)\\s*\\)|\\s+(?:day shift|night shift))?\\s*:?$',
+        'i',
+      ),
+    );
+  if (!m) return null;
+  const iso = (v) =>
+    v.includes('/')
+      ? v
+          .split('/')
+          .map((x) => x.trim())
+          .reverse()
+          .map((x, i) => (i ? x.padStart(2, '0') : x))
+          .join('-')
+      : v;
+  const start = iso(m[1]),
+    end = m[2] ? iso(m[2]) : undefined;
+  return {
+    date: start,
+    valid: validDate(start) && (!end || validDate(end)),
+    ...(end ? { dateRange: { start, end } } : {}),
+  };
+}
+const importKey = (name) => normalizeName(name).replace(/\s/g, '');
+
 export function parseReading(text, plantKey) {
   const schema = PLANT_SCHEMAS[plantKey];
   if (!schema?.rows) throw new RangeError('Unknown factory');
@@ -27,23 +81,24 @@ export function parseReading(text, plantKey) {
     };
   const lookup = new Map();
   schema.rows.forEach((row, i) =>
-    [row.name, ...(row.aliases || [])].forEach((name) => lookup.set(normalizeName(name), i)),
+    [row.name, ...(row.aliases || [])].forEach((name) => lookup.set(importKey(name), i)),
   );
   let values = schema.rows.map((row) => row.factors.map(() => ''));
   const issues = [];
   const seen = new Set();
   const dates = [];
   const times = [];
+  let timeRange, dateRange;
   let active = null;
   const entries = [];
   let labOccurrence = 0;
   let flowReading,
     flowSupplied = false,
     flowSeen = false;
-  for (const [lineIndex, raw] of String(text).split(/\r?\n/).entries()) {
-    const line = raw
-      .trim()
-      .replace(/[：＋（）]/g, (c) => ({ '：': ':', '＋': '+', '（': '(', '）': ')' })[c]);
+  for (const [lineIndex, raw] of String(text)
+    .split(/\r\n?|\n/)
+    .entries()) {
+    const line = importLine(raw);
     const sourceLine = lineIndex + 1;
     if (!line) continue;
     if (/^(?:flow\s*meter\s*)?air\s*compressor(?:\s*flow)?\s*:/i.test(line)) {
@@ -98,42 +153,55 @@ export function parseReading(text, plantKey) {
       active = null;
       continue;
     }
-    if (/^Reading time:\s*HH:MM\s+WIB$/i.test(line)) {
+    if (/^Reading\s*time\s*:\s*HH\s*:\s*MM\s*(?:WIB)?$/i.test(line)) {
       active = null;
       continue;
     }
-    if (/^Reading time:/i.test(line)) {
-      const time = /^Reading time:\s*(\d{2}:\d{2})\s+WIB$/i.exec(line)?.[1];
-      times.push(time);
-      if (!validTime(time))
+    if (/^Reading\s*time\s*:/i.test(line)) {
+      const parsed = importTime(line.slice(line.indexOf(':') + 1));
+      times.push(parsed?.time);
+      timeRange = parsed?.timeRange;
+      if (!parsed)
         issues.push({
           level: 'ERROR',
           code: 'IMPORT_TIME',
-          message: 'Use Reading time: HH:MM WIB with a valid time.',
+          sourceLine,
+          message:
+            'Use a valid time or time range, for example 07:00-08:00 WIB. The range start is used.',
+        });
+      else if (parsed.timeRange)
+        issues.push({
+          level: 'NOTICE',
+          code: 'IMPORT_TIME_RANGE',
+          time: parsed.time,
+          message: 'Time range uses ' + parsed.time + ' WIB.',
         });
       active = null;
       continue;
     }
-    const dateMatch = line.match(
-      /^(?:(\d{1,2})\/(\d{1,2})\/(20\d{2})|(20\d{2})-(\d{2})-(\d{2}))(?:\s*\(\s*(?:Pagi|Sore|Morning|Afternoon|Evening|day shift|night shift|Sore\s*\/\s*night shift)\s*\)|\s+(?:day shift|night shift))?\s*:?$/i,
-    );
+    const dateMatch = importDate(line);
     if (dateMatch) {
-      const iso = dateMatch[4]
-        ? `${dateMatch[4]}-${dateMatch[5]}-${dateMatch[6]}`
-        : `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
-      dates.push(iso);
+      dates.push(dateMatch.valid ? dateMatch.date : '');
+      dateRange = dateMatch.dateRange;
+      if (dateRange)
+        issues.push({
+          level: 'NOTICE',
+          code: 'IMPORT_DATE_RANGE',
+          date: dateMatch.date,
+          message: 'Date range uses ' + dateMatch.date + '.',
+        });
       active = null;
       continue;
     }
     const match = line.match(/^(?:\d+[.)]\s*)?([^:]+):\s*(.*)$/);
-    let ri = match ? lookup.get(normalizeName(match[1])) : undefined;
+    let ri = match ? lookup.get(importKey(match[1])) : undefined;
     if (
       plantKey === 'UNILAND' &&
       match &&
-      normalizeName(match[1]) === normalizeName('10HP Enthalpy Difference Lab')
+      importKey(match[1]) === importKey('10HP Enthalpy Difference Lab')
     ) {
       labOccurrence++;
-      if (labOccurrence === 2) ri = lookup.get(normalizeName('10HP Enthalpy Difference Lab (2)'));
+      if (labOccurrence === 2) ri = lookup.get(importKey('10HP Enthalpy Difference Lab (2)'));
     }
     if (ri !== undefined) {
       active = { ri, expr: match[2], sourceLine };
@@ -224,7 +292,7 @@ export function parseReading(text, plantKey) {
     }
     terms.forEach((term, mi) => {
       const m = term.match(
-        /^(-|\d+(?:[.,]\d{1,6})?|_{2,})?(?:\s*\(\s*Ratio\s+(\d+(?:[.,]\d+)?)\s*\)|\s*\(\(\s*Ratio\s+(\d+(?:[.,]\d+)?)\s*\)\s*\/\s*(\d+)\s*\))?$/i,
+        /^(-|\d+(?:[.,]\d{1,6})?|_{2,})?(?:\s*\(\s*Ratio\s*(\d+(?:[.,]\d+)?)\s*\)|\s*\(\(\s*Ratio\s*(\d+(?:[.,]\d+)?)\s*\)\s*\/\s*(\d+)\s*\))?$/i,
       );
       if (!m || (m[1] && m[1] !== '-' && !/^_+$/.test(m[1]) && decimalText(m[1]) === null)) {
         issues.push({
@@ -265,6 +333,7 @@ export function parseReading(text, plantKey) {
       });
   });
   if (
+    !flowSupplied &&
     !suppliedMeters.some((row) => row.some(Boolean)) &&
     !issues.some((i) => ['INVALID_READING', 'METER_COUNT'].includes(i.code))
   )
@@ -305,6 +374,8 @@ export function parseReading(text, plantKey) {
     omittedRows: schema.rows.map((_, i) => i).filter((i) => !seen.has(i)),
     date: dates[0],
     time: times[0],
+    ...(timeRange ? { timeRange } : {}),
+    ...(dateRange ? { dateRange } : {}),
     issues: legacy && success ? moveLegacyIssues(issues) : issues,
     success,
     ...(flowSeen ? { flowReading, flowSupplied } : {}),

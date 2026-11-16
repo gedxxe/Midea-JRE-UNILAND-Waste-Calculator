@@ -1,5 +1,5 @@
 import { exportRawReading } from './raw-export.js';
-import { parseReading } from './importer.js';
+import { parseReading, importLine, importDate, importTime } from './importer.js';
 import { ADDITIONAL_METERS } from './additional-readings.js';
 import {
   createGasDraft,
@@ -9,9 +9,9 @@ import {
   MAX_REFILLS,
   JRE_GAS_INPUT_VERSION,
 } from './gas.js';
-import { UTILITIES, PLANT_SCHEMAS } from './schema.js';
+import { UTILITIES } from './schema.js';
 import { decimalText, validDate } from './numbers.js';
-import { observationTime, validTime } from './reading-period.js';
+import { observationTime, validTime, isWorkingHours } from './reading-period.js';
 
 function rawEndpoint(draft, side) {
   const date = draft[side + 'Date'],
@@ -26,21 +26,68 @@ function rawEndpoint(draft, side) {
 
 // Formatting tolerance applies to structural lines only; note text remains literal.
 function normalizeSnapshot(text) {
+  const labels = new Map();
+  const key = (v) => v.toLowerCase().replace(/\s/g, '');
+  for (const label of [
+    'Selected observation',
+    'Additional cumulative electricity readings',
+    'Gas readings',
+    'Cumulative Water reading',
+    'Cumulative Air Compressor reading',
+    'Notes',
+    'Reading time',
+    'Water',
+    'Air Compressor',
+    'Before',
+    'After',
+    ...ADDITIONAL_METERS,
+  ])
+    labels.set(key(label), label);
+  for (const plant of ['JRE', 'UNILAND'])
+    for (const gas of gasCalibration(plant).gases) {
+      labels.set(key(gas.name), gas.name);
+    }
   const result = [];
   let notes = false;
   const header =
     /^(Selected observation:|Additional cumulative electricity readings:|Trafo 1, 2 and 3 cumulative readings|Gas readings:|Cumulative Water reading:|Cumulative Air Compressor reading:|Refill observations for |Manual period totals for |Notes:)/;
-  for (const raw of text.replaceAll('\r\n', '\n').split('\n')) {
+  const units = {
+    kwh: 'kWh',
+    nm3: 'Nm³',
+    'nm³': 'Nm³',
+    'nm^3': 'Nm³',
+    mmh2o: 'mmH2O',
+    'mmh₂o': 'mmH2O',
+    mmwc: 'mmWC',
+    kg: 'kg',
+    m3: 'm³',
+    'm³': 'm³',
+    'm^3': 'm³',
+    mm: 'mm',
+  };
+  for (const raw of String(text).split(/\r\n?|\n/)) {
     if (notes) {
       result.push(raw);
       continue;
     }
-    let line = raw
-      .trim()
+    let line = importLine(raw)
       .replace(/[ \t]+/g, ' ')
-      .replace(/^([A-Za-z][A-Za-z 0-9#&()–-]*):\s*/, '$1: ');
+      .replace(
+        /^([A-Za-z][A-Za-z 0-9#&()–-]*?)\s*:\s*/,
+        (_, label) => (labels.get(key(label)) || label.trim()) + ': ',
+      )
+      .replace(
+        /(kwh|Nm(?:³|3|\^3)|mmH(?:2|₂)O|mmWC|kg|m(?:³|3|\^3)|mm)(?=$|[\s;)])/gi,
+        (unit) => units[unit.toLowerCase()],
+      )
+      .replace(/([\d_–-])(?=kWh|Nm³|mmH2O|mmWC|kg|m³|mm|%)/g, '$1 ')
+      .replace(/;\s*temperature\s*:\s*/gi, '; temperature: ')
+      .replace(/^Refill\s*observations\s*for\s+/i, 'Refill observations for ')
+      .replace(/^Manual\s*period\s*totals\s*for\s+/i, 'Manual period totals for ')
+      .trimEnd();
     if (!line) continue;
-    line = line.trimEnd().replace(/Nm(?:3|\^3)\b/g, 'Nm³');
+    if (/^trafo\s*1,\s*2\s*and\s*3\s*cumulative\s*readings\s*are\s*in\s*MWh\.$/i.test(line))
+      line = 'Trafo 1, 2 and 3 cumulative readings are in MWh.';
     if (/^(Before:|After:|Tank entry off;)/.test(line)) line = '  ' + line;
     if (header.test(line) && result.length) result.push('');
     result.push(line);
@@ -48,6 +95,23 @@ function normalizeSnapshot(text) {
   }
   return result.join('\n').trim();
 }
+function readingSlot(parsed, draft) {
+  if (!isWorkingHours(draft) && parsed.timeRange) {
+    parsed.issues = parsed.issues.filter(
+      (i) => !['IMPORT_TIME_RANGE', 'IMPORT_DAILY_TIME'].includes(i.code),
+    );
+    parsed.issues.push({
+      level: 'NOTICE',
+      code: 'IMPORT_DAILY_TIME',
+      time: parsed.time,
+      message:
+        '24 HOURS keeps its 08:00 WIB boundary. The reading window does not change the report time.',
+    });
+    parsed.time = '08:00';
+  }
+  return parsed;
+}
+
 const sameFormatting = (text) => {
   const [body, notes] = text.split('\n\nNotes:');
   return body.replace(/[ \t]+/g, '') + (notes === undefined ? '' : '\nNotes:' + notes);
@@ -55,56 +119,81 @@ const sameFormatting = (text) => {
 
 // Parse a complete sharing snapshot without mutating the current document.
 // Regenerating it catches unknown, duplicate or misplaced fields rather than dropping them.
-export function parseRawReading(text, draft, side = 'end') {
-  const original = String(text).replaceAll('\r\n', '\n').trim();
-  const input = original.includes('Selected observation') ? normalizeSnapshot(original) : original;
+export function parseRawReading(text, draft, side = 'end', prepare) {
+  const original = String(text);
+  if (original.length > 131072) return parseReading(original, draft.plantKey);
+  const input = normalizeSnapshot(original);
   if (input.length > 131072) return parseReading(input, draft.plantKey);
-  if (!input.includes('\nSelected observation:')) return parseReading(input, draft.plantKey);
+  if (!input.includes('\nSelected observation:'))
+    return readingSlot(parseReading(input, draft.plantKey), draft);
   const boundary = input.indexOf('\n\nSelected observation:');
   const parts = input.slice(boundary + 2).split('\n\n');
-  const parsed = parseReading(input.slice(0, boundary), draft.plantKey);
+  const parsed = readingSlot(parseReading(input.slice(0, boundary), draft.plantKey), draft);
   if (!parsed.success) return parsed;
   try {
-    const next = structuredClone(draft);
-    const selected = parts.shift().match(/^Selected observation: (Start|End), (.+)$/);
-    if (!selected) throw Error('Invalid selected observation.');
-    // A full snapshot owns refill/manual context for the complete period.
-    // Do not silently attach that context to different dates or times.
+    if (parsed.issues.some((i) => i.code === 'RATIO_MISMATCH'))
+      throw Error(
+        'Electricity ratios do not match. Use the ratios from the current blank template.',
+      );
+    const selected = (parts.shift() || '').match(/^Selected observation: (Start|End)\s*,\s*(.+)$/i);
+    if (!selected)
+      throw Error('Selected observation: use Start or End followed by a valid date and time.');
+    const stamp = selected[2].match(
+      /^(\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*20\d{2}|20\d{2}-\d{2}-\d{2})\s+(.*)$/,
+    );
+    const sourceDate = stamp && importDate(stamp[1]),
+      sourceTime = stamp && importTime(stamp[2]);
+    if (!sourceDate?.valid || !sourceTime)
+      throw Error('Selected observation: enter a valid date and HH:MM WIB time.');
+    parsed.time ||= sourceTime.time;
+    readingSlot(parsed, draft);
+    const next = structuredClone(prepare ? prepare(parsed, side) : draft);
     const endpoint = (s) => rawEndpoint(next, s);
-    if (
-      selected[2] !== endpoint(side) ||
-      parsed.date !== next[side + 'Date'] ||
-      (parsed.time || '08:00') !== observationTime(next, side)
-    )
+    if (parsed.date !== next[side + 'Date'] || parsed.time !== observationTime(next, side))
       throw Error('Select the matching date and time before importing all readings.');
+    if (sourceDate.date !== parsed.date || sourceTime.time !== parsed.time)
+      parsed.issues.push({
+        level: 'NOTICE',
+        code: 'IMPORT_OBSERVATION',
+        date: parsed.date,
+        time: parsed.time,
+        message: 'Using the reading header: ' + parsed.date + ' ' + parsed.time + ' WIB.',
+      });
     parsed.values.forEach((values, ri) =>
       values.forEach((value, mi) => {
         if (parsed.suppliedMeters[ri][mi]) next.rows[ri][side][mi] = value;
       }),
     );
-    const value = (v) => {
+    const value = (v, label) => {
       if (v === '____') return '';
       if (v !== '-' && decimalText(v.replace(/^[+-]/, '')) === null)
-        throw Error('Invalid raw value.');
+        throw Error(
+          (label || 'Raw reading') +
+            ': use a number with up to six decimals, ____ for blank, or - for unavailable.',
+        );
       return v;
     };
     if (next.plantKey === 'JRE') {
       const lines = (parts.shift() || '').split('\n');
       if (lines.shift() !== 'Additional cumulative electricity readings:' || lines.length !== 4)
-        throw Error('Invalid additional readings.');
+        throw Error('T1–T4: include one kWh reading line for each meter.');
       next.additionalReadings ??= ADDITIONAL_METERS.map(() => ({ start: '', end: '' }));
       lines.forEach((line, i) => {
         const prefix = ADDITIONAL_METERS[i] + ': ';
         if (!line.startsWith(prefix) || !line.endsWith(' kWh'))
-          throw Error('Invalid additional meter.');
-        next.additionalReadings[i][side] = value(line.slice(prefix.length, -4));
+          throw Error(ADDITIONAL_METERS[i] + ': use a reading followed by kWh.');
+        next.additionalReadings[i][side] = value(
+          line.slice(prefix.length, -4),
+          ADDITIONAL_METERS[i],
+        );
       });
     } else if (parts.shift() !== 'Trafo 1, 2 and 3 cumulative readings are in MWh.')
       throw Error('Invalid Trafo units.');
     const gases = gasCalibration(next.plantKey).gases;
     next.gas = next.gas ? restoreGasDraft(next.gas, next.plantKey) : createGasDraft(next.plantKey);
     const point = (line, prefix, gas) => {
-      if (!line.startsWith(prefix)) throw Error('Unknown gas reading.');
+      if (!line.startsWith(prefix))
+        throw Error(gas.name + ': check the reading label and order in Gas readings.');
       const match = line
         .slice(prefix.length)
         .match(/^(\S+?)\s*(kg|mmWC|mmH2O|mm|%)(?:;\s*temperature:\s*(\S+)\s*°C)?$/);
@@ -114,10 +203,17 @@ export function parseRawReading(text, draft, side = 'end') {
         (gas.id === 'R32' && !['kg', 'mm'].includes(match[2])) ||
         (next.plantKey !== 'JRE' && gas.id === 'R32' && match[2] !== 'mm')
       )
-        throw Error('Invalid gas unit.');
+        throw Error(
+          gas.name +
+            ': use ' +
+            (gas.id === 'R32' && next.plantKey === 'JRE'
+              ? 'kg, or legacy mm with temperature in °C'
+              : gas.unit) +
+            '.',
+        );
       return {
-        reading: value(match[1]),
-        temperature: match[3] === undefined ? '' : value(match[3]),
+        reading: value(match[1], gas.name),
+        temperature: match[3] === undefined ? '' : value(match[3], gas.name + ' temperature'),
         ...(next.plantKey === 'JRE' && gas.id === 'R32' ? { unit: match[2] } : {}),
       };
     };
@@ -129,13 +225,12 @@ export function parseRawReading(text, draft, side = 'end') {
       const entry = next.gas.entries[i];
       entry.enabled = !off;
       entry[side] = point(off ? line.slice(0, -17) : line, gases[i].name + ': ', gases[i]);
-      entry.refills = [];
     });
     const water = (parts.shift() || '').match(/^Cumulative Water reading:\nWater: (\S+)\s*m³$/);
-    if (!water) throw Error('Invalid Water reading.');
+    if (!water) throw Error('Water: use one cumulative reading followed by m³.');
     if (next.water !== undefined || water[1] !== '____') {
       next.water ??= { start: '', end: '' };
-      next.water[side] = value(water[1]);
+      next.water[side] = value(water[1], 'Water');
     }
     const hasAirFlow = parts[0]?.startsWith('Cumulative Air Compressor reading:');
     let blankAirFlow = false;
@@ -147,16 +242,20 @@ export function parseRawReading(text, draft, side = 'end') {
         throw Error('Air Compressor: use one cumulative reading in Nm³.');
       next.airCompressor ??= { start: '', end: '' };
       blankAirFlow = flow[1] === '____';
-      if (!blankAirFlow) next.airCompressor[side] = value(flow[1]);
+      if (!blankAirFlow) next.airCompressor[side] = value(flow[1], 'Air Compressor');
     }
     const period = endpoint('start') + ' to ' + endpoint('end');
-    if (parts[0]?.startsWith('Refill observations for ')) {
+    const hasRefills = parts[0]?.startsWith('Refill observations for ');
+    if (hasRefills) {
       const lines = (parts.shift() || '').split('\n');
       if (
         lines.shift() !== 'Refill observations for ' + period ||
         lines.shift() !== 'Event times not recorded.'
       )
         throw Error('Refill period does not match.');
+      next.gas.entries.forEach((entry) => {
+        entry.refills = [];
+      });
       while (lines.length) {
         const label = lines.shift();
         const i = gases.findIndex((g) => label.startsWith(g.name + ' refill '));
@@ -176,27 +275,49 @@ export function parseRawReading(text, draft, side = 'end') {
           throw Error('Invalid refill context.');
       }
     }
+    let manualReplacement;
     if (parts[0]?.startsWith('Manual period totals for ')) {
-      const lines = (parts.shift() || '').split('\n');
+      const section = parts.shift(),
+        lines = section.split('\n');
+      const heading = lines.shift();
+      const endpoints = heading.slice('Manual period totals for '.length).split(' to ');
+      const blank = lines.slice(1).every((line) => /: ____ (?:[^\n]+)$/.test(line));
+      const blankContext =
+        blank &&
+        endpoints.length === 2 &&
+        endpoints.every(
+          (endpoint) => importDate(endpoint.slice(0, 10))?.valid && importTime(endpoint.slice(11)),
+        );
       if (
-        lines.shift() !== 'Manual period totals for ' + period ||
+        (heading !== 'Manual period totals for ' + period && !blankContext) ||
         lines.shift() !== 'Entered values, not cumulative meter readings.'
       )
         throw Error('Manual totals period does not match.');
       const seen = new Set();
+      const canonicalLines = [];
       for (const line of lines) {
         const i = UTILITIES[next.plantKey].findIndex(([name]) => line.startsWith(name + ': '));
         if (i < 0 || seen.has(i)) throw Error('Unknown or duplicate manual total.');
         seen.add(i);
-        next.utilities[i].value = value(
-          line.slice(UTILITIES[next.plantKey][i][0].length + 2).split(' ')[0],
+        const raw = line.slice(UTILITIES[next.plantKey][i][0].length + 2).split(' ')[0];
+        if (raw !== '____') next.utilities[i].value = value(raw, UTILITIES[next.plantKey][i][0]);
+        canonicalLines.push(
+          raw === '____' ? line.replace('____', next.utilities[i].value || '____') : line,
         );
       }
+      manualReplacement = [
+        section,
+        'Manual period totals for ' +
+          period +
+          '\nEntered values, not cumulative meter readings.\n' +
+          canonicalLines.join('\n'),
+      ];
     }
-    next.utilities.forEach((u) => {
-      u.note = '';
-    });
-    if (parts[0]?.startsWith('Notes:\n')) {
+    const hasNotes = parts[0]?.startsWith('Notes:\n');
+    if (hasNotes) {
+      next.utilities.forEach((u) => {
+        u.note = '';
+      });
       const lines = parts.shift().split('\n').slice(1);
       let index = -1;
       const seen = new Set();
@@ -212,43 +333,36 @@ export function parseRawReading(text, draft, side = 'end') {
     }
     // The source side label may differ when reusing an observation at a shared boundary.
     const regenerated = exportAllRawReadings(next, side);
-    let canonical = input.replace(
-      'Selected observation: ' + selected[1] + ',',
-      'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ',',
-    );
+    let canonical =
+      exportRawReading(next, side).text +
+      '\n\n' +
+      input
+        .slice(boundary + 2)
+        .replace(
+          /^Selected observation:[^\n]+/,
+          'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ', ' + endpoint(side),
+        );
+    if (manualReplacement) canonical = canonical.replace(...manualReplacement);
     if (blankAirFlow)
       canonical = canonical.replace(
         'Air Compressor: ____ Nm³',
         'Air Compressor: ' + (next.airCompressor?.[side] || '____') + ' Nm³',
       );
-    // A previous export may omit a newly added optional tail. Retain the existing
-    // same-time observation, but still compare all other bytes and raw sections.
-    PLANT_SCHEMAS[next.plantKey].rows.forEach((row, ri) => {
-      const mi = row.factors.length - 1;
-      if (!row.zeroWhenUnavailable?.includes(mi) || parsed.suppliedMeters[ri][mi]) return;
-      const prefix = `${ri + 1}. ${row.name}: `;
-      const expected = regenerated.text.split('\n').find((line) => line.startsWith(prefix));
-      if (!expected) return;
-      const previous = expected.split(' + ').slice(0, mi).join(' + ');
-      canonical = canonical
-        .split('\n')
-        .map((line) =>
-          line === previous || line === previous + ` + ____ (Ratio ${row.factors[mi]})`
-            ? expected
-            : line,
-        )
-        .join('\n');
-    });
-    const expectedText =
+    let expectedText =
       hasAirFlow || next.plantKey !== 'JRE'
         ? regenerated.text
         : regenerated.text.replace(
             /\n\nCumulative Air Compressor reading:\nAir Compressor: [^\n]+/,
             '',
           );
+    // Omitted period context is unsupplied, not an instruction to erase saved events or notes.
+    if (!hasRefills)
+      expectedText = expectedText.replace(/\n\nRefill observations for [\s\S]*?(?=\n\n|$)/, '');
+    if (!hasNotes) expectedText = expectedText.replace(/\n\nNotes:[\s\S]*$/, '');
     if (
       parts.length ||
-      sameFormatting(normalizeSnapshot(expectedText)) !== sameFormatting(canonical)
+      sameFormatting(normalizeSnapshot(expectedText)) !==
+        sameFormatting(normalizeSnapshot(canonical))
     )
       throw Error('Raw sections do not match the current format. No data was imported.');
     parsed.raw = next;
@@ -265,7 +379,9 @@ export function parseRawReading(text, draft, side = 'end') {
           message:
             (error instanceof TypeError
               ? 'A required raw section is missing or misplaced.'
-              : error.message) +
+              : error.message === 'shiftConflict'
+                ? 'These times conflict with existing shift readings. Review the shared boundary first.'
+                : error.message) +
             ' Check the named section, units and duplicate lines; select the matching period before trying again. Nothing was changed.',
         },
       ],

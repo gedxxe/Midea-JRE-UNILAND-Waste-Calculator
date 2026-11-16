@@ -28,6 +28,7 @@ import { createGasPanel } from './ui/gas.js';
 import { createRawExport } from './ui/raw-export.js';
 import { initRawTemplate } from './ui/raw-template.js';
 import { createImportEditor } from './ui/import.js';
+import { parseRawReading } from './raw-meter-export.js';
 import { createWaterPanel } from './ui/water.js';
 import { calculateAirCompressor } from './air-compressor.js';
 import { createAdditionalReadingsPanel } from './ui/additional-readings.js';
@@ -230,34 +231,71 @@ const periodPicker = createPeriodPicker({
 });
 const rawExport = createRawExport({ current, toast });
 initRawTemplate({ getPlant: () => plant, toast });
+function importPeriod(parsed, side) {
+  if (isWorkingHours(current())) {
+    const date =
+      isNightShift(current()) && side === 'end' ? shiftDate(parsed.date, -1) : parsed.date;
+    const pair = changeShiftPair(
+      workingHours[plant],
+      nightShifts[plant],
+      mode,
+      date,
+      side === 'start' ? parsed.time : current().startTime,
+      side === 'end' ? parsed.time : current().endTime,
+      periodOrigin ? (Array.isArray(periodOrigin) ? periodOrigin : [periodOrigin]) : [],
+    );
+    return { pair, draft: mode === 'nightShift' ? pair.night : pair.day };
+  }
+  return {
+    draft: changeDraftPeriod(
+      current(),
+      side === 'start' ? parsed.date : current().startDate,
+      side === 'end' ? parsed.date : current().endDate,
+      periodOrigin || current(),
+    ),
+  };
+}
 const importEditor = createImportEditor({
   current,
+  prepare: (parsed, side) => importPeriod(parsed, side).draft,
   toast,
-  apply(parsed, side) {
+  async apply(parsed, side, text, active) {
+    const plan = importPeriod(parsed, side);
+    const targets = plan.pair ? [plan.pair.day, plan.pair.night] : [plan.draft];
+    const previous = plan.pair ? [workingHours[plant], nightShifts[plant]] : [current()];
+    if (targets.some((draft, i) => periodKey(draft) !== periodKey(previous[i]))) {
+      const owner = accounts.getUser()?.id,
+        factory = plant,
+        recording = mode;
+      const ready = await autosave.navigate(targets, (loaded) => {
+        if (owner !== accounts.getUser()?.id || factory !== plant || recording !== mode) return;
+        if (plan.pair) {
+          plan.pair = changeShiftPair(
+            loaded[0],
+            loaded[1],
+            mode,
+            plan.draft.startDate,
+            plan.draft.startTime,
+            plan.draft.endTime,
+          );
+          plan.draft = mode === 'nightShift' ? plan.pair.night : plan.pair.day;
+        } else plan.draft = loaded[0];
+      });
+      if (
+        !ready ||
+        !active() ||
+        owner !== accounts.getUser()?.id ||
+        factory !== plant ||
+        recording !== mode
+      )
+        return { success: false, issues: [{ code: 'IMPORT_LOAD' }] };
+      // Validate against the loaded destination, so its opposite observation is retained.
+      parsed = parseRawReading(text, plan.draft, side);
+      if (!parsed.success) return parsed;
+    }
     rememberUndo();
-    if (isWorkingHours(current())) {
-      const date =
-        isNightShift(current()) && side === 'end' ? shiftDate(parsed.date, -1) : parsed.date;
-      putPair(
-        changeShiftPair(
-          workingHours[plant],
-          nightShifts[plant],
-          mode,
-          date,
-          side === 'start' ? parsed.time : current().startTime,
-          side === 'end' ? parsed.time : current().endTime,
-          periodOrigin ? (Array.isArray(periodOrigin) ? periodOrigin : [periodOrigin]) : [],
-        ),
-      );
-    } else
-      setCurrent(
-        changeDraftPeriod(
-          current(),
-          side === 'start' ? parsed.date : current().startDate,
-          side === 'end' ? parsed.date : current().endDate,
-          periodOrigin || current(),
-        ),
-      );
+    if (plan.pair) putPair(plan.pair);
+    else setCurrent(plan.draft);
     const edits = [];
     parsed.values.forEach((values, ri) =>
       values.forEach((value, mi) => {
@@ -292,6 +330,7 @@ const importEditor = createImportEditor({
     current().isExample = false;
     changed(false, edits, utilityEdits);
     mountPlant();
+    return parsed;
   },
 });
 const gasPanel = createGasPanel({

@@ -303,3 +303,97 @@ test('blank JRE cumulative air flow keeps one raw entry and imports in every per
       assert.deepEqual(draft, before);
     }
 });
+
+test('full raw reading windows select the first time for shifts and keep daily at 08:00', () => {
+  for (const plant of ['JRE', 'UNILAND'])
+    for (const [mode, time, range] of [
+      ['daily', '08:00', '07:00–08:00'],
+      ['workingHours', '18:00', '18:00-19:00'],
+      ['nightShift', '07:00', '07:00—08:00'],
+    ]) {
+      const draft = filled(plant, mode);
+      if (mode !== 'daily') draft.endTime = time;
+      const before = structuredClone(draft);
+      const raw = exportAllRawReadings(draft).text;
+      const input = raw
+        .replace(/^(\d{2}\/\d{2}\/\d{4})$/m, '$1 (Morning)')
+        .replace(/^Reading time:.*\n/m, '')
+        .replace(/^(\d{2}\/\d{2}\/\d{4} \(Morning\))$/m, '$1\nReading time: ' + range + ' WIB')
+        .replace(/^(Selected observation:.*) \d{2}:\d{2} WIB/m, '$1 17:00 WIB')
+        .replace(/\n\n/g, '\n')
+        .replace(/: /g, '：')
+        .replace(/(\d) kWh/g, '$1kwh');
+      const parsed = parseRawReading(input, draft);
+      assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+      assert.equal(parsed.time, time);
+      assert.equal(exportAllRawReadings(parsed.raw).text, exportAllRawReadings(draft).text);
+      assert.equal(
+        exportAllRawReadings(parsed.raw, 'start').text,
+        exportAllRawReadings(draft, 'start').text,
+      );
+      assert.deepEqual(draft, before);
+      assert.equal(
+        parsed.issues.filter((i) => i.code === 'IMPORT_DAILY_TIME').length,
+        mode === 'daily' ? 1 : 0,
+      );
+      assert.ok(parsed.issues.some((i) => i.code === 'IMPORT_OBSERVATION'));
+    }
+});
+
+test('destination preparation retains its opposite raw readings and rejects mismatched refill context', () => {
+  const source = filled('JRE', 'workingHours');
+  const text = exportAllRawReadings(source).text.replace('17:00 WIB', '18:00-19:00 WIB');
+  const destination = structuredClone(source);
+  destination.endTime = '18:00';
+  destination.water.start = '00012.345678';
+  destination.gas.entries[3].start = { reading: '125.987654', temperature: '', unit: 'kg' };
+  const parsed = parseRawReading(text, source, 'end', () => destination);
+  assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+  assert.equal(parsed.raw.water.start, destination.water.start);
+  assert.deepEqual(parsed.raw.gas.entries[3].start, destination.gas.entries[3].start);
+  source.gas.entries[0].refills = [
+    { before: { reading: '10', temperature: '' }, after: { reading: '20', temperature: '' } },
+  ];
+  const refills = exportAllRawReadings(source).text.replace(
+    'Reading time: 17:00',
+    'Reading time: 18:00-19:00',
+  );
+  const before = structuredClone(destination);
+  const rejected = parseRawReading(refills, source, 'end', () => destination);
+  assert.equal(rejected.success, false);
+  assert.match(rejected.issues.at(-1).message, /Refill period does not match/);
+  assert.deepEqual(destination, before);
+});
+
+test('omitted refill and note sections never erase saved context, and blank manual totals remain unsupplied', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const source = filled(plant);
+    const target = structuredClone(source);
+    target.gas.entries[0].refills = [
+      { before: { reading: '10', temperature: '' }, after: { reading: '20', temperature: '' } },
+    ];
+    target.utilities[0].note = 'Saved note\nLiteral  spaces: untouched';
+    if (plant === 'UNILAND') target.utilities[1].value = '0012,345678';
+    const before = structuredClone(target);
+    const parsed = parseRawReading(exportAllRawReadings(source).text, target);
+    assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+    assert.deepEqual(parsed.raw.gas.entries[0].refills, target.gas.entries[0].refills);
+    assert.equal(parsed.raw.utilities[0].note, target.utilities[0].note);
+    if (plant === 'UNILAND') assert.equal(parsed.raw.utilities[1].value, '0012,345678');
+    assert.deepEqual(target, before);
+  }
+});
+
+test('blank UNILAND manual context tolerates a reading window but nonempty period totals do not', () => {
+  const source = filled('UNILAND', 'workingHours');
+  const destination = structuredClone(source);
+  destination.endTime = '18:00';
+  const snapshot = () =>
+    exportAllRawReadings(source).text.replace('Reading time: 17:00', 'Reading time: 18:00-19:00');
+  let parsed = parseRawReading(snapshot(), destination);
+  assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+  source.utilities[1].value = '12.3';
+  parsed = parseRawReading(snapshot(), destination);
+  assert.equal(parsed.success, false);
+  assert.match(parsed.issues.at(-1).message, /Manual totals period does not match/);
+});
