@@ -2,6 +2,11 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.55-alpha - 2026-11-16
+
+- Keep checking an already-requested IoT reading when Auto-sync is switched off. Load the confirmed result once, then stop background checks. Preserve telemetry cadence, command cooldown and server limits.
+- Cover completion with Auto-sync on/off in desktop/mobile tests. Clarify completed production migration records and distinguish them from first-installation instructions.
+
 ## v0.11.54-alpha - 2026-11-11
 
 - Add JRE cumulative Air Compressor flow in Nm³ below Water, effective for periods starting 12 November 2026 at 08:00 WIB. Save partial readings and share matching timestamps across 24-hour, after-production and night periods without changing older saved output.

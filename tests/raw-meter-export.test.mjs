@@ -289,3 +289,17 @@ test('legacy manual Water and absent tank observations survive full raw import',
     assert.equal(exportAllRawReadings(parsed.raw).text, raw);
   }
 });
+
+test('blank JRE cumulative air flow keeps one raw entry and imports in every period', () => {
+  for (const mode of ['daily', 'workingHours', 'nightShift'])
+    for (const side of ['start', 'end']) {
+      const draft = filled('JRE', mode);
+      const before = structuredClone(draft);
+      const raw = exportAllRawReadings(draft, side).text;
+      assert.equal(raw.match(/^Air Compressor: ____ Nm³$/gm)?.length, 1);
+      const parsed = parseRawReading(raw, draft, side);
+      assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+      assert.deepEqual(parsed.raw.airCompressor, draft.airCompressor);
+      assert.deepEqual(draft, before);
+    }
+});

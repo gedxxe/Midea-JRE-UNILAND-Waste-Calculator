@@ -91,87 +91,113 @@ test('Power Meter Reading never fetches private telemetry before login', async (
   expect(reads).toBe(0);
 });
 
-test('ten-minute reading sync uses lightweight status checks and a completed request loads fresh values', async ({
-  page,
-}, testInfo) => {
-  await setup(page, { role: 'admin' });
-  await page.clock.install({ time: new Date('2026-11-06T01:00:00Z') });
-  let now = Date.parse('2026-11-06T01:00:00Z');
-  let full = 0,
-    status = 0,
-    posts = 0,
-    pending = false,
-    completed = false,
-    requested = null;
-  const device = () => ({
-    device_id: 'timed-node',
-    plant: 'JRE',
-    meter_id: 'warehouse',
-    meter_profile: 'fort',
-    active: true,
-    last_received_at: new Date(now).toISOString(),
-    refresh_pending: pending,
-    refresh_requested_at: requested,
-    refresh_completed_at: completed ? new Date(now).toISOString() : null,
-  });
-  await page.route('**/api/iot-readings?**', (route) => {
-    const light = new URL(route.request().url()).searchParams.has('status_only');
-    if (light) status++;
-    else full++;
-    const d = device();
-    if (!light)
-      d.latest_reading = {
-        captured_at: new Date(now).toISOString(),
-        readings: {
-          active_energy_kwh: completed ? '456.789999' : '123.456789',
-          current_a: '1.234567',
-        },
-      };
-    return route.fulfill({
-      json: {
-        enabled: true,
-        status_only: light,
-        server_time: new Date(now).toISOString(),
-        connection: { manual_refresh_enabled: true },
-        devices: [d],
-        readings: [],
-      },
-    });
-  });
-  await page.route('**/api/iot-refresh', (route) => {
-    posts++;
-    pending = true;
-    requested = new Date(now).toISOString();
-    return route.fulfill({ status: 202, json: { queued: true, requested_at: requested } });
-  });
-  await page.goto('/iot-power-meter-reading');
-  await expect(page.locator('.iot-reading')).toHaveText('123.457 kWh');
-  await expect(page.locator('.iot-device-card')).toContainText('1.235 A');
-  await page.locator('#iot-auto').check();
-  await expect.poll(() => full).toBe(2);
-  now += 61000;
-  await page.clock.fastForward(61000);
-  await expect.poll(() => status).toBeGreaterThan(0);
-  expect(full).toBe(2);
-  await page.locator('.iot-read-now').click();
-  await expect(page.locator('.iot-read-now')).toBeDisabled();
-  await expect(page.locator('.iot-read-rim')).toHaveCount(1);
-  await page.locator('.iot-read-now').evaluate((b) => {
-    for (let i = 0; i < 8; i++) b.click();
-  });
-  expect(posts).toBe(1);
-  await page.screenshot({ path: '.vercel/iot-readnow-' + testInfo.project.name + '.png' });
-  pending = false;
-  completed = true;
-  now += 11000;
-  await page.clock.fastForward(11000);
-  await expect(page.locator('.iot-reading')).toHaveText('456.79 kWh');
-  await expect(page.locator('.iot-read-now')).toBeEnabled();
-  await page.locator('[data-close-dialog="iot-dialog"]').click();
-  const requests = full + status;
-  await page.clock.fastForward(700000);
-  expect(full + status).toBe(requests);
-});
+for (const outcome of ['sync-on', 'sync-off', 'expired']) {
+  const stopAuto = outcome !== 'sync-on';
+  test(
+    'ten-minute reading sync resolves a pending request: ' + outcome,
+    async ({ page }, testInfo) => {
+      await setup(page, { role: 'admin' });
+      await page.clock.install({ time: new Date('2026-11-06T01:00:00Z') });
+      let now = Date.parse('2026-11-06T01:00:00Z');
+      let full = 0,
+        status = 0,
+        posts = 0,
+        pending = false,
+        completed = false,
+        requested = null;
+      const device = () => ({
+        device_id: 'timed-node',
+        plant: 'JRE',
+        meter_id: 'warehouse',
+        meter_profile: 'fort',
+        active: true,
+        last_received_at: new Date(now).toISOString(),
+        refresh_pending: pending,
+        refresh_requested_at: requested,
+        refresh_completed_at: completed ? new Date(now).toISOString() : null,
+      });
+      await page.route('**/api/iot-readings?**', (route) => {
+        const light = new URL(route.request().url()).searchParams.has('status_only');
+        if (light) status++;
+        else full++;
+        const d = device();
+        if (!light)
+          d.latest_reading = {
+            captured_at: new Date(now).toISOString(),
+            readings: {
+              active_energy_kwh: completed ? '456.789999' : '123.456789',
+              current_a: '1.234567',
+            },
+          };
+        return route.fulfill({
+          json: {
+            enabled: true,
+            status_only: light,
+            server_time: new Date(now).toISOString(),
+            connection: { manual_refresh_enabled: true },
+            devices: [d],
+            readings: [],
+          },
+        });
+      });
+      await page.route('**/api/iot-refresh', (route) => {
+        posts++;
+        pending = true;
+        requested = new Date(now).toISOString();
+        return route.fulfill({ status: 202, json: { queued: true, requested_at: requested } });
+      });
+      await page.goto('/iot-power-meter-reading');
+      await expect(page.locator('.iot-reading')).toHaveText('123.457 kWh');
+      await expect(page.locator('.iot-device-card')).toContainText('1.235 A');
+      await page.locator('#iot-auto').check();
+      await expect.poll(() => full).toBe(2);
+      now += 61000;
+      await page.clock.fastForward(61000);
+      await expect.poll(() => status).toBeGreaterThan(0);
+      expect(full).toBe(2);
+      await page.locator('.iot-read-now').click();
+      await expect(page.locator('.iot-read-now')).toBeDisabled();
+      await expect(page.locator('.iot-read-rim')).toHaveCount(1);
+      await page.locator('.iot-read-now').evaluate((b) => {
+        for (let i = 0; i < 8; i++) b.click();
+      });
+      expect(posts).toBe(1);
+      await page.screenshot({
+        path: '.vercel/iot-readnow-' + testInfo.project.name + '-' + outcome + '.png',
+      });
+      if (stopAuto) {
+        await expect.poll(() => status).toBeGreaterThan(1);
+        await page.clock.runFor(100);
+        await page.locator('#iot-auto').uncheck();
+      }
+      pending = false;
+      completed = outcome !== 'expired';
+      const elapsed = completed ? 11000 : 121000;
+      now += elapsed;
+      await page.clock.fastForward(elapsed);
+      await expect(page.locator('.iot-reading')).toHaveText(
+        completed ? '456.79 kWh' : '123.457 kWh',
+      );
+      if (!completed)
+        await expect(page.locator('#iot-status')).toHaveText(
+          'No new reading received. Check the meter connection.',
+        );
+      await expect(page.locator('.iot-read-now')).toBeEnabled();
+      expect(posts).toBe(1);
+      expect(full).toBe(completed ? 3 : 2);
+      if (stopAuto) {
+        const settled = full + status;
+        now += 700000;
+        await page.clock.fastForward(700000);
+        expect(full + status).toBe(settled);
+      }
+      await page.locator('[data-close-dialog="iot-dialog"]').click();
+      const requests = full + status;
+      await page.clock.fastForward(700000);
+      expect(full + status).toBe(requests);
+    },
+  );
+}
 
 test('unconfirmed read requests retain a local cooldown and do not claim a received measurement', async ({
   page,
