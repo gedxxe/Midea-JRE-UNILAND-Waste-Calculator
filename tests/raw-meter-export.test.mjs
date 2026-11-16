@@ -359,7 +359,15 @@ test('destination preparation retains its opposite raw readings and rejects mism
     'Reading time: 18:00-19:00',
   );
   const before = structuredClone(destination);
-  const rejected = parseRawReading(refills, source, 'end', () => destination);
+  const adjusted = parseRawReading(refills, source, 'end', () => destination);
+  assert.equal(adjusted.success, true, JSON.stringify(adjusted.issues));
+  assert.deepEqual(adjusted.raw.gas.entries[0].refills, source.gas.entries[0].refills);
+  const rejected = parseRawReading(
+    refills.replace('Refill observations for 01/11/2026', 'Refill observations for 31/10/2026'),
+    source,
+    'end',
+    () => destination,
+  );
   assert.equal(rejected.success, false);
   assert.match(rejected.issues.at(-1).message, /Refill period does not match/);
   assert.deepEqual(destination, before);
@@ -384,7 +392,7 @@ test('omitted refill and note sections never erase saved context, and blank manu
   }
 });
 
-test('blank UNILAND manual context tolerates a reading window but nonempty period totals do not', () => {
+test('UNILAND context follows a corrected endpoint but cannot move totals between dates', () => {
   const source = filled('UNILAND', 'workingHours');
   const destination = structuredClone(source);
   destination.endTime = '18:00';
@@ -394,6 +402,50 @@ test('blank UNILAND manual context tolerates a reading window but nonempty perio
   assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
   source.utilities[1].value = '12.3';
   parsed = parseRawReading(snapshot(), destination);
+  assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+  assert.equal(parsed.raw.utilities[1].value, '12.3');
+  parsed = parseRawReading(
+    snapshot().replace(
+      'Manual period totals for 01/11/2026',
+      'Manual period totals for 31/10/2026',
+    ),
+    destination,
+  );
   assert.equal(parsed.success, false);
   assert.match(parsed.issues.at(-1).message, /Manual totals period does not match/);
+});
+
+test('misspelled date notes, encoded indentation and legacy refill metadata retain both gases exactly', () => {
+  const source = filled('JRE', 'workingHours');
+  source.gas.entries[2].refills = [
+    {
+      before: { reading: '1234.500001', temperature: '' },
+      after: { reading: '2345,600002', temperature: '' },
+    },
+  ];
+  source.gas.entries[3].start = { reading: '10000', temperature: '', unit: 'kg' };
+  source.gas.entries[3].end = { reading: '20000', temperature: '', unit: 'kg' };
+  source.gas.entries[3].refills = [
+    {
+      before: { reading: '1000.123456', temperature: '', unit: 'kg' },
+      after: { reading: '21000,654321', temperature: '', unit: 'kg' },
+    },
+  ];
+  const destination = structuredClone(source);
+  destination.endTime = '18:00';
+  const text = exportAllRawReadings(source)
+    .text.replace(
+      '01/11/2026\nReading time: 17:00',
+      '01/11/2026 (Afternon)\nReading time: 18:00-19:00',
+    )
+    .replaceAll('  Before:', '&#x20; Before:')
+    .replaceAll('  After:', '&nbsp;After:');
+  const before = structuredClone(destination);
+  const parsed = parseRawReading(text, destination);
+  assert.equal(parsed.success, true, JSON.stringify(parsed.issues));
+  assert.equal(parsed.time, '18:00');
+  assert.deepEqual(parsed.raw.gas.entries[2].refills, source.gas.entries[2].refills);
+  assert.deepEqual(parsed.raw.gas.entries[3].refills, source.gas.entries[3].refills);
+  assert.ok(parsed.issues.some((i) => i.code === 'IMPORT_CONTEXT'));
+  assert.deepEqual(destination, before);
 });

@@ -1,4 +1,4 @@
-import { validDate, formatReportDate, formatNumber, dayDiff } from './numbers.js';
+import { validDate, formatReportDate, formatNumber, dayDiff, shiftDate } from './numbers.js';
 export const WORKING_HOURS = 'workingHours';
 export const NIGHT_SHIFT = 'nightShift';
 export const periodKind = (draft) => draft?.periodKind || draft?.kind || 'daily';
@@ -7,6 +7,13 @@ export const isNightShift = (draft) => periodKind(draft) === NIGHT_SHIFT;
 export const isWorkingHours = (draft) => [WORKING_HOURS, NIGHT_SHIFT].includes(periodKind(draft));
 export const validTime = (value) =>
   typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+// A single observation belongs to the adjacent daily pair unless a range is explicitly requested.
+export function importDailyDates(draft, date, side, keepPeriod = false) {
+  return {
+    startDate: side === 'start' ? date : keepPeriod ? draft.startDate : shiftDate(date, -1),
+    endDate: side === 'end' ? date : keepPeriod ? draft.endDate : shiftDate(date, 1),
+  };
+}
 export function workMinutes(draft) {
   if (!validTime(draft.startTime) || !validTime(draft.endTime)) return null;
   const minutes = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));

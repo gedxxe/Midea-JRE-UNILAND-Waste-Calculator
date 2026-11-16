@@ -245,14 +245,58 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
       if (!blankAirFlow) next.airCompressor[side] = value(flow[1], 'Air Compressor');
     }
     const period = endpoint('start') + ' to ' + endpoint('end');
+    const contextReplacements = [];
+    const contextHeading = (heading, prefix) => {
+      const oldEndpoints = [endpoint('start'), endpoint('end')];
+      oldEndpoints[side === 'start' ? 0 : 1] =
+        sourceDate.date.split('-').reverse().join('/') + ' ' + sourceTime.time + ' WIB';
+      const previous = prefix + oldEndpoints.join(' to ');
+      const expected = prefix + period;
+      const legacyTimes =
+        next.periodKind === 'workingHours'
+          ? ['08:00', '17:00']
+          : next.periodKind === 'nightShift'
+            ? ['17:00', '08:00']
+            : null;
+      const legacy = legacyTimes?.map(
+        (time, i) => endpoint(i === 0 ? 'start' : 'end').slice(0, 11) + time + ' WIB',
+      );
+      const sourceEndpoint =
+        sourceDate.date.split('-').reverse().join('/') + ' ' + sourceTime.time + ' WIB';
+      const legacyWindow =
+        parsed.timeRange &&
+        legacy &&
+        heading === prefix + legacy.join(' to ') &&
+        sourceEndpoint === legacy[selected[1].toLowerCase() === 'start' ? 0 : 1];
+      if (
+        heading !== expected &&
+        sourceDate.date === parsed.date &&
+        (heading === previous || legacyWindow)
+      ) {
+        contextReplacements.push([heading, expected]);
+        if (!parsed.issues.some((i) => i.code === 'IMPORT_CONTEXT'))
+          parsed.issues.push({
+            level: 'NOTICE',
+            code: 'IMPORT_CONTEXT',
+            time: parsed.time,
+            message:
+              'The period boundary follows the reading header. Refill values and their order are unchanged; event times are not inferred.',
+          });
+        return expected;
+      }
+      return heading;
+    };
     const hasRefills = parts[0]?.startsWith('Refill observations for ');
     if (hasRefills) {
       const lines = (parts.shift() || '').split('\n');
       if (
-        lines.shift() !== 'Refill observations for ' + period ||
+        contextHeading(lines.shift(), 'Refill observations for ') !==
+          'Refill observations for ' + period ||
         lines.shift() !== 'Event times not recorded.'
       )
-        throw Error('Refill period does not match.');
+        throw Error(
+          'Refill period does not match. Select the recording mode and dates shown in the refill section; refill events cannot be moved to another day or shift.',
+        );
       next.gas.entries.forEach((entry) => {
         entry.refills = [];
       });
@@ -279,7 +323,7 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
     if (parts[0]?.startsWith('Manual period totals for ')) {
       const section = parts.shift(),
         lines = section.split('\n');
-      const heading = lines.shift();
+      const heading = contextHeading(lines.shift(), 'Manual period totals for ');
       const endpoints = heading.slice('Manual period totals for '.length).split(' to ');
       const blank = lines.slice(1).every((line) => /: ____ (?:[^\n]+)$/.test(line));
       const blankContext =
@@ -343,6 +387,7 @@ export function parseRawReading(text, draft, side = 'end', prepare) {
           'Selected observation: ' + (side === 'start' ? 'Start' : 'End') + ', ' + endpoint(side),
         );
     if (manualReplacement) canonical = canonical.replace(...manualReplacement);
+    for (const replacement of contextReplacements) canonical = canonical.replace(...replacement);
     if (blankAirFlow)
       canonical = canonical.replace(
         'Air Compressor: ____ Nm³',

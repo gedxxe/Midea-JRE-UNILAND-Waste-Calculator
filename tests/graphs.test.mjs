@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { graphValues, graphRecords, graphSegments } from '../graph-data.js';
 import { defaultGraphs, GRAPH_METRICS, validGraph } from '../graph-schema.js';
 import { reportSnapshot } from '../server/report-data.js';
+import { electricityConflicts } from '../observations.js';
+import { utilityConflicts } from '../utility-periods.js';
+import { workingDailyRows } from '../server/graphs.js';
+import { createDraft } from '../engine.js';
 import { exampleDraft } from '../examples.js';
 import { periodLabel, graphYAxis } from '../graph-axis.js';
 import { PLANT_SCHEMAS } from '../schema.js';
@@ -282,4 +286,124 @@ test('numeric combined periods, including recorded zero, retain genuine overlap 
     assert.equal(records.filter((r) => r.overlap).length, 3);
     assert.deepEqual(graphSegments(records, 'w0'), []);
   }
+});
+
+function nestedWorkingRows(plant) {
+  return [13, 14, 15].map((day, i) => {
+    const d = createDraft(plant, `2026-11-${day}`, '2026-11-16');
+    d.rows.forEach((row) => {
+      row.start.fill(String(1000 + i * 100));
+      row.end.fill('1300');
+    });
+    d.water = { start: String(100 + i * 10), end: '130' };
+    if (plant === 'JRE') d.airCompressor = { start: String(1000 + i * 10), end: '1030' };
+    return {
+      id: 'synthetic-' + day,
+      revision: 1,
+      start_date: d.startDate,
+      end_date: d.endDate,
+      autosaved: true,
+      snapshot: reportSnapshot(d, { allowPartial: true }),
+    };
+  });
+}
+
+test('nested working copies project exact adjacent daily readings without rewriting any stored copy', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const rows = nestedWorkingRows(plant),
+      before = structuredClone(rows);
+    const projected = workingDailyRows(rows, plant, '2026-11-01', '2026-11-30');
+    const records = graphRecords(projected, plant);
+    assert.equal(records.filter((r) => r.overlap).length, 0);
+    assert.equal(records.filter((r) => r.dailyCoverage).length, 2);
+    const days = records.filter((r) => !r.superseded);
+    assert.deepEqual(
+      days.map((r) => [r.startDate, r.endDate]),
+      [
+        ['2026-11-13', '2026-11-14'],
+        ['2026-11-14', '2026-11-15'],
+        ['2026-11-15', '2026-11-16'],
+      ],
+    );
+    assert.deepEqual(
+      days.map((r) => r.values.r0),
+      plant === 'JRE' ? [100, 100, 100] : [320000, 320000, 320000],
+    );
+    assert.equal(days[0].values.u4, 10);
+    assert.equal(days[0].values.u0, null);
+    assert.equal(days[0].derived, true);
+    assert.deepEqual(
+      graphSegments(records, 'r0').map((s) => s.length),
+      [3],
+    );
+    assert.ok(days[0].sourcePeriods.includes('synthetic-13'));
+    assert.equal('draft' in days[0], false);
+    assert.deepEqual(rows, before);
+    const clipped = graphRecords(workingDailyRows(rows, plant, '2026-11-14', '2026-11-14'), plant);
+    assert.ok(clipped.filter((r) => r.derived).every((r) => r.startDate === '2026-11-14'));
+  }
+});
+
+test('combined periods with missing or contradictory endpoints retain overlap checks; zeros remain measured', () => {
+  const rows = nestedWorkingRows('JRE');
+  const singleton = [rows[0]];
+  assert.deepEqual(workingDailyRows(singleton, 'JRE'), singleton);
+  const bad = structuredClone(rows);
+  bad[1].snapshot.draft.rows[0].end[0] = '1301';
+  const before = structuredClone(bad);
+  const records = graphRecords(workingDailyRows(bad, 'JRE'), 'JRE');
+  assert.equal(
+    records.some((r) => r.dailyCoverage),
+    false,
+  );
+  assert.ok(records.some((r) => r.overlap));
+  assert.deepEqual(bad, before);
+  const zero = nestedWorkingRows('JRE');
+  zero.forEach((row) => {
+    row.snapshot.draft.rows.forEach((r) => {
+      r.start.fill('1000');
+      r.end.fill('1000');
+    });
+    row.snapshot = reportSnapshot(row.snapshot.draft, { allowPartial: true });
+  });
+  const projected = graphRecords(workingDailyRows(zero, 'JRE'), 'JRE');
+  assert.deepEqual(
+    projected.filter((r) => !r.superseded).map((r) => r.values.r0),
+    [0, 0, 0],
+  );
+  const checkpoint = rows.map((row) => ({ ...row, autosaved: false }));
+  assert.deepEqual(workingDailyRows(checkpoint, 'JRE'), checkpoint);
+});
+
+test('dated conflict checks inspect only the requested observation and preserve the complete input', () => {
+  const rows = nestedWorkingRows('JRE');
+  const a = rows[0].snapshot.draft,
+    b = structuredClone(a);
+  b.rows[0].end[0] = '1301';
+  b.water.end = '131';
+  const drafts = [a, b],
+    before = structuredClone(drafts);
+  assert.ok(electricityConflicts(drafts).length);
+  assert.ok(utilityConflicts(drafts).length);
+  assert.deepEqual(electricityConflicts(drafts, '2026-11-13'), []);
+  assert.deepEqual(utilityConflicts(drafts, '2026-11-13'), []);
+  assert.ok(electricityConflicts(drafts, '2026-11-16').length);
+  assert.ok(utilityConflicts(drafts, '2026-11-16').length);
+  assert.deepEqual(drafts, before);
+});
+
+test('daily Water alone cannot hide a combined electricity result with a missing intermediate meter', () => {
+  const rows = nestedWorkingRows('JRE');
+  rows[1].snapshot.draft.rows[0].start[0] = '';
+  rows[1].snapshot = reportSnapshot(rows[1].snapshot.draft, { allowPartial: true });
+  const before = structuredClone(rows);
+  const projected = workingDailyRows(rows, 'JRE');
+  assert.equal(projected.find((row) => row.id === rows[0].id).dailyCoverage, undefined);
+  const records = graphRecords(projected, 'JRE');
+  assert.ok(records.some((row) => row.overlap));
+  assert.equal(
+    records.find((row) => row.derived && row.startDate === '2026-11-13').values.r0,
+    null,
+  );
+  assert.deepEqual(rows, before);
 });

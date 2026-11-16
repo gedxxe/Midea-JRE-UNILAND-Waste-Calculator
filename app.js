@@ -11,7 +11,7 @@ import {
   hasUtilityData,
 } from './utility-periods.js';
 import { createWorkingHoursPicker } from './ui/working-hours.js';
-import { isWorkingHours, isNightShift, periodKind } from './reading-period.js';
+import { isWorkingHours, isNightShift, periodKind, importDailyDates } from './reading-period.js';
 import { emptyNightShifts, changeShiftPair, nextShiftPair, syncShiftReading } from './shifts.js';
 import {
   seedElectricity,
@@ -231,7 +231,7 @@ const periodPicker = createPeriodPicker({
 });
 const rawExport = createRawExport({ current, toast });
 initRawTemplate({ getPlant: () => plant, toast });
-function importPeriod(parsed, side) {
+function importPeriod(parsed, side, keepPeriod = false) {
   if (isWorkingHours(current())) {
     const date =
       isNightShift(current()) && side === 'end' ? shiftDate(parsed.date, -1) : parsed.date;
@@ -246,21 +246,18 @@ function importPeriod(parsed, side) {
     );
     return { pair, draft: mode === 'nightShift' ? pair.night : pair.day };
   }
+  const dates = importDailyDates(current(), parsed.date, side, keepPeriod);
   return {
-    draft: changeDraftPeriod(
-      current(),
-      side === 'start' ? parsed.date : current().startDate,
-      side === 'end' ? parsed.date : current().endDate,
-      periodOrigin || current(),
-    ),
+    draft: changeDraftPeriod(current(), dates.startDate, dates.endDate, periodOrigin || current()),
   };
 }
 const importEditor = createImportEditor({
   current,
-  prepare: (parsed, side) => importPeriod(parsed, side).draft,
+  prepare: (parsed, side, keepPeriod) => importPeriod(parsed, side, keepPeriod).draft,
   toast,
-  async apply(parsed, side, text, active) {
-    const plan = importPeriod(parsed, side);
+  async apply(parsed, side, text, active, keepPeriod) {
+    const plan = importPeriod(parsed, side, keepPeriod);
+    if (!periodKey(plan.draft)) return { success: false, issues: [{ code: 'IMPORT_PERIOD' }] };
     const targets = plan.pair ? [plan.pair.day, plan.pair.night] : [plan.draft];
     const previous = plan.pair ? [workingHours[plant], nightShifts[plant]] : [current()];
     if (targets.some((draft, i) => periodKey(draft) !== periodKey(previous[i]))) {

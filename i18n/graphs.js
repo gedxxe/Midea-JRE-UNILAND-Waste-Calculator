@@ -1,4 +1,10 @@
 export const graphMessages = {
+  graphReadyCalculated: ['{count} daily periods', '{count} 个每日时段', '{count} periode harian'],
+  graphCalculatedDays: [
+    '{count} daily periods use recorded readings. Gas stays blank where refill timing is unknown.',
+    '{count} 个每日时段使用已保存读数。补充时间未知时，气体用量留空。',
+    '{count} periode harian memakai reading tercatat. Gas tetap kosong jika waktu refill belum diketahui.',
+  ],
   graphDataSource: ['Values', '数据', 'Data'],
   graphWorkingSource: ['Latest autosave', '最新自动保存', 'Autosave terbaru'],
   graphCheckpointSource: ['Saved versions', '已保存版本', 'Versi tersimpan'],
@@ -216,6 +222,16 @@ export const graphMessages = {
     '{count} saved periods overlap and are not plotted. The dates and related periods are listed below.',
     '{count} 份报告与其他时段重叠，已从图中排除。请检查数据表和历史记录中的日期。',
     '{count} laporan memiliki periode bertumpang tindih dan tidak diplot. Periksa tanggalnya di tabel data dan historian.',
+  ],
+  graphRecordedReadings: [
+    'Calculated from recorded daily readings',
+    '根据已保存的每日读数计算',
+    'Dihitung dari reading harian yang tercatat',
+  ],
+  graphDailyCoverage: [
+    'Daily readings are plotted; combined copy is retained.',
+    '已绘制每日读数，合并副本仍保留。',
+    'Reading harian ditampilkan; salinan periode gabungan tetap disimpan.',
   ],
   graphLayoutNote: [
     'Chart settings are saved in this browser per account; readings are fetched from the historian. Graphs use one unit each. Electrical MWh values are displayed as kWh.',

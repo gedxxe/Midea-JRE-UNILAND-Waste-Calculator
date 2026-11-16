@@ -2,6 +2,21 @@ import { getLanguage } from './index.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 import { formatNumber } from '../numbers.js';
 export const readingMessages = {
+  invalidPeriod: [
+    'Choose a valid period with End after Start, or turn off the multi-day range option.',
+    '请选择结束晚于开始的有效时段，或关闭多日范围选项。',
+    'Pilih periode valid dengan akhir setelah awal, atau matikan opsi rentang beberapa hari.',
+  ],
+  target: [
+    'Import into {start} → {end} WIB.',
+    '导入至 {start} → {end} WIB。',
+    'Impor ke {start} → {end} WIB.',
+  ],
+  context: [
+    'Period boundary follows the reading header; refill values and order are unchanged. Event times are not inferred.',
+    '时段边界按读数标题调整；补充量和顺序不变，不推断补充事件时间。',
+    'Batas periode mengikuti header reading; nilai dan urutan refill tetap. Jam kejadian refill tidak diasumsikan.',
+  ],
   loadFailed: [
     'Could not load the destination period. Nothing was imported. Check the connection or resolve the autosave conflict, then retry.',
     '无法加载目标时段，未导入任何数据。请检查连接或解决自动保存冲突后重试。',
@@ -159,6 +174,7 @@ export function readingIssueMessage(issue, plant) {
   const key = {
     IMPORT_SIZE: 'size',
     IMPORT_LOAD: 'loadFailed',
+    IMPORT_PERIOD: 'invalidPeriod',
     IMPORT_FLOW: 'flow',
     IMPORT_DATE: 'date',
     IMPORT_TIME: 'time',
@@ -166,6 +182,7 @@ export function readingIssueMessage(issue, plant) {
     IMPORT_DATE_RANGE: 'dateRange',
     IMPORT_DAILY_TIME: 'dailyTime',
     IMPORT_OBSERVATION: 'observation',
+    IMPORT_CONTEXT: 'context',
     IMPORT_FACTORY: 'factory',
     METER_COUNT: 'count',
     INVALID_READING: 'invalid',

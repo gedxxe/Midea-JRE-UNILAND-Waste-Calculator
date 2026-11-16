@@ -6,7 +6,7 @@ import { relatedGraphPeriods } from '../graph-overlap.js';
 // Shared, value-free date diagnostics above all charts and the monthly table.
 export function renderGraphReview(records) {
   const relevant = records.filter(
-    (r) => r.overlap || r.noValues || (r.autosaved && r.complete === false),
+    (r) => r.overlap || r.noValues || r.dailyCoverage || (r.autosaved && r.complete === false),
   );
   if (!relevant.length) return null;
   const details = node('details', undefined, 'graph-data graph-period-review');

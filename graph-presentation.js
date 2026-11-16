@@ -59,6 +59,7 @@ export function graphPeriodLabel(record, language) {
         (i === 0 ? (record.days === 1 ? ' day)' : ' days)') : ['', ' 天)', ' hari)'][i]);
 }
 export function graphSourceLabel(record, translate) {
+  if (record.derived) return translate('graphRecordedReadings');
   if (record.source === 'excel') return translate('graphImported');
   if (record.autosaved)
     return (
@@ -69,6 +70,7 @@ export function graphSourceLabel(record, translate) {
 }
 
 export function graphRecordStatus(record, translate) {
+  if (record.dailyCoverage) return translate('graphDailyCoverage');
   if (record.overlap) return translate('graphExcluded');
   if (record.superseded) return translate('graphReplaced');
   if (record.noValues) return translate('graphEmptyWorking');

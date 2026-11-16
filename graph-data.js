@@ -71,6 +71,8 @@ export function graphRecords(rows, plant, history = []) {
     const working = isWorkingHours(period);
     return {
       id: row.id,
+      ...(row.derived ? { derived: true, sourcePeriods: row.sourcePeriods } : {}),
+      ...(row.superseded ? { superseded: true, dailyCoverage: row.dailyCoverage === true } : {}),
       revision: row.revision,
       ...(Number.isInteger(row.checkpoint_revision)
         ? { checkpointRevision: row.checkpoint_revision }

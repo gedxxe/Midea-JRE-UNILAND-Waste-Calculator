@@ -36,8 +36,8 @@ function matches(periods, target, side) {
 }
 
 // Seeding never replaces nonempty observations, enables a tank or invents manual consumption.
-export function seedUtilityReadings(periods) {
-  const next = structuredClone(periods);
+export function seedUtilityReadings(periods, targets = periods) {
+  const next = structuredClone(targets);
   for (const target of next)
     for (const side of sides) {
       const sources = matches(periods, target, side);
@@ -100,13 +100,13 @@ export function shareUtilityEdits(periods, kind, edits) {
   return next;
 }
 
-export function utilityConflicts(periods) {
+export function utilityConflicts(periods, date) {
   const conflicts = [],
     seen = new Set();
   for (const draft of periods)
     for (const side of sides) {
       const time = stamp(draft, side);
-      if (!time || seen.has(time)) continue;
+      if (!time || seen.has(time) || (date && draft[side + 'Date'] !== date)) continue;
       seen.add(time);
       const sources = matches(periods, draft, side);
       for (const field of flowFields) {

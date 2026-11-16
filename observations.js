@@ -62,8 +62,8 @@ export function shareElectricityEdits(periods, kind, edits) {
   return next;
 }
 // Old Daily and shift drafts were independent. Fill only unambiguous empty cells.
-export function seedElectricity(periods) {
-  const next = periods.map((d) => structuredClone(d));
+export function seedElectricity(periods, targets = periods) {
+  const next = targets.map((d) => structuredClone(d));
   for (const target of next)
     for (const side of ['start', 'end']) {
       const stamp = point(target, side);
@@ -92,13 +92,13 @@ export function seedElectricity(periods) {
     }
   return next;
 }
-export function electricityConflicts(periods) {
+export function electricityConflicts(periods, date) {
   const conflicts = [],
     seen = new Set();
   for (const draft of periods)
     for (const side of ['start', 'end']) {
       const stamp = point(draft, side);
-      if (!stamp) continue;
+      if (!stamp || (date && draft[side + 'Date'] !== date)) continue;
       for (const field of fields(draft, side)) {
         const id =
           stamp + '|' + (field.index === undefined ? field.ri + ':' + field.mi : 'T' + field.index);
