@@ -722,6 +722,7 @@ export function createIotReading({ request, opened, getUser }) {
     clearTimeout(timer);
     clearTimeout(statusTimer);
     if ($('iot-auto').checked) void refresh();
+    else scheduleStatus();
   });
   dialog.addEventListener('close', () => {
     stopButtons();
