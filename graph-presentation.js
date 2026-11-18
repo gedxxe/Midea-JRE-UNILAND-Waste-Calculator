@@ -4,6 +4,12 @@ import { formatNumber } from './numbers.js';
 import { isWorkingHours, isNightShift } from './reading-period.js';
 
 const index = (language) => ({ en: 0, 'zh-CN': 1, id: 2 })[language] ?? 0;
+export function graphValueLabel(record, key) {
+  const value = record?.values?.[key];
+  return Number.isFinite(value)
+    ? (record.stockIncrease?.includes(key) ? '+' : '') + formatNumber(value, 8)
+    : '-';
+}
 export const graphTitleField = (language) => ['titleEn', 'titleZh', 'titleId'][index(language)];
 export const metricLabel = (metric, language) =>
   metricLabels[metric.label]?.[index(language)] ?? metric.label;

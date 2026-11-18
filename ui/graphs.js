@@ -15,9 +15,10 @@ import {
   graphPeriodLabel,
   graphSourceLabel,
   graphRecordStatus,
+  graphValueLabel,
 } from '../graph-presentation.js';
 import { GRAPH_METRICS, DEPARTMENTS, defaultGraphs } from '../graph-schema.js';
-import { dayDiff, validDate, formatNumber } from '../numbers.js';
+import { dayDiff, validDate } from '../numbers.js';
 import { renderGraph, exportGraph, copyGraph } from './graph-renderer.js';
 import { validYAxis } from '../graph-axis.js';
 export function createGraphs({
@@ -155,6 +156,16 @@ export function createGraphs({
           data.records.filter((r) => !r.superseded && r.autosaved && r.complete === false).length,
         ],
         ['graphCalculatedDays', data.records.filter((r) => r.derived).length],
+        [
+          'graphGasProjected',
+          data.records
+            .filter((r) => !r.superseded)
+            .reduce((sum, r) => sum + (r.gasProjected?.length || 0), 0),
+        ],
+        [
+          'graphGasStockIncrease',
+          data.records.filter((r) => !r.superseded && r.stockIncrease?.length).length,
+        ],
         ['graphOverlap', data.records.filter((r) => r.overlap).length],
         [
           'graphSuperseded',
@@ -166,7 +177,12 @@ export function createGraphs({
             node(
               'p',
               t(key, { count }),
-              ['graphMulti', 'graphIncompletePeriods', 'graphCalculatedDays'].includes(key)
+              [
+                'graphMulti',
+                'graphIncompletePeriods',
+                'graphCalculatedDays',
+                'graphGasProjected',
+              ].includes(key)
                 ? 'notice'
                 : 'notice warning',
             ),
@@ -633,8 +649,7 @@ export function createGraphs({
                 (record.source === 'excel' ? ' · ' + record.sourceLabel : ''),
             ),
           );
-          for (const metric of chosen)
-            row.append(node('td', formatNumber(record.values[metric.key], 8)));
+          for (const metric of chosen) row.append(node('td', graphValueLabel(record, metric.key)));
           body.append(row);
         }
         table.append(body);

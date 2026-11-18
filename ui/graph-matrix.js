@@ -8,8 +8,9 @@ import {
   graphPeriodLabel,
   graphSourceLabel,
   graphRecordStatus,
+  graphValueLabel,
 } from '../graph-presentation.js';
-import { shiftDate, formatNumber } from '../numbers.js';
+import { shiftDate } from '../numbers.js';
 import { periodLabel } from '../graph-axis.js';
 
 export function renderMonthlyTable({
@@ -138,7 +139,7 @@ export function renderMonthlyTable({
         cell.append(
           node(
             'span',
-            Number.isFinite(value) ? formatNumber(value, 8) : '-',
+            graphValueLabel(slot.record, metric.key),
             Number.isFinite(value) ? 'matrix-value' : 'matrix-empty',
           ),
         );
@@ -152,9 +153,15 @@ export function renderMonthlyTable({
           (slot.record ? graphPeriodLabel(slot.record, language) : slot.date) +
           ' · ' +
           (Number.isFinite(value)
-            ? formatNumber(value, 8) + ' ' + metric.unit
+            ? graphValueLabel(slot.record, metric.key) + ' ' + metric.unit
             : t('graphMissing')) +
-          (slot.record ? ' · ' + graphSourceLabel(slot.record, t) : '');
+          (slot.record ? ' · ' + graphSourceLabel(slot.record, t) : '') +
+          (slot.record?.gasProjected?.includes(metric.key)
+            ? ' · ' + t('graphGasShiftSource')
+            : '') +
+          (slot.record?.stockIncrease?.includes(metric.key)
+            ? ' · ' + t('graphGasStockIncrease')
+            : '');
         for (let offset = 0; offset < slot.span; offset++) {
           const key = shiftDate(slot.date, offset);
           if (!byDate.has(key)) byDate.set(key, []);

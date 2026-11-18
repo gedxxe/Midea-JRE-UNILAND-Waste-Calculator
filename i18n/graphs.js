@@ -1,4 +1,19 @@
 export const graphMessages = {
+  graphGasProjected: [
+    '{count} gas values use matching saved shift readings and refills.',
+    '{count} 个气体数值使用时间一致的已保存班次读数和补充记录。',
+    '{count} nilai gas memakai reading dan refill shift tersimpan dengan periode yang cocok.',
+  ],
+  graphGasStockIncrease: [
+    'A + sign marks measured stock increase. Check readings and refill entries.',
+    '+ 表示测得库存增加。请检查读数和补充记录。',
+    'Tanda + menunjukkan kenaikan stok terukur. Periksa reading dan catatan refill.',
+  ],
+  graphGasShiftSource: [
+    'From matching saved shifts',
+    '来自时间一致的已保存班次',
+    'Dari shift tersimpan dengan periode yang cocok',
+  ],
   graphReadyCalculated: ['{count} daily periods', '{count} 个每日时段', '{count} periode harian'],
   graphCalculatedDays: [
     '{count} daily periods use recorded readings. Gas stays blank where refill timing is unknown.',

@@ -8,11 +8,12 @@ import { restorePeriodDraft } from '../draft-records.js';
 import { createDraft } from '../engine.js';
 import { observationTime, periodKind } from '../reading-period.js';
 import { seedElectricity, electricityConflicts } from '../observations.js';
-import { seedUtilityReadings, utilityConflicts } from '../utility-periods.js';
+import { seedUtilityReadings, utilityConflicts, projectGasPeriod } from '../utility-periods.js';
+import { gasCalibration, gasMassText } from '../gas.js';
 import { reportSnapshot } from './report-data.js';
 
 // Read-only daily projection of working observations. Never rewrite saved documents/output.
-export function workingDailyRows(rows, plant, start, endDate) {
+function recordedDailyRows(rows, plant, start, endDate) {
   const points = new Map(),
     sources = [];
   for (const row of rows) {
@@ -136,6 +137,78 @@ export function workingDailyRows(rows, plant, start, endDate) {
     return { ...row, superseded: true, dailyCoverage: true };
   });
 }
+
+const gasMetrics = (plant) =>
+  gasCalibration(plant).gases.map((gas) =>
+    plant === 'JRE' ? 'u' + gas.utilityIndex : 'kg' + gas.utilityIndex,
+  );
+function needsGasProjection(row, plant) {
+  if (!row.autosaved || !row.snapshot?.draft || row.snapshot.periodValid === false) return false;
+  const values = graphValues(row.snapshot, plant, { stockIncreases: true });
+  return gasMetrics(plant).some((key) => !Number.isFinite(values[key]) || values[key] < 0);
+}
+export function workingDailyRows(rows, plant, start, endDate, gasRows = []) {
+  const daily = recordedDailyRows(rows, plant, start, endDate);
+  if (!gasRows.length) return daily;
+  const sources = gasRows.flatMap((row) => {
+    if (!row.autosaved || row.snapshot?.periodValid === false || !row.snapshot?.draft) return [];
+    try {
+      const draft = restorePeriodDraft(row.snapshot.draft);
+      return draft.plantKey === plant &&
+        draft.startDate === row.start_date &&
+        draft.endDate === row.end_date &&
+        periodKind(draft) === row.report_kind
+        ? [{ row, draft }]
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  return daily.map((row) => {
+    if (!needsGasProjection(row, plant) || dayDiff(row.start_date, row.end_date) !== 1) return row;
+    let target;
+    try {
+      target = restorePeriodDraft(row.snapshot.draft);
+    } catch {
+      return row;
+    }
+    if (
+      periodKind(target) !== 'daily' ||
+      target.startDate !== row.start_date ||
+      target.endDate !== row.end_date ||
+      target.plantKey !== plant
+    )
+      return row;
+    const projection = projectGasPeriod(
+      target,
+      sources.map((source) => source.draft),
+    );
+    if (!projection) return row;
+    const current = graphValues(row.snapshot, plant, { stockIncreases: true }),
+      values = {};
+    gasMetrics(plant).forEach((key, i) => {
+      const result = projection.values[i];
+      if ((!Number.isFinite(current[key]) || current[key] < 0) && result) {
+        const value = Number(gasMassText(result.kg, result.kgText));
+        if (value !== current[key]) values[key] = value;
+      }
+    });
+    if (!Object.keys(values).length) return row;
+    return {
+      ...row,
+      gasProjection: values,
+      sourcePeriods: [
+        ...new Set([
+          ...(row.sourcePeriods || []),
+          row.id,
+          ...projection.sources.map(
+            (draft) => sources.find((source) => source.draft === draft).row.id,
+          ),
+        ]),
+      ],
+    };
+  });
+}
 export function graphsHandler(database = getPool, env = process.env) {
   return endpoint(async (req, res) => {
     if (!env.AUTH_SECRET || env.AUTH_SECRET.length < 32) fail(503, 'NOT_CONFIGURED');
@@ -158,24 +231,27 @@ export function graphsHandler(database = getPool, env = process.env) {
     const days = dayDiff(start, end);
     if (!['JRE', 'UNILAND'].includes(plant) || days === null || days < 0 || days > 365)
       fail(400, 'INVALID_GRAPH_RANGE');
-    const { rows } = await db.query(
-      `WITH documents AS (
+    const loadRows = (kinds, raw = false) =>
+      db.query(
+        `WITH documents AS (
         SELECT r.id,r.revision,r.start_date,r.end_date,r.report_kind,v.snapshot,false AS autosaved,r.revision AS checkpoint_revision
         FROM meter_app.reports r JOIN meter_app.report_revisions v ON v.report_id=r.id AND v.revision=r.revision
-        WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date AND r.report_kind=$5
+        WHERE r.owner_id=$1 AND r.plant=$2 AND r.start_date >= $3::date AND r.start_date <= $4::date AND r.report_kind=ANY($5::text[])
         AND ($6::boolean OR NOT EXISTS(SELECT 1 FROM meter_app.period_autosaves a WHERE a.owner_id=r.owner_id AND a.plant=r.plant AND a.report_kind=r.report_kind AND a.start_date=r.start_date AND a.end_date=r.end_date))
         UNION ALL
         SELECT a.id,GREATEST(COALESCE(r.revision,0),1) AS revision,a.start_date,a.end_date,a.report_kind,a.snapshot,true AS autosaved,COALESCE(r.revision,0) AS checkpoint_revision
         FROM meter_app.period_autosaves a LEFT JOIN meter_app.reports r ON r.owner_id=a.owner_id AND r.plant=a.plant AND r.report_kind=a.report_kind AND r.start_date=a.start_date AND r.end_date=a.end_date
-        WHERE a.owner_id=$1 AND a.plant=$2 AND a.start_date >= $3::date AND a.start_date <= $4::date AND a.report_kind=$5 AND NOT $6::boolean
-      ) SELECT id,revision,start_date::text,end_date::text,autosaved,checkpoint_revision,
+        WHERE a.owner_id=$1 AND a.plant=$2 AND a.start_date >= $3::date AND a.start_date <= $4::date AND a.report_kind=ANY($5::text[]) AND NOT $6::boolean
+      ) SELECT id,revision,start_date::text,end_date::text,report_kind,autosaved,checkpoint_revision,
        jsonb_build_object('period',jsonb_build_object('kind',report_kind,'startTime',snapshot->'draft'->'startTime','endTime',snapshot->'draft'->'endTime'),
        'complete',snapshot->'complete','periodValid',snapshot->'periodValid',
-       'draft',CASE WHEN NOT $6::boolean AND report_kind='daily' THEN snapshot->'draft' ELSE NULL END,
+       'draft',CASE WHEN NOT $6::boolean AND $7::boolean THEN snapshot->'draft' ELSE NULL END,
        'output',jsonb_build_object('reportText',snapshot->'output'->'reportText','worksheetText',snapshot->'output'->'worksheetText')) AS snapshot
       FROM documents ORDER BY start_date,end_date,id LIMIT 1001`,
-      [user.id, plant, start, end, kind, view === 'checkpoint'],
-    );
+        [user.id, plant, start, end, kinds, view === 'checkpoint', raw],
+      );
+    const project = kind === 'daily' && view === 'working';
+    const { rows } = await loadRows([kind], project);
     const history =
       kind !== 'daily'
         ? []
@@ -186,8 +262,12 @@ export function graphsHandler(database = getPool, env = process.env) {
             )
           ).rows;
     if (rows.length + history.length > 1000) fail(422, 'GRAPH_RANGE_TOO_LARGE');
-    const working =
-      kind === 'daily' && view === 'working' ? workingDailyRows(rows, plant, start, end) : rows;
+    const gasRows =
+      project && rows.some((row) => needsGasProjection(row, plant))
+        ? (await loadRows(['workingHours', 'nightShift'], true)).rows
+        : [];
+    if (gasRows.length > 1000) fail(422, 'GRAPH_RANGE_TOO_LARGE');
+    const working = project ? workingDailyRows(rows, plant, start, end, gasRows) : rows;
     send(res, 200, {
       plant,
       start,

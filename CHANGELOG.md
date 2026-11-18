@@ -2,6 +2,12 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
+## v0.11.60-alpha - 2026-11-18
+
+- Fill missing working-view daily gas values from saved shifts only when they form an exact, non-overlapping daily partition with matching gas boundaries and compatible refill bundles. Keep manual/unavailable values, conflicts, saved positive results and measured zeros intact. No raw observation, tank selection, report or autosave is rewritten.
+- Keep stock increases visible as **+amount kg**, matching the existing report notation. Mark them explicitly in the API, monthly table, chart data, tooltips and exports. Show separate hollow points and break the consumption line at these observations. Never turn a gain into ordinary consumption or display a negative amount.
+- Reuse the existing graph, utility-period and presentation modules. Graph responses retain owner isolation and exclude raw gas/refill details. Checkpoint reports remain stored unchanged; no migration or new dependency.
+
 ## v0.11.59-alpha - 2026-11-16
 
 - Place the sign-in form on the right and a short greeting on the left; stack the layout on narrow screens. Keep native fields, Back, public templates, password-change gates and circular welcome transitions.

@@ -6,6 +6,7 @@ import { workingDailyRows } from '../../server/graphs.js';
 import { createDraft } from '../../engine.js';
 import { graphRecords } from '../../graph-data.js';
 import { defaultGraphs } from '../../graph-schema.js';
+import { utilityPeriods } from '../fixtures/shift-utilities.mjs';
 
 const account = {
   id: 'b89c2b90-bbee-4a90-bd68-a0e9fc761352',
@@ -1007,6 +1008,91 @@ test('checkpoint view rejects a stale server response instead of labelling worki
   await expect(page.locator('.graph-card').first().locator('circle')).toHaveCount(0);
   await expect(page.locator('#graph-status')).not.toContainText('saved periods');
   expect(state.errors).toEqual([]);
+});
+
+test('daily gas gaps show verified shifts, plus-marked gains and zero with source hints in tables and exports', async ({
+  page,
+}, info) => {
+  const { errors } = await setup(page);
+  const [daily, after, night] = utilityPeriods('JRE');
+  for (const [i, draft] of [daily, after, night].entries()) {
+    draft.utilities[0].value = '';
+    draft.gas.entries[3] = {
+      enabled: i !== 0,
+      start: { reading: i === 2 ? '110' : '100', temperature: '', unit: 'kg' },
+      end: { reading: i === 1 ? '110' : '120', temperature: '', unit: 'kg' },
+      refills: [],
+    };
+    if (i === 0) draft.gas.entries.forEach((entry) => (entry.enabled = false));
+  }
+  const zero = createDraft('JRE', '2026-09-17', '2026-09-18');
+  zero.gas.entries[3] = {
+    enabled: true,
+    start: { reading: '50', temperature: '', unit: 'kg' },
+    end: { reading: '50', temperature: '', unit: 'kg' },
+    refills: [],
+  };
+  const row = (draft, id) => ({
+    id,
+    revision: 1,
+    start_date: draft.startDate,
+    end_date: draft.endDate,
+    report_kind: draft.periodKind || 'daily',
+    autosaved: true,
+    snapshot: reportSnapshot(draft, { allowPartial: true }),
+  });
+  const rows = [row(daily, 'daily-gas'), row(zero, 'zero-gas')],
+    shifts = [row(after, 'day-gas'), row(night, 'night-gas')];
+  const before = structuredClone({ rows, shifts });
+  const data = graphRecords(workingDailyRows(rows, 'JRE', undefined, undefined, shifts), 'JRE');
+  await page.route('**/api/graphs?**', (r) =>
+    r.fulfill({
+      json: {
+        ...Object.fromEntries(new URL(r.request().url()).searchParams),
+        plant: 'JRE',
+        records: data,
+      },
+    }),
+  );
+  await page.locator('#open-graphs').click();
+  await expect(page.locator('#graph-warnings')).toContainText(
+    'gas values use matching saved shift',
+  );
+  await expect(page.locator('#graph-warnings')).toContainText('A + sign');
+  await page.locator('#graph-view-table').click();
+  const gas = page.locator('#graph-matrix tr[data-metric="u3"]');
+  await expect(gas.locator('td[data-date="2026-09-16"]')).toHaveText('+20');
+  await expect(gas.locator('td[data-date="2026-09-16"]')).toHaveAttribute(
+    'title',
+    /matching saved shifts/,
+  );
+  await expect(gas.locator('td[data-date="2026-09-17"]')).toHaveText('0');
+  const lpg = page.locator('#graph-matrix tr[data-metric="u0"] td[data-date="2026-09-16"]');
+  expect(Number(await lpg.innerText())).toBeGreaterThan(0);
+  await gas.locator('td[data-date="2026-09-16"]').scrollIntoViewIfNeeded();
+  await page
+    .locator('#graph-matrix')
+    .screenshot({ path: info.outputPath('daily-gas-balances.png') });
+  await page.locator('#graph-view-charts').click();
+  await page.locator('#graph-layout-tools summary').click();
+  await page.locator('#graph-add').click();
+  const card = page.locator('.graph-card').last();
+  await card.locator('.graph-advanced summary').click();
+  await card.locator('[data-graph-unit]').selectOption('kg');
+  await card.locator('[data-graph-series="u3"]').check();
+  await expect(card.locator('circle[data-series="u3"]')).toHaveCount(2);
+  await expect(card.locator('svg [data-stock-note]')).toContainText('A + sign');
+  await expect(card.locator('circle[data-stock-increase] title')).toContainText('+20 kg');
+  const bounds = (await card.locator('svg').getAttribute('data-plot-bounds'))
+    .split(',')
+    .map(Number);
+  for (const y of await card
+    .locator('circle[data-series="u3"]')
+    .evaluateAll((nodes) => nodes.map((n) => Number(n.getAttribute('cy')))))
+    expect(y).toBeGreaterThanOrEqual(bounds[1]);
+  await card.locator('svg').screenshot({ path: info.outputPath('stock-increase-chart.png') });
+  expect({ rows, shifts }).toEqual(before);
+  expect(errors).toEqual([]);
 });
 
 test('recorded endpoints restore daily chart and monthly points while combined source copies remain reviewable', async ({

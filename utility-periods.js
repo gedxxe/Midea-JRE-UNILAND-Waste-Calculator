@@ -1,6 +1,13 @@
 import { observationTime, periodKind, validTime } from './reading-period.js';
-import { validDate, scaledReading } from './numbers.js';
-import { gasPoint, gasPointUnit, syncGasVersion, copyGasPoint } from './gas.js';
+import { validDate, scaledReading, dayDiff } from './numbers.js';
+import {
+  gasPoint,
+  gasPointUnit,
+  syncGasVersion,
+  copyGasPoint,
+  gasCalibration,
+  calculateGas,
+} from './gas.js';
 
 export const UTILITY_LAYOUT = 1;
 export const hasUtilityData = (d) =>
@@ -27,6 +34,66 @@ const pointId = (p) =>
   ]);
 const hasPoint = (p) => Boolean(p?.reading.trim() || (p?.unit !== 'kg' && p?.temperature.trim()));
 const legacyWater = (d) => !d.water && Boolean(d.utilities[4].value.trim());
+
+// A complete, unambiguous shift partition can supply a daily gas balance without
+// assigning untimed refill events to guessed dates or changing the saved draft.
+export function projectGasPeriod(target, periods) {
+  if (periodKind(target) !== 'daily' || dayDiff(target.startDate, target.endDate) !== 1)
+    return null;
+  const start = stamp(target, 'start'),
+    end = stamp(target, 'end');
+  if (!start || !end || start >= end) return null;
+  const candidates = periods.filter(
+    (d) =>
+      d.plantKey === target.plantKey &&
+      periodKind(d) !== 'daily' &&
+      stamp(d, 'start') &&
+      stamp(d, 'end') &&
+      stamp(d, 'start') >= start &&
+      stamp(d, 'end') <= end &&
+      stamp(d, 'start') < stamp(d, 'end'),
+  );
+  const chain = [];
+  let cursor = start;
+  while (cursor < end) {
+    const next = candidates.filter((d) => stamp(d, 'start') === cursor);
+    if (next.length !== 1) return null;
+    chain.push(next[0]);
+    cursor = stamp(next[0], 'end');
+  }
+  if (cursor !== end || chain.length !== candidates.length) return null;
+  const values = gasCalibration(target.plantKey).gases.map((gas, index) => {
+    const own = target.gas.entries[index];
+    if (!own.enabled && target.utilities[gas.utilityIndex].value.trim()) return null;
+    const entries = chain.map((d) => d.gas.entries[index]);
+    if (
+      entries.some(
+        (entry) =>
+          !entry.enabled || !Number.isFinite(calculateGas(gas.id, entry, target.plantKey).kg),
+      )
+    )
+      return null;
+    const first = entries[0].start,
+      last = entries.at(-1).end;
+    if (
+      (hasPoint(own.start) && pointId(own.start) !== pointId(first)) ||
+      (hasPoint(own.end) && pointId(own.end) !== pointId(last)) ||
+      entries.some((entry, i) => i > 0 && pointId(entries[i - 1].end) !== pointId(entry.start))
+    )
+      return null;
+    const refills = entries.flatMap((entry) => entry.refills);
+    const bundle = (events) =>
+      JSON.stringify(events.map((event) => [pointId(event.before), pointId(event.after)]));
+    if (own.refills.length && bundle(own.refills) !== bundle(refills)) return null;
+    const result = calculateGas(
+      gas.id,
+      { enabled: true, start: first, end: last, refills },
+      target.plantKey,
+    );
+    return Number.isFinite(result.kg) ? result : null;
+  });
+  return { values, sources: chain };
+}
 function matches(periods, target, side) {
   const time = stamp(target, side);
   if (!time) return [];
