@@ -2,11 +2,6 @@
 
 Release tags identify immutable milestones. Dates use Asia/Jakarta. Alpha versions are not stable releases.
 
-## v0.11.61-alpha - 2026-11-18
-
-- Correct JRE compressor electricity/flow to include only New Air Compressor 1#, New Air Compressor 2#, and Air Compressor 1#, from the original 12 November 2026, 08:00 WIB baseline. Dryer and Cooling Tower remains in Excel Z but no longer affects the AC ratio or makes it unavailable when its reading is missing.
-- Keep flow AB, column order, electrical ratios, zero/missing-flow handling and saved historical output unchanged. No migration, new module or dependency.
-
 ## v0.11.60-alpha - 2026-11-18
 
 - Fill missing working-view daily gas values from saved shifts only when they form an exact, non-overlapping daily partition with matching gas boundaries and compatible refill bundles. Keep manual/unavailable values, conflicts, saved positive results and measured zeros intact. No raw observation, tank selection, report or autosave is rewritten.
