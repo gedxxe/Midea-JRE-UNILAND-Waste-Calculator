@@ -18,15 +18,15 @@ test('JRE air flow and compressor efficiency use the confirmed boundary in all m
     const factor =
       draft.periodKind === 'workingHours' ? 4 : draft.periodKind === 'nightShift' ? 6 : 10;
     assert.equal(report.airCompressorResult.value, '100');
-    assert.equal(report.airCompressorResult.electricity, String(factor * 44));
-    assert.equal(report.airCompressorResult.ratio, String((factor * 44) / 100));
+    assert.equal(report.airCompressorResult.electricity, String(factor * 42));
+    assert.equal(report.airCompressorResult.ratio, String((factor * 42) / 100));
     assert.match(report.reportSectionText, /Air Compressor: 100 Nm³/);
     assert.equal(graphValues(reportSnapshot(draft), 'JRE').u5, 100);
     const excel = buildExcelRow(draft, report);
     assert.equal(excel.values[excel.columns.findIndex((c) => c.column === 'AB')], '100');
     assert.equal(
       excel.values[excel.columns.findIndex((c) => c.column === 'AC')],
-      String((factor * 44) / 100),
+      String((factor * 42) / 100),
     );
   }
   for (const draft of reportPeriods('JRE', '2026-11-11')) {
@@ -38,6 +38,38 @@ test('JRE air flow and compressor efficiency use the confirmed boundary in all m
   }
   const uniland = reportPeriods('UNILAND', '2026-11-12')[0];
   assert.equal(calculateDraft(uniland).airCompressorResult.applicable, false);
+});
+
+test('dryer consumption stays in Excel Z but cannot alter or block the compressor ratio', () => {
+  for (const draft of reportPeriods('JRE', '2026-11-12')) {
+    draft.airCompressor = { start: '100', end: '200' };
+    const original = calculateDraft(draft),
+      dryerIndex = original.calculatedRows.findIndex(
+        (row) => row.name === 'Dryer and Cooling Tower New Air Compressor',
+      ),
+      baseline = buildExcelRow(draft, original);
+    const start = draft.rows[dryerIndex].start;
+    for (const end of [
+      [String(Number(start[0]) + 100), String(Number(start[1]) + 200)],
+      ['', String(Number(start[1]) + 200)],
+      ['-', String(Number(start[1]) + 200)],
+    ]) {
+      draft.rows[dryerIndex].end = end;
+      const before = structuredClone(draft),
+        result = calculateDraft(draft),
+        excel = buildExcelRow(draft, result);
+      assert.equal(
+        result.airCompressorResult.electricity,
+        original.airCompressorResult.electricity,
+      );
+      assert.equal(result.airCompressorResult.ratio, original.airCompressorResult.ratio);
+      assert.equal(excel.values[24], baseline.values[24]); // AC
+      assert.equal(excel.values[23], '100'); // AB
+      assert.equal(excel.values[21], end[0] && end[0] !== '-' ? '300' : '-'); // Z
+      assert.equal(excel.values.length, 49);
+      assert.deepEqual(draft, before);
+    }
+  }
 });
 
 test('zero compressor inputs are valid; missing energy or zero flow never fabricates an efficiency', () => {
