@@ -1,8 +1,12 @@
 import { node } from './dom.js';
 import { getLanguage, t } from '../i18n/index.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
-import { metricLabel, graphPeriodLabel, graphSourceLabel } from '../graph-presentation.js';
-import { formatNumber } from '../numbers.js';
+import {
+  metricLabel,
+  graphPeriodLabel,
+  graphSourceLabel,
+  graphValueLabel,
+} from '../graph-presentation.js';
 
 export function attachGraphInteraction(frame, svg, config, records, onToggle) {
   const periods = records.filter((r) => !r.overlap && !r.superseded && !r.noValues && r.days > 0);
@@ -45,7 +49,7 @@ export function attachGraphInteraction(frame, svg, config, records, onToggle) {
         node(
           'b',
           Number.isFinite(record.values[key])
-            ? formatNumber(record.values[key], 8) + ' ' + config.unit
+            ? graphValueLabel(record, key) + ' ' + config.unit
             : t('graphMissing'),
         ),
       );

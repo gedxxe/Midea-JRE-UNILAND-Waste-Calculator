@@ -5,6 +5,7 @@ import {
   metricLabel,
   graphPeriodLabel,
   graphSourceLabel,
+  graphValueLabel,
 } from '../graph-presentation.js';
 import { pngResolution } from '../png.js';
 import { GRAPH_METRICS } from '../graph-schema.js';
@@ -82,7 +83,15 @@ export function renderGraph(
     legend.push({ metric, x: lx, y: ly, lines });
     lx += span + 20;
   });
-  const height = ly + Math.max(1, ...legend.map((l) => l.lines.length)) * 16 + 32;
+  const legendBottom = ly + Math.max(1, ...legend.map((l) => l.lines.length)) * 16 + 32;
+  const stockNotes = metrics.some(
+    (metric) =>
+      !config.hiddenSeries?.includes(metric.key) &&
+      periods.some((p) => p.stockIncrease?.includes(metric.key)),
+  )
+    ? wrap(t('graphGasStockIncrease'), right - left, 13)
+    : [];
+  const height = legendBottom + (stockNotes.length ? (stockNotes.length + 1) * 18 : 0);
   const svg = svgNode('svg', {
     xmlns: NS,
     viewBox: '0 0 ' + chartWidth + ' ' + height,
@@ -96,6 +105,21 @@ export function renderGraph(
   });
   svg.append(svgNode('title', {}, title), svgNode('desc', {}, t('graphPlotDesc')));
   svg.append(svgNode('rect', { width: chartWidth, height, fill: '#ffffff' }));
+  stockNotes.forEach((line, i) =>
+    svg.append(
+      svgNode(
+        'text',
+        {
+          x: left,
+          y: legendBottom + i * 18 + 4,
+          'font-size': 13,
+          fill: '#70420b',
+          'data-stock-note': '',
+        },
+        line,
+      ),
+    ),
+  );
   titleLines.forEach((line, i) =>
     svg.append(
       svgNode(
@@ -133,9 +157,18 @@ export function renderGraph(
   );
   const segments = metrics
     .filter((metric) => !config.hiddenSeries?.includes(metric.key))
-    .map((metric) => ({ metric, parts: graphSegments(records, metric.key) }));
+    .map((metric) => ({
+      metric,
+      parts: graphSegments(records, metric.key),
+      gains: periods
+        .filter((p) => p.stockIncrease?.includes(metric.key))
+        .map((p) => ({ ...p, value: p.values[metric.key] })),
+    }));
   const axis = graphYAxis(
-    segments.flatMap((s) => s.parts.flatMap((p) => p.map((v) => v.value))),
+    segments.flatMap((s) => [
+      ...s.parts.flatMap((p) => p.map((v) => v.value)),
+      ...s.gains.map((p) => p.value),
+    ]),
     config.yAxis,
   );
   if (!axis) return svg;
@@ -254,7 +287,7 @@ export function renderGraph(
           (axis.clipped ? ' · ' + t('graphOutside') : ''),
       ),
     );
-  segments.forEach(({ metric, parts }) => {
+  segments.forEach(({ metric, parts, gains }) => {
     const index = metrics.findIndex((m) => m.key === metric.key);
     const color = COLORS[index % COLORS.length],
       dash = ['none', '5 3', '2 3', '8 3 2 3', '10 4'][Math.floor(index / COLORS.length) % 5];
@@ -270,32 +303,51 @@ export function renderGraph(
           'data-series': metric.key,
         }),
       );
-      for (const p of part) {
-        const mark = svgNode('circle', {
-          cx: x(p),
-          cy: y(p.value),
-          r: 2.4,
-          fill: color,
-          'data-series': metric.key,
-          'data-period-index': positions.get(p.startDate + '/' + p.endDate),
-        });
-        mark.append(
+    }
+    for (const p of [...parts.flat(), ...gains]) {
+      const gain = p.stockIncrease?.includes(metric.key);
+      const mark = svgNode('circle', {
+        cx: x(p),
+        cy: y(p.value),
+        r: gain ? 4 : 2.4,
+        fill: gain ? '#ffffff' : color,
+        stroke: color,
+        ...(gain ? { 'data-stock-increase': '' } : {}),
+        'data-series': metric.key,
+        'data-period-index': positions.get(p.startDate + '/' + p.endDate),
+      });
+      mark.append(
+        svgNode(
+          'title',
+          {},
+          metric.label +
+            ': ' +
+            graphValueLabel(p, metric.key) +
+            ' ' +
+            config.unit +
+            ' | ' +
+            graphPeriodLabel(p, language) +
+            ' | ' +
+            graphSourceLabel(p, t) +
+            (p.gasProjected?.includes(metric.key) ? ' | ' + t('graphGasShiftSource') : '') +
+            (p.stockIncrease?.includes(metric.key) ? ' | ' + t('graphGasStockIncrease') : ''),
+        ),
+      );
+      plot.append(mark);
+      if (gain)
+        plot.append(
           svgNode(
-            'title',
-            {},
-            metric.label +
-              ': ' +
-              formatNumber(p.value, 8) +
-              ' ' +
-              config.unit +
-              ' | ' +
-              graphPeriodLabel(p, language) +
-              ' | ' +
-              graphSourceLabel(p, t),
+            'text',
+            {
+              x: x(p),
+              y: Math.max(top + 13, y(p.value) - 8),
+              'text-anchor': x(p) === left ? 'start' : x(p) === right ? 'end' : 'middle',
+              'font-size': 12,
+              fill: color,
+            },
+            graphValueLabel(p, metric.key),
           ),
         );
-        plot.append(mark);
-      }
     }
   });
   metrics.forEach((metric, index) => {
@@ -347,7 +399,10 @@ export function renderGraph(
     );
     svg.append(group);
   });
-  const count = segments.reduce((n, s) => n + s.parts.reduce((a, p) => a + p.length, 0), 0);
+  const count = segments.reduce(
+    (n, s) => n + s.parts.reduce((a, p) => a + p.length, 0) + s.gains.length,
+    0,
+  );
   if (!count)
     svg.append(
       svgNode(

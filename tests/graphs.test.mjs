@@ -6,11 +6,149 @@ import { reportSnapshot } from '../server/report-data.js';
 import { electricityConflicts } from '../observations.js';
 import { utilityConflicts } from '../utility-periods.js';
 import { workingDailyRows } from '../server/graphs.js';
-import { createDraft } from '../engine.js';
+import { createDraft, createWorkingHoursDraft, createNightShiftDraft } from '../engine.js';
+import { calculateGas, gasCalibration } from '../gas.js';
 import { exampleDraft } from '../examples.js';
 import { periodLabel, graphYAxis } from '../graph-axis.js';
+import { graphValueLabel } from '../graph-presentation.js';
 import { PLANT_SCHEMAS } from '../schema.js';
 const saved = (plant = 'JRE') => reportSnapshot(exampleDraft(plant));
+
+function gasWorkingRows(plant) {
+  const daily = createDraft(plant, '2026-09-10', '2026-09-11');
+  const day = createWorkingHoursDraft(plant, '2026-09-10');
+  const night = createNightShiftDraft(plant, '2026-09-10');
+  for (const draft of [daily, day, night]) {
+    draft.rows.forEach((r) => {
+      r.start.fill('100');
+      r.end.fill('120');
+    });
+    draft.gas.entries.forEach((entry, i) => {
+      const point = (reading) => ({
+        reading,
+        temperature: i === 3 && plant === 'UNILAND' ? '25' : '',
+        ...(i === 3 && plant === 'JRE' ? { unit: 'kg' } : {}),
+      });
+      const [a, b, c] = i === 0 ? ['70', '60', '65'] : ['1600', '1400', '1500'];
+      entry.enabled = draft !== daily;
+      entry.start = point(draft === night ? c : a);
+      entry.end = point(draft === day ? c : b);
+      entry.refills = draft === day ? [{ before: point(b), after: point(c) }] : [];
+    });
+  }
+  const row = (draft, id) => ({
+    id,
+    revision: 1,
+    start_date: draft.startDate,
+    end_date: draft.endDate,
+    report_kind: draft.periodKind || 'daily',
+    autosaved: true,
+    snapshot: reportSnapshot(draft, { allowPartial: true }),
+  });
+  return { rows: [row(daily, 'daily')], shifts: [row(day, 'day'), row(night, 'night')] };
+}
+
+test('daily gas gaps use an exact saved shift partition including refills, without changing stored records', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const { rows, shifts } = gasWorkingRows(plant),
+      before = structuredClone({ rows, shifts });
+    const original = graphValues(rows[0].snapshot, plant);
+    const records = graphRecords(
+      workingDailyRows(rows, plant, undefined, undefined, shifts),
+      plant,
+    );
+    assert.equal(records.length, 1);
+    const keys = gasCalibration(plant).gases.map((gas) =>
+      plant === 'JRE' ? 'u' + gas.utilityIndex : 'kg' + gas.utilityIndex,
+    );
+    assert.deepEqual(records[0].gasProjected, keys);
+    for (const [i, key] of keys.entries()) {
+      assert.equal(original[key], null);
+      const entry = structuredClone(rows[0].snapshot.draft.gas.entries[i]);
+      entry.enabled = true;
+      entry.refills = shifts[0].snapshot.draft.gas.entries[i].refills;
+      assert.equal(
+        records[0].values[key],
+        Number(calculateGas(gasCalibration(plant).gases[i].id, entry, plant).kg.toFixed(6)),
+      );
+    }
+    assert.equal(records[0].values.r0, original.r0);
+    assert.deepEqual(records[0].sourcePeriods, ['daily', 'day', 'night']);
+    assert.deepEqual({ rows, shifts }, before);
+    assert.equal(JSON.stringify(records).includes('"draft"'), false);
+    assert.deepEqual(workingDailyRows(rows, plant), rows);
+  }
+});
+
+test('gas projection rejects missing, overlapping, conflicting and out-of-window evidence, and preserves zero/manual values', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const { rows, shifts } = gasWorkingRows(plant);
+    const key = plant === 'JRE' ? 'u0' : 'kg0';
+    const values = (s, r = rows) =>
+      graphRecords(workingDailyRows(r, plant, undefined, undefined, s), plant)[0];
+    assert.equal(values(shifts.slice(0, 1)).values[key], null);
+    assert.equal(values([...shifts, structuredClone(shifts[0])]).values[key], null);
+    const outside = structuredClone(shifts);
+    outside[0].snapshot.draft.startTime = '07:00';
+    assert.equal(values(outside).values[key], null);
+    const conflict = structuredClone(shifts);
+    conflict[1].snapshot.draft.gas.entries[0].start.reading = '66';
+    assert.equal(values(conflict).values[key], null);
+    assert.ok(Number.isFinite(values(conflict).values[plant === 'JRE' ? 'u1' : 'kg2']));
+    const invalid = structuredClone(shifts);
+    invalid[0].snapshot.draft.gas.entries[0].refills[0].after.reading = '59';
+    assert.equal(values(invalid).values[key], null);
+    const manual = structuredClone(rows);
+    manual[0].snapshot.draft.utilities[0].value = '-';
+    assert.equal(values(shifts, manual).values[key], null);
+    const zero = structuredClone(rows);
+    zero[0].snapshot.draft.gas.entries[0].enabled = true;
+    zero[0].snapshot.draft.gas.entries[0].end = structuredClone(
+      zero[0].snapshot.draft.gas.entries[0].start,
+    );
+    zero[0].snapshot = reportSnapshot(zero[0].snapshot.draft, { allowPartial: true });
+    assert.equal(values(shifts, zero).values[key], 0);
+    const mismatched = structuredClone(rows);
+    mismatched[0].snapshot.draft.gas.entries[0].end.reading = '61';
+    assert.equal(values(shifts, mismatched).values[key], null);
+    const ownRefill = structuredClone(rows);
+    ownRefill[0].snapshot.draft.gas.entries[0].refills = [
+      { before: { reading: '55', temperature: '' }, after: { reading: '65', temperature: '' } },
+    ];
+    assert.equal(values(shifts, ownRefill).values[key], null);
+  }
+});
+
+test('stock gains retain their plus notation and stay separate from consumption lines', () => {
+  for (const plant of ['JRE', 'UNILAND']) {
+    const prefix = PLANT_SCHEMAS[plant].utilityPrefix;
+    const snapshot = {
+      output: {
+        reportText:
+          prefix + ' Nitrogen: +12.345 Kg (measured stock increase)\n' + prefix + ' Water: 0 m³',
+        worksheetText: '',
+      },
+    };
+    const key = plant === 'JRE' ? 'u2' : 'kg3';
+    const record = graphRecords(
+      [{ id: 'gain', start_date: '2026-09-10', end_date: '2026-09-11', snapshot }],
+      plant,
+    )[0];
+    assert.equal(record.values[key], 12.345);
+    assert.deepEqual(record.stockIncrease, [key]);
+    assert.equal(graphValueLabel(record, key), '+12.345');
+    assert.deepEqual(graphSegments([record], key), []);
+    assert.equal(record.values.u4, 0);
+    assert.equal(
+      graphValues({ output: { reportText: prefix + ' Nitrogen: +12.345 Kg' } }, plant)[key],
+      null,
+    );
+    assert.equal(
+      graphValues({ output: { reportText: prefix + ' Nitrogen: -' } }, plant)[key],
+      null,
+    );
+  }
+});
 
 test('graphs need only immutable report and worksheet text, not private raw snapshot fields', () => {
   for (const plant of ['JRE', 'UNILAND']) {

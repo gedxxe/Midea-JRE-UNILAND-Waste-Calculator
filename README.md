@@ -9,7 +9,7 @@
   <a href="https://neon.com/docs"><img alt="Neon PostgreSQL" src="https://img.shields.io/badge/Neon-PostgreSQL-4169e1?logo=postgresql&amp;logoColor=white" /></a>
 </p>
 
-**v0.11.59-alpha** · JRE / UNILAND · made in <3 by gede
+**v0.11.60-alpha** · JRE / UNILAND · made in <3 by gede
 
 [Open website](https://midea-jre.vercel.app/) · [English](#english) · [简体中文](#简体中文) · [Indonesia](#indonesia) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md) · [Rights reserved](LICENSE)
 
@@ -72,7 +72,7 @@ The **Energy Record** welcome page uses the supplied Midea logo and React Bits e
 
 The interface supports English, Simplified Chinese and Indonesian. Equipment, units and copied templates retain factory wording. Combined dates remain a period total, not an invented daily average.
 
-Gas stock increases stay visible as **+amount (measured stock increase)**, with a nonblocking notice to check readings, temperatures and omitted refills. Ordinary consumption keeps its usual format. Invalid observations or decreasing refill events still block final reports; stock gains are not plotted as positive consumption. The application does not infer a physical cause or rewrite saved history.
+Gas stock increases stay visible as **+amount (measured stock increase)**, with a nonblocking notice to check readings, temperatures and omitted refills. Ordinary consumption keeps its usual format. Invalid observations or decreasing refill events still block final reports; stock gains show as +amount with a stock-increase label and separate chart marks, outside the consumption line. The application does not infer a physical cause or rewrite saved history.
 
 JRE **Warehouse Lighting** is row 32, ratio x40. Warehouse Area now excludes its consumption in all three modes. Reports starting before **25 October 2026** use Lighting consumption 0, including 24 morning to 25 morning. Actual readings dated 25 October remain available for the next report. Saved historical output stays unchanged.
 
@@ -187,7 +187,7 @@ made in <3 by gede
 
 **电表读数**打开 `/iot-power-meter-reading`，仅用于设备诊断。已连接/离线依据三分钟内的认证通信，与读数分开；需要固件支持心跳。操作员可查看管理员登记的电表及已保存读数，不能修改卡片、密钥或发送立即读取命令。报表和自动保存仍按账户隔离。管理员可添加设备、电表与固件配置ID，生成或更换密钥并停用上传。卡片显示最新kWh和设备发送的电流(A)，支持分相。不会填入人工表格、自动保存、能耗图表或报告。立即读取会请求新采集值，间隔至少十秒；常规读数同步为十分钟。监控数值最多显示三位小数。密钥仅显示一次。见[配置与固件协议](docs/iot.md)。
 
-面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.59-alpha**，数据用于决策前仍需人工复核。
+面向 Midea JRE 和 UNILAND 操作人员的能源抄表与报表工具。填写累计读数、检查用量、保存个人账户历史，再复制工厂报表、原始读数清单或 Excel 行。目标是支持美的业务流程中的标准记录、异常检查、修订追踪和能源趋势分析；不代表官方 MBS 认证或批准。当前 **v0.11.60-alpha**，数据用于决策前仍需人工复核。
 
 登录后，/app 为抄表与报表，/app/monitoring 为图表与月度表，/app/history 为历史报表，/app/accounts 为管理员账户管理。支持浏览器前进、后退及直接链接刷新；打开受保护页面前先检查会话。菜单切换保留当前草稿，不改变计算结果。
 
@@ -226,7 +226,7 @@ Account 面板的 **快速指南** 用八步及光标动画介绍主要功能。
 
 **月度表格**显示月份、年份、完整日期列和固定设备名称；合并时段保留完整用量。可选择**全屏**或收起**筛选**以增加空间。表格与对话框均可滚动；Escape 先还原视图，再关闭窗口。图表支持平滑曲线、共享提示及可点击图例，保存数值与缺失间隔保持不变。
 
-燃气换算库存增加时显示 **+数值（测得库存增加）**，并提示检查读数、温度及是否漏记补充，仍可保存和复制。正常用量格式不变；无效读数或补充量下降仍需修正。库存增加不作为正用量绘图，不推断物理原因，也不重算旧报表。
+燃气换算库存增加时显示 **+数值（测得库存增加）**，并提示检查读数、温度及是否漏记补充，仍可保存和复制。正常用量格式不变；无效读数或补充量下降仍需修正。库存增加以 +数值和独立图标显示，不接入用量曲线，不推断物理原因，也不重算旧报表。
 
 JRE 为 32 项设备 / 63 个电表，UNILAND 为 34 项 / 48 个读数位置。JRE Window 电表 6 为 x40；Piping 1 电表 3 的直读差值扣除 Window 电表 6 用量后计入 Piping 合计。Building 3 保留既定扣减。Structural 为 max(0, 本表用量减去 Piping 1 电表 1 用量 x40)，两者读数均须有效；主表 Total 独立。T1–T4 仅为 JRE 可选备注；UNILAND Trafo 原始读数已是 MWh。旧报表不会因更新而重算。见[电表规则](docs/meter-rules.md)、[燃气](docs/gas.md)、[图表](docs/graphs.md)。
 
@@ -278,7 +278,7 @@ Slogan welcome tetap “Capek mencatat meter secara manual? Coba Catatan Energi.
 
 **Power Meter Reading** di sebelah Graphs membuka `/iot-power-meter-reading` untuk diagnostik perangkat. Connected/Offline berdasarkan kontak terautentikasi dalam tiga menit, terpisah dari reading; firmware perlu mendukung heartbeat. Admin dapat menambah ID perangkat/meter/profil, membuat atau mengganti key, dan menonaktifkan upload. Card menampilkan kWh terbaru serta arus (A) yang dikirim, termasuk per fase. Tidak mengisi tabel, autosave, grafik konsumsi atau laporan operator. Baca sekarang meminta reading baru dengan jeda sepuluh detik; sinkron reading normal tiap sepuluh menit. Angka monitoring maksimal tiga desimal. Key hanya tampil sekali. Lihat [konfigurasi dan kontrak firmware](docs/iot.md).
 
-Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.59-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
+Alat pencatatan energi untuk operator Midea JRE dan UNILAND. Isi reading kumulatif, periksa konsumsi, simpan histori per akun, lalu salin laporan pabrik, daftar mentah atau baris Excel. Mendukung proses Midea Business System melalui pencatatan konsisten, pemeriksaan, jejak koreksi dan tren energi. Tidak mengklaim persetujuan atau sertifikasi resmi MBS. Versi **v0.11.60-alpha** tetap memerlukan pemeriksaan manusia sebelum hasil dipakai untuk keputusan.
 
 Setelah login, /app untuk pengisian, /app/monitoring untuk grafik/tabel bulanan, /app/history untuk histori, dan /app/accounts khusus admin. Mendukung Back/Forward, link langsung dan refresh. Pergantian menu mempertahankan draft; sesi diperiksa sebelum tampilan terlindungi dibuka. Lihat [routing](docs/navigation.md).
 
@@ -341,7 +341,7 @@ Halaman **Energy Record** memakai logo Midea yang diberikan dan efek React Bits.
 
 **Tabel bulanan** menampilkan bulan/tahun, kolom tanggal lengkap dan nama equipment yang tetap terlihat saat digeser. Rekap gabungan tetap satu total. Pilih **Layar Penuh** atau lipat **Filter** untuk ruang lebih luas. Tabel dan dialog bisa di-scroll; Escape mengembalikan tampilan dahulu sebelum menutupnya. Grafik memakai kurva halus, tooltip bersama dan legend interaktif; nilai tersimpan serta celah data tetap sama.
 
-Kenaikan stok gas hasil konversi tetap tampil sebagai **+angka (kenaikan stok terukur)**, dengan notice untuk memeriksa reading, suhu dan refill yang mungkin belum dicatat. Laporan tetap bisa disimpan/disalin; konsumsi biasa memakai format semula. Input tidak valid atau stok yang turun saat refill tetap perlu dikoreksi. Kenaikan stok tidak diplot sebagai konsumsi positif, penyebab fisiknya tidak ditebak, dan histori tidak dihitung ulang.
+Kenaikan stok gas hasil konversi tetap tampil sebagai **+angka (kenaikan stok terukur)**, dengan notice untuk memeriksa reading, suhu dan refill yang mungkin belum dicatat. Laporan tetap bisa disimpan/disalin; konsumsi biasa memakai format semula. Input tidak valid atau stok yang turun saat refill tetap perlu dikoreksi. Kenaikan stok tampil sebagai +angka dengan penanda terpisah dari garis konsumsi, penyebab fisiknya tidak ditebak, dan histori tidak dihitung ulang.
 
 JRE memiliki 32 equipment / 63 meter; UNILAND 34 equipment / 48 slot. Window meter 6 JRE memakai x40. Selisih direct Piping 1 meter 3 dikurangi pemakaian Window meter 6, lalu nilai bersihnya masuk total Piping. Building 3 tetap memakai pengurangan yang dikonfirmasi. Structural = max(0, pemakaian mentahnya dikurangi Piping 1 meter 1 x40), hanya jika kedua reading valid. Total utama independen. T1–T4 hanya catatan opsional JRE; Trafo UNILAND sudah MWh. Pembaruan tidak menghitung ulang histori. Lihat [aturan meter](docs/meter-rules.md), [gas](docs/gas.md) dan [grafik](docs/graphs.md).
 

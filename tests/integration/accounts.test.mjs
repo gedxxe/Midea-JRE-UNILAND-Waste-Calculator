@@ -1761,7 +1761,7 @@ test('UNILAND tank gas persists incomplete drafts, recalculates on the server an
   );
 });
 
-test('both plants persist stock increases without plotting them as gas consumption or rewriting revisions', async () => {
+test('both plants expose explicitly marked stock increases while preserving stored plus notation and revisions', async () => {
   const actor = await login(await seed());
   for (const plant of ['JRE', 'UNILAND']) {
     const draft = exampleDraft(plant);
@@ -1796,7 +1796,12 @@ test('both plants persist stock increases without plotting them as gas consumpti
       actor,
     });
     assert.equal(graphs.status, 200);
-    assert.equal(graphs.value.records[0].values[plant === 'JRE' ? 'u2' : 'kg3'], null);
+    const metric = plant === 'JRE' ? 'u2' : 'kg3';
+    assert.equal(
+      graphs.value.records[0].values[metric],
+      Math.abs(Number(stored.output.gas[0].kg.toFixed(6))),
+    );
+    assert.ok(graphs.value.records[0].stockIncrease.includes(metric));
     draft.gas.entries[2].end = point('950');
     draft.gas.entries[2].refills = [{ before: point('1010'), after: point('1100') }];
     const positive = await call('/api/reports', {
@@ -3170,6 +3175,82 @@ test('period navigation reads owner data before replacing an archived document a
       400,
     );
   }
+});
+
+test('working daily gas uses owner-scoped complete shift evidence while retaining canonical documents and checkpoints', async () => {
+  const actor = await autosaveActor(),
+    outsider = await autosaveActor();
+  const workspace = autosaveWorkspace(createDraft('JRE'));
+  const expected = {};
+  for (const plant of ['JRE', 'UNILAND']) {
+    const [daily, after, night] = utilityPeriods(plant);
+    after.gas.entries[2].refills = [
+      { before: { reading: '850', temperature: '' }, after: { reading: '950', temperature: '' } },
+    ];
+    const balanced = structuredClone(daily);
+    balanced.gas.entries[2].refills = structuredClone(after.gas.entries[2].refills);
+    const calculated = calculateDraft(balanced);
+    expected[plant] = calculated.gasResults;
+    daily.gas.entries.forEach((entry, i) => {
+      entry.enabled = false;
+      daily.utilities[gasCalibration(plant).gases[i].utilityIndex].value = '';
+    });
+    workspace.drafts[plant] = daily;
+    workspace.workingHours[plant] = after;
+    workspace.nightShifts[plant] = night;
+  }
+  assert.equal(
+    (await call('/api/drafts', { actor, body: { workspace, baseVersion: 0 } })).status,
+    200,
+  );
+  const other = structuredClone(workspace);
+  other.workingHours.JRE.gas.entries[2].refills[0].after.reading = '990';
+  assert.equal(
+    (await call('/api/drafts', { actor: outsider, body: { workspace: other, baseVersion: 0 } }))
+      .status,
+    200,
+  );
+  const read = async () =>
+    Object.fromEntries(
+      await Promise.all(
+        ['reports', 'report_revisions', 'period_autosaves', 'working_drafts', 'users'].map(
+          async (table) => [
+            table,
+            (
+              await db.query(
+                'SELECT to_jsonb(t) AS row FROM meter_app.' +
+                  table +
+                  ' t ORDER BY to_jsonb(t)::text',
+              )
+            ).rows,
+          ],
+        ),
+      ),
+    );
+  const before = await read();
+  for (const plant of ['JRE', 'UNILAND']) {
+    const url = '/api/graphs?plant=' + plant + '&start=2026-09-16&end=2026-09-16';
+    const response = await call(url, { actor });
+    assert.equal(response.status, 200);
+    assert.equal(response.value.records.length, 1);
+    const record = response.value.records[0];
+    assert.equal(record.gasProjected.length, 4);
+    expected[plant].forEach((result) => {
+      const gas = gasCalibration(plant).gases.find((g) => g.id === result.gas);
+      const key = (plant === 'JRE' ? 'u' : 'kg') + gas.utilityIndex;
+      assert.equal(record.values[key], Number(result.kg.toFixed(6)));
+    });
+    assert.equal(JSON.stringify(response.value).includes('"draft"'), false);
+    assert.equal(JSON.stringify(response.value).includes('"refills"'), false);
+    assert.equal(record.sourcePeriods.length, 3);
+    const otherRecord = (await call(url, { actor: outsider })).value.records[0];
+    if (plant === 'JRE') assert.notEqual(otherRecord.values.u2, record.values.u2);
+    assert.equal((await call(url + '&view=checkpoint', { actor })).value.records.length, 0);
+    const shifts = (await call(url + '&kind=workingHours', { actor })).value.records;
+    assert.equal(shifts.length, 1);
+    assert.equal(shifts[0].gasProjected, undefined);
+  }
+  assert.deepEqual(await read(), before);
 });
 
 test('working graph reads resolve nested dates from owner-scoped raw readings without changing stored application data', async () => {

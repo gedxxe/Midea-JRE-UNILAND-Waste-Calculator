@@ -7,7 +7,7 @@ import { dayDiff, round, shiftDate } from './numbers.js';
 
 // Read the saved English outputs, not today's engine or raw cumulative readings.
 // Old snapshots remain immutable and retain the result approved at their revision.
-export function graphValues(snapshot, plant) {
+export function graphValues(snapshot, plant, { stockIncreases = false } = {}) {
   const values = {};
   const report =
     typeof snapshot?.output?.reportText === 'string' ? snapshot.output.reportText.split('\n') : [];
@@ -15,19 +15,27 @@ export function graphValues(snapshot, plant) {
     typeof snapshot?.output?.worksheetText === 'string'
       ? snapshot.output.worksheetText.split('\n')
       : [];
-  function extract(lines, prefix, unit = '') {
+  function extract(lines, prefix, unit = '', gasBalance = false) {
     const matches = lines.filter((line) => line.startsWith(prefix));
     if (matches.length !== 1) return null;
     const text = matches[0].slice(prefix.length);
     if (text === '-' || text.startsWith('- ')) return null;
-    const match = /^(\d+(?:\.\d+)?)(.*)$/.exec(text);
-    if (!match || !Number.isFinite(Number(match[1])) || Number(match[1]) > 1e15) return null;
+    const match = /^([+-]?\d+(?:\.\d+)?)(.*)$/.exec(text);
+    if (!match || !Number.isFinite(Number(match[1])) || Math.abs(Number(match[1])) > 1e15)
+      return null;
+    if (!gasBalance && /^[+-]/.test(match[1])) return null;
+    if (!stockIncreases && /^[+-]/.test(match[1])) return null;
     const suffix = unit ? ' ' + unit : '';
     if (
       match[2] !== suffix &&
       !(unit && match[2].startsWith(suffix + ' (') && match[2].endsWith(')'))
     )
       return null;
+    // Reports encode measured stock gains as +mass, not positive consumption.
+    if (match[1].startsWith('+'))
+      return gasBalance && match[2].startsWith(suffix + ' (measured stock increase)')
+        ? -Number(match[1])
+        : null;
     return Number(match[1]);
   }
   const headers = buildWorksheet(plant, '', []).headers.filter((h) => h !== 'Date');
@@ -54,7 +62,12 @@ export function graphValues(snapshot, plant) {
   const checksStart = report.indexOf('CHECK RAW DATA:');
   const utilityReport = checksStart < 0 ? report : report.slice(0, checksStart);
   UTILITIES[plant].forEach(([name, unit], i) => {
-    values['u' + i] = extract(utilityReport, schema.utilityPrefix + ' ' + name + ': ', unit);
+    values['u' + i] = extract(
+      utilityReport,
+      schema.utilityPrefix + ' ' + name + ': ',
+      unit,
+      unit === 'Kg',
+    );
   });
   for (const metric of GRAPH_METRICS[plant])
     if (metric.utilityIndex !== undefined)
@@ -62,6 +75,7 @@ export function graphValues(snapshot, plant) {
         utilityReport,
         schema.utilityPrefix + ' ' + UTILITIES[plant][metric.utilityIndex][0] + ': ',
         'Kg',
+        true,
       );
   return Object.fromEntries(GRAPH_METRICS[plant].map((m) => [m.key, values[m.key] ?? null]));
 }
@@ -69,9 +83,21 @@ export function graphRecords(rows, plant, history = []) {
   const records = rows.map((row) => {
     const period = row.snapshot?.period;
     const working = isWorkingHours(period);
+    const values =
+      row.snapshot?.periodValid === false
+        ? Object.fromEntries(GRAPH_METRICS[plant].map((metric) => [metric.key, null]))
+        : { ...graphValues(row.snapshot, plant, { stockIncreases: true }), ...row.gasProjection };
+    const stockIncrease = GRAPH_METRICS[plant]
+      .filter((metric) => metric.unit === 'kg' && values[metric.key] < 0)
+      .map((metric) => metric.key);
+    for (const key of stockIncrease) values[key] = Math.abs(values[key]);
     return {
       id: row.id,
       ...(row.derived ? { derived: true, sourcePeriods: row.sourcePeriods } : {}),
+      ...(row.gasProjection
+        ? { gasProjected: Object.keys(row.gasProjection), sourcePeriods: row.sourcePeriods }
+        : {}),
+      ...(stockIncrease.length ? { stockIncrease } : {}),
       ...(row.superseded ? { superseded: true, dailyCoverage: row.dailyCoverage === true } : {}),
       revision: row.revision,
       ...(Number.isInteger(row.checkpoint_revision)
@@ -90,10 +116,7 @@ export function graphRecords(rows, plant, history = []) {
             minutes: workMinutes({ ...period, startDate: row.start_date, endDate: row.end_date }),
           }
         : {}),
-      values:
-        row.snapshot?.periodValid === false
-          ? Object.fromEntries(GRAPH_METRICS[plant].map((metric) => [metric.key, null]))
-          : graphValues(row.snapshot, plant),
+      values,
       ...(row.autosaved ? { autosaved: true, complete: row.snapshot?.complete === true } : {}),
       source: 'report',
     };
@@ -146,7 +169,12 @@ export function graphSegments(records, key) {
   for (const row of records) {
     const value = row.values[key];
     if (row.superseded || row.noValues) continue;
-    if (row.overlap || row.days < 1 || !Number.isFinite(value)) {
+    if (
+      row.overlap ||
+      row.days < 1 ||
+      !Number.isFinite(value) ||
+      row.stockIncrease?.includes(key)
+    ) {
       if (segment.length) segments.push(segment);
       segment = [];
       previous = null;
