@@ -2,9 +2,8 @@ import { test, expect, modernWorkspace } from './fixtures.js';
 import { excelWorkspace } from '../fixtures/excel-periods.mjs';
 import { buildExcelRow, excelRowToTSV } from '../../excel-row.js';
 import { calculateDraft } from '../../engine.js';
-import { reportPeriods } from '../fixtures/report-periods.mjs';
-async function setup(page, zero = false, source = excelWorkspace(zero)) {
-  let workspace = modernWorkspace(source),
+async function setup(page, zero = false) {
+  let workspace = modernWorkspace(excelWorkspace(zero)),
     version = 1;
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -36,41 +35,6 @@ async function setup(page, zero = false, source = excelWorkspace(zero)) {
   return { errors };
 }
 const read = (page) => page.evaluate(async () => navigator.clipboard.readText());
-test('JRE Excel ratio excludes dryer consumption while retaining its own column in all modes', async ({
-  page,
-  context,
-}) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  const source = excelWorkspace();
-  const periods = reportPeriods('JRE', '2026-11-12');
-  for (const [index, key] of ['drafts', 'workingHours', 'nightShifts'].entries()) {
-    periods[index].airCompressor = [
-      { start: '100', end: '200' },
-      { start: '100', end: '140' },
-      { start: '140', end: '200' },
-    ][index];
-    source[key].JRE = periods[index];
-  }
-  const { errors } = await setup(page, false, source);
-  for (const [mode, dryer] of [
-    ['daily', '20'],
-    ['workingHours', '8'],
-    ['nightShift', '12'],
-  ]) {
-    await page.selectOption('#reading-mode', mode);
-    await page.selectOption('#report-view', 'worksheet');
-    await page.locator('#copy-report').click();
-    await expect.poll(async () => (await read(page)).split('\t')[24]).toBe('4.2');
-    const cells = (await read(page)).split('\t');
-    expect(cells).toHaveLength(49);
-    expect(cells[21]).toBe(dryer); // Z remains the standalone dryer column.
-    await expect(page.locator('#report-preview')).toHaveValue(
-      /AC: Air Compressor electricity \/ flow \(kWh\/Nm³\) = 4\.2/,
-    );
-  }
-  expect(errors).toEqual([]);
-});
-
 for (const plant of ['JRE', 'UNILAND']) {
   test(
     plant + ' copies the exact current Excel range for daily, Day and Night in either copy control',

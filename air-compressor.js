@@ -7,6 +7,7 @@ export const AIR_FLOW_FROM = '2026-11-12T08:00';
 export const COMPRESSOR_EQUIPMENT = Object.freeze([
   'New Air Compressor 1#',
   'New Air Compressor 2#',
+  'Dryer and Cooling Tower New Air Compressor',
   'Air Compressor 1#',
 ]);
 const compressorRows = COMPRESSOR_EQUIPMENT.map((name) => {
